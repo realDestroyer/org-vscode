@@ -1,8 +1,7 @@
-# VS-ORG
+# Org-vscode
 
 
 ![Version](https://img.shields.io/badge/version-v0.1.4-blue.svg)
-[![Install](https://img.shields.io/badge/Marketplace-Install-green.svg)](https://marketplace.visualstudio.com/items?itemName=BobbyBoyd.vs-org)</br></br>
 
 This is a work in progress extension that will, in the end, try to emulate [Emacs Org-Mode](https://orgmode.org/) as much as possible.
 
@@ -10,7 +9,7 @@ This is a work in progress extension that will, in the end, try to emulate [Emac
 
 ## Features
 
-Introducing Agenda View! Schedule your tasks with `ctrl+alt+s`, run the `VS-Org: Agenda View` command and see all of your scheduled tasks in all of your VS-Org files, in one clean interface, organized by date. Watch the Agenda View Demo: </br>
+Introducing Agenda View! Schedule your tasks with `ctrl+alt+s`, run the `Org-vscode: Agenda View` command and see all of your scheduled tasks in all of your VS-Org files, in one clean interface, organized by date. Watch the Agenda View Demo: </br>
 
 <img src="https://github.com/robaboyd/vs-org/blob/master/Images/openAgenda.gif?raw=true" width="700" height="400" />
 
@@ -75,7 +74,8 @@ Check out the [RoadMap](https://github.com/robaboyd/vs-org/blob/master/roadmap.m
 
 ## Authors
 
-- Bobby Boyd - Maintainer/Creator
+- Forked from the original author: Bobby Boyd
+- Current Maintainer - realDestroyer
 
 ## License
 
