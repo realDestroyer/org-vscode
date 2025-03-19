@@ -1,4 +1,5 @@
-import * as vscode from "vscode";
+import * as vscode from 'vscode';
+
 module.exports = function () {
   vscode.commands.executeCommand("workbench.action.files.save").then(() => {
     const { activeTextEditor } = vscode.window;

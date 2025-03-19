@@ -1,3 +1,4 @@
+import * as vscode from 'vscode';
 module.exports = function(array: string[] = ["⊖ ", "⊙ ", "⊘ "]) {
   const { activeTextEditor } = vscode.window;
   if (activeTextEditor && activeTextEditor.document.languageId === "vso") {

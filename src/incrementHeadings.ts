@@ -3,7 +3,8 @@
 // incrementing increase spaces by 1 and rotate character array to the left
 // decrementing is the reverse of increment
 
-import * as vscode from "vscode";
+import * as vscode from 'vscode';
+
 module.exports = function() {
   const { activeTextEditor } = vscode.window;
   if (activeTextEditor && activeTextEditor.document.languageId === "vso") {
