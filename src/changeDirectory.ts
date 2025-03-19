@@ -1,5 +1,5 @@
-const vscode = require("vscode");
-const path = require("path");
+import * as vscode from 'vscode';
+import * as path from 'path';
 
 module.exports = function() {
   vscode.window

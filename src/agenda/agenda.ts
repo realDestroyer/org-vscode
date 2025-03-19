@@ -1,359 +1,248 @@
-import * as vscode from "vscode";
-import * as fs from "fs";
-import * as os from "os";
-import * as moment from "moment";
-import * as path from "path";
-
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+import * as vscode from 'vscode';
+const fs = require("fs");
+const os = require("os");
+import * as moment from 'moment';
+import * as path from 'path';
 module.exports = function () {
-  vscode.commands.executeCommand("workbench.action.files.save").then(() => {
-    let config = vscode.workspace.getConfiguration("vsorg");
-    let folderPath = config.get("folderPath");
-    let dateFormat: any = config.get("dateFormat");
-    let folder: any;
-    let taskText: any;
-    let taskTextGetTodo: any = "";
-    let getDateFromTaskText: any;
-    let convertedDateArray: any = [];
-    let unsortedObject: any = {};
-    let sortedObject: any = {};
-    var itemInSortedObject: any = "";
-
-
-    //call the function
-    readFiles();
-
-    function readFiles() {
-      //read the directory
-      fs.readdir(setMainDir(), (err, items: any) => {
-
-        //loop through all of the files in the directory
-        for (let i = 0; i < items.length; i++) {
-          //make sure its a vsorg file
-          if (items[i].includes(".vsorg")) {
-            //read the file and puth the text in an array
-            let fileText
-            if (os.platform() === "darwin" || os.platform() === "linux") {
-              fileText = fs
-                .readFileSync(setMainDir() + "/" + items[i])
-                .toString()
-                .split(/\r?\n/);
-            } else {
-
-              fileText = fs
-                .readFileSync(setMainDir() + "\\" + items[i])
-                .toString()
-                .split(/\r?\n/);
-            }
-
-            fileText.forEach(element => {
-              // for each element check for scheduled and not done
-              if (element.includes("SCHEDULED") && !element.includes("DONE")) {
-                //get everything before scheduled
-                taskText = element.trim().match(/.*(?=.*SCHEDULED)/g);
-                //get todo
-                taskTextGetTodo = element.match(/\bTODO\b/);
-                //remove keywords and unicode chars
-                taskText = taskText[0].replace("⊙", "");
-                taskText = taskText.replace("TODO", "");
-                taskText = taskText.replace("DONE", "");
-                taskText = taskText.replace("⊘", "");
-                taskText = taskText.replace("⊖", "");
-                taskText = taskText.trim();
-                //get the date
-                getDateFromTaskText = element.match(/\[(.*)\]/);
-                //if there is a TODO
-                if (taskTextGetTodo !== null) {
-                  taskText =
-                    '<span class="filename">' +
-                    items[i] +
-                    ":</span> " +
-                    '<span class="todo" data-filename="' +
-                    items[i] +
-                    '" data-text= "' +
-                    taskText +
-                    '" ' +
-                    '" data-date= "' +
-                    getDateFromTaskText[0] +
-                    '"> ' +
-                    taskTextGetTodo +
-                    "</span>" +
-                    '<span class="taskText">' +
-                    taskText +
-                    "</span>" +
-                    '<span class="scheduled">SCHEDULED</span>';
-                } else {
-                  taskText =
-                    '<span class="filename">' +
-                    items[i] +
-                    ":</span> " +
-                    '<span class="taskText">' +
-                    taskText +
-                    "</span>" +
-                    '<span class="scheduled">SCHEDULED</span>';
-                }
-
-                //get the day of the week for items scheduled in the future
-                let d = moment(getDateFromTaskText[1], dateFormat).day();
-                let nameOfDay;
-                if (d === 0) {
-                  nameOfDay = "Sunday";
-                } else if (d === 1) {
-                  nameOfDay = "Monday";
-                } else if (d === 2) {
-                  nameOfDay = "Tuesday";
-                } else if (d === 3) {
-                  nameOfDay = "Wednesday";
-                } else if (d === 4) {
-                  nameOfDay = "Thursday";
-                } else if (d === 5) {
-                  nameOfDay = "Friday";
-                } else if (d === 6) {
-                  nameOfDay = "Saturday";
-                }
-
-                convertedDateArray = [];
-                if (moment(getDateFromTaskText[1], dateFormat) >= moment(new Date(), dateFormat)) {
-
-                  if (nameOfDay !== undefined) {
-                    convertedDateArray.push({
-                      date:
-                        '<div class="heading' +
-                        nameOfDay +
-                        " " +
-                        getDateFromTaskText[0] +
-                        '"><h4 class="' +
-                        getDateFromTaskText[0] +
-                        '">' +
-                        getDateFromTaskText[0] +
-                        ", " +
-                        nameOfDay.toUpperCase() +
-                        "</h4></div>",
-                      text: '<div class="panel ' + getDateFromTaskText[0] + '">' + taskText + "</div>"
-                    });
-                  }
-                } else {
-                  //todays date for incomplete items in the past
-                  var today: any = new Date();
-                  var dd: any = today.getDate();
-                  var mm: any = today.getMonth() + 1;
-                  var yyyy: any = today.getFullYear();
-                  var getDayOverdue: any = today.getDay();
-                  var overdue: any;
-                  if (dd < 10) {
-                    dd = "0" + dd;
-                  }
-
-                  if (mm < 10) {
-                    mm = "0" + mm;
-                  }
-                  if (dateFormat === "MM-DD-YYYY") {
-
-
-                    today = mm + "-" + dd + "-" + yyyy;
-                  } else {
-
-                    today = dd + "-" + mm + "-" + yyyy;
-                  }
-
-                  if (getDayOverdue === 0) {
-                    overdue = "Sunday";
-                  } else if (getDayOverdue === 1) {
-                    overdue = "Monday";
-                  } else if (getDayOverdue === 2) {
-                    overdue = "Tuesday";
-                  } else if (getDayOverdue === 3) {
-                    overdue = "Wednesday";
-                  } else if (getDayOverdue === 4) {
-                    overdue = "Thursday";
-                  } else if (getDayOverdue === 5) {
-                    overdue = "Friday";
-                  } else if (getDayOverdue === 6) {
-                    overdue = "Saturday";
-                  }
-                  //if date is a day in the past
-                  if (moment(getDateFromTaskText[1], dateFormat) < moment(new Date().getDate(), dateFormat)) {
-
-                    convertedDateArray.push({
-                      date:
-                        '<div class="heading' +
-                        overdue +
-                        " " +
-                        "[" +
-                        today +
-                        "]" +
-                        '"><h4 class="' +
-                        "[" +
-                        today +
-                        "]" +
-                        '">' +
-                        "[" +
-                        today +
-                        "]" +
-                        ", " +
-                        overdue.toUpperCase() +
-                        "</h4></div>",
-                      text:
-                        '<div class="panel ' +
-                        "[" +
-                        today +
-                        "]" +
-                        '">' +
-                        taskText +
-                        '<span class="late">LATE: ' +
-                        getDateFromTaskText[1] +
-                        "</span></div>"
-                    });
-                  }
-                }
-                //converted array to object with date as keys
-                convertedDateArray.forEach((element: any) => {
-                  if (!unsortedObject[element.date]) {
-                    unsortedObject[element.date] = "  " + element.text;
-                  } else {
-                    unsortedObject[element.date] += "  " + element.text;
-                  }
-                });
-              }
-            });
-            //sort the object by date
-            Object.keys(unsortedObject).forEach(function (key) {
-              sortedObject[key] = unsortedObject[key];
-            });
-          }
-        }
-
-        Object.keys(sortedObject)
-          .sort(function (a: any, b: any) {
-
-            let first: any = moment(a.match(/\[(.*)\]/), dateFormat).toDate();
-
-            let second: any = moment(b.match(/\[(.*)\]/), dateFormat).toDate();
-
-            return first - second;
-          })
-          .forEach(function (property) {
-            itemInSortedObject += property + sortedObject[property] + "</br>";
-          });
-
-
-
-
-        createWebview();
-      });
-    }
-
-    /**
-     * Get the Main Directory
-     */
-    function setMainDir() {
-      if (folderPath === "") {
-        let homeDir = os.homedir();
-        if (os.platform() === "darwin" || os.platform() === "linux") {
-          folder = homeDir + "/VSOrgFiles";
-        } else {
-
-          folder = homeDir + "\\VSOrgFiles";
-        }
-      } else {
-        folder = folderPath;
+    vscode.commands.executeCommand("workbench.action.files.save").then(() => {
+      let config = vscode.workspace.getConfiguration("org");
+      let dateFormat = config.get<string>("dateFormat") || "YYYY-MM-DD";
+        // Check if dateFormat is an array and extract the first element
+        if (Array.isArray(dateFormat)) {
+          dateFormat = dateFormat[0];
       }
-      return folder;
-    }
-
-    function createWebview() {
-
-      let reload = false;
-      let fullAgendaView = vscode.window.createWebviewPanel(
-        "fullAgenda",
-        "Full Agenda View",
-        vscode.ViewColumn.Beside,
-        {
-          // Enable scripts in the webview
-          enableScripts: true
-        }
-      );
-
-      // Set The HTML content
-      fullAgendaView.webview.html = getWebviewContent(sortedObject);
-
-      //reload on save
-      vscode.workspace.onDidSaveTextDocument((document: vscode.TextDocument) => {
-        reload = true;
-        fullAgendaView.dispose();
-      });
-
-      fullAgendaView.onDidDispose(() => {
-        if (reload === true) {
-          reload = false;
-          vscode.commands.executeCommand("extension.viewAgenda");
-        }
-      });
-
-      // Handle messages from the webview
-      fullAgendaView.webview.onDidReceiveMessage(message => {
-        switch (message.command) {
-          case "open":
-            let fullPath = path.join(setMainDir(), message.text);
-            vscode.workspace.openTextDocument(vscode.Uri.file(fullPath)).then(doc => {
-              vscode.window.showTextDocument(doc, vscode.ViewColumn.One, false);
+      if (typeof dateFormat !== 'string') {
+          vscode.window.showErrorMessage(`Invalid dateFormat configuration: ${dateFormat}`);
+          return;
+      }
+        //let folder;
+        let taskText;
+        let taskTextGetTodo = "";
+        let getDateFromTaskText;
+        let convertedDateArray = [];
+        let unsortedObject: Record<string, string> = {};
+        let sortedObject: Record<string, string> = {};
+        var itemInSortedObject = "";
+        //call the function
+        readFiles();
+        function readFiles() {
+            //read the directory
+            fs.readdir(setMainDir(), (err: NodeJS.ErrnoException | null, items: string[]) => {
+              if (err) {
+                vscode.window.showErrorMessage(`Error reading directory: ${err.message}`);
+                return;
+            }
+                //loop through all of the files in the directory
+                for (let i = 0; i < items.length; i++) {
+                    //make sure its a org file
+                    if (items[i].includes(".org")) {
+                        //read the file and puth the text in an array
+                        let fileText;
+                        if (os.platform() === "darwin" || os.platform() === "linux") {
+                            fileText = fs
+                                .readFileSync(setMainDir() + "/" + items[i])
+                                .toString()
+                                .split(/\r?\n/);
+                        }
+                        else {
+                            fileText = fs
+                                .readFileSync(setMainDir() + "\\" + items[i])
+                                .toString()
+                                .split(/\r?\n/);
+                        }
+                        fileText.forEach((element: string) => {
+                          if (element.includes("SCHEDULED") && !element.includes("DONE")) {
+                              taskText = element.trim().match(/.*(?=.*SCHEDULED)/g);
+                              const todoMatch = element.match(/\bTODO\b/);
+                              taskTextGetTodo = todoMatch ? todoMatch[0] : "";
+                              if (taskText && taskText[0]) {
+                                  taskText = taskText[0].replace("⊙", "").replace("TODO", "").replace("DONE", "").replace("⊘", "").replace("⊖", "").trim();
+                                  getDateFromTaskText = element.match(/\[(.*)\]/);
+                                  if (getDateFromTaskText && getDateFromTaskText[1]) {
+                                      if (taskTextGetTodo !== null) {
+                                          taskText = `<span class="filename">${items[i]}:</span> <span class="todo" data-filename="${items[i]}" data-text="${taskText}" data-date="${getDateFromTaskText[0]}"> ${taskTextGetTodo}</span><span class="taskText">${taskText}</span><span class="scheduled">SCHEDULED</span>`;
+                                      } else {
+                                          taskText = `<span class="filename">${items[i]}:</span> <span class="taskText">${taskText}</span><span class="scheduled">SCHEDULED</span>`;
+                                      }
+                                      let d = moment(getDateFromTaskText[1] as string, dateFormat).day();
+                                      let nameOfDay = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"][d];
+                                      convertedDateArray = [];
+                                      if (moment(getDateFromTaskText[1], dateFormat) >= moment(new Date(), dateFormat)) {
+                                          if (nameOfDay !== undefined) {
+                                              convertedDateArray.push({
+                                                  date: `<div class="heading${nameOfDay} ${getDateFromTaskText[0]}"><h4 class="${getDateFromTaskText[0]}">${getDateFromTaskText[0]}, ${nameOfDay.toUpperCase()}</h4></div>`,
+                                                  text: `<div class="panel ${getDateFromTaskText[0]}">${taskText}</div>`
+                                              });
+                                          }
+                                      } else {
+                                          let today = moment().format(dateFormat);
+                                          let overdue = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"][moment().day()];
+                                          if (moment(getDateFromTaskText[1], dateFormat) < moment(new Date().getDate(), dateFormat)) {
+                                              convertedDateArray.push({
+                                                  date: `<div class="heading${overdue} [${today}]"><h4 class="[${today}]">[${today}], ${overdue.toUpperCase()}</h4></div>`,
+                                                  text: `<div class="panel [${today}]">${taskText}<span class="late">LATE: ${getDateFromTaskText[1]}</span></div>`
+                                              });
+                                          }
+                                      }
+                                      convertedDateArray.forEach(element => {
+                                          if (!unsortedObject[element.date]) {
+                                              unsortedObject[element.date] = " " + element.text;
+                                          } else {
+                                              unsortedObject[element.date] += " " + element.text;
+                                          }
+                                      });
+                                  } else {
+                                      console.error("getDateFromTaskText is null or undefined for element:", element);
+                                  }
+                              } else {
+                                  console.error("taskText is null or undefined for element:", element);
+                              }
+                          }
+                      });
+                        //sort the object by date
+                        Object.keys(unsortedObject).forEach(function (key) {
+                            sortedObject[key] = unsortedObject[key];
+                        });
+                    }
+                }
+                Object.keys(sortedObject)
+                    .sort(function (a, b) {
+                    let first = moment(a.match(/\[(.*)\]/), dateFormat).toDate();
+                    let second = moment(b.match(/\[(.*)\]/), dateFormat).toDate();
+                    return first.getTime() - second.getTime();
+                })
+                    .forEach(function (property) {
+                    itemInSortedObject += property + sortedObject[property] + "</br>";
+                });
+                createWebview();
             });
-            return;
-
-          case "changeTodo":
-            let textArray = message.text.split(",");
-            let fileName = path.join(setMainDir(), textArray[1]);
-            let text = textArray[2];
-            let contents = fs.readFileSync(fileName, "utf-8");
-            let x = contents.split(/\r?\n/);
-
-            for (let i = 0; i < x.length; i++) {
-              if (x[i].indexOf(text) > -1 && x[i].indexOf(textArray[3]) > -1) {
-                let removeSchedule: any = x[i].match(/\bSCHEDULED\b(.*)/g);
-                let date = moment().format('Do MMMM YYYY, h:mm:ss a');
-
-                x[i] = x[i].replace(removeSchedule[0], "");
-                x[i] = x[i].replace(
-                  "TODO " + text,
-                  "DONE " +
-                  text +
-                  "    SCHEDULED: " +
-                  textArray[3] +
-                  "\n   COMPLETED:" +
-                  "[" +
-                  date +
-                  "]"
-                );
-                contents = x.join("\r\n");
-                fs.writeFileSync(fileName, contents, "utf-8");
-                return;
-              }
-            }
-
-          case "changeDone":
-            let textArrayD = message.text.split(",");
-            let fileNameD = path.join(setMainDir(), textArrayD[1]);
-            let textD = textArrayD[2];
-            let contentsD = fs.readFileSync(fileNameD, "utf-8");
-            let y = contentsD.split(/\r?\n/);
-
-            for (let i = 0; i < y.length; i++) {
-              if (y[i].indexOf(textD) > -1 && y[i].indexOf(textArrayD[3]) > -1) {
-                let removeSchedule: any = y[i].match(/\bSCHEDULED\b(.*)/g);
-                y[i] = y[i].replace(removeSchedule[0], "");
-                y[i] = y[i].replace("DONE " + textD, "TODO " + textD + "    SCHEDULED: " + textArrayD[3]);
-                y.splice(i + 1, 1);
-                contentsD = y.join("\r\n");
-                fs.writeFileSync(fileNameD, contentsD, "utf-8");
-                return;
-              }
-            }
         }
-      });
-
-    }
-
-    function getWebviewContent(task: keyof typeof sortedObject) {
-      return `<!DOCTYPE html>
+        /**
+         * Get the Main Directory
+         */
+        function setMainDir(): string {
+          const config = vscode.workspace.getConfiguration("org");
+          const folderPath = config.get<string>("folderPath");
+      
+          if (folderPath && folderPath.trim() !== "") {
+              return folderPath;
+          } else {
+              const homeDir = os.homedir();
+              if (os.platform() === "darwin" || os.platform() === "linux") {
+                  return path.join(homeDir, "OrgFiles");
+              } else {
+                  return path.join(homeDir, "OrgFiles");
+              }
+          }
+      }      
+        function createWebview() {
+            let reload = false;
+            let fullAgendaView = vscode.window.createWebviewPanel("fullAgenda", "Full Agenda View", vscode.ViewColumn.Beside, {
+                // Enable scripts in the webview
+                enableScripts: true
+            });
+            // Set The HTML content
+            fullAgendaView.webview.html = getWebviewContent(sortedObject);
+            //reload on save
+            vscode.workspace.onDidSaveTextDocument((document) => {
+                reload = true;
+                fullAgendaView.dispose();
+            });
+            fullAgendaView.onDidDispose(() => {
+                if (reload === true) {
+                    reload = false;
+                    vscode.commands.executeCommand("extension.viewAgenda");
+                }
+            });
+            // Handle messages from the webview
+            fullAgendaView.webview.onDidReceiveMessage((message: any) => {
+              switch (message.command) {
+                case "open":
+                  if (message.text !== undefined && message.text.trim() !== "") {
+                    let fullPath = path.join(setMainDir(), message.text as string);
+                    vscode.workspace.openTextDocument(vscode.Uri.file(fullPath)).then(doc => {
+                        vscode.window.showTextDocument(doc, vscode.ViewColumn.Beside, false);
+                      });
+                  } else {
+                      vscode.window.showErrorMessage("The provided path is invalid or undefined.");
+                  }
+                  return;         
+                  case "changeTodo":
+                      if (typeof message.text === 'string') {
+                          let textArray = message.text.split(",");
+                          if (textArray.length >= 4) {
+                              let fileName = path.join(setMainDir(), textArray[1]);
+                              let text = textArray[2];
+                              let contents = fs.readFileSync(fileName, "utf-8");
+                              let x = contents.split(/\r?\n/);
+                              for (let i = 0; i < x.length; i++) {
+                                  if (x[i].indexOf(text) > -1 && x[i].indexOf(textArray[3]) > -1) {
+                                      let removeSchedule = x[i].match(/\bSCHEDULED\b(.*)/g);
+                                      if (removeSchedule) {
+                                          let date = moment().format('Do MMMM YYYY, h:mm:ss a');
+                                          x[i] = x[i].replace(removeSchedule[0], "");
+                                          x[i] = x[i].replace(
+                                              "TODO " + text,
+                                              "DONE " +
+                                              text +
+                                              "    SCHEDULED: " +
+                                              textArray[3] +
+                                              "\n   COMPLETED:[" +
+                                              date +
+                                              "]"
+                                          );
+                                          contents = x.join("\r\n");
+                                          fs.writeFileSync(fileName, contents, "utf-8");
+                                      }
+                                      return;
+                                  }
+                              }
+                          } else {
+                              vscode.window.showErrorMessage("changeTodo message.text has an invalid format.");
+                          }
+                      } else {
+                          vscode.window.showErrorMessage("changeTodo message.text is undefined.");
+                      }
+                      return;
+          
+                  case "changeDone":
+                      if (typeof message.text === 'string') {
+                          let textArrayD = message.text.split(",");
+                          if (textArrayD.length >= 4) {
+                              let fileNameD = path.join(setMainDir(), textArrayD[1]);
+                              let textD = textArrayD[2];
+                              let contentsD = fs.readFileSync(fileNameD, "utf-8");
+                              let y = contentsD.split(/\r?\n/);
+                              for (let i = 0; i < y.length; i++) {
+                                  if (y[i].indexOf(textD) > -1 && y[i].indexOf(textArrayD[3]) > -1) {
+                                      let removeSchedule = y[i].match(/\bSCHEDULED\b(.*)/g);
+                                      if (removeSchedule) {
+                                          y[i] = y[i].replace(removeSchedule[0], "");
+                                          y[i] = y[i].replace(
+                                              "DONE " + textD,
+                                              "TODO " + textD + "    SCHEDULED: " + textArrayD[3]
+                                          );
+                                          y.splice(i + 1, 1);
+                                          contentsD = y.join("\r\n");
+                                          fs.writeFileSync(fileNameD, contentsD, "utf-8");
+                                      }
+                                      return;
+                                  }
+                              }
+                          } else {
+                              vscode.window.showErrorMessage("changeDone message.text has an invalid format.");
+                          }
+                      } else {
+                          vscode.window.showErrorMessage("changeDone message.text is undefined.");
+                      }
+                      return;
+              }
+          });          
+        }
+        function getWebviewContent(task: Record<string, string>): string {
+            return `<!DOCTYPE html>
         <html lang="en">
         <head>
             <meta charset="UTF-8">
@@ -606,6 +495,7 @@ module.exports = function () {
 </script>
 </body>
 </html>`;
-    }
-  });
+        }
+    });
 };
+//# sourceMappingURL=agenda.js.map
