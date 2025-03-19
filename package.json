@@ -35,14 +35,14 @@
 		},
 		"configuration": {
 			"type": "object",
-			"title": "VS-Org Config",
+			"title": "Org-vscode Config",
 			"properties": {
-				"vsorg.folderPath": {
+				"Org-vscode.folderPath": {
 					"type": "string",
 					"default": "",
 					"description": "Main folder"
 				},
-				"vsorg.dateFormat": {
+				"Org-vscode.dateFormat": {
 					"type": "string",
 					"default": [
 						"MM-DD-YYYY"
@@ -61,11 +61,11 @@
 		"commands": [
 			{
 				"command": "extension.setFolderPath",
-				"title": "org-vscode Change VS-Org Directory"
+				"title": "org-vscode Change Org-vscode Directory"
 			},
 			{
 				"command": "extension.createVsoFile",
-				"title": "org-vscode Create New .vsorg file"
+				"title": "org-vscode Create New .org file"
 			},
 			{
 				"command": "extension.getTags",

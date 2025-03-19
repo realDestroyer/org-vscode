@@ -7,14 +7,14 @@ module.exports = function() {
       canSelectFolders: true,
       canSelectFiles: false,
       canSelectMany: false,
-      openLabel: "Set As VS-Org Folder"
+      openLabel: "Set As Org-vscode Folder"
     })
     .then((response: any) => {
       vscode.workspace
         .getConfiguration("vsorg")
         .update("folderPath", path.normalize(response[0].fsPath), true)
         .then(() => {
-          vscode.window.showInformationMessage("VS-Org: " + response[0].fsPath + " set as directory");
+          vscode.window.showInformationMessage("Org-vscode: " + response[0].fsPath + " set as directory");
         });
     });
 };

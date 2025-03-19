@@ -90,7 +90,7 @@ export function activate(ctx: vscode.ExtensionContext): void {
   //run updateDates on config change
   vscode.commands.registerCommand("extension.updateDates", updateDates);
   vscode.workspace.onDidChangeConfiguration((event) => {
-    let settingChanged = event.affectsConfiguration("vsorg.dateFormat");
+    let settingChanged = event.affectsConfiguration("Org-vscode.dateFormat");
     if (settingChanged) {
       vscode.commands.executeCommand('extension.updateDates');
     }
