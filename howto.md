@@ -14,7 +14,7 @@ By default, the main directory is set to your home folder.
 To change it, use the command:  
 **`Org-vscode: Change Org-vscode Directory`**  
 
-<img src="https://github.com/realdestroyer/vs-org/blob/master/Images/changeDir.gif?raw=true" width="700" height="400" />
+<img src="https://github.com/realdestroyer/org-vscode/blob/master/Images/changeDir.gif?raw=true" width="700" height="400" />
 
 ---
 
@@ -23,7 +23,7 @@ To change it, use the command:
 Create a new file inside your main directory using:  
 **`Org-vscode: Create new .org file`**  
 
-<img src="https://github.com/realdestroyer/vs-org/blob/master/Images/newFile.gif?raw=true" width="700" height="400" />
+<img src="https://github.com/realdestroyer/org-vscode/blob/master/Images/newFile.gif?raw=true" width="700" height="400" />
 
 ---
 
@@ -31,7 +31,7 @@ Create a new file inside your main directory using:
 
 Use the `/header` snippet to quickly generate a structured header.
 
-<img src="https://github.com/realdestroyer/vs-org/blob/master/Images/headerSnippet.gif?raw=true" width="700" height="400" />
+<img src="https://github.com/realdestroyer/org-vscode/blob/master/Images/headerSnippet.gif?raw=true" width="700" height="400" />
 
 ---
 
@@ -41,7 +41,7 @@ You can open a file using either:
 - **`Org-vscode: Open By Title`**  
 - **`Org-vscode: Open By Tag`**  
 
-<img src="https://github.com/realdestroyer/vs-org/blob/master/Images/openCommands.gif?raw=true" width="700" height="400" />
+<img src="https://github.com/realdestroyer/org-vscode/blob/master/Images/openCommands.gif?raw=true" width="700" height="400" />
 
 ---
 
@@ -50,10 +50,10 @@ You can open a file using either:
 - **Schedule an item** → Use `Ctrl + Alt + S`.  
 - **View all scheduled items** → Use **`Org-vscode: Agenda View`**.  
 
-<img src="https://github.com/realdestroyer/vs-org/blob/master/Images/openAgenda.gif?raw=true" width="700" height="400" />
+<img src="https://github.com/realdestroyer/org-vscode/blob/master/Images/openAgenda.gif?raw=true" width="700" height="400" />
 
 ---
 
 ## 🎬 Full Demo
 
-<img src="https://github.com/realdestroyer/vs-org/blob/master/Images/fullDemo.gif?raw=true" width="700" height="400" />
+<img src=https://github.com/realDestroyer/org-vscode/blob/master/Images/fullDemo.gif?raw=true" width="700" height="400" />
