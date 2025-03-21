@@ -3,84 +3,48 @@ import * as path from "path";
 import * as fs from "fs";
 import * as os from "os";
 
-module.exports = function () {
-  let config = vscode.workspace.getConfiguration("vsorg");
-  let folderPath = config.get("folderPath");
-  let folder: any;
-  let titles: any[] = [];
+export function getTitles(): void {
+    let config = vscode.workspace.getConfiguration("vsorg");
+    let folderPath = config.get<string>("folderPath") || "";
+    let titles: string[] = [];
+    let listObject: Record<string, string> = {};
 
-  let listObject: TitleObject = {};
-  let splitTitle: string[];
+    readFiles();
 
-  readFiles();
-  interface TitleObject {
-    [key: string]: any;
-  }
+    function readFiles() {
+        fs.readdir(setMainDir(), (err, items) => {
+            if (err) return;
+            items.forEach((file) => {
+                if (file.endsWith(".vsorg")) {
+                    let fileText = fs.readFileSync(path.join(setMainDir(), file), "utf-8");
 
-  function readFiles() {
-    fs.readdir(setMainDir(), (err: any, items: any) => {
-      for (let i = 0; i < items.length; i++) {
-        if (items[i].includes(".vsorg")) {
-          let fileText;
+                    if (fileText.includes("#+TITLE:")) {
+                        let getTitle = fileText.match(/\#\+TITLE.*/gi);
+                        if (getTitle) {
+                            let splitTitle = getTitle[0].replace("#+TITLE:", "").trim();
+                            titles.push(splitTitle);
+                            listObject[splitTitle] = file;
+                        }
+                    }
+                }
+            });
 
-          if (os.platform() === 'darwin') {
-            fileText = fs.readFileSync(setMainDir() + "/" + items[i], "utf8");
-          } else {
-            fileText = fs.readFileSync(setMainDir() + "\\" + items[i], "utf8");
-          }
-
-          if (fileText.includes("#+TITLE:") && fileText.match(/\#\+TITLE.*/gi) !== null) {
-            let fileName: string = items[i];
-            let getTitle: any = fileText.match(/\#\+TITLE.*/gi);
-            splitTitle = getTitle
-              .join("")
-              .split("#+TITLE:")
-              .join("")
-              .trim();
-
-            titles.push(splitTitle);
-
-            for (let j = 0; j < titles.length; j++) {
-              if (listObject[titles[j]] === undefined) {
-                listObject[titles[j]] = "";
-              }
-
-              if (listObject[titles[j]] === "") {
-                listObject[titles[j]] = fileName;
-              }
-            }
-          }
-        }
-        setQuickPick();
-      }
-    });
-  }
-
-  function setQuickPick() {
-    vscode.window.showQuickPick(titles).then((title: any) => {
-      if (title in listObject) {
-        let fullpath: any = path.join(setMainDir(), listObject[title]);
-        vscode.workspace.openTextDocument(vscode.Uri.file(fullpath)).then(doc => {
-          vscode.window.showTextDocument(doc, vscode.ViewColumn.Beside, true);
+            setQuickPick();
         });
-      }
-    });
-  }
-  /**
-   * Get the Main Directory
-   */
-  function setMainDir() {
-    if (folderPath === "") {
-      let homeDir = os.homedir();
-      if (os.platform() === "darwin" || os.platform() === "linux") {
-        folder = homeDir + "/VSOrgFiles";
-      } else {
-
-        folder = homeDir + "\\VSOrgFiles";
-      }
-    } else {
-      folder = folderPath;
     }
-    return folder;
-  }
-};
+
+    function setQuickPick() {
+        vscode.window.showQuickPick(titles).then((title) => {
+            if (title && listObject[title]) {
+                let fullpath = path.join(setMainDir(), listObject[title]);
+                vscode.workspace.openTextDocument(vscode.Uri.file(fullpath)).then(doc => {
+                    vscode.window.showTextDocument(doc, vscode.ViewColumn.Beside, true);
+                });
+            }
+        });
+    }
+
+    function setMainDir(): string {
+        return folderPath.trim() !== "" ? folderPath : path.join(os.homedir(), "VSOrgFiles");
+    }
+}

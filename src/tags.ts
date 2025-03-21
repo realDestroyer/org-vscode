@@ -3,96 +3,56 @@ import * as path from "path";
 import * as fs from "fs";
 import * as os from "os";
 
-module.exports = function () {
-  let config = vscode.workspace.getConfiguration("vsorg");
-  let folderPath = config.get("folderPath");
-  let folder: any;
+export function getTags(): void {
+    let config = vscode.workspace.getConfiguration("vsorg");
+    let folderPath = config.get<string>("folderPath") || "";
+    let listObject: Record<string, string> = {};
+    let formatTag: string[] = [];
 
-  let listObject: TagObject = {};
-  let splitTags: string[];
-  let formatTag: any = [];
+    readFiles();
 
-  readFiles();
+    function readFiles() {
+        fs.readdir(setMainDir(), (err, items) => {
+            if (err) return;
+            items.forEach((file) => {
+                if (file.endsWith(".vsorg")) {
+                    let fileText = fs.readFileSync(path.join(setMainDir(), file), "utf-8");
 
-  //interfaces
-  interface TagObject {
-    [key: string]: any;
-  }
-  //get tags
-  function readFiles() {
-    fs.readdir(setMainDir(), (err: any, items: any) => {
-      for (let i = 0; i < items.length; i++) {
-        if (items[i].includes(".vsorg")) {
-          //check files for #+ TAGS:'
-          let fileText;
-          if (os.platform() === "darwin" || os.platform() === "linux") {
-            fileText = fs.readFileSync(setMainDir() + "/" + items[i], "utf-8");
-          } else {
-            fileText = fs.readFileSync(setMainDir() + "\\" + items[i], "utf-8");
-          }
-
-          if (fileText.includes("#+TAGS:") && fileText.match(/\#\+TAGS.*/gi) !== null) {
-            let fileName: string = items[i];
-            let getTags: any = fileText.match(/\#\+TAGS.*/gi);
-            splitTags = getTags
-              .join("")
-              .split("#+TAGS:")
-              .join("")
-              .trim()
-              .split(",");
-
-            splitTags.forEach((element: any) => {
-              if (!formatTag.includes(element)) {
-                formatTag.push(element);
-              }
+                    if (fileText.includes("#+TAGS:")) {
+                        let getTags = fileText.match(/\#\+TAGS.*/gi);
+                        if (getTags) {
+                            let splitTags = getTags[0].replace("#+TAGS:", "").trim().split(",");
+                            splitTags.forEach((tag) => {
+                                if (!formatTag.includes(tag)) {
+                                    formatTag.push(tag);
+                                }
+                                listObject[tag] = (listObject[tag] || "") + file + ",";
+                            });
+                        }
+                    }
+                }
             });
 
-            splitTags.forEach((element: any) => {
-              if (listObject[element] === undefined) {
-                listObject[element] = "";
-              }
-              listObject[element] = listObject[element] + fileName + ",";
-            });
-          }
-        }
-
-        setQuickPick();
-      }
-    });
-  }
-
-  function setQuickPick() {
-    vscode.window.showQuickPick(formatTag).then((tag: any) => {
-      if (tag != null) {
-        if (tag in listObject) {
-          let getFileName = listObject[tag].split(",");
-          vscode.window.showQuickPick(getFileName).then((filePath: any) => {
-            let fullpath: any = path.join(setMainDir(), filePath);
-            vscode.workspace.openTextDocument(vscode.Uri.file(fullpath)).then(doc => {
-              vscode.window.showTextDocument(doc, vscode.ViewColumn.Beside, true);
-            });
-          });
-        }
-        // vscode.window.showQuickPick(listObject)
-      }
-    });
-  }
-  /**
-   * Get the Main Directory
-   */
-  function setMainDir() {
-    if (folderPath === "") {
-      let homeDir = os.homedir();
-      if (os.platform() === "darwin" || os.platform() === "linux") {
-        folder = homeDir + "/VSOrgFiles";
-      } else {
-
-        folder = homeDir + "\\VSOrgFiles";
-      }
-    } else {
-      folder = folderPath;
+            setQuickPick();
+        });
     }
-    return folder;
-  }
 
-};
+    function setQuickPick() {
+        vscode.window.showQuickPick(formatTag).then((tag) => {
+            if (tag && listObject[tag]) {
+                let getFileName = listObject[tag].split(",");
+                vscode.window.showQuickPick(getFileName).then((filePath) => {
+                    if (!filePath) return;
+                    let fullpath = path.join(setMainDir(), filePath);
+                    vscode.workspace.openTextDocument(vscode.Uri.file(fullpath)).then(doc => {
+                        vscode.window.showTextDocument(doc, vscode.ViewColumn.Beside, true);
+                    });
+                });
+            }
+        });
+    }
+
+    function setMainDir(): string {
+        return folderPath.trim() !== "" ? folderPath : path.join(os.homedir(), "VSOrgFiles");
+    }
+}
