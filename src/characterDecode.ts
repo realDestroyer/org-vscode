@@ -1,17 +1,12 @@
-import * as vscode from 'vscode';
-module.exports = function(array: string[] = ["⊖ ", "⊙ ", "⊘ "]) {
-  const { activeTextEditor } = vscode.window;
-  if (activeTextEditor && activeTextEditor.document.languageId === "vso") {
+import * as vscode from "vscode";
+
+export function characterDecode(array: string[] = ["⊖ ", "⊙ ", "⊘ "]): string | undefined {
+    const { activeTextEditor } = vscode.window;
+    if (!activeTextEditor || activeTextEditor.document.languageId !== "vso") return undefined;
+
     const { document } = activeTextEditor;
-
     let position = activeTextEditor.selection.active.line;
-    const getCurrentLine = document.lineAt(position);
-    let currentLineText = getCurrentLine.text;
+    let currentLineText = document.lineAt(position).text;
 
-    for (let i = 0; i < array.length; i++) {
-      if (currentLineText.includes(array[i])) {
-        return array[i];
-      }
-    }
-  }
-};
+    return array.find(char => currentLineText.includes(char));
+}
