@@ -8,13 +8,20 @@
 	"publisher": "realDestroyer",
 	"license": "MIT",
 	"engines": {
-		"vscode": "^1.27.0"
+	"vscode": "^1.70.0"
 	},
 	"categories": [
-		"Other"
+	"Notebooks",
+	"Extension Packs",
+	"Other"
 	],
 	"activationEvents": [
-		"*"
+	"onLanguage:org",
+	"onLanguage:vsorg",
+	"onLanguage:org-vscode",
+	"onLanguage:vso",
+	"onCommand:extension.viewAgenda",
+	"onCommand:extension.createVsoFile"
 	],
 	"keywords": [
 		"todo",
@@ -43,18 +50,16 @@
 					"description": "Main folder"
 				},
 				"Org-vscode.dateFormat": {
-					"type": "string",
-					"default": [
-						"MM-DD-YYYY"
-					],
-					"enum": [
-						"MM-DD-YYYY",
-						"DD-MM-YYYY"
-					],
-					"minItems": 1,
-					"maxItems": 3,
-					"uniqueItems": true,
-					"description": "The scheduled date format."
+				"type": "string",
+				"default": "MM-DD-YYYY",
+				"enum": [
+					"MM-DD-YYYY",
+					"DD-MM-YYYY"
+				],
+				"minItems": 1,
+				"maxItems": 3,
+				"uniqueItems": true,
+				"description": "The scheduled date format."
 				}
 			}
 		},
@@ -62,6 +67,10 @@
 			{
 				"command": "extension.setFolderPath",
 				"title": "org-vscode Change Org-vscode Directory"
+			},
+			{
+				"command": "extension.openCalendarView",
+				"title": "Open Calendar View"
 			},
 			{
 				"command": "extension.createVsoFile",
@@ -90,6 +99,11 @@
 				"command": "extension.toggleStatusLeft",
 				"key": "ctrl+left",
 				"when": "editorLangId == 'vso' && editorTextFocus"
+			},
+			{
+				"command": "extension.openCalendarView",
+				"key": "ctrl+shift+c",
+				"when": "editorTextFocus"
 			},
 			{
 				"command": "extension.moveBlockUp",

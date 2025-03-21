@@ -18,11 +18,11 @@ const GO_MODE: vscode.DocumentFilter = { language: "vso", scheme: "file" };
 
 class GoOnTypingFormatter implements vscode.OnTypeFormattingEditProvider {
     public provideOnTypeFormattingEdits(
-        document: vscode.TextDocument,
+        _document: vscode.TextDocument,
         position: vscode.Position,
-        ch: string,
-        options: vscode.FormattingOptions,
-        token: vscode.CancellationToken
+        _ch: string,
+        _options: vscode.FormattingOptions,
+        _token: vscode.CancellationToken
     ): Thenable<vscode.TextEdit[]> {
         return new Promise((resolve) => {
             const { activeTextEditor } = vscode.window;
