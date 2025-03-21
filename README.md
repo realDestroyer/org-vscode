@@ -10,7 +10,7 @@ This is a work in progress extension that will, in the end, try to emulate [Emac
 ## Features
 
 Create a new .org file with the built-in 'create new .org file' command: </br>
-<img src=">https://github.com/realdestroyer/org-vscode/blob/master/Images/Create-file-and-header.gif?raw=true" width="700" height="400" />
+<img src=">https://github.com/realdestroyer/org-vscode/blob/master/Images/Create-file-and-headings.gif?raw=true" width="700" height="400" />
 
 
 Schedule your tasks with `ctrl+alt+s`, run the `Org-vscode: Agenda View` command and see all of your scheduled tasks in all of your org-vscode files, in one clean interface, organized by date. </br>
