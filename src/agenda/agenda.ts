@@ -123,7 +123,8 @@ module.exports = function () {
          * Get the Main Directory
          */
         function setMainDir(): string {
-          const config = vscode.workspace.getConfiguration("org");
+          const config = vscode.workspace.getConfiguration("Org-vscode");
+          const dateFormat = config.get<string>("dateFormat") || "DD-MM-YYYY";
           const folderPath = config.get<string>("folderPath");
       
           if (folderPath && folderPath.trim() !== "") {
