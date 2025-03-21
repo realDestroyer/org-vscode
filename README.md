@@ -9,9 +9,21 @@ This is a work in progress extension that will, in the end, try to emulate [Emac
 
 ## Features
 
-Introducing Agenda View! Schedule your tasks with `ctrl+alt+s`, run the `Org-vscode: Agenda View` command and see all of your scheduled tasks in all of your VS-Org files, in one clean interface, organized by date. Watch the Agenda View Demo: </br>
+Create a new .org file with the built-in 'create new .org file' command: </br>
+<img src=">https://github.com/robaboyd/vs-org/blob/master/Images/Create-file-and-header.gif?raw=true" width="700" height="400" />
 
-<img src="https://github.com/robaboyd/vs-org/blob/master/Images/openAgenda.gif?raw=true" width="700" height="400" />
+
+Schedule your tasks with `ctrl+alt+s`, run the `Org-vscode: Agenda View` command and see all of your scheduled tasks in all of your VS-Org files, in one clean interface, organized by date. </br>
+
+<img src=https://github.com/robaboyd/vs-org/blob/master/Images/Schedule-task.gif?raw=true" width="700" height="400" />
+
+
+Introducing Agenda View! Run the `Org-vscode: Agenda View` command and see all of your scheduled tasks in all of your VS-Org files, in one clean interface, organized by date. </br>
+Watch the Agenda View Demo: </br>
+
+<img src="https://github.com/robaboyd/vs-org/blob/master/Images/Agenda-View.gif?raw=true" width="700" height="400" />
+
+
 
 Check out the HOW-TO for all of the available featuers:</br>
 [How-To](https://github.com/robaboyd/vs-org/blob/master/howto.md)
