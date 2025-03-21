@@ -1,106 +1,61 @@
 import * as vscode from "vscode";
 import { WindowMessage } from "./showMessage";
 
-module.exports = function () {
-  const { activeTextEditor } = vscode.window;
-  if (!activeTextEditor || activeTextEditor.document.languageId !== "vso") {
-    return;
-  }
-
-  const { document } = activeTextEditor;
-  const position: number = activeTextEditor.selection.active.line;
-  const currentLine: vscode.TextLine = document.lineAt(position);
-  let workspaceEdit = new vscode.WorkspaceEdit();
-  const config = vscode.workspace.getConfiguration("vsorg");
-
-  const dateFormat = config.get<string[]>("dateFormat");
-
-  // TODO: make a calendar widget
-
-  // Messages
-  const fullDateMessage = new WindowMessage(
-    "warning",
-    "Full date must be entered",
-    false,
-    false
-  );
-  const notADateMessage = new WindowMessage(
-    "warning",
-    "That's not a valid date.",
-    false,
-    false
-  );
-
-  if (currentLine.text.includes("SCHEDULED:")) {
-    const removeScheduled = currentLine.text
-      .replace(/\b(SCHEDULED)\b(.*)/, "")
-      .trimRight();
-
-    workspaceEdit.delete(document.uri, currentLine.range);
-    workspaceEdit.insert(
-      document.uri,
-      currentLine.range.start,
-      removeScheduled
-    );
-    return vscode.workspace.applyEdit(workspaceEdit);
-  }
-
-  async function getInput(
-    prompt: string,
-    placeHolder: string
-  ): Promise<string | undefined> {
-    return await vscode.window.showInputBox({ prompt, placeHolder });
-  }
-
-  (async function () {
-    const year = await getInput(
-      "Enter in number format, the year you would like this to be scheduled",
-      "Year ex. 2018"
-    );
-
-    if (!year || year.length !== 4) {
-      return fullDateMessage.showMessage();
+export function scheduleTask(): void {
+    const { activeTextEditor } = vscode.window;
+    if (!activeTextEditor || activeTextEditor.document.languageId !== "vso") {
+        return;
     }
 
-    const month = await getInput(
-      "Enter in number format, the month you would like this to be scheduled",
-      "Month ex. 08 => August"
-    );
+    const { document } = activeTextEditor;
+    const position = activeTextEditor.selection.active.line;
+    const currentLine = document.lineAt(position);
+    let workspaceEdit = new vscode.WorkspaceEdit();
+    const config = vscode.workspace.getConfiguration("vsorg");
+    const dateFormat = config.get<string>("dateFormat") || "MM-DD-YYYY";
 
-    if (!month || month.length > 2) {
-      return fullDateMessage.showMessage();
+    const fullDateMessage = new WindowMessage("warning", "Full date must be entered", false, false);
+    const notADateMessage = new WindowMessage("warning", "That's not a valid date.", false, false);
+
+    if (currentLine.text.includes("SCHEDULED:")) {
+        const removeScheduled = currentLine.text.replace(/\b(SCHEDULED)\b(.*)/, "").trimEnd();
+        workspaceEdit.delete(document.uri, currentLine.range);
+        workspaceEdit.insert(document.uri, currentLine.range.start, removeScheduled);
+        vscode.workspace.applyEdit(workspaceEdit);
+        return;
     }
 
-    const day = await getInput(
-      "Enter in number format, the day you would like this to be scheduled.",
-      "Day ex. 08 => the eighth"
-    );
-
-    if (
-      !day ||
-      day.length > 2 ||
-      daysInMonth(parseInt(month), parseInt(year)) < parseInt(day)
-    ) {
-      return notADateMessage.showMessage();
+    async function getInput(prompt: string, placeholder: string): Promise<string | undefined> {
+        return vscode.window.showInputBox({ prompt, placeHolder: placeholder });
     }
 
-    const formattedDate =
-      dateFormat?.[0] === "MM-DD-YYYY"
-        ? `${month}-${day}-${year}`
-        : `${day}-${month}-${year}`;
+    (async function () {
+        const year = await getInput("Enter the year (YYYY):", "2025");
+        if (!year || year.length !== 4) {
+            return fullDateMessage.showMessage();
+        }
 
-    workspaceEdit.delete(document.uri, currentLine.range);
-    workspaceEdit.insert(
-      document.uri,
-      currentLine.range.start,
-      `${currentLine.text}    SCHEDULED: [${formattedDate}]`
-    );
+        const month = await getInput("Enter the month (MM):", "08");
+        if (!month || month.length > 2) {
+            return fullDateMessage.showMessage();
+        }
 
-    await vscode.workspace.applyEdit(workspaceEdit);
-    vscode.commands.executeCommand("workbench.action.files.save");
-  })();
+        const day = await getInput("Enter the day (DD):", "15");
+        if (!day || day.length > 2 || daysInMonth(parseInt(month), parseInt(year)) < parseInt(day)) {
+            return notADateMessage.showMessage();
+        }
 
-  function daysInMonth(month: number, year: number): number {
+        const formattedDate = dateFormat === "MM-DD-YYYY"
+            ? `${month}-${day}-${year}`
+            : `${day}-${month}-${year}`;
+
+        workspaceEdit.delete(document.uri, currentLine.range);
+        workspaceEdit.insert(document.uri, currentLine.range.start, `${currentLine.text}    SCHEDULED: [${formattedDate}]`);
+        await vscode.workspace.applyEdit(workspaceEdit);
+        vscode.commands.executeCommand("workbench.action.files.save");
+    })();
+}
+
+function daysInMonth(month: number, year: number): number {
     return new Date(year, month, 0).getDate();
-  }
-};
+}
