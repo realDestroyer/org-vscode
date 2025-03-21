@@ -48,8 +48,8 @@ Make sure you save your files with the .vsorg extension.
 
 | Keys                  | Decription                         |
 | --------------------- | ---------------------------------- |
-| `shift+rightArrow`    | add TODO or DONE Keyword           |
-| `shift+leftArrow`     | add DONE or TODO keyword           |
+| `shift+rightArrow`    | Cycle between keywords             |
+| `shift+leftArrow`     | Cycle between keywords             |
 | `shift+alt+UpArrow`   | Move Block of code Up              |
 | `shift+alt+downArrow` | Move Block of code down            |
 | `alt+rightArrow`      | Increment the level of the heading |
@@ -57,6 +57,8 @@ Make sure you save your files with the .vsorg extension.
 | `shift + ctrl + [`    | Fold                               |
 | `shift + ctrl + ]`    | Unfold                             |
 | `ctrl+alt+s`          | Schedule a task                    |
+| `ctrl+alt+v`          | Open Agenda View                   |
+| `ctrl+shift+c`        | Calendar View                      |
 
 ## Snippets
 
@@ -71,15 +73,15 @@ Submit an [Issue](https://github.com/realdestroyer/org-vscode/issues) if there i
 
 ## Release Notes
 
-## [0.1.4] 08-09-24
+## [0.1.4] 03-20-2024
 
-`Fixed`
+`Added Agenda View`
 
-- Fixed scheduling bug
+- Added Agenda View
 
 `Changed`
 
-- Changed the keybinds for folding to the default vscode keybinds ```Shift + Ctrl + [``` to fold and ```Shift + Ctrl + ]``` to unfold
+- Changed the keybinds for agenda view from `ctrl+alt+a` to `ctrl+alt+v`
 
 ## Upcoming Features
 
