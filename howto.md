@@ -1,44 +1,59 @@
-# VS-Org How-To
+# Org-vscode How-To
 
-> Organize your thoughts and tasks into hierarchical lists. You can add an item with \*. The Number of \* determines the level of the item.</br>
-> Mark a task as TODO or DONE.</br>
-> Fold Lists with Tab.</br>
-> Increment or Decrement an item in a list.</br>
+> Organize your thoughts and tasks into hierarchical lists.  
+> - Create items using `*`. The number of `*` determines the heading level.  
+> - Mark tasks as `TODO` or `DONE`.  
+> - Fold lists with `Tab`.  
+> - Increment or decrement headings using `Alt + Left/Right`.  
 
-## Change the Main Directory
+---
 
-The main directory by default is set to your home directory.
+## 📁 Change the Main Directory
 
-To change the main directory use the `VS-Org: Change VS-Org Directory` command.
+By default, the main directory is set to your home folder.  
+To change it, use the command:  
+**`Org-vscode: Change Org-vscode Directory`**  
 
-<img src="https://github.com/robaboyd/vs-org/blob/master/Images/changeDir.gif?raw=true" width="700" height="400" />
+<img src="https://github.com/realdestroyer/vs-org/blob/master/Images/changeDir.gif?raw=true" width="700" height="400" />
 
-## Create a new .vsorg file
+---
 
-You can create a new file in your main directory by using the `VS-Org: Create new .vsorg file` command
+## 📝 Create a New `.org` File
 
-<img src="https://github.com/robaboyd/vs-org/blob/master/Images/newFile.gif?raw=true" width="700" height="400" />
+Create a new file inside your main directory using:  
+**`Org-vscode: Create new .org file`**  
 
-## Create a header
+<img src="https://github.com/realdestroyer/vs-org/blob/master/Images/newFile.gif?raw=true" width="700" height="400" />
 
-You can use the `/header` snippet to create a header.
+---
 
-<img src="https://github.com/robaboyd/vs-org/blob/master/Images/headerSnippet.gif?raw=true" width="700" height="400" />
+## 🔖 Create a Header
 
-## Open a file by tags or by titles
+Use the `/header` snippet to quickly generate a structured header.
 
-You can open a file by either the `VS-Org: Open By Title` or `VS-Org: Open By Tag` commands.
+<img src="https://github.com/realdestroyer/vs-org/blob/master/Images/headerSnippet.gif?raw=true" width="700" height="400" />
 
-<img src="https://github.com/robaboyd/vs-org/blob/master/Images/openCommands.gif?raw=true" width="700" height="400" />
+---
 
+## 📂 Open a File by Tags or Titles
 
-## Agenda View and Scheduling
+You can open a file using either:  
+- **`Org-vscode: Open By Title`**  
+- **`Org-vscode: Open By Tag`**  
 
-To schedule an item use the `ctrl+alt+s` keybind. To view all of your scheduled items in all of your vsorg files use the `VS-Org: Agenda View` command.
+<img src="https://github.com/realdestroyer/vs-org/blob/master/Images/openCommands.gif?raw=true" width="700" height="400" />
 
-<img src="https://github.com/robaboyd/vs-org/blob/master/Images/openAgenda.gif?raw=true" width="700" height="400" />
+---
 
+## 📅 Agenda View & Scheduling
 
-## Full Demo
+- **Schedule an item** → Use `Ctrl + Alt + S`.  
+- **View all scheduled items** → Use **`Org-vscode: Agenda View`**.  
 
-<img src="https://github.com/robaboyd/vs-org/blob/master/Images/fullDemo.gif?raw=true" width="700" height="400" />
+<img src="https://github.com/realdestroyer/vs-org/blob/master/Images/openAgenda.gif?raw=true" width="700" height="400" />
+
+---
+
+## 🎬 Full Demo
+
+<img src="https://github.com/realdestroyer/vs-org/blob/master/Images/fullDemo.gif?raw=true" width="700" height="400" />
