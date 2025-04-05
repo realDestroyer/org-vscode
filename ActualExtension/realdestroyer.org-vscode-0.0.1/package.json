@@ -123,8 +123,11 @@
 			{
                 "command": "extension.addSeparator",
                 "title": "Add Separator"
-            }
-			
+            },
+			{
+				"command": "org-vscode.insertTable",
+				"title": "org-vscode: Insert Org Table"
+			  }	  
 			
 		],
 		"keybindings": [
@@ -221,6 +224,11 @@
 			{
                 "key": "ctrl+alt+d",
                 "command": "extension.addSeparator",
+                "when": "editorTextFocus"
+            },
+			{
+                "key": "alt+shift+t",
+                "command": "org-vscode.insertTable",
                 "when": "editorTextFocus"
             }	
 					
