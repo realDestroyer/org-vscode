@@ -2,20 +2,40 @@
 
 
 
-
-
 ## [0.1.1-rebuild] 03-18-25
+
 `Added`
 
 - Agenda View
   - Modifications within Agenda View are replicated in source file
-
+  - [Expand All] / [Collapse All] toggle functionality for grouped tasks
+  - Click-to-toggle TODO/DONE directly from the Agenda View
 - Calendar View
-  - You can now drag & drop tasks to different days, weeks, months and it will update the source file(s)
-
+  - You can now drag & drop tasks to different days, weeks, or months
+  - Dragging updates the source file with the new scheduled date
+  - Click-to-toggle TODO/DONE directly from the Calendar View
+- Tagged Task Support
+  - You can now add inline tags using the format `: [+TAG:tag1,tag2] -`
+  - Tags are attached to TODO lines and can be used to filter tasks
+- Tagged Agenda View
+  - New agenda view that filters tasks by tag(s)
+  - Supports AND / OR logic depending on input
+  - Fully interactive: open files, toggle status, grouped by date
 - Workspace Compatibility
-  - You can now store .org files in a workspace
-  
+  - You can now store .org files in a workspace and they will be read
+- File Watch & Auto Refresh
+  - Agenda and Calendar views automatically refresh on save
+
+`Changed`
+
+- DONE date format changed to `Day Month Name, Year` (e.g. `18th October, 2018`)
+
+`Fixed`
+
+- Agenda view now works cross-platform (including macOS)
+- Scheduling bugs when dates were invalid or partial
+
+
 ## [0.1.4] 08-09-24
 
 `Fixed`
