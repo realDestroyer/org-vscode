@@ -31,19 +31,27 @@ To install Vs-Org, open Visual Studio Code, launch VS Code quick open (Ctrl + p 
 
 Make sure you save your files with the .vsorg extension.
 
-## Keybinds
+## 🔑 Keyboard Shortcuts
 
-| Keys                  | Decription                         |
-| --------------------- | ---------------------------------- |
-| `shift+rightArrow`    | add TODO or DONE Keyword           |
-| `shift+leftArrow`     | add DONE or TODO keyword           |
-| `shift+alt+UpArrow`   | Move Block of code Up              |
-| `shift+alt+downArrow` | Move Block of code down            |
-| `alt+rightArrow`      | Increment the level of the heading |
-| `alt+leftArrow`       | Decrement the level of the heading |
-| `shift + ctrl + [`    | Fold                               |
-| `shift + ctrl + ]`    | Unfold                             |
-| `ctrl+alt+s`          | Schedule a task                    |
+| Shortcut              | Description                                 |
+|----------------------|---------------------------------------------|
+| `Ctrl + →`           | Cycle TODO keyword forward                  |
+| `Ctrl + ←`           | Cycle TODO keyword backward                 |
+| `Shift + Alt + ↑`    | Move task block up                          |
+| `Shift + Alt + ↓`    | Move task block down                        |
+| `Alt + →`            | Increase heading level                      |
+| `Alt + ←`            | Decrease heading level                      |
+| `Ctrl + Shift + [`   | Fold section                                |
+| `Ctrl + Shift + ]`   | Unfold section                              |
+| `Ctrl + Alt + S`     | Schedule a task                             |
+| `Alt + Shift + →`    | Reschedule task forward                     |
+| `Alt + Shift + ←`    | Reschedule task backward                    |
+| `Alt + Shift + A`    | Align scheduled task columns                |
+| `Ctrl + Shift + T`   | Insert a timestamp or add tags to task      |
+| `Ctrl + Alt + D`     | Insert a visual separator                   |
+| `Ctrl + Shift + C`   | Open the Calendar View                      |
+| `Ctrl + Shift + G`   | Open the Tagged Agenda View                 |
+| `Alt + Shift + T`    | Insert an Org Table via Webview             |
 
 ## Snippets
 
