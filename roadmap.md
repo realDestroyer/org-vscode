@@ -13,7 +13,10 @@ These are the features that I have either already implemented, or plan to in the
 | TODO Tracking             | Show TODO completion on the up-most level                                                  | In Progress |          |               |
 | Tables                    | Insert Tables into doc                                                                     | In Progress |          |               |
 | Make Titles Unique        | Don't allow duplicate titles                                                               | Not Started |          |               |
-|                           | **Completed**                                                                              |             |          |               |
+| Tagged Task Support       | Add inline tag support using `: [+TAG:tag1,tag2] -` syntax                                 | DONE        | v0.1.1   | realDestroyer |
+| Tagged Agenda View        | View a filtered list of tasks by tag (AND/OR modes supported)                             | DONE        | v0.1.1   | realDestroyer |
+| Expand/Collapse Agenda    | Agenda view now supports toggling sections, and [Expand All]/[Collapse All] functionality | DONE        | v0.1.1   | realDestroyer |
+| Click to Modify Tasks     | Agenda and calendar views allow click-based toggling of TODO/DONE                         | DONE        | v0.1.1   | realDestroyer |
 | Read entire workspace/dir | Read workspace or home directory for all .org files for calendar/agenda                   | DONE        | v0.1.1   | realDestroyer |
 | Calendar Modifications    | You can drag and drop tasks in calendar view now, and it will accurately change sched date | DONE        | v0.1.1   | realDestroyer |
 | Calendar View             | View a calendar with your scheduled tasks properly placed                                 | DONE        | v0.1.1   | realDestroyer |

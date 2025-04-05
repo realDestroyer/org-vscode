@@ -1,5 +1,21 @@
 # Change Log
 
+
+
+
+
+## [0.1.1-rebuild] 03-18-25
+`Added`
+
+- Agenda View
+  - Modifications within Agenda View are replicated in source file
+
+- Calendar View
+  - You can now drag & drop tasks to different days, weeks, months and it will update the source file(s)
+
+- Workspace Compatibility
+  - You can now store .org files in a workspace
+  
 ## [0.1.4] 08-09-24
 
 `Fixed`
