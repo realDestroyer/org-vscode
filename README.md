@@ -35,7 +35,7 @@ FULL DEMO:
 
 ## Install
 
-To install org-vscode, open Visual Studio Code, launch VS Code quick open (Ctrl + p or Cmd + p (mac)) and paste this `ext install BobbyBoyd.org-vscode`
+To install org-vscode, open Visual Studio Code, launch VS Code quick open (Ctrl + p or Cmd + p (mac)) and paste this `ext install realdestroyer.org-vscode`
 
 ## Requirements
 
