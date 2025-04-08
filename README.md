@@ -1,3 +1,4 @@
+
 # Org-vscode
 
 
@@ -12,19 +13,15 @@ This is a work in progress extension that will, in the end, try to emulate [Emac
 Create a new .org file with the built-in 'create new .org file' command: </br>
 <img src="https://github.com/realdestroyer/org-vscode/blob/master/Images/Create-file-and-headings.gif?raw=true" width="700" height="400" />
 
-
 Schedule your tasks with `ctrl+alt+s`, run the `Org-vscode: Agenda View` command and see all of your scheduled tasks in all of your org-vscode files, in one clean interface, organized by date. </br>
 
 <img src="https://github.com/realdestroyer/org-vscode/blob/master/Images/Schedule-task.gif?raw=true" width="700" height="400" />
-
 
 Introducing Agenda View! Run the `Org-vscode: Agenda View` command and see all of your scheduled tasks in all of your org-vscode files, in one clean interface, organized by date. </br>
 
 Watch the Agenda View Demo: </br>
 
 <img src="https://github.com/realdestroyer/org-vscode/blob/master/Images/Agenda-View.gif?raw=true" width="700" height="400" />
-
-
 
 Check out the HOW-TO for all of the available featuers:</br>
 [How-To](https://github.com/realdestroyer/org-vscode/blob/master/howto.md)
@@ -44,21 +41,28 @@ To install org-vscode, open Visual Studio Code, launch VS Code quick open (Ctrl 
 
 Make sure you save your files with the .vsorg extension.
 
-## Keybinds
+## 🔑 Keyboard Shortcuts
 
-| Keys                  | Decription                         |
-| --------------------- | ---------------------------------- |
-| `shift+rightArrow`    | Cycle between keywords             |
-| `shift+leftArrow`     | Cycle between keywords             |
-| `shift+alt+UpArrow`   | Move Block of code Up              |
-| `shift+alt+downArrow` | Move Block of code down            |
-| `alt+rightArrow`      | Increment the level of the heading |
-| `alt+leftArrow`       | Decrement the level of the heading |
-| `shift + ctrl + [`    | Fold                               |
-| `shift + ctrl + ]`    | Unfold                             |
-| `ctrl+alt+s`          | Schedule a task                    |
-| `ctrl+alt+v`          | Open Agenda View                   |
-| `ctrl+shift+c`        | Calendar View                      |
+| Shortcut              | Description                                 |
+|----------------------|---------------------------------------------|
+| `Ctrl + →`           | Cycle TODO keyword forward                  |
+| `Ctrl + ←`           | Cycle TODO keyword backward                 |
+| `Shift + Alt + ↑`    | Move task block up                          |
+| `Shift + Alt + ↓`    | Move task block down                        |
+| `Alt + →`            | Increase heading level                      |
+| `Alt + ←`            | Decrease heading level                      |
+| `Ctrl + Shift + [`   | Fold section                                |
+| `Ctrl + Shift + ]`   | Unfold section                              |
+| `Ctrl + Alt + S`     | Schedule a task                             |
+| `Alt + Shift + →`    | Reschedule task forward                     |
+| `Alt + Shift + ←`    | Reschedule task backward                    |
+| `Alt + Shift + A`    | Align scheduled task columns                |
+| `Ctrl + Shift + T`   | Insert a timestamp or add tags to task      |
+| `Ctrl + Right`       | Increment date stamp                        |
+| `Ctrl + Left`        | Decrement date stamp                        |
+| `Ctrl + Shift + G`   | Open the Tagged Agenda View                 |
+| `Ctrl + Shift + C`   | Open the Calendar View                      |
+| `Ctrl + Alt + D`     | Insert a visual separator                   |
 
 ## Snippets
 
