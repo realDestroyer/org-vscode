@@ -37,7 +37,7 @@ FULL DEMO:
 
 To install org-vscode, open Visual Studio Code, launch VS Code quick open (Ctrl + p or Cmd + p (mac)) and paste this `ext install realdestroyer.org-vscode`
 
---or--
+--or--<br>
 Download the .vsix file located in the [Releases](https://github.com/realDestroyer/org-vscode/releases/download/beta/org-vscode-0.0.1.vsix)
 Then, navigate to the extensions tab in VSCode and select "Install from VSIX"
 <img src="https://github.com/realdestroyer/org-vscode/blob/master/Images/install-vsix.png?raw=true" width="700" height="400" />
