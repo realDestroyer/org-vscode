@@ -8,11 +8,11 @@ These are the features that I have either already implemented, or plan to in the
 
 | Feature Name              | Description                                                                                | Progress    | Version  | Author        |
 | ------------------------- | ------------------------------------------------------------------------------------------ | ----------- | -------- | ------------- |
-| TODO Notifications        | Insert Tables into doc                                                                     | In Progress |          |               |
+| TODO Notifications        | Notify users of status outside VSCode (email, sms, etc.)                                   | Not Started |          |               |
 | Bulleted Lists            | Make an ordered or unordered list                                                          | In Progress |          |               |
 | TODO Tracking             | Show TODO completion on the up-most level                                                  | In Progress |          |               |
-| Tables                    | Insert Tables into doc                                                                     | In Progress |          |               |
 | Make Titles Unique        | Don't allow duplicate titles                                                               | Not Started |          |               |
+| Tables                    | Insert Tables into doc                                                                     | DONE        | v0.1.1   |               |
 | Tagged Task Support       | Add inline tag support using `: [+TAG:tag1,tag2] -` syntax                                 | DONE        | v0.1.1   | realDestroyer |
 | Tagged Agenda View        | View a filtered list of tasks by tag (AND/OR modes supported)                             | DONE        | v0.1.1   | realDestroyer |
 | Expand/Collapse Agenda    | Agenda view now supports toggling sections, and [Expand All]/[Collapse All] functionality | DONE        | v0.1.1   | realDestroyer |
