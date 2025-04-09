@@ -68,6 +68,7 @@ Make sure you save your files with the .vsorg extension.
 | `Ctrl + Shift + G`   | Open the Tagged Agenda View                 |
 | `Ctrl + Shift + C`   | Open the Calendar View                      |
 | `Ctrl + Alt + D`     | Insert a visual separator                   |
+| `Alt + Shift + T`     | Insert a table                             |
 
 ## Snippets
 
