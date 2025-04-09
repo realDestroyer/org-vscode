@@ -13,7 +13,6 @@ module.exports = function () {
     let workspaceEdit = new vscode.WorkspaceEdit();
     const config = vscode.workspace.getConfiguration("vsorg");
     const dateFormat = config.get("dateFormat");
-    // TODO: make a calendar widget
     // Messages
     const fullDateMessage = new showMessage_1.WindowMessage("warning", "Full date must be entered", false, false);
     const notADateMessage = new showMessage_1.WindowMessage("warning", "That's not a valid date.", false, false);
