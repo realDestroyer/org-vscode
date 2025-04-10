@@ -5,120 +5,140 @@ const fs = require("fs");
 const os = require("os");
 const moment = require("moment");
 const path = require("path");
+
 module.exports = function () {
-    vscode.commands.executeCommand("workbench.action.files.save").then(() => {
-        let config = vscode.workspace.getConfiguration("org");
-        let folderPath = config.get("folderPath");
-        let dateFormat = config.get("dateFormat");
-        let folder;
-        let taskText;
-        let taskTextGetTodo = "";
-        let getDateFromTaskText;
-        let convertedDateArray = [];
-        let unsortedObject = {};
-        let sortedObject = {};
-        var itemInSortedObject = "";
-        //call the function
-        readFiles();
-        function readFiles() {
-            fs.readdir(setMainDir(), (err, items) => {
-                for (let i = 0; i < items.length; i++) {
-                    if (items[i].includes(".org")) {
-                        let fileText;
-                        if (os.platform() === "darwin" || os.platform() === "linux") {
-                            fileText = fs.readFileSync(setMainDir() + "/" + items[i]).toString().split(/\r?\n/);
-                        } else {
-                            fileText = fs.readFileSync(setMainDir() + "\\" + items[i]).toString().split(/\r?\n/);
-                        }
-        
-                        fileText.forEach(element => {
-                            if (element.includes("SCHEDULED") && !element.includes("DONE")) {
-                                taskText = element.trim().match(/.*(?=.*SCHEDULED)/g);
-                                taskTextGetTodo = element.match(/\bTODO\b/);
-        
-                                // ✅ CLEANUP: remove unicode, keywords, inline tag
-                                taskText = taskText[0]
-                                    .replace(/⊙|⊘|⊖/g, "")
-                                    .replace(/\b(TODO|DONE|IN_PROGRESS|CONTINUED|ABANDONED)\b/, "")
-                                    .replace(/: \[\+TAG:.*?\] -/, "")
-                                    .trim();
-        
-                                getDateFromTaskText = element.match(/SCHEDULED:\s*\[(.*?)\]/);
-                                if (!getDateFromTaskText) return;
-        
-                                let formattedDate = moment(getDateFromTaskText[1], dateFormat).format("MM-DD-YYYY");
-                                let nameOfDay = moment(formattedDate, "MM-DD-YYYY").format("dddd");
-                                let cleanDate = `[${formattedDate}]`;
-        
-                                if (taskTextGetTodo !== null) {
-                                    taskText =
-                                        '<span class="filename">' + items[i] + ":</span> " +
-                                        '<span class="todo" data-filename="' + items[i] + '" data-text="' + taskText + '" data-date="' + cleanDate + '"> ' +
-                                        taskTextGetTodo + "</span>" +
-                                        '<span class="taskText">' + taskText + "</span>" +
-                                        '<span class="scheduled">SCHEDULED</span>';
-                                } else {
-                                    taskText =
-                                        '<span class="filename">' + items[i] + ":</span> " +
-                                        '<span class="taskText">' + taskText + "</span>" +
-                                        '<span class="scheduled">SCHEDULED</span>';
-                                }
-        
-                                convertedDateArray = [];
-        
-                                if (moment(formattedDate, "MM-DD-YYYY") >= moment(new Date(), "MM-DD-YYYY")) {
-                                    convertedDateArray.push({
-                                        date: `<div class="heading${nameOfDay} ${cleanDate}">
-                                                   <h4 class="${cleanDate}">${cleanDate}, ${nameOfDay.toUpperCase()}</h4>
-                                               </div>`,
-                                        text: `<div class="panel ${cleanDate}">${taskText}</div>`
-                                    });
-                                } else {
-                                    let today = moment().format("MM-DD-YYYY");
-                                    let overdue = moment().format("dddd");
-        
-                                    if (moment(formattedDate, "MM-DD-YYYY") < moment(today, "MM-DD-YYYY")) {
-                                        convertedDateArray.push({
-                                            date: `<div class="heading${overdue} [${today}]">
-                                                       <h4 class="[${today}]">[${today}], ${overdue.toUpperCase()}</h4>
-                                                   </div>`,
-                                            text: `<div class="panel [${today}]">${taskText}<span class="late">LATE: ${getDateFromTaskText[1]}</span></div>`
-                                        });
-                                    }
-                                }
-        
-                                convertedDateArray.forEach(element => {
-                                    if (!unsortedObject[element.date]) {
-                                        unsortedObject[element.date] = "  " + element.text;
-                                    } else {
-                                        unsortedObject[element.date] += "  " + element.text;
-                                    }
-                                });
-                            }
-                        });
-        
-                        Object.keys(unsortedObject)
-                            .sort((a, b) => {
-                                let dateA = moment(a.match(/\[(.*)\]/)[1], "MM-DD-YYYY").toDate();
-                                let dateB = moment(b.match(/\[(.*)\]/)[1], "MM-DD-YYYY").toDate();
-                                return dateA - dateB;
-                            })
-                            .forEach(key => {
-                                sortedObject[key] = unsortedObject[key];
-                            });
-                    }
+  vscode.commands.executeCommand("workbench.action.files.save").then(() => {
+    let config = vscode.workspace.getConfiguration("org");
+    let folderPath = config.get("folderPath");
+    let dateFormat = config.get("dateFormat");
+    let folder;
+    let taskText;
+    let taskTextGetTodo = "";
+    let getDateFromTaskText;
+    let convertedDateArray = [];
+    let unsortedObject = {};
+    let sortedObject = {};
+    let itemInSortedObject = "";
+
+    readFiles();
+
+    function readFiles() {
+      fs.readdir(setMainDir(), (err, items) => {
+        for (let i = 0; i < items.length; i++) {
+          if (items[i].includes(".org")) {
+            let fileText;
+            if (os.platform() === "darwin" || os.platform() === "linux") {
+              fileText = fs.readFileSync(setMainDir() + "/" + items[i]).toString().split(/\r?\n/);
+            } else {
+              fileText = fs.readFileSync(setMainDir() + "\\" + items[i]).toString().split(/\r?\n/);
+            }
+
+            for (let j = 0; j < fileText.length; j++) {
+              const element = fileText[j];
+              if (element.includes("SCHEDULED") && !element.includes("DONE")) {
+                const baseIndent = element.match(/^\s*/)?.[0] || "";
+                const children = [];
+
+                for (let k = j + 1; k < fileText.length; k++) {
+                  const nextLine = fileText[k];
+                  const nextIndent = nextLine.match(/^\s*/)?.[0] || "";
+                  if (nextIndent.length > baseIndent.length) {
+                    children.push(nextLine);
+                  } else {
+                    break;
+                  }
                 }
-        
-                Object.keys(sortedObject).forEach(property => {
-                    itemInSortedObject += property + sortedObject[property] + "</br>";
-                });
-        
-                createWebview();
-            });
+
+                const taskTextMatch = element.trim().match(/.*(?=.*SCHEDULED)/g);
+                getDateFromTaskText = element.match(/SCHEDULED:\s*\[(.*?)\]/);
+
+                if (taskTextMatch && getDateFromTaskText) {
+                  taskTextGetTodo = element.match(/\bTODO\b/);
+                  taskText = taskTextMatch[0]
+                    .replace(/⊙|⊘|⊖/g, "")
+                    .replace(/\b(TODO|DONE|IN_PROGRESS|CONTINUED|ABANDONED)\b/, "")
+                    .replace(/: \[\+TAG:.*?\] -/, "")
+                    .trim();
+
+                  let formattedDate = moment(getDateFromTaskText[1], dateFormat).format("MM-DD-YYYY");
+                  let nameOfDay = moment(formattedDate, "MM-DD-YYYY").format("dddd");
+                  let cleanDate = `[${formattedDate}]`;
+
+                  let childrenBlock = children.length > 0
+                    ? `<details class="children-block"><summary>Show Details</summary><pre>${children.join("\n")}</pre></details>`
+                    : "";
+
+                  let renderedTask = "";
+                  if (taskTextGetTodo !== null) {
+                    renderedTask =
+                      '<span class="filename">' + items[i] + ":</span> " +
+                      '<span class="todo" data-filename="' + items[i] + '" data-text="' + taskText + '" data-date="' + cleanDate + '"> ' +
+                      taskTextGetTodo + "</span>" +
+                      '<span class="taskText">' + taskText + "</span>" +
+                      '<span class="scheduled">SCHEDULED</span>';
+                  } else {
+                    renderedTask =
+                      '<span class="filename">' + items[i] + ":</span> " +
+                      '<span class="taskText">' + taskText + "</span>" +
+                      '<span class="scheduled">SCHEDULED</span>';
+                  }
+
+                  convertedDateArray = [];
+
+                  if (moment(formattedDate, "MM-DD-YYYY") >= moment(new Date(), "MM-DD-YYYY")) {
+                    convertedDateArray.push({
+                      date: `<div class="heading${nameOfDay} ${cleanDate}">
+                               <h4 class="${cleanDate}">${cleanDate}, ${nameOfDay.toUpperCase()}</h4>
+                             </div>`,
+                      text: `<div class="panel ${cleanDate}">${renderedTask}${childrenBlock}</div>`
+                    });
+                  } else {
+                    let today = moment().format("MM-DD-YYYY");
+                    let overdue = moment().format("dddd");
+
+                    if (moment(formattedDate, "MM-DD-YYYY") < moment(today, "MM-DD-YYYY")) {
+                      convertedDateArray.push({
+                        date: `<div class="heading${overdue} [${today}]">
+                                 <h4 class="[${today}]">[${today}], ${overdue.toUpperCase()}</h4>
+                               </div>`,
+                        text: `<div class="panel [${today}]">${renderedTask}<span class="late">LATE: ${getDateFromTaskText[1]}</span>${childrenBlock}</div>`
+                      });
+                    }
+                  }
+
+                  convertedDateArray.forEach(element => {
+                    if (!unsortedObject[element.date]) {
+                      unsortedObject[element.date] = "  " + element.text;
+                    } else {
+                      unsortedObject[element.date] += "  " + element.text;
+                    }
+                  });
+
+                  j += children.length;
+                }
+              }
+            }
+
+            Object.keys(unsortedObject)
+              .sort((a, b) => {
+                let dateA = moment(a.match(/\[(.*)\]/)[1], "MM-DD-YYYY").toDate();
+                let dateB = moment(b.match(/\[(.*)\]/)[1], "MM-DD-YYYY").toDate();
+                return dateA - dateB;
+              })
+              .forEach(key => {
+                sortedObject[key] = unsortedObject[key];
+              });
+          }
         }
-        
-        
-        
+
+        Object.keys(sortedObject).forEach(property => {
+          itemInSortedObject += property + sortedObject[property] + "</br>";
+        });
+
+        createWebview();
+      });
+    }       
+           
         /**
          * Get the Main Directory
          */
@@ -423,6 +443,24 @@ module.exports = function () {
           margin-left: 10px;
           margin-top: 10px;
           box-shadow: 0 3px 6px rgba(0,0,0,0.16), 0 3px 6px rgba(0,0,0,0.23);
+        }
+       .children-block {
+            margin-top: 6px;
+            font-family: monospace;
+            background-color: #f9f9f9;
+            padding: 8px;
+            border-radius: 6px;
+            white-space: pre-wrap;
+        }
+        .children-block summary {
+            cursor: pointer;
+            font-weight: bold;
+            color: #444;
+        }
+        .children-block pre {
+            margin: 6px 0 0 0;
+            font-size: 13px;
+            color: #000;
         }
         </style>
         <body>
