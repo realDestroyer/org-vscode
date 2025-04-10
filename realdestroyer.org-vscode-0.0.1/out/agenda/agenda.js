@@ -183,9 +183,12 @@ module.exports = function () {
                                     // If changing to DONE, add COMPLETED line
                                     if (newStatus === "DONE") {
                                         let completedDate = new Date();
-                                        let formattedDate = completedDate.toISOString().split('T')[0]; // YYYY-MM-DD format
-                                        fileLines.splice(i + 1, 0, `   COMPLETED: [${formattedDate}]`);
+                                        let formattedDate = completedDate.toISOString().split('T')[0];
+                                        
+                                        let leadingSpaces = fileLines[i].match(/^\s*/)?.[0] || "";
+                                        fileLines.splice(i + 1, 0, `${leadingSpaces}  COMPLETED: [${formattedDate}]`);
                                     }
+                                    
             
                                     // If moving away from DONE, remove COMPLETED line
                                     if (currentStatus[0] === "DONE" && additionalFlag === "REMOVE_COMPLETED") {

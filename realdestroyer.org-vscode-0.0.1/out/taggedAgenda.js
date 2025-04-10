@@ -77,9 +77,9 @@ function updateTaskStatusInFile(file, taskText, scheduledDate, newStatus, comple
 
             // Add COMPLETED line if switching to DONE
             if (newStatus === "DONE" && completedLine && !lines[i + 1]?.includes("COMPLETED:")) {
-                lines.splice(i + 1, 0, `   ${completedLine}`);
-            }
-
+              const leadingSpaces = line.match(/^(\s*)/)?.[1] || "";
+              lines.splice(i + 1, 0, `${leadingSpaces}  ${completedLine}`);
+          }
             // Remove COMPLETED line if leaving DONE
             if (removeCompleted && lines[i + 1]?.includes("COMPLETED:")) {
                 lines.splice(i + 1, 1);
