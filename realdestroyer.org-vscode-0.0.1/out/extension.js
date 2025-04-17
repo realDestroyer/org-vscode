@@ -30,6 +30,7 @@ const addSeparator = require("./addSeparator");
 const insertTable = require("./insertTable");
 const updateDates = require("./updateDate");
 const { openCalendarView } = require("./calendar");
+const exportCurrentTasks = require("./exportCurrentTasks");
 
 console.log("📌 agenda.js has been loaded in extension.js");
 
@@ -128,6 +129,8 @@ function activate(ctx) {
 
   insertTable.activate(ctx);
 
+  
+  vscode.commands.registerCommand("extension.exportCurrentTasks", exportCurrentTasks);
   vscode.commands.registerCommand("extension.addTagToTask", addTagToTask);
   vscode.commands.registerCommand("extension.setFolderPath", changeDirectory);
   vscode.commands.registerCommand("extension.createVsoFile", newFile);
