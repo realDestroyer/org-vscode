@@ -26,19 +26,21 @@ module.exports = function () {
       fs.readdir(setMainDir(), (err, items) => {
         for (let i = 0; i < items.length; i++) {
           if (items[i].includes(".org")) {
+            if (items[i] === "CurrentTasks.org") continue; // ✅ skip export file
+    
             let fileText;
             if (os.platform() === "darwin" || os.platform() === "linux") {
               fileText = fs.readFileSync(setMainDir() + "/" + items[i]).toString().split(/\r?\n/);
             } else {
               fileText = fs.readFileSync(setMainDir() + "\\" + items[i]).toString().split(/\r?\n/);
             }
-
+    
             for (let j = 0; j < fileText.length; j++) {
               const element = fileText[j];
               if (element.includes("SCHEDULED") && !element.includes("DONE")) {
                 const baseIndent = element.match(/^\s*/)?.[0] || "";
                 const children = [];
-
+    
                 for (let k = j + 1; k < fileText.length; k++) {
                   const nextLine = fileText[k];
                   const nextIndent = nextLine.match(/^\s*/)?.[0] || "";
@@ -48,10 +50,10 @@ module.exports = function () {
                     break;
                   }
                 }
-
+    
                 const taskTextMatch = element.trim().match(/.*(?=.*SCHEDULED)/g);
                 getDateFromTaskText = element.match(/SCHEDULED:\s*\[(.*?)\]/);
-
+    
                 if (taskTextMatch && getDateFromTaskText) {
                   taskTextGetTodo = element.match(/\bTODO\b/);
                   taskText = taskTextMatch[0]
@@ -59,15 +61,15 @@ module.exports = function () {
                     .replace(/\b(TODO|DONE|IN_PROGRESS|CONTINUED|ABANDONED)\b/, "")
                     .replace(/: \[\+TAG:.*?\] -/, "")
                     .trim();
-
+    
                   let formattedDate = moment(getDateFromTaskText[1], dateFormat).format("MM-DD-YYYY");
                   let nameOfDay = moment(formattedDate, "MM-DD-YYYY").format("dddd");
                   let cleanDate = `[${formattedDate}]`;
-
+    
                   let childrenBlock = children.length > 0
                     ? `<details class="children-block"><summary>Show Details</summary><pre>${children.join("\n")}</pre></details>`
                     : "";
-
+    
                   let renderedTask = "";
                   if (taskTextGetTodo !== null) {
                     renderedTask =
@@ -82,9 +84,9 @@ module.exports = function () {
                       '<span class="taskText">' + taskText + "</span>" +
                       '<span class="scheduled">SCHEDULED</span>';
                   }
-
+    
                   convertedDateArray = [];
-
+    
                   if (moment(formattedDate, "MM-DD-YYYY") >= moment(new Date(), "MM-DD-YYYY")) {
                     convertedDateArray.push({
                       date: `<div class="heading${nameOfDay} ${cleanDate}">
@@ -95,7 +97,7 @@ module.exports = function () {
                   } else {
                     let today = moment().format("MM-DD-YYYY");
                     let overdue = moment().format("dddd");
-
+    
                     if (moment(formattedDate, "MM-DD-YYYY") < moment(today, "MM-DD-YYYY")) {
                       convertedDateArray.push({
                         date: `<div class="heading${overdue} [${today}]">
@@ -105,7 +107,7 @@ module.exports = function () {
                       });
                     }
                   }
-
+    
                   convertedDateArray.forEach(element => {
                     if (!unsortedObject[element.date]) {
                       unsortedObject[element.date] = "  " + element.text;
@@ -113,12 +115,12 @@ module.exports = function () {
                       unsortedObject[element.date] += "  " + element.text;
                     }
                   });
-
+    
                   j += children.length;
                 }
               }
             }
-
+    
             Object.keys(unsortedObject)
               .sort((a, b) => {
                 let dateA = moment(a.match(/\[(.*)\]/)[1], "MM-DD-YYYY").toDate();
@@ -130,14 +132,14 @@ module.exports = function () {
               });
           }
         }
-
+    
         Object.keys(sortedObject).forEach(property => {
           itemInSortedObject += property + sortedObject[property] + "</br>";
         });
-
+    
         createWebview();
       });
-    }       
+    }      
            
         /**
          * Get the Main Directory

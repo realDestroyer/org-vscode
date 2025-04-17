@@ -17,6 +17,7 @@ These are the features that I have either already implemented, or plan to in the
 | Insert Deadline Support   | Add deadline insertion command (like scheduled)                                           | Not Started |          | realDestroyer |
 | Bulleted Lists            | Make an ordered or unordered list                                                          | In Progress |          | realDestroyer |
 | TODO Tracking             | Show TODO completion on the up-most level                                                  | In Progress | v1.6.0   | realDestroyer |
+| Export Current Tasks      | Export all non-DONE tasks to CurrentTasks.org, including child lines, and enable syncing with source files via keyword toggles | DONE | v0.1.5 |
 | Tables                    | Insert Tables into doc                                                                     | DONE        | v1.5.0   |               |
 | Tagged Agenda View        | View a filtered list of tasks by tag (AND/OR modes supported)                             | DONE        | v1.4.0   | realDestroyer |
 | Tagged Task Support       | Add inline tag support using `: [+TAG:tag1,tag2] -` syntax                                 | DONE        | v1.4.0   | realDestroyer |
