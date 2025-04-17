@@ -35,7 +35,7 @@
 - Agenda view now works cross-platform (including macOS)
 - Scheduling bugs when dates were invalid or partial
 
-## [0.1.5] 04-28-25
+## [1.6.1] 04-16-25
 
 `Added`
 
@@ -43,6 +43,23 @@
 - Each task section is grouped under a `##### Source: <filename> #####` header
 - Tasks updated in `CurrentTasks.org` with `keywordLeft` or `keywordRight` will sync changes to the original file automatically
 
+
+## [v1.0.0 thru v1.5.0] 03-18-25 thru 04-09-25
+`Added`
+
+- New Feature(s):
+- Agenda View
+- Tagged Agenda View
+- Calendar View
+- Keyword Left/Right integration between files
+- ReadFiles/ChangeDir 
+- Tagging
+- Tag Searching
+- Insert Table
+- Insert Visual Date Separator
+- Increment/Decrement SCHEDULED Date Stamp
+- Increment/Decrement Day Separator Date Stamp 
+- SCHEDULED alignment keyboard shortcut
 
 ## [0.1.4] 08-09-24
 
