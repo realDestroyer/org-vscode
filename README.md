@@ -69,6 +69,7 @@ Make sure you save your files with the .org extension.
 | `Ctrl + Shift + C`   | Open the Calendar View                      |
 | `Ctrl + Alt + D`     | Insert a visual separator                   |
 | `Alt + Shift + T`     | Insert a table                             |
+| `ctrl+shift+e`          | Export all active (non-DONE) tasks to CurrentTasks.org |
 
 ## Snippets
 
@@ -83,7 +84,15 @@ Submit an [Issue](https://github.com/realdestroyer/org-vscode/issues) if there i
 
 ## Release Notes
 
-## [0.1.4] 03-20-2024
+## [0.1.5] 04-16-2025
+`Export Current Tasks`
+## New Feature: Current Tasks Export
+
+Press `Ctrl + Shift + E` to export all non-DONE tasks (and their indented child lines) from all `.org` files into a single file: `CurrentTasks.org`. Each group of tasks is organized by its original source file for easy review.
+
+Tasks edited inside `CurrentTasks.org` using the left/right keyword toggles will automatically sync back to the source file.
+
+## [0.1.4] 03-20-2025
 
 `Added Agenda View`
 
