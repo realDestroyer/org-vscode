@@ -35,6 +35,14 @@
 - Agenda view now works cross-platform (including macOS)
 - Scheduling bugs when dates were invalid or partial
 
+## [0.1.5] 04-28-25
+
+`Added`
+
+- New feature: Export all active (non-DONE) tasks to `CurrentTasks.org` with `Ctrl + Shift + E`
+- Each task section is grouped under a `##### Source: <filename> #####` header
+- Tasks updated in `CurrentTasks.org` with `keywordLeft` or `keywordRight` will sync changes to the original file automatically
+
 
 ## [0.1.4] 08-09-24
 
