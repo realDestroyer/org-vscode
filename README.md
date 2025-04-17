@@ -2,7 +2,7 @@
 # Org-vscode
 
 
-![Version](https://img.shields.io/badge/version-v0.1.4-blue.svg)
+![Version](https://img.shields.io/badge/version-v.1.99.3-blue.svg)
 
 This is a work in progress extension that will, in the end, try to emulate [Emacs Org-Mode](https://orgmode.org/) as much as possible.
 
@@ -44,7 +44,7 @@ Then, navigate to the extensions tab in VSCode and select "Install from VSIX"
 
 ## Requirements
 
-Make sure you save your files with the .vsorg extension.
+Make sure you save your files with the .org extension.
 
 ## 🔑 Keyboard Shortcuts
 
