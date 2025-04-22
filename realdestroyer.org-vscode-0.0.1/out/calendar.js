@@ -1,4 +1,4 @@
-// calendar.js - Extracted calendar view logic from extension.js
+// calendar.js - Enhanced with dynamic tag coloring
 const vscode = require("vscode");
 const fs = require("fs");
 const path = require("path");
@@ -29,7 +29,7 @@ function sendTasksToCalendar(panel) {
     }
 
     files.forEach(file => {
-    if (file.endsWith(".org") && file !== "CurrentTasks.org") {
+      if (file.endsWith(".org") && file !== "CurrentTasks.org") {
         let filePath = path.join(dirPath, file);
         let content = fs.readFileSync(filePath, "utf-8").split(/\r?\n/);
 
@@ -37,19 +37,22 @@ function sendTasksToCalendar(panel) {
           const scheduledMatch = line.match(/\bSCHEDULED:\s*\[(\d{2}-\d{2}-\d{4})\]/);
           const keywordMatch = line.match(/\b(TODO|IN_PROGRESS|DONE|CONTINUED|ABANDONED)\b/);
           const startsWithSymbol = /^[⊙⊘⊖]/.test(line.trim());
-        
-          // Only include if it starts with ⊙/⊘/⊖ AND keyword is TODO or IN_PROGRESS
+
           if (scheduledMatch && startsWithSymbol && keywordMatch && ["TODO", "IN_PROGRESS"].includes(keywordMatch[0])) {
+            const tagMatch = line.match(/\[\+TAG:([^\]]+)\]/);
+            const tags = tagMatch ? tagMatch[1].split(",").map(t => t.trim().toUpperCase()) : [];
+
             tasks.push({
               text: line
-                .replace(/:?\s*\[\+TAG:[^\]]+\]\s*-?/g, '')  // remove tags
-                .replace(/SCHEDULED:.*/, '')                // remove scheduled
+                .replace(/:?\s*\[\+TAG:[^\]]+\]\s*-?/g, '')
+                .replace(/SCHEDULED:.*/, '')
                 .trim(),
               date: moment(scheduledMatch[1], "MM-DD-YYYY").format("YYYY-MM-DD"),
-              file: file
+              file: file,
+              tags: tags
             });
           }
-        });        
+        });
       }
     });
 
@@ -76,7 +79,8 @@ function rescheduleTask(file, oldDate, newDate, taskText) {
 
   let updated = false;
   let updatedLines = fileLines.map(line => {
-    if (line.includes(taskText) && scheduledRegex.test(line)) {
+    const cleanedLine = line.replace(/:?[ 	]*\[\+TAG:[^\]]+\][ 	]*-?/, '').replace(/SCHEDULED:.*/, '').trim();
+    if (cleanedLine === taskText && scheduledRegex.test(line)) {
       updated = true;
       return line.replace(scheduledRegex, `SCHEDULED: [${formattedNewDate}]`);
     }
@@ -138,14 +142,34 @@ function getCalendarWebviewContent() {
   <style>
     body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background-color: #282c34; color: white; }
     #calendar { max-width: 900px; margin: auto; background: white; color: black; padding: 10px; border-radius: 8px; }
+    .tag-badge {
+      display: inline-block;
+      padding: 5px 10px;
+      font-weight: bold;
+      font-size: 10px;
+      color: white;
+      border-radius: 20px;
+      margin-right: 5px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
   </style>
 </head>
 <body>
   <h1>Calendar View</h1>
+  <div id="tag-bubbles" style="margin-bottom: 20px;"></div>
   <div id="calendar"></div>
 
   <script>
     const vscode = acquireVsCodeApi();
+
+    const tagColorMap = {};
+    function getColorForTag(tag) {
+      if (tagColorMap[tag]) return tagColorMap[tag];
+      const hue = Object.keys(tagColorMap).length * 47 % 360;
+      const color = 'hsl(' + hue + ', 70%, 60%)';
+      tagColorMap[tag] = color;
+      return color;
+    }
 
     document.addEventListener("DOMContentLoaded", function () {
       let calendarEl = document.getElementById("calendar");
@@ -177,12 +201,28 @@ function getCalendarWebviewContent() {
 
       window.addEventListener("message", (event) => {
         const tasks = event.data.tasks;
-        let events = tasks.map(task => ({
-          title: task.text.replace(/:?\s*\[\+TAG:[^\]]+\]\s*-?/g, '').trim(),
-          start: task.date,
-          file: task.file,
-          originalDate: task.date
-        }));
+        let allTagsSet = new Set();
+
+        let events = tasks.map(task => {
+          (task.tags || []).forEach(tag => allTagsSet.add(tag));
+          let color = getColorForTag((task.tags || [])[0] || "");
+          return {
+            title: task.text,
+            start: task.date,
+            file: task.file,
+            originalDate: task.date,
+            backgroundColor: color,
+            borderColor: color
+          };
+        });
+
+        let tagBubblesHtml = Array.from(allTagsSet).map(tag => {
+          let color = getColorForTag(tag);
+          return '<span class="tag-badge" style="background-color: ' + color + '">' + tag + '</span>';;
+        }).join("");
+
+        document.getElementById("tag-bubbles").innerHTML = tagBubblesHtml;
+
         calendar.removeAllEvents();
         calendar.addEventSource(events);
       });
