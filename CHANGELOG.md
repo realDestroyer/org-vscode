@@ -1,8 +1,47 @@
 # Change Log
 
+## [1.6.2] 04-16-25
+
+`Added`
+
+- Calendar View Enhancements:
+  - Tags are now visually extracted and displayed as colored bubbles above the calendar
+  - Tasks are color-coded by their primary tag
+  - Tag colors are assigned dynamically (no hardcoding required)
+  - Rescheduling via drag-and-drop now correctly handles tasks with inline tags
+
+`Fixed`
+
+- Rescheduling bug where tagged tasks could not be matched back to source file due to missing tag text during comparison
+
+## [1.6.1] 04-16-25
+
+`Added`
+
+- New feature: Export all active (non-DONE) tasks to `CurrentTasks.org` with `Ctrl + Shift + E`
+- Each task section is grouped under a `##### Source: <filename> #####` header
+- Tasks updated in `CurrentTasks.org` with `keywordLeft` or `keywordRight` will sync changes to the original file automatically
 
 
-## [0.1.1-rebuild] 03-18-25
+## [v1.0.0 thru v1.5.0] 03-18-25 thru 04-09-25
+`Added`
+
+- New Feature(s):
+- Agenda View
+- Tagged Agenda View
+- Calendar View
+- Keyword Left/Right integration between files
+- ReadFiles/ChangeDir 
+- Tagging
+- Tag Searching
+- Insert Table
+- Insert Visual Date Separator
+- Increment/Decrement SCHEDULED Date Stamp
+- Increment/Decrement Day Separator Date Stamp 
+- SCHEDULED alignment keyboard shortcut
+
+
+## [1.0.0-rebuild] 03-18-25
 
 `Added`
 
@@ -35,32 +74,6 @@
 - Agenda view now works cross-platform (including macOS)
 - Scheduling bugs when dates were invalid or partial
 
-## [1.6.1] 04-16-25
-
-`Added`
-
-- New feature: Export all active (non-DONE) tasks to `CurrentTasks.org` with `Ctrl + Shift + E`
-- Each task section is grouped under a `##### Source: <filename> #####` header
-- Tasks updated in `CurrentTasks.org` with `keywordLeft` or `keywordRight` will sync changes to the original file automatically
-
-
-## [v1.0.0 thru v1.5.0] 03-18-25 thru 04-09-25
-`Added`
-
-- New Feature(s):
-- Agenda View
-- Tagged Agenda View
-- Calendar View
-- Keyword Left/Right integration between files
-- ReadFiles/ChangeDir 
-- Tagging
-- Tag Searching
-- Insert Table
-- Insert Visual Date Separator
-- Increment/Decrement SCHEDULED Date Stamp
-- Increment/Decrement Day Separator Date Stamp 
-- SCHEDULED alignment keyboard shortcut
-
 ## [0.1.4] 08-09-24
 
 `Fixed`
@@ -70,7 +83,6 @@
 `Changed`
 
 - Changed the keybinds for folding to the default vscode keybinds ```Shift + Ctrl + [``` to fold and ```Shift + Ctrl + ]``` to unfold
-
 
 ## [0.1.3] 10-18-18
 
