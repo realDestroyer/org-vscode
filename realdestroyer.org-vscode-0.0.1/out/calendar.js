@@ -29,20 +29,27 @@ function sendTasksToCalendar(panel) {
     }
 
     files.forEach(file => {
-      if (file.endsWith(".org")) {
+    if (file.endsWith(".org") && file !== "CurrentTasks.org") {
         let filePath = path.join(dirPath, file);
         let content = fs.readFileSync(filePath, "utf-8").split(/\r?\n/);
 
         content.forEach(line => {
-          let match = line.match(/\bSCHEDULED:\s*\[(\d{2}-\d{2}-\d{4})\]/);
-          if (match) {
+          const scheduledMatch = line.match(/\bSCHEDULED:\s*\[(\d{2}-\d{2}-\d{4})\]/);
+          const keywordMatch = line.match(/\b(TODO|IN_PROGRESS|DONE|CONTINUED|ABANDONED)\b/);
+          const startsWithSymbol = /^[⊙⊘⊖]/.test(line.trim());
+        
+          // Only include if it starts with ⊙/⊘/⊖ AND keyword is TODO or IN_PROGRESS
+          if (scheduledMatch && startsWithSymbol && keywordMatch && ["TODO", "IN_PROGRESS"].includes(keywordMatch[0])) {
             tasks.push({
-              text: line.replace(/SCHEDULED:.*/, "").trim(),
-              date: moment(match[1], "MM-DD-YYYY").format("YYYY-MM-DD"),
+              text: line
+                .replace(/:?\s*\[\+TAG:[^\]]+\]\s*-?/g, '')  // remove tags
+                .replace(/SCHEDULED:.*/, '')                // remove scheduled
+                .trim(),
+              date: moment(scheduledMatch[1], "MM-DD-YYYY").format("YYYY-MM-DD"),
               file: file
             });
           }
-        });
+        });        
       }
     });
 
@@ -171,7 +178,7 @@ function getCalendarWebviewContent() {
       window.addEventListener("message", (event) => {
         const tasks = event.data.tasks;
         let events = tasks.map(task => ({
-          title: task.text,
+          title: task.text.replace(/:?\s*\[\+TAG:[^\]]+\]\s*-?/g, '').trim(),
           start: task.date,
           file: task.file,
           originalDate: task.date
