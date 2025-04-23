@@ -40,7 +40,7 @@ module.exports = function () {
               if (element.includes("SCHEDULED") && !element.includes("DONE")) {
                 const baseIndent = element.match(/^\s*/)?.[0] || "";
                 const children = [];
-    
+            
                 for (let k = j + 1; k < fileText.length; k++) {
                   const nextLine = fileText[k];
                   const nextIndent = nextLine.match(/^\s*/)?.[0] || "";
@@ -50,10 +50,10 @@ module.exports = function () {
                     break;
                   }
                 }
-    
+            
                 const taskTextMatch = element.trim().match(/.*(?=.*SCHEDULED)/g);
                 getDateFromTaskText = element.match(/SCHEDULED:\s*\[(.*?)\]/);
-    
+            
                 if (taskTextMatch && getDateFromTaskText) {
                   taskTextGetTodo = element.match(/\bTODO\b/);
                   taskText = taskTextMatch[0]
@@ -61,15 +61,15 @@ module.exports = function () {
                     .replace(/\b(TODO|DONE|IN_PROGRESS|CONTINUED|ABANDONED)\b/, "")
                     .replace(/: \[\+TAG:.*?\] -/, "")
                     .trim();
-    
+            
                   let formattedDate = moment(getDateFromTaskText[1], dateFormat).format("MM-DD-YYYY");
                   let nameOfDay = moment(formattedDate, "MM-DD-YYYY").format("dddd");
                   let cleanDate = `[${formattedDate}]`;
-    
+            
                   let childrenBlock = children.length > 0
                     ? `<details class="children-block"><summary>Show Details</summary><pre>${children.join("\n")}</pre></details>`
                     : "";
-    
+            
                   let renderedTask = "";
                   if (taskTextGetTodo !== null) {
                     renderedTask =
@@ -84,9 +84,9 @@ module.exports = function () {
                       '<span class="taskText">' + taskText + "</span>" +
                       '<span class="scheduled">SCHEDULED</span>';
                   }
-    
+            
                   convertedDateArray = [];
-    
+            
                   if (moment(formattedDate, "MM-DD-YYYY") >= moment(new Date(), "MM-DD-YYYY")) {
                     convertedDateArray.push({
                       date: `<div class="heading${nameOfDay} ${cleanDate}">
@@ -97,17 +97,17 @@ module.exports = function () {
                   } else {
                     let today = moment().format("MM-DD-YYYY");
                     let overdue = moment().format("dddd");
-    
+            
                     if (moment(formattedDate, "MM-DD-YYYY") < moment(today, "MM-DD-YYYY")) {
                       convertedDateArray.push({
                         date: `<div class="heading${overdue} [${today}]">
                                  <h4 class="[${today}]">[${today}], ${overdue.toUpperCase()}</h4>
                                </div>`,
-                        text: `<div class="panel [${today}]">${renderedTask}<span class="late">LATE: ${getDateFromTaskText[1]}</span>${childrenBlock}</div>`
+                        text: `<div class="panel [${today}]">${renderedTask}<span class="late">LATE: ${moment(getDateFromTaskText[1], dateFormat).format("Do MMMM YYYY")}</span>${childrenBlock}</div>`
                       });
                     }
                   }
-    
+            
                   convertedDateArray.forEach(element => {
                     if (!unsortedObject[element.date]) {
                       unsortedObject[element.date] = "  " + element.text;
@@ -115,11 +115,12 @@ module.exports = function () {
                       unsortedObject[element.date] += "  " + element.text;
                     }
                   });
-    
+            
                   j += children.length;
                 }
               }
             }
+            
     
             Object.keys(unsortedObject)
               .sort((a, b) => {
@@ -204,11 +205,11 @@ module.exports = function () {
             
                                     // If changing to DONE, add COMPLETED line
                                     if (newStatus === "DONE") {
-                                        let completedDate = new Date();
-                                        let formattedDate = completedDate.toISOString().split('T')[0];
+                                        const completedDate = moment();
+                                        const formattedDate = completedDate.format("Do MMMM YYYY, h:mm:ss a");
                                         
-                                        let leadingSpaces = fileLines[i].match(/^\s*/)?.[0] || "";
-                                        fileLines.splice(i + 1, 0, `${leadingSpaces}  COMPLETED: [${formattedDate}]`);
+                                        const leadingSpaces = fileLines[i].match(/^\s*/)?.[0] || "";
+                                        fileLines.splice(i + 1, 0, `${leadingSpaces}  COMPLETED:[${formattedDate}]`);
                                     }
                                     
             
@@ -473,62 +474,68 @@ module.exports = function () {
         </div>      
         <script>
         const vscode = acquireVsCodeApi();
-        document.addEventListener('click', function(event) {
-        
-        let class0 = event.srcElement.classList[0];
-        let class1 = event.srcElement.classList[1];
-        let panels = document.getElementsByClassName('panel');
 
-        // Show or hide panels
-        if (!event.srcElement.classList.contains('panel')) {
-            for (let i = 0; i < panels.length; i++) {
-            if (panels[i].classList.contains(class0) || panels[i].classList.contains(class1)) {
-                panels[i].style.display = panels[i].style.display === 'block' ? 'none' : 'block';
-            }
-            }
-        }
-        
-        // Send filename to open file
-        if (event.srcElement.classList.contains('filename')) {
-            vscode.postMessage({
-            command: 'open',
-            text: event.target.innerText.replace(':', "")
-            });
-        }
+        // Load moment via CDN for formatting
+        const script = document.createElement('script');
+        script.src = "https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js";
+        script.onload = () => {
+          document.addEventListener('click', function(event) {
+            let class0 = event.srcElement.classList[0];
+            let class1 = event.srcElement.classList[1];
+            let panels = document.getElementsByClassName('panel');
 
-        // Cycle through statuses while maintaining proper placement and styling
-        const statuses = ["TODO", "IN_PROGRESS", "CONTINUED", "DONE", "ABANDONED"];
-        let currentStatus = event.target.innerText.trim();
-        let currentIndex = statuses.indexOf(currentStatus);
-        
-        if (currentIndex !== -1) {
-            let nextStatus = statuses[(currentIndex + 1) % statuses.length];
-            event.target.innerText = nextStatus;
-            event.srcElement.classList.remove(currentStatus.toLowerCase());
-            event.srcElement.classList.add(nextStatus.toLowerCase());
-
-            // Ensure proper styling by keeping the class structure consistent
-            event.srcElement.classList.remove("todo", "in_progress", "continued", "done", "abandoned");
-            event.srcElement.classList.add(nextStatus.toLowerCase());
-            
-            let messageText = nextStatus + "," + event.target.dataset.filename + "," + event.target.dataset.text + "," + event.target.dataset.date;
-            
-            if (nextStatus === "DONE") {
-            let completedDate = new Date();
-            let formattedDate = completedDate.toISOString().split('T')[0]; // Formats as YYYY-MM-DD
-            messageText += ",COMPLETED:[" + formattedDate + "]";
+            // Show or hide panels
+            if (!event.srcElement.classList.contains('panel')) {
+              for (let i = 0; i < panels.length; i++) {
+                if (panels[i].classList.contains(class0) || panels[i].classList.contains(class1)) {
+                  panels[i].style.display = panels[i].style.display === 'block' ? 'none' : 'block';
+                }
+              }
             }
 
-            if (currentStatus === "DONE") {
-            messageText += ",REMOVE_COMPLETED"; // Signal to remove COMPLETED line when moving away from DONE
+            // Send filename to open file
+            if (event.srcElement.classList.contains('filename')) {
+              vscode.postMessage({
+                command: 'open',
+                text: event.target.innerText.replace(':', "")
+              });
             }
-            
-            vscode.postMessage({
-            command: 'changeStatus',
-            text: messageText
-            });
-        }
-        });
+
+            // Cycle through statuses while maintaining proper placement and styling
+            const statuses = ["TODO", "IN_PROGRESS", "CONTINUED", "DONE", "ABANDONED"];
+            let currentStatus = event.target.innerText.trim();
+            let currentIndex = statuses.indexOf(currentStatus);
+
+            if (currentIndex !== -1) {
+              let nextStatus = statuses[(currentIndex + 1) % statuses.length];
+              event.target.innerText = nextStatus;
+              event.srcElement.classList.remove(currentStatus.toLowerCase());
+              event.srcElement.classList.add(nextStatus.toLowerCase());
+
+              // Ensure proper styling by keeping the class structure consistent
+              event.srcElement.classList.remove("todo", "in_progress", "continued", "done", "abandoned");
+              event.srcElement.classList.add(nextStatus.toLowerCase());
+
+              let messageText = nextStatus + "," + event.target.dataset.filename + "," + event.target.dataset.text + "," + event.target.dataset.date;
+
+              if (nextStatus === "DONE") {
+                let completedDate = moment();
+                let formattedDate = completedDate.format("Do MMMM YYYY, h:mm:ss a"); // e.g., 23rd April 2025, 7:36:12 am
+                messageText += ",COMPLETED:[" + formattedDate + "]";
+              }
+
+              if (currentStatus === "DONE") {
+                messageText += ",REMOVE_COMPLETED";
+              }
+
+              vscode.postMessage({
+                command: 'changeStatus',
+                text: messageText
+              });
+            }
+          });
+        };
+        document.head.appendChild(script);
         </script>
         </body>
 </html>`;
