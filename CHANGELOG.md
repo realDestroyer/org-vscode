@@ -1,5 +1,12 @@
 # Change Log
 
+## [1.6.3] 04-23-25
+`Fixed`
+
+- Agenda View:
+  - COMPLETED timestamps now match the correct long-form style (e.g. 23rd April 2025, 7:46:58 am) for consistency with keywordLeft / keywordRight actions.
+  - Previously, toggling to DONE in the Agenda View used an ISO format (e.g. 2025-04-23). This has been updated to keep formatting consistent across features.
+
 ## [1.6.2] 04-21-25
 
 `Added`
