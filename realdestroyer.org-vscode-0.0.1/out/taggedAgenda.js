@@ -125,10 +125,10 @@ function showTaggedAgendaView(tag, items) {
       } else if (message.command === "changeStatus") {
           const parts = message.text.split(",");
           const newStatus = parts[0];
-          const file = parts[1];
+          const file = parts[1];cw
           const taskText = parts[2].trim();
           const scheduledDate = parts[3];
-          const completedLine = parts[4] || null;
+          const completedLine = parts.slice(4).join(",") || null;
           const removeCompleted = message.text.includes("REMOVE_COMPLETED");
           console.log("🧠 Parsed status change:", { newStatus, file, taskText, scheduledDate, completedLine, removeCompleted });
 
@@ -202,6 +202,7 @@ function getTaggedWebviewContent(tag, items) {
 <!DOCTYPE html>
 <html>
 <head>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
   <meta charset="UTF-8">
   <title>Tagged Agenda: ${tag}</title>
   <link href="https://fonts.googleapis.com/css?family=Roboto+Mono:400,700|Roboto:400,700" rel="stylesheet">
@@ -466,6 +467,7 @@ body{
   <div><strong>Files:</strong> ${fileButtons}</div>
   <div id="display-agenda">${filePanels}</div>
 
+  
   <script>
       const vscode = acquireVsCodeApi();
 
@@ -513,8 +515,8 @@ body{
               let messageText = nextStatus + "," + event.target.dataset.filename + "," + event.target.dataset.text + "," + event.target.dataset.date;
 
               if (nextStatus === "DONE") {
-                  let completedDate = new Date();
-                  let formattedDate = completedDate.toISOString().split('T')[0];
+                  let completedDate = moment();
+                  let formattedDate = completedDate.format("Do MMMM YYYY, h:mm:ss a");
                   messageText += ",COMPLETED:[" + formattedDate + "]";
               }
 
@@ -529,11 +531,7 @@ body{
           }
       });
   </script>
+
 </body>
 </html>`;
 }
-
-
-
-
-

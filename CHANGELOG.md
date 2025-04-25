@@ -1,5 +1,14 @@
 # Change Log
 
+## [1.6.4] 04-24-25
+`Fixed`
+
+- Tagged Agenda View:
+  - COMPLETED timestamps now use a consistent long-form style (e.g. 25th March 2025, 8:35:37 am) when toggling to DONE, matching the format used in the main Agenda View and status change commands.
+  - Previously, marking a task as DONE in the Tagged Agenda View inserted a shortened ISO date (e.g. 2025-03-25). This has been updated for consistency and readability.
+  - Fixed a parsing bug where the time portion (including seconds) of the COMPLETED timestamp was being truncated due to incorrect handling of commas in message payloads.
+
+
 ## [1.6.3] 04-23-25
 
 `Fixed`
