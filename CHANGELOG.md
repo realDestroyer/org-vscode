@@ -44,18 +44,18 @@
 `Added`
 
 - New Feature(s):
-- Agenda View
-- Tagged Agenda View
-- Calendar View
-- Keyword Left/Right integration between files
-- ReadFiles/ChangeDir 
-- Tagging
-- Tag Searching
-- Insert Table
-- Insert Visual Date Separator
-- Increment/Decrement SCHEDULED Date Stamp
-- Increment/Decrement Day Separator Date Stamp 
-- SCHEDULED alignment keyboard shortcut
+  - Agenda View
+  - Tagged Agenda View
+  - Calendar View
+  - Keyword Left/Right integration between files
+  - ReadFiles/ChangeDir 
+  - Tagging
+  - Tag Searching
+  - Insert Table
+  - Insert Visual Date Separator
+  - Increment/Decrement SCHEDULED Date Stamp
+  - Increment/Decrement Day Separator Date Stamp 
+  - SCHEDULED alignment keyboard shortcut
 
 
 ## [1.0.0-rebuild] 03-18-25
