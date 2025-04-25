@@ -1,6 +1,7 @@
 # Change Log
 
 ## [1.6.3] 04-23-25
+
 `Fixed`
 
 - Agenda View:
