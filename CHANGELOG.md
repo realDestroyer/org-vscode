@@ -1,5 +1,11 @@
 # Change Log
 
+## [1.6.5] 04-29-25
+`Fixed`
+
+- Tagged Agenda View:
+  - Fixed the erroneously added "cw" letters in a loop. My guess is, I must've been typing on a different window or playing Counter-Strike and alt+tabbed while playing with VSCode in the background and an automated deployment must've kicked off.
+
 ## [1.6.4] 04-24-25
 `Fixed`
 
