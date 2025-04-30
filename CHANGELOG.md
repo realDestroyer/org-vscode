@@ -1,5 +1,12 @@
 # Change Log
 
+# [1.6.6] 04-30-25
+`Fixed`
+- Fixed a bug where tasks containing commas in their description (e.g. “Work on mock interview questions, etc.”) would fail to update their status.
+- The issue was caused by parsing the message.text on commas without safely escaping them. The text was split mid-sentence, causing the update logic to fail to find the original task line.
+- Commas in task text and scheduled date fields are now safely encoded and decoded during message passing between the webview and extension backend. 🎯
+
+
 ## [1.6.5] 04-29-25
 `Fixed`
 

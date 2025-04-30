@@ -126,8 +126,8 @@ function showTaggedAgendaView(tag, items) {
           const parts = message.text.split(",");
           const newStatus = parts[0];
           const file = parts[1];
-          const taskText = parts[2].trim();
-          const scheduledDate = parts[3];
+          const taskText = parts[2].trim().replaceAll("&#44;", ",");
+          const scheduledDate = parts[3].replaceAll("&#44;", ",");          
           const completedLine = parts.slice(4).join(",") || null;
           const removeCompleted = message.text.includes("REMOVE_COMPLETED");
           console.log("🧠 Parsed status change:", { newStatus, file, taskText, scheduledDate, completedLine, removeCompleted });
@@ -512,7 +512,9 @@ body{
               event.srcElement.classList.remove(...statuses.map(s => s.toLowerCase()));
               event.srcElement.classList.add(nextStatus.toLowerCase());
 
-              let messageText = nextStatus + "," + event.target.dataset.filename + "," + event.target.dataset.text + "," + event.target.dataset.date;
+              let safeText = event.target.dataset.text.replaceAll(",", "&#44;");
+              let safeDate = event.target.dataset.date.replaceAll(",", "&#44;");
+              let messageText = nextStatus + "," + event.target.dataset.filename + "," + safeText + "," + safeDate;
 
               if (nextStatus === "DONE") {
                   let completedDate = moment();
