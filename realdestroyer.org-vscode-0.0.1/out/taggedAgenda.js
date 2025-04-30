@@ -125,7 +125,7 @@ function showTaggedAgendaView(tag, items) {
       } else if (message.command === "changeStatus") {
           const parts = message.text.split(",");
           const newStatus = parts[0];
-          const file = parts[1];cw
+          const file = parts[1];
           const taskText = parts[2].trim();
           const scheduledDate = parts[3];
           const completedLine = parts.slice(4).join(",") || null;
