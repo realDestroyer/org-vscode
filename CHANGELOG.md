@@ -1,5 +1,15 @@
 # Change Log
 
+# [1.6.7] 05-07-25
+`Enhanced`
+
+- Tag Insertion:
+  - When adding a new tag to a task using the addTag command, the extension now checks the file’s #+TAGS: header at the top.
+  - If the tag isn’t already listed, it will automatically be added to the #+TAGS: line, keeping the header in sync with inline tags. 💪
+  - This makes it easier to spot what kinds of projects or contexts a file includes—especially when quickly skimming or using global tag search.
+  - Existing tags in the header are preserved, and no duplicates will be added.
+
+
 # [1.6.6] 04-30-25
 `Fixed`
 - Fixed a bug where tasks containing commas in their description (e.g. “Work on mock interview questions, etc.”) would fail to update their status.
