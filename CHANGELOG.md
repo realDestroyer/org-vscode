@@ -1,5 +1,14 @@
 # Change Log
 
+# [1.6.8] 05-08-25
+`Fixed`
+
+- Open By Tag:
+  - Restored support for opening .org files by tag from the #+TAGS: header using the VS-Org: Open By Tag command.
+  - The previous version only supported .vsorg files and silently ignored .org files.
+  - Updated logic to support both extensions, clean up blank entries, and normalize tag casing for accurate matching. 🔍✨
+  - You can now confidently open any project by tag, no matter which file type or case it's in!
+
 # [1.6.7] 05-07-25
 `Enhanced`
 
