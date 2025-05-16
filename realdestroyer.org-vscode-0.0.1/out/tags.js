@@ -1,89 +1,61 @@
 "use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
 const vscode = require("vscode");
 const path = require("path");
 const fs = require("fs");
 const os = require("os");
+
 module.exports = function () {
-    let config = vscode.workspace.getConfiguration("vsorg");
+    let config = vscode.workspace.getConfiguration("Org-vscode");
     let folderPath = config.get("folderPath");
     let folder;
-    let listObject = {};
-    let splitTags;
-    let formatTag = [];
+    let tagMap = {};
+    let tagList = [];
+
     readFiles();
-    //get tags
+
     function readFiles() {
         fs.readdir(setMainDir(), (err, items) => {
-            for (let i = 0; i < items.length; i++) {
-                if (items[i].includes(".vsorg")) {
-                    //check files for #+ TAGS:'
-                    let fileText;
-                    if (os.platform() === "darwin" || os.platform() === "linux") {
-                        fileText = fs.readFileSync(setMainDir() + "/" + items[i], "utf-8");
-                    }
-                    else {
-                        fileText = fs.readFileSync(setMainDir() + "\\" + items[i], "utf-8");
-                    }
-                    if (fileText.includes("#+TAGS:") && fileText.match(/\#\+TAGS.*/gi) !== null) {
-                        let fileName = items[i];
-                        let getTags = fileText.match(/\#\+TAGS.*/gi);
-                        splitTags = getTags
-                            .join("")
-                            .split("#+TAGS:")
-                            .join("")
-                            .trim()
-                            .split(",");
-                        splitTags.forEach((element) => {
-                            if (!formatTag.includes(element)) {
-                                formatTag.push(element);
-                            }
-                        });
-                        splitTags.forEach((element) => {
-                            if (listObject[element] === undefined) {
-                                listObject[element] = "";
-                            }
-                            listObject[element] = listObject[element] + fileName + ",";
-                        });
-                    }
-                }
-                setQuickPick();
-            }
-        });
-    }
-    function setQuickPick() {
-        vscode.window.showQuickPick(formatTag).then((tag) => {
-            if (tag != null) {
-                if (tag in listObject) {
-                    let getFileName = listObject[tag].split(",");
-                    vscode.window.showQuickPick(getFileName).then((filePath) => {
-                        let fullpath = path.join(setMainDir(), filePath);
-                        vscode.workspace.openTextDocument(vscode.Uri.file(fullpath)).then(doc => {
-                            vscode.window.showTextDocument(doc, vscode.ViewColumn.Beside, true);
-                        });
+            if (err) return vscode.window.showErrorMessage("Failed to read Org directory.");
+
+            items.filter(file => file.endsWith(".org") || file.endsWith(".vsorg")).forEach(file => {
+                const filePath = path.join(setMainDir(), file);
+                const fileText = fs.readFileSync(filePath, "utf-8");
+
+                const match = fileText.match(/^\#\+TAGS:(.*)$/m);
+                if (match) {
+                    const rawTags = match[1].split(",").map(tag => tag.trim().toUpperCase()).filter(Boolean);
+                    rawTags.forEach(tag => {
+                        if (!tagList.includes(tag)) tagList.push(tag);
+                        if (!tagMap[tag]) tagMap[tag] = [];
+                        if (!tagMap[tag].includes(file)) tagMap[tag].push(file);
                     });
                 }
-                // vscode.window.showQuickPick(listObject)
+            });
+
+            setQuickPick();
+        });
+    }
+
+    function setQuickPick() {
+        vscode.window.showQuickPick(tagList.sort()).then(selectedTag => {
+            if (selectedTag && tagMap[selectedTag]) {
+                vscode.window.showQuickPick(tagMap[selectedTag]).then(file => {
+                    if (file) {
+                        const fullPath = path.join(setMainDir(), file);
+                        vscode.workspace.openTextDocument(vscode.Uri.file(fullPath)).then(doc => {
+                            vscode.window.showTextDocument(doc, vscode.ViewColumn.Beside, true);
+                        });
+                    }
+                });
             }
         });
     }
-    /**
-     * Get the Main Directory
-     */
+
     function setMainDir() {
-        if (folderPath === "") {
-            let homeDir = os.homedir();
-            if (os.platform() === "darwin" || os.platform() === "linux") {
-                folder = homeDir + "/VSOrgFiles";
-            }
-            else {
-                folder = homeDir + "\\VSOrgFiles";
-            }
+        if (!folderPath || folderPath.trim() === "") {
+            let home = os.homedir();
+            return os.platform() === "win32" ? path.join(home, "VSOrgFiles") : path.join(home, "VSOrgFiles");
         }
-        else {
-            folder = folderPath;
-        }
-        return folder;
+        return folderPath;
     }
 };
-//# sourceMappingURL=tags.js.map
