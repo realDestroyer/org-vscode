@@ -1,6 +1,6 @@
 # Change Log
 
-# [1.6.8] 05-08-25
+# [1.6.8] 05-15-25
 `Fixed`
 
 - Open By Tag:
