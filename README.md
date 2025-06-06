@@ -107,9 +107,11 @@ Tasks edited inside `CurrentTasks.org` using the left/right keyword toggles will
 Check out the [RoadMap](https://github.com/realdestroyer/org-vscode/blob/master/roadmap.md) for upcoming features.
 
 ## Authors
-
-- Forked from the original author: Bobby Boyd
 - Current Maintainer - realDestroyer
+
+- Was initially forked from a project started by: Bobby Boyd
+    - However, I have made such a significant amount of changes and the original extension is dead - so I have broken the connection to the original.
+    - If you want to see what his extension looked like, you can find it here: [Bobby Boyd's Extension](https://github.com/boydvoid/vs-org)
 
 ## License
 
