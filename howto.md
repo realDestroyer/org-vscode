@@ -54,6 +54,7 @@ You can open a file using either:
 
 ---
 
-## 🎬 Full Demo
+## 🎬 Partial Demo
 
-<img src=https://github.com/realDestroyer/org-vscode/blob/master/Images/fullDemo.gif?raw=true" width="700" height="400" />
+- **Partial Demo**
+<img src="https://github.com/realDestroyer/org-vscode/blob/master/Images/fullDemo.gif?raw=true" width="700" height="400" />
