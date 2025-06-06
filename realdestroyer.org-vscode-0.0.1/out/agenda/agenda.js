@@ -13,7 +13,7 @@ module.exports = function () {
     let dateFormat = config.get("dateFormat");
     let folder;
     let taskText;
-    let taskTextGetTodo = "";
+    let taskKeywordMatch = "";
     let getDateFromTaskText;
     let convertedDateArray = [];
     let unsortedObject = {};
@@ -22,25 +22,29 @@ module.exports = function () {
 
     readFiles();
 
+    // Reads all .org files and builds agenda view HTML blocks grouped by scheduled date
     function readFiles() {
       fs.readdir(setMainDir(), (err, items) => {
         for (let i = 0; i < items.length; i++) {
           if (items[i].includes(".org")) {
-            if (items[i] === "CurrentTasks.org") continue; // ✅ skip export file
-    
+            if (items[i] === "CurrentTasks.org") continue; // Skip export file
+
+            // Read the contents of the .org file
             let fileText;
             if (os.platform() === "darwin" || os.platform() === "linux") {
               fileText = fs.readFileSync(setMainDir() + "/" + items[i]).toString().split(/\r?\n/);
             } else {
               fileText = fs.readFileSync(setMainDir() + "\\" + items[i]).toString().split(/\r?\n/);
             }
-    
+
+            // Iterate through lines to find scheduled, non-DONE tasks
             for (let j = 0; j < fileText.length; j++) {
               const element = fileText[j];
               if (element.includes("SCHEDULED") && !element.includes("DONE")) {
+
+                // Capture indented child lines that belong to the current task
                 const baseIndent = element.match(/^\s*/)?.[0] || "";
                 const children = [];
-            
                 for (let k = j + 1; k < fileText.length; k++) {
                   const nextLine = fileText[k];
                   const nextIndent = nextLine.match(/^\s*/)?.[0] || "";
@@ -50,64 +54,70 @@ module.exports = function () {
                     break;
                   }
                 }
-            
+
+                // Extract core task text and scheduled date
                 const taskTextMatch = element.trim().match(/.*(?=.*SCHEDULED)/g);
                 getDateFromTaskText = element.match(/SCHEDULED:\s*\[(.*?)\]/);
-            
+
                 if (taskTextMatch && getDateFromTaskText) {
-                  taskTextGetTodo = element.match(/\bTODO\b/);
+                  // Match the task keyword (TODO, IN_PROGRESS, etc.)
+                  taskKeywordMatch = element.match(/\b(TODO|IN_PROGRESS|CONTINUED|DONE|ABANDONED)\b/);
+
+                  // Clean up task line: remove symbols, keyword, tags
                   taskText = taskTextMatch[0]
                     .replace(/⊙|⊘|⊖/g, "")
                     .replace(/\b(TODO|DONE|IN_PROGRESS|CONTINUED|ABANDONED)\b/, "")
                     .replace(/: \[\+TAG:.*?\] -/, "")
                     .trim();
-            
+
+                  // Format the task's scheduled date for grouping and display
                   let formattedDate = moment(getDateFromTaskText[1], dateFormat).format("MM-DD-YYYY");
                   let nameOfDay = moment(formattedDate, "MM-DD-YYYY").format("dddd");
                   let cleanDate = `[${formattedDate}]`;
-            
+
+                  // Create collapsible child block (if child lines exist)
                   let childrenBlock = children.length > 0
-                    ? `<details class="children-block"><summary>Show Details</summary><pre>${children.join("\n")}</pre></details>`
+                    ? `<details class=\"children-block\"><summary>Show Details</summary><pre>${children.join("\n")}</pre></details>`
                     : "";
-            
+
+                  // Build HTML task entry
                   let renderedTask = "";
-                  if (taskTextGetTodo !== null) {
+                  if (taskKeywordMatch !== null) {
                     renderedTask =
-                      '<span class="filename">' + items[i] + ":</span> " +
-                      '<span class="todo" data-filename="' + items[i] + '" data-text="' + taskText + '" data-date="' + cleanDate + '"> ' +
-                      taskTextGetTodo + "</span>" +
+                      '<span class="filename" data-file="' + items[i] + '">' + items[i] + ":</span> " +
+                      '<span class="' + taskKeywordMatch[0].toLowerCase() + '" data-filename="' + items[i] + '" data-text="' + taskText + '" data-date="' + cleanDate + '">' + taskKeywordMatch[0] + '</span>' +
                       '<span class="taskText">' + taskText + "</span>" +
                       '<span class="scheduled">SCHEDULED</span>';
                   } else {
                     renderedTask =
-                      '<span class="filename">' + items[i] + ":</span> " +
+                      '<span class="filename" data-file="' + items[i] + '">' + items[i] + ":</span> " +
                       '<span class="taskText">' + taskText + "</span>" +
                       '<span class="scheduled">SCHEDULED</span>';
                   }
-            
+
+                  // Clear the current date array and group task appropriately by date
                   convertedDateArray = [];
-            
+
+                  // If task is today or future
                   if (moment(formattedDate, "MM-DD-YYYY") >= moment(new Date(), "MM-DD-YYYY")) {
                     convertedDateArray.push({
-                      date: `<div class="heading${nameOfDay} ${cleanDate}">
-                               <h4 class="${cleanDate}">${cleanDate}, ${nameOfDay.toUpperCase()}</h4>
-                             </div>`,
-                      text: `<div class="panel ${cleanDate}">${renderedTask}${childrenBlock}</div>`
+                      date: `<div class=\"heading${nameOfDay} ${cleanDate}\"><h4 class=\"${cleanDate}\">${cleanDate}, ${nameOfDay.toUpperCase()}</h4></div>`,
+                      text: `<div class=\"panel ${cleanDate}\">${renderedTask}${childrenBlock}</div>`
                     });
                   } else {
+                    // If task is overdue
                     let today = moment().format("MM-DD-YYYY");
                     let overdue = moment().format("dddd");
-            
+
                     if (moment(formattedDate, "MM-DD-YYYY") < moment(today, "MM-DD-YYYY")) {
                       convertedDateArray.push({
-                        date: `<div class="heading${overdue} [${today}]">
-                                 <h4 class="[${today}]">[${today}], ${overdue.toUpperCase()}</h4>
-                               </div>`,
-                        text: `<div class="panel [${today}]">${renderedTask}<span class="late">LATE: ${moment(getDateFromTaskText[1], dateFormat).format("Do MMMM YYYY")}</span>${childrenBlock}</div>`
+                        date: `<div class=\"heading${overdue} [${today}]\"><h4 class=\"[${today}]\">[${today}], ${overdue.toUpperCase()}</h4></div>`,
+                        text: `<div class=\"panel [${today}]\">${renderedTask}<span class=\"late\">LATE: ${moment(getDateFromTaskText[1], dateFormat).format("Do MMMM YYYY")}</span>${childrenBlock}</div>`
                       });
                     }
                   }
-            
+
+                  // Add each task block to unsorted object under its date
                   convertedDateArray.forEach(element => {
                     if (!unsortedObject[element.date]) {
                       unsortedObject[element.date] = "  " + element.text;
@@ -115,13 +125,14 @@ module.exports = function () {
                       unsortedObject[element.date] += "  " + element.text;
                     }
                   });
-            
+
+                  // Skip past children for outer loop
                   j += children.length;
                 }
               }
             }
-            
-    
+
+            // Sort agenda items by date and store in sortedObject for ordered rendering
             Object.keys(unsortedObject)
               .sort((a, b) => {
                 let dateA = moment(a.match(/\[(.*)\]/)[1], "MM-DD-YYYY").toDate();
@@ -133,103 +144,77 @@ module.exports = function () {
               });
           }
         }
-    
+
+        // Build final webview string from sorted agenda entries
         Object.keys(sortedObject).forEach(property => {
           itemInSortedObject += property + sortedObject[property] + "</br>";
         });
-    
+
         createWebview();
       });
-    }      
-           
-        /**
-         * Get the Main Directory
-         */
-        function setMainDir() {
-            console.log("📂 Getting Main Directory...");
-        
-            let config = vscode.workspace.getConfiguration("Org-vscode");
-            let folderPath = config.get("folderPath");
-        
-            if (!folderPath || folderPath.trim() === "") {
-                console.warn("⚠️ No folderPath found! Prompting user to set one.");
-                vscode.window.showErrorMessage("No org directory set. Please configure 'Org-vscode.folderPath' in settings.");
-                return null;  // Prevents using an incorrect directory
+    }
+
+    function setMainDir() {
+      let config = vscode.workspace.getConfiguration("Org-vscode");
+      let folderPath = config.get("folderPath");
+      if (!folderPath || folderPath.trim() === "") {
+        vscode.window.showErrorMessage("No org directory set. Please configure 'Org-vscode.folderPath' in settings.");
+        return null;
+      }
+      return folderPath;
+    }
+
+    function createWebview() {
+      let reload = false;
+      let fullAgendaView = vscode.window.createWebviewPanel("fullAgenda", "Full Agenda View", vscode.ViewColumn.Beside, { enableScripts: true });
+      fullAgendaView.webview.html = getWebviewContent(sortedObject);
+
+      vscode.workspace.onDidSaveTextDocument(() => {
+        reload = true;
+        fullAgendaView.dispose();
+      });
+
+      fullAgendaView.onDidDispose(() => {
+        if (reload) vscode.commands.executeCommand("extension.viewAgenda");
+      });
+
+      fullAgendaView.webview.onDidReceiveMessage(message => {
+        if (message.command === "open") {
+          let fullPath = path.join(setMainDir(), message.text);
+          vscode.workspace.openTextDocument(vscode.Uri.file(fullPath)).then(doc => {
+            vscode.window.showTextDocument(doc, vscode.ViewColumn.One, false);
+          });
+        } else if (message.command === "changeStatus") {
+          let [newStatus, fileName, taskText, date, additionalFlag] = message.text.split(",");
+          let filePath = path.join(setMainDir(), fileName);
+          let fileContents = fs.readFileSync(filePath, "utf-8");
+          let fileLines = fileContents.split(/\r?\n/);
+
+          for (let i = 0; i < fileLines.length; i++) {
+            if (fileLines[i].includes(taskText) && fileLines[i].includes(date)) {
+              let currentStatus = fileLines[i].match(/\b(TODO|DONE|IN_PROGRESS|CONTINUED|ABANDONED)\b/);
+              if (currentStatus) {
+                fileLines[i] = fileLines[i].replace(currentStatus[0], newStatus);
+                if (newStatus === "DONE") {
+                  const completedDate = moment();
+                  const formattedDate = completedDate.format("Do MMMM YYYY, h:mm:ss a");
+                  const leadingSpaces = fileLines[i].match(/^\s*/)?.[0] || "";
+                  fileLines.splice(i + 1, 0, `${leadingSpaces}  COMPLETED:[${formattedDate}]`);
+                }
+                if (currentStatus[0] === "DONE" && additionalFlag === "REMOVE_COMPLETED") {
+                  if (fileLines[i + 1] && fileLines[i + 1].trim().startsWith("COMPLETED:")) {
+                    fileLines.splice(i + 1, 1);
+                  }
+                }
+                fs.writeFileSync(filePath, fileLines.join("\n"), "utf-8");
+                vscode.window.showInformationMessage(`Updated: ${taskText} -> ${newStatus}`);
+              }
+              break;
             }
-        
-            console.log(`✅ Using configured folderPath: ${folderPath}`);
-            return folderPath;
+          }
         }
-        
-        function createWebview() {
-            let reload = false;
-            let fullAgendaView = vscode.window.createWebviewPanel("fullAgenda", "Full Agenda View", vscode.ViewColumn.Beside, {
-                // Enable scripts in the webview
-                enableScripts: true
-            });
-            // Set The HTML content
-            fullAgendaView.webview.html = getWebviewContent(sortedObject);
-            //reload on save
-            vscode.workspace.onDidSaveTextDocument((document) => {
-                reload = true;
-                fullAgendaView.dispose();
-            });
-            fullAgendaView.onDidDispose(() => {
-                if (reload === true) {
-                    reload = false;
-                    vscode.commands.executeCommand("extension.viewAgenda");
-                }
-            });
-            // Handle messages from the webview
-            fullAgendaView.webview.onDidReceiveMessage(message => {
-                switch (message.command) {
-                    case "open":
-                        let fullPath = path.join(setMainDir(), message.text);
-                        vscode.workspace.openTextDocument(vscode.Uri.file(fullPath)).then(doc => {
-                            vscode.window.showTextDocument(doc, vscode.ViewColumn.One, false);
-                        });
-                        return;
-            
-                    case "changeStatus":
-                        let [newStatus, fileName, taskText, date, additionalFlag] = message.text.split(",");
-                        let filePath = path.join(setMainDir(), fileName);
-                        let fileContents = fs.readFileSync(filePath, "utf-8");
-                        let fileLines = fileContents.split(/\r?\n/);
-            
-                        for (let i = 0; i < fileLines.length; i++) {
-                            if (fileLines[i].includes(taskText) && fileLines[i].includes(date)) {
-                                let currentStatus = fileLines[i].match(/\b(TODO|DONE|IN_PROGRESS|CONTINUED|ABANDONED)\b/);
-                                
-                                if (currentStatus) {
-                                    fileLines[i] = fileLines[i].replace(currentStatus[0], newStatus);
-            
-                                    // If changing to DONE, add COMPLETED line
-                                    if (newStatus === "DONE") {
-                                        const completedDate = moment();
-                                        const formattedDate = completedDate.format("Do MMMM YYYY, h:mm:ss a");
-                                        
-                                        const leadingSpaces = fileLines[i].match(/^\s*/)?.[0] || "";
-                                        fileLines.splice(i + 1, 0, `${leadingSpaces}  COMPLETED:[${formattedDate}]`);
-                                    }
-                                    
-            
-                                    // If moving away from DONE, remove COMPLETED line
-                                    if (currentStatus[0] === "DONE" && additionalFlag === "REMOVE_COMPLETED") {
-                                        if (fileLines[i + 1] && fileLines[i + 1].trim().startsWith("COMPLETED:")) {
-                                            fileLines.splice(i + 1, 1);
-                                        }
-                                    }
-            
-                                    fs.writeFileSync(filePath, fileLines.join("\n"), "utf-8");
-                                    vscode.window.showInformationMessage(`Updated: ${taskText} -> ${newStatus}`);
-                                }
-                                break;
-                            }
-                        }
-                        return;
-                }
-            });                    
-        }
+      });
+    }
         function getWebviewContent(task) {
             return `<!DOCTYPE html>
         <html lang="en">
