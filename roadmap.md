@@ -1,6 +1,6 @@
-# Roadmap v1.0.0
+# Roadmap
 
-Live version: 0.0.1
+Live version: 1.6.9
 
 These are the features that I have either already implemented, or plan to in the near future.
 
@@ -16,7 +16,16 @@ These are the features that I have either already implemented, or plan to in the
 | Calendar Filtering        | Filter tasks by status, date range, or deadline                                           | Not Started |          | realDestroyer |
 | Insert Deadline Support   | Add deadline insertion command (like scheduled)                                           | Not Started |          | realDestroyer |
 | Bulleted Lists            | Make an ordered or unordered list                                                          | In Progress |          | realDestroyer |
-| TODO Tracking             | Show TODO completion on the up-most level                                                  | In Progress | v1.6.0   | realDestroyer |
+| TODO Tracking             | Show TODO completion on the up-most level                                                  | In Progress |          | realDestroyer |
+| Unicode Overhaul + Message Popup | Updated all status cycling + file syncing for ⊙ ⊘ ⊜ ⊖ ⊗; Ctrl+Alt+M message popup added    | DONE | v1.6.9   | realDestroyer |
+| Bug Fixes                   | See CHANGELOG.md for full details                                                          | DONE | v1.6.8   | realDestroyer |
+| Smart Tag Insertion         | Adds new tags inline and to #+TAGS header if missing                                       | DONE | v1.6.7   | realDestroyer |
+| Comma-safe Message Parsing  | Escapes commas in message.text so complex task strings update correctly                    | DONE | v1.6.6   | realDestroyer |
+| Bug Fixes                   | See CHANGELOG.md for full details                                                          | DONE | v1.6.5   | realDestroyer |
+| Bug Fixes                   | See CHANGELOG.md for full details                                                          | DONE | v1.6.4   | realDestroyer |
+| Agenda View Timestamp Format | Agenda View now adds long-form COMPLETED timestamps when toggling DONE                     | DONE | v1.6.3   | realDestroyer |
+| Bug Fixes                   | See CHANGELOG.md for full details                                                          | DONE | v1.6.2   | realDestroyer |
+| Export Active Tasks         | Export all active (non-DONE) tasks to CurrentTasks.org with Ctrl + Shift + E               | DONE | v1.6.1   | realDestroyer |
 | Expandable Agenda Children| Collapsible child lines for indented task content in Agenda View                          | DONE | v1.5.2 | realDestroyer |
 | Export Current Tasks      | Export all non-DONE tasks to CurrentTasks.org, including child lines, and enable syncing with source files via keyword toggles | DONE | v1.5.1 | realDestroyer |
 | Tables                    | Insert Tables into doc                                                                     | DONE        | v1.5.0   |               |
