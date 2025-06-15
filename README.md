@@ -83,25 +83,9 @@ Make sure you save your files with the .org extension.
 
 Submit an [Issue](https://github.com/realdestroyer/org-vscode/issues) if there is a bug you would like to report.
 
-## Release Notes
+## Changelog
 
-## [0.1.5] 04-16-2025
-`Export Current Tasks`
-## New Feature: Current Tasks Export
-
-Press `Ctrl + Shift + E` to export all non-DONE tasks (and their indented child lines) from all `.org` files into a single file: `CurrentTasks.org`. Each group of tasks is organized by its original source file for easy review.
-
-Tasks edited inside `CurrentTasks.org` using the left/right keyword toggles will automatically sync back to the source file.
-
-## [0.1.4] 03-20-2025
-
-`Added Agenda View`
-
-- Added Agenda View
-
-`Changed`
-
-- Changed the keybinds for agenda view from `ctrl+alt+a` to `ctrl+alt+v`
+Check out the recent changes in the [Change Log](https://github.com/realdestroyer/org-vscode/blob/master/CHANGELOG.md)
 
 ## Upcoming Features
 
