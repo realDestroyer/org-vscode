@@ -3,6 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.activate = activate;
 
 const vscode = require("vscode");
+const { WindowMessage } = require("./showMessage");
 const fs = require("fs");
 const path = require("path");
 const moment = require("moment");
@@ -31,6 +32,8 @@ const insertTable = require("./insertTable");
 const updateDates = require("./updateDate");
 const { openCalendarView } = require("./calendar");
 const exportCurrentTasks = require("./exportCurrentTasks");
+
+
 
 console.log("📌 agenda.js has been loaded in extension.js");
 
@@ -97,6 +100,7 @@ function numOfSpaces(asterisk) {
 }
 
 function activate(ctx) {
+
   vscode.commands.registerCommand("extension.viewAgenda", agenda);
   vscode.commands.registerCommand("extension.updateDates", updateDates);
 
@@ -106,7 +110,19 @@ function activate(ctx) {
       vscode.commands.executeCommand("extension.updateDates");
     }
   });
+  const showMessageCommand = vscode.commands.registerCommand("extension.showMessageTest", () => {
+    let msg = new WindowMessage(
+      "information",
+      "Welcome to Org Mode for VSCode!",
+      true,
+      true,
+      "realDestroyer's GitHub Repository",
+      "https://github.com/realDestroyer/org-vscode"
+    );
+    msg.showMessage();
+  });
 
+  ctx.subscriptions.push(showMessageCommand);
   let forwardCommand = vscode.commands.registerCommand("extension.rescheduleTaskForward", moveDateForward);
   let backwardCommand = vscode.commands.registerCommand("extension.rescheduleTaskBackward", moveDateBackward);
   ctx.subscriptions.push(forwardCommand);

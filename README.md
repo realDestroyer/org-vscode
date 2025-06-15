@@ -70,6 +70,7 @@ Make sure you save your files with the .org extension.
 | `Ctrl + Alt + D`     | Insert a visual separator                   |
 | `Alt + Shift + T`     | Insert a table                             |
 | `ctrl+shift+e`          | Export all active (non-DONE) tasks to CurrentTasks.org |
+| `Ctrl + Alt + M`     | Show test message popup (GitHub button)     |
 
 ## Snippets
 

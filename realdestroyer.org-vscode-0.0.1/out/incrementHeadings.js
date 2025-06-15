@@ -10,7 +10,7 @@ module.exports = function () {
     if (activeTextEditor && activeTextEditor.document.languageId === "vso") {
         const { document } = activeTextEditor;
         let direction = "right";
-        let characterArray = ["⊖ ", "⊙ ", "⊘ "];
+        let characterArray = ['⊖ ', '⊙ ', '⊘ ', '⊜ ', '⊗ '];
         let position = activeTextEditor.selection.active.line;
         let getCurrentLine = document.lineAt(position);
         let currentLineText = getCurrentLine.text;
@@ -19,7 +19,7 @@ module.exports = function () {
         let newSpaces;
         let convertSpaces = [];
         let newChar;
-        let formattedText = currentLineText.replace(/[⊙⊘⊖\?]/g, "").trim();
+        let formattedText = currentLineText.replace(/[⊙⊘⊖⊜⊗\?]/g, "").trim();
         increment();
         function increment() {
             if (currentLineText.includes(char)) {
@@ -33,6 +33,12 @@ module.exports = function () {
                     newChar = "⊘ ";
                 }
                 if (currentLineText.includes("⊘")) {
+                    newChar = "⊜ ";
+                }
+                if (currentLineText.includes("⊜")) {
+                    newChar = "⊗ ";
+                }
+                if (currentLineText.includes("⊗")) {
                     newChar = "⊖ ";
                 }
                 if (direction === "right") {

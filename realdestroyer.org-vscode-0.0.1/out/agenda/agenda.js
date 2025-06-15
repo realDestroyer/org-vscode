@@ -65,7 +65,7 @@ module.exports = function () {
 
                   // Clean up task line: remove symbols, keyword, tags
                   taskText = taskTextMatch[0]
-                    .replace(/⊙|⊘|⊖/g, "")
+                    .replace(/[⊙⊖⊘⊜⊗]/g, "")
                     .replace(/\b(TODO|DONE|IN_PROGRESS|CONTINUED|ABANDONED)\b/, "")
                     .replace(/: \[\+TAG:.*?\] -/, "")
                     .trim();
@@ -194,7 +194,21 @@ module.exports = function () {
             if (fileLines[i].includes(taskText) && fileLines[i].includes(date)) {
               let currentStatus = fileLines[i].match(/\b(TODO|DONE|IN_PROGRESS|CONTINUED|ABANDONED)\b/);
               if (currentStatus) {
-                fileLines[i] = fileLines[i].replace(currentStatus[0], newStatus);
+                const symbols = {
+                  TODO: '⊙ ',
+                  IN_PROGRESS: '⊘ ',
+                  CONTINUED: '⊜ ',
+                  DONE: '⊖ ',
+                  ABANDONED: '⊗ '
+                };
+
+                let indent = fileLines[i].match(/^\s*/)?.[0] || "";
+                let cleaned = fileLines[i]
+                  .replace(/[⊙⊘⊖⊜⊗]/g, '')
+                  .replace(/\b(TODO|DONE|IN_PROGRESS|CONTINUED|ABANDONED)\b/, '')
+                  .trim();
+
+                fileLines[i] = `${indent}${symbols[newStatus]}${newStatus} ${cleaned}`;
                 if (newStatus === "DONE") {
                   const completedDate = moment();
                   const formattedDate = completedDate.format("Do MMMM YYYY, h:mm:ss a");
@@ -492,8 +506,16 @@ module.exports = function () {
             let currentIndex = statuses.indexOf(currentStatus);
 
             if (currentIndex !== -1) {
+              const symbols = {
+                TODO: '⊙ ',
+                IN_PROGRESS: '⊘ ',
+                CONTINUED: '⊜ ',
+                DONE: '⊖ ',
+                ABANDONED: '⊗ '
+              };
               let nextStatus = statuses[(currentIndex + 1) % statuses.length];
               event.target.innerText = nextStatus;
+
               event.srcElement.classList.remove(currentStatus.toLowerCase());
               event.srcElement.classList.add(nextStatus.toLowerCase());
 
