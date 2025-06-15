@@ -1,4 +1,4 @@
-// calendar.js - Enhanced with dynamic tag coloring
+// calendar.js - Full Unicode + Keyword Support
 const vscode = require("vscode");
 const fs = require("fs");
 const path = require("path");
@@ -36,9 +36,9 @@ function sendTasksToCalendar(panel) {
         content.forEach(line => {
           const scheduledMatch = line.match(/\bSCHEDULED:\s*\[(\d{2}-\d{2}-\d{4})\]/);
           const keywordMatch = line.match(/\b(TODO|IN_PROGRESS|DONE|CONTINUED|ABANDONED)\b/);
-          const startsWithSymbol = /^[⊙⊘⊖]/.test(line.trim());
+          const startsWithSymbol = /^[⊙⊖⊘⊜⊗]/.test(line.trim());
 
-          if (scheduledMatch && startsWithSymbol && keywordMatch && ["TODO", "IN_PROGRESS"].includes(keywordMatch[0])) {
+          if (scheduledMatch && startsWithSymbol && keywordMatch) {
             const tagMatch = line.match(/\[\+TAG:([^\]]+)\]/);
             const tags = tagMatch ? tagMatch[1].split(",").map(t => t.trim().toUpperCase()) : [];
 
@@ -46,6 +46,7 @@ function sendTasksToCalendar(panel) {
               text: line
                 .replace(/:?\s*\[\+TAG:[^\]]+\]\s*-?/g, '')
                 .replace(/SCHEDULED:.*/, '')
+                .replace(/[⊙⊖⊘⊜⊗]/g, '')
                 .trim(),
               date: moment(scheduledMatch[1], "MM-DD-YYYY").format("YYYY-MM-DD"),
               file: file,
@@ -79,7 +80,11 @@ function rescheduleTask(file, oldDate, newDate, taskText) {
 
   let updated = false;
   let updatedLines = fileLines.map(line => {
-    const cleanedLine = line.replace(/:?[ 	]*\[\+TAG:[^\]]+\][ 	]*-?/, '').replace(/SCHEDULED:.*/, '').trim();
+    const cleanedLine = line
+      .replace(/:?[ \t]*\[\+TAG:[^\]]+\][ \t]*-?/, '')
+      .replace(/SCHEDULED:.*/, '')
+      .replace(/[⊙⊖⊘⊜⊗]/g, '')
+      .trim();
     if (cleanedLine === taskText && scheduledRegex.test(line)) {
       updated = true;
       return line.replace(scheduledRegex, `SCHEDULED: [${formattedNewDate}]`);
@@ -161,8 +166,8 @@ function getCalendarWebviewContent() {
 
   <script>
     const vscode = acquireVsCodeApi();
-
     const tagColorMap = {};
+
     function getColorForTag(tag) {
       if (tagColorMap[tag]) return tagColorMap[tag];
       const hue = Object.keys(tagColorMap).length * 47 % 360;
@@ -218,7 +223,7 @@ function getCalendarWebviewContent() {
 
         let tagBubblesHtml = Array.from(allTagsSet).map(tag => {
           let color = getColorForTag(tag);
-          return '<span class="tag-badge" style="background-color: ' + color + '">' + tag + '</span>';;
+          return '<span class="tag-badge" style="background-color: ' + color + '">' + tag + '</span>';
         }).join("");
 
         document.getElementById("tag-bubbles").innerHTML = tagBubblesHtml;

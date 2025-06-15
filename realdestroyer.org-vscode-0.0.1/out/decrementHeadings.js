@@ -9,7 +9,7 @@ module.exports = function () {
     const { activeTextEditor } = vscode.window;
     if (activeTextEditor && activeTextEditor.document.languageId === "vso") {
         const { document } = activeTextEditor;
-        let characterArray = ["⊖ ", "⊙ ", "⊘ "];
+        let characterArray = ['⊖ ', '⊙ ', '⊘ ', '⊜ ', '⊗ '];
         let position = activeTextEditor.selection.active.line;
         let getCurrentLine = document.lineAt(position);
         let currentLineText = getCurrentLine.text;
@@ -18,7 +18,7 @@ module.exports = function () {
         let newSpaces = "";
         let convertSpaces = [];
         let newChar;
-        let formattedText = currentLineText.replace(/[⊙⊘⊖\?]/g, "").trim();
+        let formattedText = currentLineText.replace(/[⊙⊘⊖⊜⊗\?]/g, "").trim();
         decrement();
         function decrement() {
             if (currentLineText.includes(char)) {
@@ -26,13 +26,19 @@ module.exports = function () {
                 edit.delete(document.uri, getCurrentLine.range);
                 //setting the new char
                 if (currentLineText.includes("⊖")) {
+                    newChar = "⊗ ";
+                }
+                if (currentLineText.includes("⊜")) {
                     newChar = "⊘ ";
+                }
+                if (currentLineText.includes("⊘")) {
+                    newChar = "⊙ ";
                 }
                 if (currentLineText.includes("⊙")) {
                     newChar = "⊖ ";
                 }
-                if (currentLineText.includes("⊘")) {
-                    newChar = "⊙ ";
+                if (currentLineText.includes("⊗")) {
+                    newChar = "⊜ ";
                 }
                 //remove a space before the char
                 if (getLeadingSpace.length !== 0) {

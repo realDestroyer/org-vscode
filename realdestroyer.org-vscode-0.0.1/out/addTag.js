@@ -30,7 +30,10 @@ module.exports = function addTag() {
             const updatedTagBlock = `[+TAG:${currentTags.join(",")}]`;
             newLine = lineText.replace(tagRegex, updatedTagBlock);
         } else {
-            newLine = lineText.replace(/(TODO|DONE|IN_PROGRESS|CONTINUED|ABANDONED)/, `$1 : [+TAG:${inputTagUpper}] -`);
+            newLine = lineText.replace(
+              /([⊙⊘⊜⊖⊗]\s*(TODO|IN_PROGRESS|CONTINUED|DONE|ABANDONED))/,
+              `$1 : [+TAG:${inputTagUpper}] -`
+              );
         }
 
         const edit = new vscode.WorkspaceEdit();

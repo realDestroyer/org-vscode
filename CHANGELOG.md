@@ -1,5 +1,36 @@
 # Change Log
 
+# [1.6.9] 06-14-25
+`Enhanced`
+
+- Unified Task Symbols:
+  - Updated all internal functions (Agenda View, Tagged Agenda View, Calendar View, keywordLeft/Right, etc.) to support the new Unicode task symbols:
+    - ⊙ TODO
+    - ⊘ IN_PROGRESS
+    - ⊜ CONTINUED
+    - ⊖ DONE
+    - ⊗ ABANDONED
+  - Symbols are now accurately rotated in both source files and supporting views.
+  - Agenda and Tagged Agenda Views now update the keyword correctly while intentionally hiding the Unicode symbol for a cleaner look.
+
+- Visual Cycling Behavior:
+  - Stopped infinite cycling: you can no longer rotate beyond TODO (left) or ABANDONED (right).
+  - COMPLETED timestamps are reliably added or removed when toggling to/from DONE in every view.
+  - Cleaned symbol detection logic to prevent keyword misfires (e.g. detecting "DONE" inside "ABANDONED").
+
+`Fixed`
+
+- Unicode-aware task matching:
+  - Substring-matching bugs are now eliminated using stricter regex to detect keywords correctly (e.g. DONE was falsely matched inside ABANDONED).
+  - Symbol detection logic in task movement (moveUp / moveDown) updated to use the full Unicode task set.
+
+`Added`
+
+- Message Utility Activation:
+  - Fully integrated and exposed the previously unused `showMessage.js` feature.
+  - A new command (`extension.showMessageTest`) displays an information popup with a customizable message and button.
+  - Added a `Ctrl + Alt + M` keybinding for testing the GitHub redirect example.
+
 # [1.6.8] 05-15-25
 `Fixed`
 

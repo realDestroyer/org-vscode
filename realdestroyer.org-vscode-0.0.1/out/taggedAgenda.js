@@ -6,8 +6,8 @@ const moment = require("moment");
 
 module.exports = async function taggedAgenda() {
   const tagInput = await vscode.window.showInputBox({
-      prompt: "Enter tags (comma-separated). Use 'any:' for OR logic. Ex: any:client,urgent",
-      validateInput: input => input.includes(" ") ? "Tags cannot contain spaces." : null
+    prompt: "Enter tags (comma-separated). Use 'any:' for OR logic. Ex: any:client,urgent",
+    validateInput: input => input.includes(" ") ? "Tags cannot contain spaces." : null
   });
 
   if (!tagInput) return;
@@ -23,117 +23,127 @@ module.exports = async function taggedAgenda() {
   const files = fs.readdirSync(orgDir).filter(file => file.endsWith(".org"));
 
   for (const file of files) {
-      const filePath = path.join(orgDir, file);
-      const lines = fs.readFileSync(filePath, "utf8").split(/\r?\n/);
+    const filePath = path.join(orgDir, file);
+    const lines = fs.readFileSync(filePath, "utf8").split(/\r?\n/);
 
-      lines.forEach((line, index) => {
-          const tagMatch = line.match(/\[\+TAG:(.*?)\]/);
-          if (tagMatch) {
-              const taskTags = tagMatch[1].split(",").map(t => t.trim().toUpperCase());
+    lines.forEach((line, index) => {
+      const tagMatch = line.match(/\[\+TAG:(.*?)\]/);
+      if (tagMatch) {
+        const taskTags = tagMatch[1].split(",").map(t => t.trim().toUpperCase());
 
-              const match = isOrSearch
-                  ? inputTags.some(tag => taskTags.includes(tag))
-                  : inputTags.every(tag => taskTags.includes(tag));
+        const match = isOrSearch
+          ? inputTags.some(tag => taskTags.includes(tag))
+          : inputTags.every(tag => taskTags.includes(tag));
 
-              if (match) {
-                  agendaItems.push({
-                      file,
-                      line,
-                      lineNumber: index + 1
-                  });
-              }
-          }
-      });
+        if (match) {
+          agendaItems.push({
+            file,
+            line,
+            lineNumber: index + 1
+          });
+        }
+      }
+    });
   }
 
   showTaggedAgendaView(tagString, agendaItems);
 };
 
+function updateTaskStatusInFile(file, taskText, scheduledDate, newStatus, removeCompleted) {
+  const orgDir = getOrgFolder();
+  const filePath = path.join(orgDir, file);
+  const lines = fs.readFileSync(filePath, "utf-8").split(/\r?\n/);
 
-function updateTaskStatusInFile(file, taskText, scheduledDate, newStatus, completedLine, removeCompleted) {
-    const orgDir = getOrgFolder();
-    const filePath = path.join(orgDir, file);
-    const lines = fs.readFileSync(filePath, "utf-8").split(/\r?\n/);
+  const dateTag = scheduledDate ? `SCHEDULED: [${scheduledDate}]` : null;
+  console.log("🛠 Updating file:", filePath);
+  console.log("🔍 Looking for task text:", taskText);
+  if (dateTag) console.log("🔍 With scheduled date tag:", dateTag);
 
-    const dateTag = scheduledDate ? `SCHEDULED: [${scheduledDate}]` : null;
+  let found = false;
 
-    console.log("🛠 Updating file:", filePath);
-    console.log("🔍 Looking for task text:", taskText);
-    if (dateTag) console.log("🔍 With scheduled date tag:", dateTag);
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const matchesTask = line.includes(taskText);
+    const matchesDate = dateTag ? line.includes(dateTag) : true;
 
-    let found = false;
+    if (matchesTask && matchesDate) {
+        console.log("✅ Found matching line:", line);
 
-    for (let i = 0; i < lines.length; i++) {
-        const line = lines[i];
+        // Swap status
+        const symbols = {
+          TODO: '⊙ ',
+          IN_PROGRESS: '⊘ ',
+          CONTINUED: '⊜ ',
+          DONE: '⊖ ',
+          ABANDONED: '⊗ '
+        };
 
-        const matchesTask = line.includes(taskText);
-        const matchesDate = dateTag ? line.includes(dateTag) : true;
+        let indent = line.match(/^\s*/)?.[0] || "";
+        let cleaned = line
+          .replace(/[⊙⊘⊜⊖⊗]/g, '')
+          .replace(/\b(TODO|DONE|IN_PROGRESS|CONTINUED|ABANDONED)\b/, '')
+          .trim();
 
-        if (matchesTask && matchesDate) {
-            console.log("✅ Found matching line:", line);
+        lines[i] = `${indent}${symbols[newStatus]}${newStatus} ${cleaned}`;
 
-            // Swap status
-            lines[i] = line.replace(/\b(TODO|DONE|IN_PROGRESS|CONTINUED|ABANDONED)\b/, newStatus);
 
-            // Add COMPLETED line if switching to DONE
-            if (newStatus === "DONE" && completedLine && !lines[i + 1]?.includes("COMPLETED:")) {
-              const leadingSpaces = line.match(/^(\s*)/)?.[1] || "";
-              lines.splice(i + 1, 0, `${leadingSpaces}  ${completedLine}`);
-          }
-            // Remove COMPLETED line if leaving DONE
-            if (removeCompleted && lines[i + 1]?.includes("COMPLETED:")) {
-                lines.splice(i + 1, 1);
-            }
+      if (newStatus === "DONE" && !lines[i + 1]?.includes("COMPLETED:")) {
+        const indent = lines[i].match(/^\s*/)?.[0] || "";
+        const formatted = moment().format("Do MMMM YYYY, h:mm:ss a");
+        lines.splice(i + 1, 0, `${indent}  COMPLETED:[${formatted}]`);
+      }
 
-            found = true;
-            break;
-        }
+      if (removeCompleted && lines[i + 1]?.includes("COMPLETED:")) {
+        lines.splice(i + 1, 1);
+      }
+
+      found = true;
+      break;
     }
+  }
 
-    if (!found) {
-        console.error("❌ No matching line found to update.");
-    } else {
-        fs.writeFileSync(filePath, lines.join("\n"), "utf-8");
-    }
+  if (found) {
+    fs.writeFileSync(filePath, lines.join("\n"), "utf-8");
+  } else {
+    console.error("❌ No matching line found to update.");
+  }
 }
 
-
 function getOrgFolder() {
-    const config = vscode.workspace.getConfiguration("Org-vscode");
-    const folderPath = config.get("folderPath");
-    return folderPath && folderPath.trim() !== "" ? folderPath : path.join(os.homedir(), "OrgFiles");
+  const config = vscode.workspace.getConfiguration("Org-vscode");
+  const folderPath = config.get("folderPath");
+  return folderPath && folderPath.trim() !== "" ? folderPath : path.join(os.homedir(), "OrgFiles");
 }
 
 function showTaggedAgendaView(tag, items) {
   const panel = vscode.window.createWebviewPanel(
-      "taggedAgendaView",
-      `Tagged Agenda: ${tag}`,
-      vscode.ViewColumn.Beside,
-      { enableScripts: true }
+    "taggedAgendaView",
+    `Tagged Agenda: ${tag}`,
+    vscode.ViewColumn.Beside,
+    { enableScripts: true }
   );
 
   panel.webview.html = getTaggedWebviewContent(tag, items);
 
   panel.webview.onDidReceiveMessage(message => {
     console.log("📩 Received message from webview:", message);
-      if (message.command === "openFile") {
-          const orgDir = getOrgFolder();
-          const filePath = path.join(orgDir, message.file);
-          vscode.workspace.openTextDocument(vscode.Uri.file(filePath)).then(doc => {
-              vscode.window.showTextDocument(doc, { preview: false });
-          });
-      } else if (message.command === "changeStatus") {
-          const parts = message.text.split(",");
-          const newStatus = parts[0];
-          const file = parts[1];
-          const taskText = parts[2].trim().replaceAll("&#44;", ",");
-          const scheduledDate = parts[3].replaceAll("&#44;", ",");          
-          const completedLine = parts.slice(4).join(",") || null;
-          const removeCompleted = message.text.includes("REMOVE_COMPLETED");
-          console.log("🧠 Parsed status change:", { newStatus, file, taskText, scheduledDate, completedLine, removeCompleted });
+    if (message.command === "openFile") {
+      const orgDir = getOrgFolder();
+      const filePath = path.join(orgDir, message.file);
+      vscode.workspace.openTextDocument(vscode.Uri.file(filePath)).then(doc => {
+        vscode.window.showTextDocument(doc, { preview: false });
+      });
+    } else if (message.command === "changeStatus") {
+      const parts = message.text.split(",");
+      const newStatus = parts[0];
+      const file = parts[1];
+      const taskText = parts[2].trim();
+      const scheduledDate = parts[3];
+      const removeCompleted = message.text.includes("REMOVE_COMPLETED");
+      console.log("🔄 Changing status:", newStatus, "in file:", file, "for task:", taskText, "with scheduled date:", scheduledDate);
 
-          updateTaskStatusInFile(file, taskText, scheduledDate, newStatus, completedLine, removeCompleted);
-      }
+      updateTaskStatusInFile(file, taskText, scheduledDate, newStatus, removeCompleted);
+    }
   });
 }
 
@@ -141,62 +151,61 @@ function getTaggedWebviewContent(tag, items) {
   const grouped = {};
 
   for (const item of items) {
-      if (!grouped[item.file]) {
-          grouped[item.file] = [];
-      }
-      grouped[item.file].push(item);
+    if (!grouped[item.file]) {
+      grouped[item.file] = [];
+    }
+    grouped[item.file].push(item);
   }
 
   const fileButtons = Object.keys(grouped).map(file =>
-      `<button class="file-tab" data-target="${file}">${file}</button>`
+    `<button class="file-tab" data-target="${file}">${file}</button>`
   ).join(" ");
 
   const filePanels = Object.entries(grouped).map(([file, tasks]) => {
     const taskPanels = tasks.map(item => {
-        const keywordMatch = item.line.match(/\b(TODO|DONE|IN_PROGRESS|CONTINUED|ABANDONED)\b/);
-        const keyword = keywordMatch ? keywordMatch[0] : "TODO";
-        const keywordClass = keyword.toLowerCase();
+      const keywordMatch = item.line.match(/\b(TODO|DONE|IN_PROGRESS|CONTINUED|ABANDONED)\b/);
+      const keyword = keywordMatch ? keywordMatch[0] : "TODO";
+      const keywordClass = keyword.toLowerCase();
 
-        const scheduledMatch = item.line.match(/\[([0-9]{2}-[0-9]{2}-[0-9]{4})\]/);
-        const scheduledDate = scheduledMatch ? scheduledMatch[1] : "";
+      const scheduledMatch = item.line.match(/\[([0-9]{2}-[0-9]{2}-[0-9]{4})\]/);
+      const scheduledDate = scheduledMatch ? scheduledMatch[1] : "";
 
-        const tagsMatch = item.line.match(/\[\+TAG:([^\]]+)\]/);
-        const tagBubbles = tagsMatch
-            ? tagsMatch[1].split(",").map(t =>
-                `<span class="tag-badge">${t.trim()}</span>`
-            ).join("")
-            : "";
+      const tagsMatch = item.line.match(/\[\+TAG:([^\]]+)\]/);
+      const tagBubbles = tagsMatch
+        ? tagsMatch[1].split(",").map(t =>
+            `<span class="tag-badge">${t.trim()}</span>`
+          ).join("")
+        : "";
 
-        const taskText = item.line
-            .replace(/.*?\] -/, "")                // Remove leading symbol/tag section
-            .replace(/\s+SCHEDULED:.*/, "")        // Remove SCHEDULED block
-            .replace(/\[\+TAG:.*?\]/, "")          // Remove inline tag section from text
-            .trim();
+      const taskText = item.line
+        .replace(/.*?\] -/, "")
+        .replace(/\s+SCHEDULED:.*/, "")
+        .replace(/\[\+TAG:.*?\]/, "")
+        .replace(/[⊙⊖⊘⊜⊗]/g, "")  // Unicode cleanup
+        .trim();
 
-        const lateLabel = scheduledDate && moment(scheduledDate, "MM-DD-YYYY").isBefore(moment())
-            ? `<span class="late">LATE: ${scheduledDate}</span>` : "";
+      const lateLabel = scheduledDate && moment(scheduledDate, "MM-DD-YYYY").isBefore(moment())
+        ? `<span class="late">LATE: ${scheduledDate}</span>` : "";
 
-        return `
-            <div class="panel ${file}">
-                <div class="textDiv">
-                    <span class="filename" data-file="${file}">${file}:</span>
-                    <span class="${keywordClass}" data-filename="${file}" data-text="${taskText}" data-date="${scheduledDate}">${keyword}</span>
-                    <span class="taskText">${taskText}</span>
-                    ${lateLabel}
-                    <span class="scheduled">SCHEDULED</span>
-                    ${tagBubbles}
-                </div>
-            </div>`;
+      return `
+        <div class="panel ${file}">
+          <div class="textDiv">
+            <span class="filename" data-file="${file}">${file}:</span>
+            <span class="${keywordClass}" data-filename="${file}" data-text="${taskText}" data-date="${scheduledDate}">${keyword}</span>
+            <span class="taskText">${taskText}</span>
+            ${lateLabel}
+            <span class="scheduled">SCHEDULED</span>
+            ${tagBubbles}
+          </div>
+        </div>`;
     }).join("");
 
     return `
         <div class="file-group" id="${file}" style="display: none;">
-            <h3>${file}:</h3>
-            ${taskPanels}
-        </div>`;
-}).join("");
-
-
+              <h3>${file}:</h3>
+              ${taskPanels}
+            </div>`;
+  }).join("");
 
   return `
 <!DOCTYPE html>
