@@ -1,5 +1,16 @@
 # Change Log
 
+# [1.7.0] 06-20-25
+`Enhanced`
+
+- **Calendar View Rework:**
+  - Task tags are now interactive: tag "bubbles" are displayed above the calendar, one for each unique tag found in the currently visible tasks.
+  - Clicking a tag filters the visible tasks in the calendar to only those matching the tag.
+  - Ctrl+Clicking tag bubbles allows multiple tags to be selected (OR logic).
+  - When tags are selected, unselected tags are visually desaturated (grayed out) for clarity.
+  - If no tags are selected, all tasks and tags remain colorful.
+  - Enhanced styling and clarity around filtering behavior.
+
 # [1.6.9] 06-14-25
 `Enhanced`
 

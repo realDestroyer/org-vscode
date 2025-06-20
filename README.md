@@ -1,4 +1,3 @@
-
 # Org-vscode
 
 
@@ -22,6 +21,21 @@ Introducing Agenda View! Run the `Org-vscode: Agenda View` command and see all o
 Watch the Agenda View Demo: </br>
 
 <img src="https://github.com/realdestroyer/org-vscode/blob/master/Images/Agenda-View.gif?raw=true" width="700" height="400" />
+
+
+---
+
+### 🗓️ Calendar View How-To
+
+- Run `Org-vscode: Calendar View` or use `Ctrl + Shift + C`.
+- Tasks are color-coded by their primary tag.
+- Click on a tag bubble above the calendar to filter tasks by that tag.
+- Ctrl+Click to select multiple tags.
+- Click again to remove a tag from your selection.
+- When no tags are selected, all tasks are shown.
+- Drag tasks to new dates to reschedule. The underlying .org file is updated automatically.
+
+---
 
 Check out the HOW-TO for all of the available featuers:</br>
 [How-To](https://github.com/realdestroyer/org-vscode/blob/master/howto.md)

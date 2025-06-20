@@ -1,6 +1,6 @@
 # Roadmap
 
-Live version: 1.6.9
+Live version: 1.7.0
 
 These are the features that I have either already implemented, or plan to in the near future.
 
@@ -10,10 +10,10 @@ These are the features that I have either already implemented, or plan to in the
 | ------------------------- | ------------------------------------------------------------------------------------------ | ----------- | -------- | ------------- |
 | TODO Notifications        | Notify users of status outside VSCode (email, sms, etc.)                                   | Not Started |          | realDestroyer |
 | Make Titles Unique        | Don't allow duplicate titles                                                               | Not Started |          | realDestroyer |
-| Calendar Tag Filtering    | Filter calendar tasks by tag                                                              | Not Started |          | realDestroyer |
-| Hide Tags in Calendar     | Display only task content in calendar view (remove visible tag syntax from entry)        | Not Started |          | realDestroyer |
-| Calendar Right-Click Menu | Right-click task to create, duplicate, or delete in calendar                              | Not Started |          | realDestroyer |
-| Calendar Filtering        | Filter tasks by status, date range, or deadline                                           | Not Started |          | realDestroyer |
+| Calendar Tag Filtering    | Filter calendar tasks by tag                                                              | DONE | v1.7.0 | realDestroyer |
+| Hide Tags in Calendar     | Display only task content in calendar view (remove visible tag syntax from entry)        | DONE | v1.7.0 | realDestroyer |
+| Calendar Right-Click Menu | Right-click task to create, duplicate, or delete in calendar                              | In Progress |          | realDestroyer |
+| Calendar Filtering        | Filter tasks by status, date range, or deadline                                           | DONE | v1.7.0 | realDestroyer |
 | Insert Deadline Support   | Add deadline insertion command (like scheduled)                                           | Not Started |          | realDestroyer |
 | Bulleted Lists            | Make an ordered or unordered list                                                          | In Progress |          | realDestroyer |
 | TODO Tracking             | Show TODO completion on the up-most level                                                  | In Progress |          | realDestroyer |
