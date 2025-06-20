@@ -61,14 +61,19 @@ function sendTasksToCalendar(panel) {
               ? tagMatch[1].split(",").map(t => t.trim().toUpperCase())
               : [];
 
-            // Format the task object
+            const fullLine = line.trim();
+
+            const cleanedText = fullLine
+              .replace(/\b(TODO|IN_PROGRESS|DONE|CONTINUED|ABANDONED)\b/, '') // Remove keyword
+              .replace(/:?\s*\[\+TAG:[^\]]+\]\s*-?/, '')                  // Remove inline tag structure
+              .replace(/SCHEDULED:.*/, '')                                     // Strip scheduled portion
+              .replace(/[⊙⊖⊘⊜⊗]/g, '')                                         // Remove the leading Unicode symbol
+              .trim();
+
             tasks.push({
-              text: line
-                .replace(/:?\s*\[\+TAG:[^\]]+\]\s*-?/g, '')  // Remove inline tag structure
-                .replace(/SCHEDULED:.*/, '')                // Strip scheduled portion
-                .replace(/[⊙⊖⊘⊜⊗]/g, '')                    // Strip the leading Unicode symbol
-                .trim(),                                    // Final cleaned text
-              date: moment(scheduledMatch[1], "MM-DD-YYYY").format("YYYY-MM-DD"), // Convert to ISO format
+              text: cleanedText, // For display in calendar
+              fullText: fullLine, // For backend matching (reschedule logic)
+              date: moment(scheduledMatch[1], "MM-DD-YYYY").format("YYYY-MM-DD"),
               file: file,
               tags: tags
             });
@@ -110,19 +115,13 @@ function rescheduleTask(file, oldDate, newDate, taskText) {
 
   // Step through every line and look for a match with the task text and scheduled date
   let updatedLines = fileLines.map(line => {
-    const cleanedLine = line
-      .replace(/:?[ \t]*\[\+TAG:[^\]]+\][ \t]*-?/, '') // Remove inline tag structure
-      .replace(/SCHEDULED:.*/, '')                    // Remove existing SCHEDULED section
-      .replace(/[⊙⊖⊘⊜⊗]/g, '')                        // Remove the unicode symbol
-      .trim();
+    const fullLine = line.trim();
 
-    // If both the cleaned task text and old date match, update the scheduled portion
-    if (cleanedLine === taskText && scheduledRegex.test(line)) {
+    if (fullLine === taskText && scheduledRegex.test(line)) {
       updated = true;
       return line.replace(scheduledRegex, `SCHEDULED: [${formattedNewDate}]`);
     }
 
-    // Otherwise, return the line unchanged
     return line;
   });
   if (updated) {
@@ -224,6 +223,8 @@ function getCalendarWebviewContent() {
   <script>
     const vscode = acquireVsCodeApi();
     const tagColorMap = {};
+    let allTasks = [];
+    let activeTagFilter = null;
 
     function getColorForTag(tag) {
       if (tagColorMap[tag]) return tagColorMap[tag];
@@ -244,6 +245,9 @@ function getCalendarWebviewContent() {
         },
         editable: true,
         events: [],
+        datesSet: function(info) {
+          renderFilteredTasks(info.start, info.end);
+        },
         eventClick: function (info) {
           vscode.postMessage({ command: "openFile", file: info.event.extendedProps.file });
         },
@@ -254,7 +258,7 @@ function getCalendarWebviewContent() {
             file: info.event.extendedProps.file,
             oldDate: info.event.extendedProps.originalDate,
             newDate: newDate,
-            text: info.event.title
+            text: info.event.extendedProps.fullText // <--- this must be fullText
           });
         }
       });
@@ -262,34 +266,48 @@ function getCalendarWebviewContent() {
       calendar.render();
 
       window.addEventListener("message", (event) => {
-        const tasks = event.data.tasks;
-        let allTagsSet = new Set();
+        allTasks = event.data.tasks;
+        renderFilteredTasks(calendar.view.activeStart, calendar.view.activeEnd);
+      });
 
-        let events = tasks.map(task => {
-          (task.tags || []).forEach(tag => allTagsSet.add(tag));
-          let color = getColorForTag((task.tags || [])[0] || "");
+      vscode.postMessage({ command: "requestTasks" });
+
+      function renderFilteredTasks(start, end) {
+        const visibleTasks = allTasks.filter(task => {
+          const taskDate = moment(task.date);
+          return taskDate.isSameOrAfter(moment(start)) && taskDate.isBefore(moment(end));
+        });
+
+        const filteredByTag = activeTagFilter
+          ? visibleTasks.filter(task => task.tags.includes(activeTagFilter))
+          : visibleTasks;
+
+        const events = filteredByTag.map(task => {
+          const color = getColorForTag((task.tags || [])[0] || "");
           return {
             title: task.text,
             start: task.date,
             file: task.file,
             originalDate: task.date,
             backgroundColor: color,
-            borderColor: color
+            borderColor: color,
+            fullText: task.fullText,
+            tags: task.tags
           };
         });
 
-        let tagBubblesHtml = Array.from(allTagsSet).map(tag => {
-          let color = getColorForTag(tag);
+        const visibleTags = new Set();
+        visibleTasks.forEach(task => task.tags.forEach(tag => visibleTags.add(tag)));
+
+        let tagBubblesHtml = Array.from(visibleTags).map(tag => {
+          const color = getColorForTag(tag);
           return '<span class="tag-badge" style="background-color: ' + color + '">' + tag + '</span>';
         }).join("");
-
         document.getElementById("tag-bubbles").innerHTML = tagBubblesHtml;
 
         calendar.removeAllEvents();
         calendar.addEventSource(events);
-      });
-
-      vscode.postMessage({ command: "requestTasks" });
+      }
     });
   </script>
 </body>
