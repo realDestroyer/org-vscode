@@ -1,5 +1,8 @@
 const vscode = require('vscode');
 
+/**
+ * Finds all lines that contain a valid date heading like: ⊘ [05-16-2025 Thu]
+ */
 function findDateLines(text) {
     const dateRegex = /⊘ \[\d{2}-\d{2}-\d{4} \w{3}\]/g;
     let match;
@@ -12,11 +15,17 @@ function findDateLines(text) {
     return lines;
 }
 
+/**
+ * Filters out date lines that already have a separator following them
+ */
 function filterLinesWithoutSeparator(lines, text) {
     const separator = '-------------------------------------------------------------------------------------------------------------------------------';
     return lines.filter(line => !text.includes(`${line.match} ${separator}`));
 }
 
+/**
+ * Adds a separator line to each date heading that doesn't already have one
+ */
 function addSeparatorToLines(lines, text) {
     const separator = '-------------------------------------------------------------------------------------------------------------------------------';
     let newText = text;
@@ -28,6 +37,9 @@ function addSeparatorToLines(lines, text) {
     return newText;
 }
 
+/**
+ * Main function that runs when the user invokes the Add Separator command
+ */
 function addSeparator() {
     const editor = vscode.window.activeTextEditor;
     if (!editor) {
@@ -39,15 +51,19 @@ function addSeparator() {
     const document = editor.document;
     const text = document.getText();
 
+    // Step 1: Find all valid ⊘ [MM-DD-YYYY Day] lines
     const dateLines = findDateLines(text);
     console.log('Date lines found:', dateLines);
 
+    // Step 2: Filter out the ones that already have a separator
     const linesWithoutSeparator = filterLinesWithoutSeparator(dateLines, text);
     console.log('Lines without separator:', linesWithoutSeparator);
 
+    // Step 3: Add separators to those lines
     const newText = addSeparatorToLines(linesWithoutSeparator, text);
     console.log('New text:', newText);
 
+    // Step 4: Replace the document content with updated text
     editor.edit(editBuilder => {
         const fullRange = new vscode.Range(
             document.positionAt(0),
