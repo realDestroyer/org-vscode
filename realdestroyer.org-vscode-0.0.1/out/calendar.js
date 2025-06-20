@@ -213,6 +213,19 @@ function getCalendarWebviewContent() {
       margin-right: 5px;
       box-shadow: 0 2px 5px rgba(0,0,0,0.2);
     }
+    .tag-badge.selected {
+      opacity: 1;
+      border: 2px solid white;
+      cursor: pointer;
+    }
+    .tag-badge.inactive {
+      opacity: 0.3;
+      filter: grayscale(100%);
+      cursor: pointer;
+    }
+    .tag-badge:hover {
+      opacity: 0.8;
+    }
   </style>
 </head>
 <body>
@@ -224,7 +237,7 @@ function getCalendarWebviewContent() {
     const vscode = acquireVsCodeApi();
     const tagColorMap = {};
     let allTasks = [];
-    let activeTagFilter = null;
+    let activeTagFilter = [];
 
     function getColorForTag(tag) {
       if (tagColorMap[tag]) return tagColorMap[tag];
@@ -278,8 +291,8 @@ function getCalendarWebviewContent() {
           return taskDate.isSameOrAfter(moment(start)) && taskDate.isBefore(moment(end));
         });
 
-        const filteredByTag = activeTagFilter
-          ? visibleTasks.filter(task => task.tags.includes(activeTagFilter))
+        const filteredByTag = activeTagFilter.length
+          ? visibleTasks.filter(task => task.tags.some(tag => activeTagFilter.includes(tag)))
           : visibleTasks;
 
         const events = filteredByTag.map(task => {
@@ -301,10 +314,34 @@ function getCalendarWebviewContent() {
 
         let tagBubblesHtml = Array.from(visibleTags).map(tag => {
           const color = getColorForTag(tag);
-          return '<span class="tag-badge" style="background-color: ' + color + '">' + tag + '</span>';
+          let className = 'tag-badge';
+          if (activeTagFilter.length > 0) {
+            className += activeTagFilter.includes(tag) ? ' selected' : ' inactive';
+          }
+          return '<span class="' + className + '" data-tag="' + tag + '" style="background-color: ' + color + '">' + tag + '</span>';
         }).join("");
+
         document.getElementById("tag-bubbles").innerHTML = tagBubblesHtml;
 
+        // Reattach click handlers
+        document.querySelectorAll(".tag-badge").forEach(el => {
+          el.onclick = e => {
+            const tag = el.dataset.tag;
+            const ctrlPressed = e.ctrlKey || e.metaKey;
+
+            if (ctrlPressed) {
+              if (activeTagFilter.includes(tag)) {
+                activeTagFilter = activeTagFilter.filter(t => t !== tag);
+              } else {
+                activeTagFilter.push(tag);
+              }
+            } else {
+              activeTagFilter = activeTagFilter.includes(tag) ? [] : [tag];
+            }
+
+            renderFilteredTasks(start, end); // Rerender with updated filter
+          };
+        });
         calendar.removeAllEvents();
         calendar.addEventSource(events);
       }
