@@ -1,70 +1,63 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-//get number of spaces in front of the unicode char
-// get the unicode char
-// incrementing increase spaces by 1 and rotate character array to the left
-// decrementing is the reverse of increment
 const vscode = require("vscode");
+
+// Main function to decrement the heading symbol (⨀ style task marker)
 module.exports = function () {
     const { activeTextEditor } = vscode.window;
     if (activeTextEditor && activeTextEditor.document.languageId === "vso") {
         const { document } = activeTextEditor;
+        // Define task symbol cycle order
         let characterArray = ['⊖ ', '⊙ ', '⊘ ', '⊜ ', '⊗ '];
+
+        // Get current cursor line
         let position = activeTextEditor.selection.active.line;
         let getCurrentLine = document.lineAt(position);
         let currentLineText = getCurrentLine.text;
+
+        // Decode current task symbol from line
         let char = characterDecode(characterArray);
+
+        // Capture leading spaces (indentation) to preserve formatting
         let getLeadingSpace = currentLineText.substr(0, currentLineText.indexOf(char));
         let newSpaces = "";
         let convertSpaces = [];
-        let newChar;
+
+        // Remove current symbol to isolate task text
         let formattedText = currentLineText.replace(/[⊙⊘⊖⊜⊗\?]/g, "").trim();
-        decrement();
-        function decrement() {
-            if (currentLineText.includes(char)) {
-                let edit = new vscode.WorkspaceEdit();
-                edit.delete(document.uri, getCurrentLine.range);
-                //setting the new char
-                if (currentLineText.includes("⊖")) {
-                    newChar = "⊗ ";
-                }
-                if (currentLineText.includes("⊜")) {
-                    newChar = "⊘ ";
-                }
-                if (currentLineText.includes("⊘")) {
-                    newChar = "⊙ ";
-                }
-                if (currentLineText.includes("⊙")) {
-                    newChar = "⊖ ";
-                }
-                if (currentLineText.includes("⊗")) {
-                    newChar = "⊜ ";
-                }
-                //remove a space before the char
-                if (getLeadingSpace.length !== 0) {
-                    for (let i = 1; i <= getLeadingSpace.length - 1; i++) {
-                        convertSpaces.push(" ");
-                        newSpaces = convertSpaces.join("");
-                    }
-                    edit.insert(document.uri, getCurrentLine.range.start, newSpaces + newChar + formattedText);
-                    vscode.workspace.applyEdit(edit);
-                }
-            }
+
+        // Prepare workspace edit
+        let edit = new vscode.WorkspaceEdit();
+        edit.delete(document.uri, getCurrentLine.range);
+
+        // Rotate to next symbol
+        let currentIndex = characterArray.indexOf(char);
+        let newChar = characterArray[(currentIndex - 1 + characterArray.length) % characterArray.length];
+
+        // Reapply same indentation
+        for (let i = 0; i <= getLeadingSpace.length; i++) {
+            convertSpaces.push(" ");
+            newSpaces = convertSpaces.join("");
         }
-        function characterDecode(characterArray) {
-            const { activeTextEditor } = vscode.window;
-            if (activeTextEditor && activeTextEditor.document.languageId === "vso") {
-                const { document } = activeTextEditor;
-                let position = activeTextEditor.selection.active.line;
-                const getCurrentLine = document.lineAt(position);
-                let currentLineText = getCurrentLine.text;
-                for (let i = 0; i < characterArray.length; i++) {
-                    if (currentLineText.includes(characterArray[i])) {
-                        return characterArray[i];
-                    }
+
+        // Insert updated line with new symbol
+        edit.insert(document.uri, getCurrentLine.range.start, newSpaces + newChar + formattedText);
+        vscode.workspace.applyEdit(edit);
+    }
+
+    // Helper to decode which symbol is currently on the line
+    function characterDecode(characterArray) {
+        const { activeTextEditor } = vscode.window;
+        if (activeTextEditor && activeTextEditor.document.languageId === "vso") {
+            const { document } = activeTextEditor;
+            let position = activeTextEditor.selection.active.line;
+            const getCurrentLine = document.lineAt(position);
+            let currentLineText = getCurrentLine.text;
+            for (let i = 0; i < characterArray.length; i++) {
+                if (currentLineText.includes(characterArray[i])) {
+                    return characterArray[i];
                 }
             }
         }
     }
 };
-//# sourceMappingURL=decrementHeadings.js.map

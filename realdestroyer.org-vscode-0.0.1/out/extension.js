@@ -2,12 +2,16 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.activate = activate;
 
+// ─────────────────────────────────────────────────────────────
+// Module Imports
+// ─────────────────────────────────────────────────────────────
 const vscode = require("vscode");
 const { WindowMessage } = require("./showMessage");
 const fs = require("fs");
 const path = require("path");
 const moment = require("moment");
 
+// Local extension modules
 const newFile = require("./newFile");
 const changeDirectory = require("./changeDirectory");
 const keywordRight = require("./keywordRight");
@@ -33,11 +37,15 @@ const updateDates = require("./updateDate");
 const { openCalendarView } = require("./calendar");
 const exportCurrentTasks = require("./exportCurrentTasks");
 
-
-
+// Startup log for debugging
 console.log("📌 agenda.js has been loaded in extension.js");
 
+// ─────────────────────────────────────────────────────────────
+// Inline Formatter for Org Headings
+// ─────────────────────────────────────────────────────────────
 const GO_MODE = { language: "vso", scheme: "file" };
+
+// Auto-add ⊙/⊘/⊖ based on asterisk heading level when user types space
 class GoOnTypingFormatter {
   provideOnTypeFormattingEdits(document, position, ch, options, token) {
     return new Promise((resolve, reject) => {
@@ -68,14 +76,8 @@ class GoOnTypingFormatter {
     });
   }
 }
-/**
- * Get the number of asterisks that are on the line and return
- * the corrisponding unicode character
- *
- * @param asterisks Get the number of asterisks
- *
- * @returns {array} the first item in the characters array
- */
+
+// Picks a unicode symbol based on asterisk level
 function setUnicodeChar(asterisks) {
   let characters = ["⊖ ", "⊙ ", "⊘ "];
   for (let i = 0; i < asterisks; i++) {
@@ -84,13 +86,15 @@ function setUnicodeChar(asterisks) {
   return characters[0];
 }
 
+// Returns a compound text edit to delete line + insert formatted line
 function textEdit(char, position, document, spaces) {
   const getRange = document.lineAt(position).range;
   let removeText = vscode.TextEdit.delete(getRange);
   let insertText = vscode.TextEdit.insert(position, spaces + char);
   return [removeText, insertText];
 }
-// number of spaces to add function
+
+// Returns the number of spaces to pad based on heading level
 function numOfSpaces(asterisk) {
   let spacesArray = [];
   for (let i = 1; i < asterisk; i++) {
@@ -99,17 +103,19 @@ function numOfSpaces(asterisk) {
   return spacesArray.join("");
 }
 
+// ─────────────────────────────────────────────────────────────
+// Extension Activation
+// ─────────────────────────────────────────────────────────────
 function activate(ctx) {
-
-  vscode.commands.registerCommand("extension.viewAgenda", agenda);
-  vscode.commands.registerCommand("extension.updateDates", updateDates);
-
+  // Auto-refresh when date format setting is changed
   vscode.workspace.onDidChangeConfiguration((event) => {
     let settingChanged = event.affectsConfiguration("Org-vscode.dateFormat");
     if (settingChanged) {
       vscode.commands.executeCommand("extension.updateDates");
     }
   });
+
+  // Register all commands
   const showMessageCommand = vscode.commands.registerCommand("extension.showMessageTest", () => {
     let msg = new WindowMessage(
       "information",
@@ -123,45 +129,32 @@ function activate(ctx) {
   });
 
   ctx.subscriptions.push(showMessageCommand);
-  let forwardCommand = vscode.commands.registerCommand("extension.rescheduleTaskForward", moveDateForward);
-  let backwardCommand = vscode.commands.registerCommand("extension.rescheduleTaskBackward", moveDateBackward);
-  ctx.subscriptions.push(forwardCommand);
-  ctx.subscriptions.push(backwardCommand);
+  ctx.subscriptions.push(vscode.commands.registerCommand("extension.viewAgenda", agenda));
+  ctx.subscriptions.push(vscode.commands.registerCommand("extension.updateDates", updateDates));
+  ctx.subscriptions.push(vscode.commands.registerCommand("extension.rescheduleTaskForward", moveDateForward));
+  ctx.subscriptions.push(vscode.commands.registerCommand("extension.rescheduleTaskBackward", moveDateBackward));
+  ctx.subscriptions.push(vscode.commands.registerCommand("extension.alignSchedules", alignSchedules));
+  ctx.subscriptions.push(vscode.commands.registerCommand("extension.insertDateStamp", insertDateStamp));
+  ctx.subscriptions.push(vscode.commands.registerCommand("extension.incrementDate", incrementDateForward));
+  ctx.subscriptions.push(vscode.commands.registerCommand("extension.decrementDate", decrementDateBackward));
+  ctx.subscriptions.push(vscode.commands.registerCommand("extension.addSeparator", addSeparator));
+  ctx.subscriptions.push(vscode.commands.registerCommand("extension.exportCurrentTasks", exportCurrentTasks));
+  ctx.subscriptions.push(vscode.commands.registerCommand("extension.addTagToTask", addTagToTask));
+  ctx.subscriptions.push(vscode.commands.registerCommand("extension.setFolderPath", changeDirectory));
+  ctx.subscriptions.push(vscode.commands.registerCommand("extension.createVsoFile", newFile));
+  ctx.subscriptions.push(vscode.commands.registerCommand("extension.getTags", getTags));
+  ctx.subscriptions.push(vscode.commands.registerCommand("extension.getTitles", titles));
+  ctx.subscriptions.push(vscode.commands.registerCommand("extension.toggleStatusRight", keywordRight));
+  ctx.subscriptions.push(vscode.commands.registerCommand("extension.toggleStatusLeft", keywordLeft));
+  ctx.subscriptions.push(vscode.commands.registerCommand("extension.scheduling", scheduling));
+  ctx.subscriptions.push(vscode.commands.registerCommand("extension.moveBlockUp", moveUp));
+  ctx.subscriptions.push(vscode.commands.registerCommand("extension.moveBlockDown", moveDown));
+  ctx.subscriptions.push(vscode.commands.registerCommand("extension.increment", increment));
+  ctx.subscriptions.push(vscode.commands.registerCommand("extension.decrement", decrement));
+  ctx.subscriptions.push(vscode.commands.registerCommand("extension.viewTaggedAgenda", taggedAgenda));
+  ctx.subscriptions.push(vscode.commands.registerCommand("extension.openCalendarView", openCalendarView));
 
-  let alignCommand = vscode.commands.registerCommand("extension.alignSchedules", alignSchedules);
-  ctx.subscriptions.push(alignCommand);
-
-  let dateStampCommand = vscode.commands.registerCommand("extension.insertDateStamp", insertDateStamp);
-  ctx.subscriptions.push(dateStampCommand);
-
-  let incrementCommand = vscode.commands.registerCommand("extension.incrementDate", incrementDateForward);
-  ctx.subscriptions.push(incrementCommand);
-
-  let decrementCommand = vscode.commands.registerCommand("extension.decrementDate", decrementDateBackward);
-  ctx.subscriptions.push(decrementCommand);
-
-  let addSeparatorCommand = vscode.commands.registerCommand("extension.addSeparator", addSeparator);
-  ctx.subscriptions.push(addSeparatorCommand);
-
-  insertTable.activate(ctx);
-
-  
-  vscode.commands.registerCommand("extension.exportCurrentTasks", exportCurrentTasks);
-  vscode.commands.registerCommand("extension.addTagToTask", addTagToTask);
-  vscode.commands.registerCommand("extension.setFolderPath", changeDirectory);
-  vscode.commands.registerCommand("extension.createVsoFile", newFile);
-  vscode.commands.registerCommand("extension.getTags", getTags);
-  vscode.commands.registerCommand("extension.getTitles", titles);
-  vscode.commands.registerCommand("extension.toggleStatusRight", keywordRight);
-  vscode.commands.registerCommand("extension.toggleStatusLeft", keywordLeft);
-  vscode.commands.registerCommand("extension.scheduling", scheduling);
-  vscode.commands.registerCommand("extension.moveBlockUp", moveUp);
-  vscode.commands.registerCommand("extension.moveBlockDown", moveDown);
-  vscode.commands.registerCommand("extension.increment", increment);
-  vscode.commands.registerCommand("extension.decrement", decrement);
-  vscode.commands.registerCommand("extension.viewTaggedAgenda", taggedAgenda);
-  vscode.commands.registerCommand("extension.openCalendarView", openCalendarView);
-
+  // Register real-time formatter for " " after typing an asterisk heading
   ctx.subscriptions.push(
     vscode.languages.registerOnTypeFormattingEditProvider(GO_MODE, new GoOnTypingFormatter(), " ")
   );

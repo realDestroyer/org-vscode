@@ -1,23 +1,37 @@
-// calendar.js - Full Unicode + Keyword Support
-const vscode = require("vscode");
-const fs = require("fs");
-const path = require("path");
-const moment = require("moment");
+// calendar.js - Handles Calendar View for Org Mode (with full Unicode + keyword support)
 
-let calendarPanel = null;
+const vscode = require("vscode");   // VSCode API access
+const fs = require("fs");           // File system module to read/write org files
+const path = require("path");       // For cross-platform path handling
+const moment = require("moment");   // Date formatting library
 
+let calendarPanel = null; // Keeps reference to the Webview panel (singleton instance)
+
+/**
+ * Retrieves the directory path where `.org` files are stored.
+ * Falls back to ~/OrgFiles if no custom path is set in settings.
+ */
 function setMainDir() {
   const config = vscode.workspace.getConfiguration("Org-vscode");
   const folderPath = config.get("folderPath");
-  return folderPath && folderPath.trim() !== "" ? folderPath : path.join(require("os").homedir(), "OrgFiles");
+  return folderPath && folderPath.trim() !== "" 
+    ? folderPath 
+    : path.join(require("os").homedir(), "OrgFiles");
 }
 
+/**
+ * If the calendar view is already open, this forces a refresh by re-sending task data.
+ * This is useful after making changes (e.g. keyword updates, reschedules).
+ */
 function refreshCalendarView() {
   if (calendarPanel) {
-    sendTasksToCalendar(calendarPanel);
+    sendTasksToCalendar(calendarPanel); // Resends all task data to the Webview
   }
 }
-
+/**
+ * Reads all `.org` files and extracts scheduled tasks with valid status keywords.
+ * Filters out `CurrentTasks.org`, parses metadata (date, tags, file), and sends task data to the calendar webview.
+ */
 function sendTasksToCalendar(panel) {
   let tasks = [];
   let dirPath = setMainDir();
@@ -29,26 +43,32 @@ function sendTasksToCalendar(panel) {
     }
 
     files.forEach(file => {
+      // Ignore non-.org files and the special CurrentTasks.org export file
       if (file.endsWith(".org") && file !== "CurrentTasks.org") {
         let filePath = path.join(dirPath, file);
         let content = fs.readFileSync(filePath, "utf-8").split(/\r?\n/);
 
         content.forEach(line => {
+          // Must be a scheduled task with a proper status keyword and start with a task symbol
           const scheduledMatch = line.match(/\bSCHEDULED:\s*\[(\d{2}-\d{2}-\d{4})\]/);
           const keywordMatch = line.match(/\b(TODO|IN_PROGRESS|DONE|CONTINUED|ABANDONED)\b/);
           const startsWithSymbol = /^[⊙⊖⊘⊜⊗]/.test(line.trim());
 
           if (scheduledMatch && startsWithSymbol && keywordMatch) {
+            // Extract inline tags if they exist: [+TAG:foo,bar]
             const tagMatch = line.match(/\[\+TAG:([^\]]+)\]/);
-            const tags = tagMatch ? tagMatch[1].split(",").map(t => t.trim().toUpperCase()) : [];
+            const tags = tagMatch
+              ? tagMatch[1].split(",").map(t => t.trim().toUpperCase())
+              : [];
 
+            // Format the task object
             tasks.push({
               text: line
-                .replace(/:?\s*\[\+TAG:[^\]]+\]\s*-?/g, '')
-                .replace(/SCHEDULED:.*/, '')
-                .replace(/[⊙⊖⊘⊜⊗]/g, '')
-                .trim(),
-              date: moment(scheduledMatch[1], "MM-DD-YYYY").format("YYYY-MM-DD"),
+                .replace(/:?\s*\[\+TAG:[^\]]+\]\s*-?/g, '')  // Remove inline tag structure
+                .replace(/SCHEDULED:.*/, '')                // Strip scheduled portion
+                .replace(/[⊙⊖⊘⊜⊗]/g, '')                    // Strip the leading Unicode symbol
+                .trim(),                                    // Final cleaned text
+              date: moment(scheduledMatch[1], "MM-DD-YYYY").format("YYYY-MM-DD"), // Convert to ISO format
               file: file,
               tags: tags
             });
@@ -57,83 +77,120 @@ function sendTasksToCalendar(panel) {
       }
     });
 
+    // Send task data to calendar webview if the panel is open
     if (panel) {
       panel.webview.postMessage({ tasks });
     }
   });
 }
-
+/**
+ * Updates a specific task's scheduled date inside the specified .org file.
+ * Matches based on original task text and the old scheduled date.
+ */
 function rescheduleTask(file, oldDate, newDate, taskText) {
   let filePath = path.join(setMainDir(), file);
   let fileContents = fs.readFileSync(filePath, "utf-8");
   let fileLines = fileContents.split(/\r?\n/);
 
+  // Try to parse the new date using known formats (ISO or MM-DD-YYYY)
   let parsedNewDate = moment(newDate, ["YYYY-MM-DD", "MM-DD-YYYY"], true);
   if (!parsedNewDate.isValid()) {
     vscode.window.showErrorMessage(`Failed to reschedule task: Invalid date format.`);
     return;
   }
 
+  // Format both old and new dates into standard [MM-DD-YYYY] org format
   let formattedOldDate = moment(oldDate, "YYYY-MM-DD").format("MM-DD-YYYY");
   let formattedNewDate = parsedNewDate.format("MM-DD-YYYY");
+
+  // Build a regex pattern that matches the original scheduled date
   let scheduledRegex = new RegExp(`SCHEDULED:\\s*\\[${formattedOldDate}\\]`);
 
   let updated = false;
+
+  // Step through every line and look for a match with the task text and scheduled date
   let updatedLines = fileLines.map(line => {
     const cleanedLine = line
-      .replace(/:?[ \t]*\[\+TAG:[^\]]+\][ \t]*-?/, '')
-      .replace(/SCHEDULED:.*/, '')
-      .replace(/[⊙⊖⊘⊜⊗]/g, '')
+      .replace(/:?[ \t]*\[\+TAG:[^\]]+\][ \t]*-?/, '') // Remove inline tag structure
+      .replace(/SCHEDULED:.*/, '')                    // Remove existing SCHEDULED section
+      .replace(/[⊙⊖⊘⊜⊗]/g, '')                        // Remove the unicode symbol
       .trim();
+
+    // If both the cleaned task text and old date match, update the scheduled portion
     if (cleanedLine === taskText && scheduledRegex.test(line)) {
       updated = true;
       return line.replace(scheduledRegex, `SCHEDULED: [${formattedNewDate}]`);
     }
+
+    // Otherwise, return the line unchanged
     return line;
   });
-
   if (updated) {
+    // If we successfully found and updated the task, write the new content back to disk
     fs.writeFileSync(filePath, updatedLines.join("\n"), "utf-8");
+
+    // Let the user know it succeeded and trigger a refresh of the calendar
     vscode.window.showInformationMessage(`Task rescheduled to ${formattedNewDate} in ${file}`);
     refreshCalendarView();
   } else {
+    // If we couldn't find a match, notify the user
     vscode.window.showErrorMessage(`Could not find scheduled task to update.`);
   }
 }
 
+
+/**
+ * Opens the Calendar View as a Webview panel in VSCode.
+ * If already open, brings the panel into focus.
+ * Sets up event listeners for messaging between the webview and extension.
+ */
 function openCalendarView() {
+  // If the panel is already open, just reveal it (focus it)
   if (calendarPanel) {
     calendarPanel.reveal(vscode.ViewColumn.Beside);
     return;
   }
 
+  // Create a new Webview Panel beside the editor
   calendarPanel = vscode.window.createWebviewPanel(
-    "calendarView",
-    "Calendar View",
-    vscode.ViewColumn.Beside,
-    { enableScripts: true }
+    "calendarView",           // Internal ID
+    "Calendar View",          // Display title
+    vscode.ViewColumn.Beside, // Show beside current editor
+    { enableScripts: true }   // Allow scripts to run in the Webview
   );
 
+  // Set the initial HTML content for the calendar (injected from getCalendarWebviewContent)
   calendarPanel.webview.html = getCalendarWebviewContent();
 
+  // When the user closes the panel, release the reference so it can be recreated later
   calendarPanel.onDidDispose(() => {
     calendarPanel = null;
   });
 
+  // Handle messages coming from the calendar webview (i.e., user interactions)
   calendarPanel.webview.onDidReceiveMessage(message => {
     if (message.command === "requestTasks") {
+      // Webview is asking for fresh task data
       sendTasksToCalendar(calendarPanel);
+
     } else if (message.command === "openFile") {
+      // Open a specific org file in the editor
       let filePath = path.join(setMainDir(), message.file);
       vscode.workspace.openTextDocument(vscode.Uri.file(filePath)).then(doc => {
         vscode.window.showTextDocument(doc);
       });
+
     } else if (message.command === "rescheduleTask") {
+      // Webview user dragged/dropped a task to a new date
       rescheduleTask(message.file, message.oldDate, message.newDate, message.text);
     }
   });
 }
 
+/**
+ * Returns the full HTML content for the Calendar View Webview panel.
+ * Integrates FullCalendar, styles, and sets up message passing to/from the extension.
+ */
 function getCalendarWebviewContent() {
   return `<!DOCTYPE html>
 <html>
