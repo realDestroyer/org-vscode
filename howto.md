@@ -22,6 +22,8 @@
 * [🔁 Cycle Task Statuses](#cycle-task-statuses)
 * [🏷 Inline Tags & Tag Filtering](#inline-tags--tag-filtering)
 * [🧮 Insert Org Table](#insert-org-table)
+* [Align Scheduled Task Tags](#align-scheduled-tasks)
+* [Tagged Agenda View](#tagged-agenda-view)
 * [📆 Calendar View](#calendar-view)
 
 ---
@@ -269,7 +271,7 @@ This improves readability by ensuring every scheduled date starts in the same co
 A helpful formatting tool for keeping things clean — especially in large org files!
 ---
 
-### 📂 Open Files by Tag <a id="open-files-by-tag"></a>
+## 📂 Open Files by Tag <a id="open-files-by-tag"></a>
 
 Use the command:
 **`Org-vscode: Open By Tag`**
@@ -280,7 +282,7 @@ You'll be prompted to pick a tag, and then a file containing that tag. This help
 <img src="https://github.com/realDestroyer/org-vscode/blob/master/Images/open-by-tag.gif?raw=true" width="700" height="400" />
 ---
 
-### 🧠 Tagged Agenda View <a id="tagged-agenda-view"></a>
+## 🧠 Tagged Agenda View <a id="tagged-agenda-view"></a>
 
 Use the command:
 **`Org-vscode: Tagged Agenda View`**
@@ -290,6 +292,8 @@ This lets you filter tasks across all files by tag(s). Two modes are supported:
 
 * `any:tag1,tag2` → **OR logic** (match *any* tag)
 * `all:tag1,tag2` → **AND logic** (must match *all* tags)
+
+<img src="https://github.com/realDestroyer/org-vscode/blob/master/Images/tagged-agenda-example.gif?raw=true" width="700" height="400" />
 
 #### 📁 Features: <a id="features"></a>
 
@@ -328,6 +332,9 @@ Choose alignment: Left, Center, or Right
 
 Once you’re done, click Insert Table to automatically place it at your cursor.
 
+<img src="https://github.com/realDestroyer/org-vscode/blob/master/Images/insert-table-example.gif?raw=true" width="700" height="400" />
+
+
 ---
 ## 📆 Calendar View <a id="calendar-view"></a>
 
@@ -338,6 +345,8 @@ The **Calendar View** provides a powerful visual way to see your scheduled Org t
 Use the command:
 **`Org-vscode: Open Calendar View`**
 🔑 **Keybinding:** `Ctrl + Shift + C`
+
+<img src="https://github.com/realDestroyer/org-vscode/blob/master/Images/calendar-example.gif?raw=true" width="700" height="400" />
 
 ---
 
