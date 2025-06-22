@@ -9,6 +9,23 @@
 
 ---
 
+## 📘 Table of Contents
+
+* [📁 Change the Main Directory](#change-the-main-directory)
+* [📝 Create a New .org File](#create-a-new-org-file)
+* [🔖 Create a Header](#create-a-header)
+* [🧩 Org-vscode Snippets](#org-vscode-snippets)
+* [📂 Open a File by Tags or Titles](#open-a-file-by-tags-or-titles)
+* [📅 Agenda View & Scheduling](#agenda-view--scheduling)
+* [📼 Partial Demo](#partial-demo)
+* [🔤 Unicode Headings](#unicode-headings-based-on-asterisk-level)
+* [🔁 Cycle Task Statuses](#cycle-task-statuses)
+* [🏷 Inline Tags & Tag Filtering](#inline-tags--tag-filtering)
+* [🧮 Insert Org Table](#insert-org-table)
+* [📆 Calendar View](#calendar-view)
+
+---
+
 ## 📁 Change the Main Directory
 
 By default, the main directory is set to your home folder.
@@ -36,8 +53,11 @@ Use the `/header` snippet to quickly generate a structured header.
 
 ## ✨ Org-vscode Snippets
 
-Save time and reduce boilerplate with handy built-in snippets.
+Save time and create boilerplate with handy built-in snippets.
 Just type the prefix and hit `Tab` to expand the snippet inside a `.org` file.
+
+<img src="https://github.com/realdestroyer/org-vscode/blob/master/Images/snippet-example.gif?raw=true" width="700" height="400" />
+
 
 | Prefix       | Description                     |
 | ------------ | ------------------------------- |
@@ -202,6 +222,50 @@ Use the command:
 This command prompts you to enter one or more tags (comma-separated), and automatically inserts them into the currently selected task.
 
 ---
+## 📏 Align Scheduled Tasks
+
+Use this command to visually align all `SCHEDULED:` timestamps in your current `.org` file.
+This improves readability by ensuring every scheduled date starts in the same column — even across differently sized task descriptions.
+
+---
+
+### 🛠 What It Does
+
+* Scans the file for any line containing `SCHEDULED: [MM-DD-YYYY]`
+* Determines the longest task description in the file
+* Pads shorter task lines so that all timestamps align to the same column
+* Preserves original indentation
+
+---
+
+### 📌 Example
+
+**Before:**
+
+```org
+⊙ TODO Review meeting notes           SCHEDULED: [06-21-2025]
+⊖ DONE Email client      SCHEDULED: [06-20-2025]
+⊘ IN_PROGRESS Fix bug             SCHEDULED: [06-22-2025]
+```
+
+**After Running Align:**
+
+```org
+⊙ TODO Review meeting notes           SCHEDULED: [06-21-2025]
+⊖ DONE Email client                   SCHEDULED: [06-20-2025]
+⊘ IN_PROGRESS Fix bug                 SCHEDULED: [06-22-2025]
+```
+
+---
+
+### ▶️ How to Use
+
+* Run the command: **`Org-vscode: Align Scheduled Tasks`**
+* 🗝️ **Keybinding:** `Alt + Shift + A`
+* The alignment only affects the currently open file
+
+A helpful formatting tool for keeping things clean — especially in large org files!
+---
 
 ### 📂 Open Files by Tag
 
@@ -211,6 +275,7 @@ Use the command:
 
 You'll be prompted to pick a tag, and then a file containing that tag. This helps you jump to relevant `.org` files based on tag metadata.
 
+<img src="https://github.com/realDestroyer/org-vscode/blob/master/Images/open-by-tag.gif?raw=true" width="700" height="400" />
 ---
 
 ### 🧠 Tagged Agenda View
