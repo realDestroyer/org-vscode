@@ -9,7 +9,7 @@
 
 ---
 
-## 📘 Table of Contents
+## 📘 Table of Contents <a id="table-of-contents"></a>
 
 * [📁 Change the Main Directory](#change-the-main-directory)
 * [📝 Create a New .org File](#create-a-new-org-file)
@@ -26,7 +26,7 @@
 
 ---
 
-## 📁 Change the Main Directory
+## 📁 Change the Main Directory <a id="change-the-main-directory"></a>
 
 By default, the main directory is set to your home folder.
 To change it, use the command:
@@ -36,7 +36,7 @@ To change it, use the command:
 
 ---
 
-## 📝 Create a New `.org` File
+## 📝 Create a New `.org` File <a id="create-a-new-org-file"></a>
 
 Create a new file inside your main directory using:
 **`Org-vscode: Create new .org file`**
@@ -45,13 +45,13 @@ Create a new file inside your main directory using:
 
 ---
 
-## 🔖 Create a Header
+## 🔖 Create a Header <a id="create-a-header"></a>
 
 Use the `/header` snippet to quickly generate a structured header.
 
 <img src="https://github.com/realdestroyer/org-vscode/blob/master/Images/headerSnippet.gif?raw=true" width="700" height="400" />
 
-## ✨ Org-vscode Snippets
+## ✨ Org-vscode Snippets <a id="org-vscode-snippets"></a>
 
 Save time and create boilerplate with handy built-in snippets.
 Just type the prefix and hit `Tab` to expand the snippet inside a `.org` file.
@@ -71,16 +71,16 @@ Just type the prefix and hit `Tab` to expand the snippet inside a `.org` file.
 | `/section`   | Labeled section block           |
 | `/template`  | Full task template with tags    |
 
-### Example Expansions
+### Example Expansions <a id="example-expansions"></a>
 
-#### `/todo`
+#### `/todo` <a id="todo"></a>
 
 ```org
 ⊙ TODO Task description
    SCHEDULED: [04-21-2025]
 ```
 
-#### `/checklist`
+#### `/checklist` <a id="checklist"></a>
 
 ```org
 - [ ] First item
@@ -88,7 +88,7 @@ Just type the prefix and hit `Tab` to expand the snippet inside a `.org` file.
 - [ ]
 ```
 
-#### `/meeting`
+#### `/meeting` <a id="meeting"></a>
 
 ```org
 * 04-21-2025 :: Weekly Sync
@@ -97,7 +97,7 @@ Just type the prefix and hit `Tab` to expand the snippet inside a `.org` file.
 - Action Items:
 ```
 
-#### `/template`
+#### `/template` <a id="template"></a>
 
 ```org
 ⊙ TODO Task Name
@@ -114,7 +114,7 @@ Snippets make it easy to maintain formatting consistency and move quickly throug
 
 ---
 
-## 📂 Open a File by Tags or Titles
+## 📂 Open a File by Tags or Titles <a id="open-a-file-by-tags-or-titles"></a>
 
 You can open a file using either:
 
@@ -125,7 +125,7 @@ You can open a file using either:
 
 ---
 
-## 📅 Agenda View & Scheduling
+## 📅 Agenda View & Scheduling <a id="agenda-view-scheduling"></a>
 
 * **Schedule an item** → Use `Ctrl + Alt + S`.
 * **View all scheduled items** → Use **`Org-vscode: Agenda View`**.
@@ -134,7 +134,7 @@ You can open a file using either:
 
 ---
 
-## 📼 Partial Demo
+## 📼 Partial Demo <a id="partial-demo"></a>
 
 * **Partial Demo**
 
@@ -142,7 +142,7 @@ You can open a file using either:
 
 ---
 
-## 🔤 Unicode Headings Based on Asterisk Level
+## 🔤 Unicode Headings Based on Asterisk Level <a id="unicode-headings-based-on-asterisk-level"></a>
 
 In Org-vscode, heading levels are visually enhanced with custom Unicode symbols to give structure and clarity to your task lists.
 
@@ -162,7 +162,7 @@ In Org-vscode, heading levels are visually enhanced with custom Unicode symbols 
 
 ---
 
-## 🔁 Cycle Task Statuses
+## 🔁 Cycle Task Statuses <a id="cycle-task-statuses"></a>
 
 Org-vscode supports five task states, each represented with a unique Unicode symbol:
 
@@ -174,16 +174,16 @@ Org-vscode supports five task states, each represented with a unique Unicode sym
 | `DONE`         | ⊖      | Completed                 |
 | `ABANDONED`    | ⊗      | No longer relevant        |
 
-### 💡 Ways to Change Task Status
+### 💡 Ways to Change Task Status <a id="ways-to-change-task-status"></a>
 
-#### 🔘 In Agenda View or Tagged Agenda View
+#### 🔘 In Agenda View or Tagged Agenda View <a id="in-agenda-view-or-tagged-agenda-view"></a>
 
 * Click on the current status (e.g. `TODO`) to cycle through the options.
 * The task line is automatically updated in the source file.
 * If switching **to `DONE`**, a `COMPLETED:` timestamp is inserted on the next line.
 * If switching **from `DONE` to any other state**, the `COMPLETED:` line is removed.
 
-#### ✏️ In the `.org` file directly
+#### ✏️ In the `.org` file directly <a id="in-the-org-file-directly"></a>
 
 You can manually change task keywords:
 
@@ -195,11 +195,11 @@ Or remove/change the keyword symbol, and the extension will update it accordingl
 
 ---
 
-## 🌿 Inline Tags & Tag Filtering
+## 🌿 Inline Tags & Tag Filtering <a id="inline-tags-tag-filtering"></a>
 
 Org-vscode supports **inline tagging** to categorize tasks and enable advanced filtering in the UI.
 
-### 📝 Add Tags to a Task
+### 📝 Add Tags to a Task <a id="add-tags-to-a-task"></a>
 
 To tag a task, use the special `[+TAG:...]` syntax directly after the task keyword:
 
@@ -213,7 +213,7 @@ To tag a task, use the special `[+TAG:...]` syntax directly after the task keywo
 
 ---
 
-### 🌿 Add Tags to an Existing Task
+### 🌿 Add Tags to an Existing Task <a id="add-tags-to-an-existing-task"></a>
 
 Use the command:
 **`Org-vscode: Add Tag to Task`**
@@ -222,14 +222,16 @@ Use the command:
 This command prompts you to enter one or more tags (comma-separated), and automatically inserts them into the currently selected task.
 
 ---
-## 📏 Align Scheduled Tasks
+## 📏 Align Scheduled Tasks <a id="align-scheduled-tasks"></a>
 
 Use this command to visually align all `SCHEDULED:` timestamps in your current `.org` file.
 This improves readability by ensuring every scheduled date starts in the same column — even across differently sized task descriptions.
 
+<img src="https://github.com/realDestroyer/org-vscode/blob/master/Images/align-schedules.gif?raw=true" width="700" height="400" />
+
 ---
 
-### 🛠 What It Does
+### 🛠 What It Does <a id="what-it-does"></a>
 
 * Scans the file for any line containing `SCHEDULED: [MM-DD-YYYY]`
 * Determines the longest task description in the file
@@ -238,7 +240,7 @@ This improves readability by ensuring every scheduled date starts in the same co
 
 ---
 
-### 📌 Example
+### 📌 Example <a id="example"></a>
 
 **Before:**
 
@@ -258,7 +260,7 @@ This improves readability by ensuring every scheduled date starts in the same co
 
 ---
 
-### ▶️ How to Use
+### ▶️ How to Use <a id="how-to-use"></a>
 
 * Run the command: **`Org-vscode: Align Scheduled Tasks`**
 * 🗝️ **Keybinding:** `Alt + Shift + A`
@@ -267,7 +269,7 @@ This improves readability by ensuring every scheduled date starts in the same co
 A helpful formatting tool for keeping things clean — especially in large org files!
 ---
 
-### 📂 Open Files by Tag
+### 📂 Open Files by Tag <a id="open-files-by-tag"></a>
 
 Use the command:
 **`Org-vscode: Open By Tag`**
@@ -278,7 +280,7 @@ You'll be prompted to pick a tag, and then a file containing that tag. This help
 <img src="https://github.com/realDestroyer/org-vscode/blob/master/Images/open-by-tag.gif?raw=true" width="700" height="400" />
 ---
 
-### 🧠 Tagged Agenda View
+### 🧠 Tagged Agenda View <a id="tagged-agenda-view"></a>
 
 Use the command:
 **`Org-vscode: Tagged Agenda View`**
@@ -289,7 +291,7 @@ This lets you filter tasks across all files by tag(s). Two modes are supported:
 * `any:tag1,tag2` → **OR logic** (match *any* tag)
 * `all:tag1,tag2` → **AND logic** (must match *all* tags)
 
-#### 📁 Features:
+#### 📁 Features: <a id="features"></a>
 
 * Groups results by file
 * Shows each task with its current status, schedule date, and tags
@@ -297,7 +299,7 @@ This lets you filter tasks across all files by tag(s). Two modes are supported:
 * Clickable status cycles through keywords
 * Use `[Expand All]` / `[Collapse All]` buttons to show/hide groups
 
-#### 🔍 Example:
+#### 🔍 Example: <a id="example-2"></a>
 
 ```text
 Enter tags (comma-separated). Use 'any:' for OR logic. Ex: any:urgent,review
@@ -327,11 +329,11 @@ Choose alignment: Left, Center, or Right
 Once you’re done, click Insert Table to automatically place it at your cursor.
 
 ---
-## 📆 Calendar View
+## 📆 Calendar View <a id="calendar-view"></a>
 
 The **Calendar View** provides a powerful visual way to see your scheduled Org tasks in a monthly or weekly layout — with interactive support for drag-to-reschedule, tag filtering, and click-to-open behavior.
 
-### 🧭 Open the Calendar View
+### 🧭 Open the Calendar View <a id="open-the-calendar-view"></a>
 
 Use the command:
 **`Org-vscode: Open Calendar View`**
@@ -339,37 +341,37 @@ Use the command:
 
 ---
 
-### ✨ Features:
+### ✨ Features: <a id="features-2"></a>
 
-#### ✅ Displays Scheduled Tasks
+#### ✅ Displays Scheduled Tasks <a id="displays-scheduled-tasks"></a>
 
 * Tasks with `SCHEDULED: [MM-DD-YYYY]` are shown as calendar events.
 * Unicode and Org keyword support: ⊙ TODO, ⊘ IN\_PROGRESS, ⊖ DONE, etc.
 * Automatically parses `.org` files in your main directory (excluding `CurrentTasks.org`).
 
-#### 🖱 Click to Open Task
+#### 🖱 Click to Open Task <a id="click-to-open-task"></a>
 
 * Clicking an event will open the source `.org` file in your editor.
 
-#### 🔀 Drag to Reschedule
+#### 🔀 Drag to Reschedule <a id="drag-to-reschedule"></a>
 
 * Drag and drop events to a new date on the calendar.
 * The `.org` file will be automatically updated with the new `SCHEDULED:` date.
 
-#### 🏷 Tag Bubbles for Filtering
+#### 🏷 Tag Bubbles for Filtering <a id="tag-bubbles-for-filtering"></a>
 
 * If a task contains a `[+TAG:...]` inline tag, those tags appear as clickable colored bubbles.
 * Click a tag to filter tasks shown on the calendar.
 * Use `Ctrl + Click` to multi-select tags.
 
-#### 🎨 Custom Color Coding
+#### 🎨 Custom Color Coding <a id="custom-color-coding"></a>
 
 * Each tag is assigned a unique background color using HSL values.
 * This makes it easy to visually distinguish different categories of tasks.
 
 ---
 
-### 💡 Bonus Behavior
+### 💡 Bonus Behavior <a id="bonus-behavior"></a>
 
 * Supports FullCalendar views: `Month`, `Week`, `Day`.
 * Updates automatically if you reschedule or change a task keyword.
