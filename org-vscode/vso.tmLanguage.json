@@ -4,9 +4,146 @@
   "scopeName": "source.vso",
   "patterns": [
     {
+      "name": "constant.character.todo.vso",
+      "comment": "TODO Unicode Symbol",
+      "begin": "[\u2299]",
+      "end": "(?=\\bTODO\\b)"
+    },
+    {
+      "name": "string.task.todo.vso",
+      "comment": "TODO Task Text",
+      "begin": "\\bTODO\\b\\s*:.*?-",
+      "end": "(?=\\s*SCHEDULED:|$)",
+      "patterns": [
+        {
+          "include": "#todo"
+        }
+      ]
+    },
+    {
+      "name": "constant.character.in_progress.vso",
+      "comment": "IN_PROGRESS Unicode Symbol",
+      "begin": "[\u2298]",
+      "end": "(?=\\bIN_PROGRESS\\b)"
+    },
+    {
+      "name": "string.task.in_progress.vso",
+      "comment": "IN_PROGRESS Task Text",
+      "begin": "\\bIN_PROGRESS\\b\\s*:.*?-",
+      "end": "(?=\\s*SCHEDULED:|$)",
+      "patterns": [
+        {
+          "include": "#in_progress"
+        }
+      ]
+    },
+    {
+      "name": "constant.character.continued.vso",
+      "comment": "CONTINUED Unicode Symbol",
+      "begin": "[\u229c]",
+      "end": "(?=\\bCONTINUED\\b)"
+    },
+    {
+      "name": "string.task.continued.vso",
+      "comment": "CONTINUED Task Text",
+      "begin": "\\bCONTINUED\\b\\s*:.*?-",
+      "end": "(?=\\s*SCHEDULED:|$)",
+      "patterns": [
+        {
+          "include": "#continued"
+        }
+      ]
+    },
+    {
+      "name": "constant.character.done.vso",
+      "comment": "DONE Unicode Symbol",
+      "begin": "[\u2296]",
+      "end": "(?=\\bDONE\\b)"
+    },
+    {
+      "name": "string.task.done.vso",
+      "comment": "DONE Task Text",
+      "begin": "\\bDONE\\b\\s*:.*?-",
+      "end": "(?=\\s*SCHEDULED:|$)",
+      "patterns": [
+        {
+          "include": "#done"
+        }
+      ]
+    },
+    {
+      "name": "constant.character.abandoned.vso",
+      "comment": "ABANDONED Unicode Symbol",
+      "begin": "[\u2297]",
+      "end": "(?=\\bABANDONED\\b)"
+    },
+    {
+      "name": "string.task.abandoned.vso",
+      "comment": "ABANDONED Task Text",
+      "begin": "\\bABANDONED\\b\\s*:.*?-",
+      "end": "(?=\\s*SCHEDULED:|$)",
+      "patterns": [
+        {
+          "include": "#abandoned"
+        }
+      ]
+    },
+    {
+      "name": "entity.other.attribute-name.tag.vso",
+      "comment": "Inline TAG block",
+      "match": "\\[\\+TAG:[^\\]]*\\]"
+    },
+    {
+      "name": "entity.other.attribute-name.tag.vso",
+      "comment": "Inline TAG block",
+      "match": "\\[\\+TAG:[^\\]]*\\]"
+    },
+    {
+      "name": "constant.character.in_progress.vso",
+      "comment": "In Progress Task Symbol",
+      "begin": "[\u2298]",
+      "end": "$",
+      "patterns": [
+        {
+          "include": "#in_progress"
+        },
+        {
+          "include": "#sched"
+        }
+      ]
+    },
+    {
+      "name": "constant.character.abandoned.vso",
+      "comment": "Abandoned Task Symbol",
+      "begin": "[\u2297]",
+      "end": "$",
+      "patterns": [
+        {
+          "include": "#abandoned"
+        },
+        {
+          "include": "#sched"
+        }
+      ]
+    },
+    {
+      "name": "constant.character.continued.vso",
+      "comment": "Continued Task Symbol",
+      "begin": "[\u229c]",
+      "end": "$",
+      "patterns": [
+        {
+          "include": "#continued"
+        },
+        {
+          "include": "#sched"
+        }
+      ]
+    },
+    {
       "name": "markup.heading.vso",
       "comment": "Heading 1",
-      "begin": "[⊙]",
+      "begin": "[\u2299]",
       "end": "$",
       "patterns": [
         {
@@ -23,7 +160,7 @@
     {
       "name": "keyword.other.vso",
       "comment": "Heading 2",
-      "begin": "[⊘]",
+      "begin": "[\u2298]",
       "end": "$",
       "patterns": [
         {
@@ -40,7 +177,7 @@
     {
       "name": "keyword.operator.vso",
       "comment": "Heading 3",
-      "begin": "[⊖]",
+      "begin": "[\u2296]",
       "end": "$",
       "patterns": [
         {
@@ -89,7 +226,7 @@
     "todo": {
       "patterns": [
         {
-          "name": "markup.bold.vso",
+          "name": "keyword.control.todo.vso",
           "match": "\\bTODO\\b"
         }
       ]
@@ -97,7 +234,7 @@
     "done": {
       "patterns": [
         {
-          "name": "entity.name.function.vso",
+          "name": "keyword.control.done.vso",
           "match": "\\bDONE\\b"
         }
       ]
@@ -107,6 +244,38 @@
         {
           "name": "comment.vso",
           "match": "\\bSCHEDULED\\b(.*)"
+        }
+      ]
+    },
+    "abandoned": {
+      "patterns": [
+        {
+          "name": "keyword.control.abandoned.vso",
+          "match": "\\bABANDONED\\b"
+        }
+      ]
+    },
+    "continued": {
+      "patterns": [
+        {
+          "name": "keyword.control.continued.vso",
+          "match": "\\bCONTINUED\\b"
+        }
+      ]
+    },
+    "in_progress": {
+      "patterns": [
+        {
+          "name": "keyword.control.in_progress.vso",
+          "match": "\\bIN_PROGRESS\\b"
+        }
+      ]
+    },
+    "tag": {
+      "patterns": [
+        {
+          "name": "entity.other.attribute-name.tag.vso",
+          "match": "\\[\\+TAG:[^\\]]*\\]"
         }
       ]
     }
