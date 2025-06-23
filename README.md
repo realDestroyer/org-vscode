@@ -1,119 +1,148 @@
 # Org-vscode
 
+![Version](https://img.shields.io/badge/version-v1.99.3-blue.svg)
 
-![Version](https://img.shields.io/badge/version-v.1.99.3-blue.svg)
-
-This is a work in progress extension that will, in the end, try to emulate [Emacs Org-Mode](https://orgmode.org/) as much as possible.
-
-> Quickly create todo lists, take notes, plan projects and organize your thoughts. Check out the full demo below.
-
-## Features
-
-Create a new .org file with the built-in 'create new .org file' command: </br>
-<img src="https://github.com/realdestroyer/org-vscode/blob/master/Images/Create-file-and-headings.gif?raw=true" width="700" height="400" />
-
-Schedule your tasks with `ctrl+alt+s`, run the `Org-vscode: Agenda View` command and see all of your scheduled tasks in all of your org-vscode files, in one clean interface, organized by date. </br>
-
-<img src="https://github.com/realdestroyer/org-vscode/blob/master/Images/Schedule-task.gif?raw=true" width="700" height="400" />
-
-Introducing Agenda View! Run the `Org-vscode: Agenda View` command and see all of your scheduled tasks in all of your org-vscode files, in one clean interface, organized by date. </br>
-
-Watch the Agenda View Demo: </br>
-
-<img src="https://github.com/realdestroyer/org-vscode/blob/master/Images/Agenda-View.gif?raw=true" width="700" height="400" />
-
+> A fast, keyboard-driven Org Mode–style task manager built for Visual Studio Code.
+> Inspired by Emacs Org Mode
 
 ---
 
-### 🗓️ Calendar View How-To
+## 🚀 What is Org-vscode?
 
-- Run `Org-vscode: Calendar View` or use `Ctrl + Shift + C`.
-- Tasks are color-coded by their primary tag.
-- Click on a tag bubble above the calendar to filter tasks by that tag.
-- Ctrl+Click to select multiple tags.
-- Click again to remove a tag from your selection.
-- When no tags are selected, all tasks are shown.
-- Drag tasks to new dates to reschedule. The underlying .org file is updated automatically.
+Organize your thoughts, tasks, projects, and notes — all inside VSCode — using a minimal Org file format powered by Unicode symbols and intuitive keyboard controls.
+
+Whether you're an Emacs power user or just want a highly structured task system, Org-vscode is built to help you:
+
+* Stay focused
+* Schedule your work
+* Track task progress
+* Visually plan via calendar and agenda views
+* Tag tasks/projects
+* Search/open files based on tag or title
+* Export current active tasks for quick review
+* Quickly build tables, checklists, and templates
+* Work entirely from the keyboard
 
 ---
 
-Check out the HOW-TO for all of the available featuers:</br>
-[How-To](https://github.com/realdestroyer/org-vscode/blob/master/howto.md)
+## 🧩 Core Features
 
-Check out the recent changes in the [Change Log](https://github.com/realdestroyer/org-vscode/blob/master/CHANGELOG.md)
+✅ **Unicode Task States**
+`⊙` TODO, `⊘` IN\_PROGRESS, `⊜` CONTINUED, `⊖` DONE, `⊗` ABANDONED
 
-For upcoming features view the [Roadmap](https://github.com/realdestroyer/org-vscode/blob/master/roadmap.md)
+📅 **Agenda View**
+See all scheduled tasks from all `.org` files in one clean, date-grouped panel. Fully clickable + status toggleable.
 
-FULL DEMO:  
-<img src="https://github.com/realdestroyer/org-vscode/blob/master/Images/fullDemo.gif?raw=true" width="700" height="400" />
+📆 **Calendar View**
+Drag & drop tasks to reschedule. Filter by tag. Auto-syncs to file.
 
-## Install
+🏷 **Inline Tagging**
+Use `[+TAG:urgent,project]` to categorize tasks. Supports AND/OR logic filtering.
 
-To install org-vscode, open Visual Studio Code, launch VS Code quick open (Ctrl + p or Cmd + p (mac)) and paste this `ext install realdestroyer.org-vscode`
+🧠 **Tagged Agenda View**
+Filter tasks by one or multiple tags, grouped by file. Click-to-edit support.
 
---or--<br>
-Download the .vsix file located in the [Releases](https://github.com/realDestroyer/org-vscode/releases/download/beta/org-vscode-0.0.1.vsix)
-Then, navigate to the extensions tab in VSCode and select "Install from VSIX"
-<img src="https://github.com/realdestroyer/org-vscode/blob/master/Images/install-vsix.png?raw=true" width="700" height="400" />
+🧮 **Table Builder**
+Visually generate Org-style tables with alignment, row headers, and optional labels.
 
-## Requirements
+📏 **Align Timestamps**
+Neatly formats all `SCHEDULED:` timestamps to the same column width.
 
-Make sure you save your files with the .org extension.
+📤 **Export Active Tasks**
+Copy all non-DONE tasks to `CurrentTasks.org` for quick review or reporting.
+
+✂️ **Built-In Snippets**
+Use `/todo`, `/template`, `/meeting`, `/checklist`, and more to insert pre-styled blocks.
+
+---
+
+## 📚 Learn More
+
+✨ Full How-To Guide (with examples, images, and keyboard shortcuts):
+[📖 View the Org-vscode How-To →](https://github.com/realdestroyer/org-vscode/blob/master/howto.md)
+
+🛠 See recent changes in the [CHANGELOG](https://github.com/realdestroyer/org-vscode/blob/master/CHANGELOG.md)
+🚧 See what’s coming next on the [ROADMAP](https://github.com/realdestroyer/org-vscode/blob/master/roadmap.md)
+
+---
 
 ## 🔑 Keyboard Shortcuts
 
-| Shortcut              | Description                                 |
-|----------------------|---------------------------------------------|
-| `Ctrl + →`           | Cycle TODO keyword forward                  |
-| `Ctrl + ←`           | Cycle TODO keyword backward                 |
-| `Shift + Alt + ↑`    | Move task block up                          |
-| `Shift + Alt + ↓`    | Move task block down                        |
-| `Alt + →`            | Increase heading level                      |
-| `Alt + ←`            | Decrease heading level                      |
-| `Ctrl + Shift + [`   | Fold section                                |
-| `Ctrl + Shift + ]`   | Unfold section                              |
-| `Ctrl + Alt + S`     | Schedule a task                             |
-| `Alt + Shift + →`    | Reschedule task forward                     |
-| `Alt + Shift + ←`    | Reschedule task backward                    |
-| `Alt + Shift + A`    | Align scheduled task columns                |
-| `Ctrl + Shift + T`   | Insert a timestamp or add tags to task      |
-| `Ctrl + Right`       | Increment date stamp                        |
-| `Ctrl + Left`        | Decrement date stamp                        |
-| `Ctrl + Shift + G`   | Open the Tagged Agenda View                 |
-| `Ctrl + Shift + C`   | Open the Calendar View                      |
-| `Ctrl + Alt + D`     | Insert a visual separator                   |
-| `Alt + Shift + T`     | Insert a table                             |
-| `ctrl+shift+e`          | Export all active (non-DONE) tasks to CurrentTasks.org |
-| `Ctrl + Alt + M`     | Show Popup Message with link to repo (GitHub button)     |
+| Shortcut           | Description                                            |     |
+| ------------------ | ------------------------------------------------------ | --- |
+| `Ctrl + →`         | Cycle TODO keyword forward                             |     |
+| `Ctrl + ←`         | Cycle TODO keyword backward                            |     |
+| `Shift + Alt + ↑`  | Move task block up                                     |     |
+| `Shift + Alt + ↓`  | Move task block down                                   |     |
+| `Alt + →`          | Increase heading level                                 |     |
+| `Alt + ←`          | Decrease heading level                                 |     |
+| `Ctrl + Shift + [` | Fold section                                           |     |
+| `Ctrl + Shift + ]` | Unfold section                                         |     |
+| `Ctrl + Alt + S`   | Schedule a task                                        |     |
+| `Alt + Shift + →`  | Reschedule task forward                                |     |
+| `Alt + Shift + ←`  | Reschedule task backward                               |     |
+| `Alt + Shift + A`  | Align all scheduled timestamps                         |     |
+| `Ctrl + Shift + T` | Insert date stamp or add tag to current task           |     |
+| `Ctrl + Right`     | Increment inline date                                  |     |
+| `Ctrl + Left`      | Decrement inline date                                  |     |
+| `Ctrl + Shift + G` | Open the Tagged Agenda View                            |     |
+| `Ctrl + Shift + C` | Open the Calendar View                                 |     |
+| `Ctrl + Shift + E` | Export all active (non-DONE) tasks to CurrentTasks.org |     |
+| `Ctrl + Alt + D`   | Insert visual separator line                           |     |
+| `Alt + Shift + T`  | Open visual table builder                              |     |
+| `Ctrl + Alt + M`   | Show popup message (GitHub link)                       | --- |
 
-## Snippets
+## 📦 Install
 
-| Snippet   | Decription         | Output                  |
-| --------- | ------------------ | ----------------------- |
-| `/header` | insert page header | #+ TITLE:</br> #+ TAGS: |
-|           |                    |                         |
+### Option 1: Marketplace Install
 
-## Known Issues and Bugs
+Search for `org-vscode` in the Extensions Marketplace inside VSCode.
 
-Submit an [Issue](https://github.com/realdestroyer/org-vscode/issues) if there is a bug you would like to report.
+### Option 2: Manual Install
 
-## Changelog
+Download the latest `.vsix` from [Releases](https://github.com/realDestroyer/org-vscode/releases)
+Then: Extensions Panel → More Actions (⋯) → *Install from VSIX...*
 
-Check out the recent changes in the [Change Log](https://github.com/realdestroyer/org-vscode/blob/master/CHANGELOG.md)
-
-## Upcoming Features
-
-Check out the [RoadMap](https://github.com/realdestroyer/org-vscode/blob/master/roadmap.md) for upcoming features.
-
-## Authors
-- Current Maintainer - realDestroyer
-
-- Was initially forked from a project started by: Bobby Boyd
-    - However, I have made such a significant amount of changes and the original extension is dead - so I have broken the connection to the original.
-    - If you want to see what his extension looked like, you can find it here: [Bobby Boyd's Extension](https://github.com/boydvoid/vs-org)
-
-## License
-
-This project is under the MIT License
+<img src="https://github.com/realdestroyer/org-vscode/blob/master/Images/install-vsix.png?raw=true" width="700" height="400" />
 
 ---
+
+## 🎬 Demo
+
+<img src="https://github.com/realdestroyer/org-vscode/blob/master/Images/fullDemo.gif?raw=true" width="700" height="400" />
+
+---
+
+## 🧠 Snippets Cheat Sheet
+
+| Snippet      | Description               |
+| ------------ | ------------------------- |
+| `/header`    | Insert header block       |
+| `/todo`      | New scheduled TODO        |
+| `/tagged`    | TODO with tags            |
+| `/meeting`   | Meeting notes structure   |
+| `/checklist` | Create checklist block    |
+| `/template`  | Full task block w/ fields |
+| `/table2`    | 2x2 Org table             |
+| `/table3`    | 3x3 Org table             |
+
+---
+
+## 🐞 Issues and Contributions
+
+If you run into a bug or have a feature request, please open an [issue](https://github.com/realdestroyer/org-vscode/issues).
+
+Pull requests welcome!
+
+---
+
+## 👨‍💻 Author
+
+* Maintained by [@realDestroyer](https://github.com/realDestroyer)
+* Originally forked from a legacy project by Bobby Boyd — now significantly overhauled with countless new features created from scratch.
+
+---
+
+## 📄 License
+
+MIT License — see [LICENSE](https://github.com/realdestroyer/org-vscode/blob/master/LICENSE) for full details.
