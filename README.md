@@ -27,31 +27,31 @@ Whether you're an Emacs power user or just want a highly structured task system,
 
 ## 🧩 Core Features
 
-**Unicode Task States**
+**Unicode Task States**  
 `⊙` TODO, `⊘` IN\_PROGRESS, `⊜` CONTINUED, `⊖` DONE, `⊗` ABANDONED
 
-**Agenda View**
+**Agenda View**  
 See all scheduled tasks from all `.org` files in one clean, date-grouped panel. Fully clickable + status toggleable.
 
-**Calendar View**
+**Calendar View**  
 Drag & drop tasks to reschedule. Filter by tag. Auto-syncs to file.
 
-**Inline Tagging**
+**Inline Tagging**  
 Use `[+TAG:urgent,project]` to categorize tasks. Supports AND/OR logic filtering.
 
-**Tagged Agenda View**
+**Tagged Agenda View**  
 Filter tasks by one or multiple tags, grouped by file. Click-to-edit support.
 
-**Table Builder**
+**Table Builder**  
 Visually generate Org-style tables with alignment, row headers, and optional labels.
 
-**Align Timestamps**
+**Align Timestamps**  
 Neatly formats all `SCHEDULED:` timestamps to the same column width.
 
-**Export Active Tasks**
+**Export Active Tasks**  
 Copy all non-DONE tasks to `CurrentTasks.org` for quick review or reporting.
 
-**Built-In Snippets**
+**Built-In Snippets**  
 Use `/todo`, `/template`, `/meeting`, `/checklist`, and more to insert pre-styled blocks.
 
 ---
