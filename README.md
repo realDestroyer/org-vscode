@@ -27,42 +27,42 @@ Whether you're an Emacs power user or just want a highly structured task system,
 
 ## 🧩 Core Features
 
-✅ **Unicode Task States**
+**Unicode Task States**
 `⊙` TODO, `⊘` IN\_PROGRESS, `⊜` CONTINUED, `⊖` DONE, `⊗` ABANDONED
 
-📅 **Agenda View**
+**Agenda View**
 See all scheduled tasks from all `.org` files in one clean, date-grouped panel. Fully clickable + status toggleable.
 
-📆 **Calendar View**
+**Calendar View**
 Drag & drop tasks to reschedule. Filter by tag. Auto-syncs to file.
 
-🏷 **Inline Tagging**
+**Inline Tagging**
 Use `[+TAG:urgent,project]` to categorize tasks. Supports AND/OR logic filtering.
 
-🧠 **Tagged Agenda View**
+**Tagged Agenda View**
 Filter tasks by one or multiple tags, grouped by file. Click-to-edit support.
 
-🧮 **Table Builder**
+**Table Builder**
 Visually generate Org-style tables with alignment, row headers, and optional labels.
 
-📏 **Align Timestamps**
+**Align Timestamps**
 Neatly formats all `SCHEDULED:` timestamps to the same column width.
 
-📤 **Export Active Tasks**
+**Export Active Tasks**
 Copy all non-DONE tasks to `CurrentTasks.org` for quick review or reporting.
 
-✂️ **Built-In Snippets**
+**Built-In Snippets**
 Use `/todo`, `/template`, `/meeting`, `/checklist`, and more to insert pre-styled blocks.
 
 ---
 
-## 📚 Learn More
+## Learn More
 
-✨ Full How-To Guide (with examples, images, and keyboard shortcuts):
-[📖 View the Org-vscode How-To →](https://github.com/realdestroyer/org-vscode/blob/master/howto.md)
+Full How-To Guide (with examples, images, and keyboard shortcuts):
+[View the Org-vscode How-To →](https://github.com/realdestroyer/org-vscode/blob/master/howto.md)
 
-🛠 See recent changes in the [CHANGELOG](https://github.com/realdestroyer/org-vscode/blob/master/CHANGELOG.md)
-🚧 See what’s coming next on the [ROADMAP](https://github.com/realdestroyer/org-vscode/blob/master/roadmap.md)
+See recent changes in the [CHANGELOG](https://github.com/realdestroyer/org-vscode/blob/master/CHANGELOG.md)
+See what’s coming next on the [ROADMAP](https://github.com/realdestroyer/org-vscode/blob/master/roadmap.md)
 
 ---
 
@@ -113,7 +113,7 @@ Then: Extensions Panel → More Actions (⋯) → *Install from VSIX...*
 
 ---
 
-## 🧠 Snippets Cheat Sheet
+## Snippets Cheat Sheet
 
 | Snippet      | Description               |
 | ------------ | ------------------------- |
