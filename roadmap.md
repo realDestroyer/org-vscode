@@ -10,13 +10,14 @@ These are the features that I have either already implemented, or plan to in the
 | ------------------------- | ------------------------------------------------------------------------------------------ | ----------- | -------- | ------------- |
 | TODO Notifications        | Notify users of status outside VSCode (email, sms, etc.)                                   | Not Started |          | realDestroyer |
 | Make Titles Unique        | Don't allow duplicate titles                                                               | Not Started |          | realDestroyer |
-| Calendar Tag Filtering    | Filter calendar tasks by tag                                                              | DONE | v1.7.0 | realDestroyer |
-| Hide Tags in Calendar     | Display only task content in calendar view (remove visible tag syntax from entry)        | DONE | v1.7.0 | realDestroyer |
-| Calendar Right-Click Menu | Right-click task to create, duplicate, or delete in calendar                              | In Progress |          | realDestroyer |
-| Calendar Filtering        | Filter tasks by status, date range, or deadline                                           | DONE | v1.7.0 | realDestroyer |
 | Insert Deadline Support   | Add deadline insertion command (like scheduled)                                           | Not Started |          | realDestroyer |
+| Calendar Right-Click Menu | Right-click task to create, duplicate, or delete in calendar                              | In Progress |          | realDestroyer |
 | Bulleted Lists            | Make an ordered or unordered list                                                          | In Progress |          | realDestroyer |
 | TODO Tracking             | Show TODO completion on the up-most level                                                  | In Progress |          | realDestroyer |
+| JIRA Integration          | Allow tasks to be pushed to JIRA (Epic, Story, Issues, sub-tasks, etc.)                    | In Progress |          | realDestroyer |
+| Calendar Tag Filtering    | Filter calendar tasks by tag                                                              | DONE | v1.7.0 | realDestroyer |
+| Hide Tags in Calendar     | Display only task content in calendar view (remove visible tag syntax from entry)        | DONE | v1.7.0 | realDestroyer |
+| Calendar Filtering        | Filter tasks by status, date range, or deadline                                           | DONE | v1.7.0 | realDestroyer |
 | Unicode Overhaul + Message Popup | Updated all status cycling + file syncing for ⊙ ⊘ ⊜ ⊖ ⊗; Ctrl+Alt+M message popup added    | DONE | v1.6.9   | realDestroyer |
 | Bug Fixes                   | See CHANGELOG.md for full details                                                          | DONE | v1.6.8   | realDestroyer |
 | Smart Tag Insertion         | Adds new tags inline and to #+TAGS header if missing                                       | DONE | v1.6.7   | realDestroyer |
