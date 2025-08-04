@@ -4,6 +4,7 @@ const vscode = require("vscode");
 const fs = require("fs");
 const os = require("os");
 const moment = require("moment");
+const taskKeywordManager = require("../taskKeywordManager");
 const path = require("path");
 
 module.exports = function () {
@@ -194,26 +195,11 @@ module.exports = function () {
             if (fileLines[i].includes(taskText) && fileLines[i].includes(date)) {
               let currentStatus = fileLines[i].match(/\b(TODO|DONE|IN_PROGRESS|CONTINUED|ABANDONED)\b/);
               if (currentStatus) {
-                const symbols = {
-                  TODO: '⊙ ',
-                  IN_PROGRESS: '⊘ ',
-                  CONTINUED: '⊜ ',
-                  DONE: '⊖ ',
-                  ABANDONED: '⊗ '
-                };
-
                 let indent = fileLines[i].match(/^\s*/)?.[0] || "";
-                let cleaned = fileLines[i]
-                  .replace(/[⊙⊘⊖⊜⊗]/g, '')
-                  .replace(/\b(TODO|DONE|IN_PROGRESS|CONTINUED|ABANDONED)\b/, '')
-                  .trim();
-
-                fileLines[i] = `${indent}${symbols[newStatus]}${newStatus} ${cleaned}`;
+                let cleaned = taskKeywordManager.cleanTaskText(fileLines[i]);
+                fileLines[i] = taskKeywordManager.buildTaskLine(indent, newStatus, cleaned);
                 if (newStatus === "DONE") {
-                  const completedDate = moment();
-                  const formattedDate = completedDate.format("Do MMMM YYYY, h:mm:ss a");
-                  const leadingSpaces = fileLines[i].match(/^\s*/)?.[0] || "";
-                  fileLines.splice(i + 1, 0, `${leadingSpaces}  COMPLETED:[${formattedDate}]`);
+                  fileLines.splice(i + 1, 0, taskKeywordManager.buildCompletedStamp(indent));
                 }
                 if (currentStatus[0] === "DONE" && additionalFlag === "REMOVE_COMPLETED") {
                   if (fileLines[i + 1] && fileLines[i + 1].trim().startsWith("COMPLETED:")) {
