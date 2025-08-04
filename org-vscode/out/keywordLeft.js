@@ -1,7 +1,7 @@
 const vscode = require("vscode");
-const moment = require("moment");
 const fs = require("fs");
 const path = require("path");
+const taskKeywordManager = require("./taskKeywordManager");
 
 module.exports = function () {
   vscode.commands.executeCommand("workbench.action.files.save").then(() => {
@@ -13,54 +13,25 @@ module.exports = function () {
     const currentLine = document.lineAt(position);
     const nextLine = document.lineAt(position + 1);
 
-    const keywords = ['TODO', 'IN_PROGRESS', 'CONTINUED', 'DONE', 'ABANDONED'];
-    const characterArray = ['⊙ ', '⊘ ', '⊜ ', '⊖ ', '⊗ '];
-
     const workspaceEdit = new vscode.WorkspaceEdit();
-
     const leadingSpaces = currentLine.text.slice(0, currentLine.firstNonWhitespaceCharacterIndex);
-
-    // Remove current symbol and keyword
-    let cleanedText = currentLine.text
-      .replace(/[⊙⊘⊖⊜⊗]/g, '')
-      .replace(/\b(TODO|IN_PROGRESS|CONTINUED|DONE|ABANDONED)\b/g, '')
-      .trim();
-
-    // Detect current keyword and index
+    const cleanedText = taskKeywordManager.cleanTaskText(currentLine.text);
     const keywordMatch = currentLine.text.match(/\b(TODO|IN_PROGRESS|CONTINUED|DONE|ABANDONED)\b/);
-    const currentKeywordIndex = keywordMatch ? keywords.indexOf(keywordMatch[1]) : -1;
-
-    console.log("🔍 CURRENT keyword:", keywords[currentKeywordIndex]);
-    console.log("🔢 currentKeywordIndex:", currentKeywordIndex);
-
-    // Rotate LEFT
-    const nextKeywordIndex = currentKeywordIndex > 0 ? currentKeywordIndex - 1 : keywords.length - 1;
-    const nextKeyword = keywords[nextKeywordIndex];
-    const nextSymbol = characterArray[nextKeywordIndex];
-
-    console.log("➡️ NEXT keyword:", nextKeyword);
-    console.log("🔢 nextKeywordIndex:", nextKeywordIndex);
-    console.log("🔤 nextSymbol:", nextSymbol);
-
-    // Build updated line
-    let newLine = `${leadingSpaces}${nextSymbol}${nextKeyword} ${cleanedText}`;
-    console.log("🧾 Final newLine:", newLine);
-
+    let currentKeyword = keywordMatch ? keywordMatch[1] : null;
+    const { keyword: nextKeyword, symbol: nextSymbol } = taskKeywordManager.rotateKeyword(currentKeyword, "left");
+    let newLine = taskKeywordManager.buildTaskLine(leadingSpaces, nextKeyword, cleanedText);
     // Add or remove COMPLETED line
     if (nextKeyword === 'DONE') {
-      const completedDate = moment().format('Do MMMM YYYY, h:mm:ss a');
-      const completedLine = `${leadingSpaces}  COMPLETED:[${completedDate}]`;
-      newLine += `\n${completedLine}`;
+      newLine += `\n${taskKeywordManager.buildCompletedStamp(leadingSpaces)}`;
     } else if (currentLine.text.includes('DONE') && nextLine.text.includes('COMPLETED')) {
       workspaceEdit.delete(document.uri, nextLine.range);
     }
-
-    // Replace current line
     workspaceEdit.replace(document.uri, currentLine.range, newLine);
 
     vscode.workspace.applyEdit(workspaceEdit).then(() => {
       vscode.commands.executeCommand("workbench.action.files.save");
 
+      //  If inside CurrentTasks.org, update original file
       if (document.fileName.includes("CurrentTasks.org")) {
         let originalFile = null;
         for (let i = position; i >= 0; i--) {
@@ -81,22 +52,15 @@ module.exports = function () {
             for (let i = 0; i < originalLines.length; i++) {
               let line = originalLines[i];
 
-              let lineClean = line
-                .replace(/[⊙⊘⊖⊜⊗]/g, '')
-                .replace(/\b(TODO|IN_PROGRESS|CONTINUED|DONE|ABANDONED)\b/g, '')
-                .trim();
-
+              let lineClean = taskKeywordManager.cleanTaskText(line);
               if (lineClean === cleanedText) {
                 const origIndent = line.slice(0, line.search(/\S/));
-                originalLines[i] = `${origIndent}${nextSymbol}${nextKeyword} ${lineClean}`;
-
+                originalLines[i] = taskKeywordManager.buildTaskLine(origIndent, nextKeyword, lineClean);
                 if (nextKeyword === 'DONE' && !originalLines[i + 1]?.includes("COMPLETED")) {
-                  const completedStamp = `${origIndent}  COMPLETED:[${moment().format('Do MMMM YYYY, h:mm:ss a')}]`;
-                  originalLines.splice(i + 1, 0, completedStamp);
+                  originalLines.splice(i + 1, 0, taskKeywordManager.buildCompletedStamp(origIndent));
                 } else if (originalLines[i + 1]?.includes("COMPLETED")) {
                   originalLines.splice(i + 1, 1);
                 }
-
                 fs.writeFileSync(fullPath, originalLines.join("\n"), "utf8");
                 break;
               }
