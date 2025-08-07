@@ -1,5 +1,14 @@
 # Change Log
 
+# [1.7.1] 08-04-25
+`Refactored`
+
+- Centralized Task Keyword/Symbol Manager:
+  - All logic for task keyword transitions, symbol assignment, and completion stamps is now handled by a new manager (`taskKeywordManager.js`).
+  - Refactored all relevant files (`keywordLeft.js`, `keywordRight.js`, `agenda.js`, `taggedAgenda.js`, and recommended for `calendar.js`) to use this manager, eliminating duplicated logic and ensuring consistent behavior across all views and commands.
+  - Blank lines or notes now default to TODO when keyword rotation is triggered.
+  - This refactor improves maintainability, reliability, and future extensibility of task status handling throughout the extension.
+
 # [1.7.0] 06-20-25
 `Enhanced`
 

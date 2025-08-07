@@ -2,7 +2,7 @@
 	"name": "org-vscode",
 	"displayName": "org-vscode",
 	"description": "Quickly create todo lists, take notes, plan projects and organize your thoughts.",
-	"version": "1.7.0",
+	"version": "1.7.1",
 	"repository": "https://www.github.com/realDestroyer/org-vscode",
 	"icon": "Logo.png",
 	"publisher": "realDestroyer",
@@ -69,6 +69,14 @@
 				"title": "org-vscode Change Org-vscode Directory"
 			},
 			{
+				"command": "extension.rescheduleTaskForward",
+				"title": "Reschedule Task Forward"
+			},
+			{
+				"command": "extension.rescheduleTaskBackward",
+				"title": "Reschedule Task Backward"
+			},			
+			{
 				"command": "extension.openCalendarView",
 				"title": "Open Calendar View"
 			},
@@ -87,7 +95,45 @@
 			{
 				"command": "extension.viewAgenda",
 				"title": "org-vscode Agenda View"
+			},
+			{
+				"command": "extension.alignSchedules",
+				"title": "Align Scheduled Tasks"
+			},
+			{
+				"command": "extension.insertDateStamp",
+				"title": "Insert Date Stamp"
+			},
+			{
+				"command": "extension.incrementDate",
+				"title": "Increment Date Stamp"
+			},
+			{
+				"command": "extension.decrementDate",
+				"title": "Decrement Date Stamp"
+			},
+			{
+				"command": "extension.addTagToTask",
+				"title": "Add Tag to Task"
+			  },
+			  {
+				"command": "extension.viewTaggedAgenda",
+				"title": "View Tagged Agenda"
+			},
+			{
+                "command": "extension.addSeparator",
+                "title": "Add Separator"
+            },
+			{
+				"command": "org-vscode.insertTable",
+				"title": "org-vscode: Insert Org Table"
+			},
+			{
+				"command": "org-vscode.exportCurrentTasks",
+				"title": "org-vscode: Insert Org Table"
 			}
+
+			
 		],
 		"keybindings": [
 			{
@@ -110,6 +156,16 @@
 				"key": "shift+alt+up",
 				"when": "editorLangId == 'vso' && editorTextFocus"
 			},
+			{
+				"key": "alt+shift+right",
+				"command": "extension.rescheduleTaskForward",
+				"when": "editorTextFocus"
+			},
+			{
+				"key": "alt+shift+left",
+				"command": "extension.rescheduleTaskBackward",
+				"when": "editorTextFocus"
+			},			
 			{
 				"command": "extension.moveBlockDown",
 				"key": "shift+alt+down",
@@ -139,7 +195,54 @@
 				"command": "extension.scheduling",
 				"key": "ctrl+alt+s",
 				"when": "editorLangId == 'vso' && editorTextFocus"
+			},
+			{
+				"key": "alt+shift+a",
+				"command": "extension.alignSchedules",
+				"when": "editorTextFocus"
+			},
+			{
+				"key": "ctrl+shift+t",
+				"command": "extension.insertDateStamp",
+				"when": "editorTextFocus"
+			},
+			{
+				"key": "ctrl+right",
+				"command": "extension.incrementDate",
+				"when": "editorTextFocus"
+			},
+			{
+				"key": "ctrl+left",
+				"command": "extension.decrementDate",
+				"when": "editorTextFocus"
+			},
+			{
+				"command": "extension.addTagToTask",
+				"key": "ctrl+shift+t",
+				"when": "editorTextFocus"
+			  },
+			  {
+				"command": "extension.viewTaggedAgenda",
+				"key": "ctrl+shift+g",
+				"when": "editorTextFocus"
+			},
+			{
+                "key": "ctrl+alt+d",
+                "command": "extension.addSeparator",
+                "when": "editorTextFocus"
+            },
+			{
+                "key": "alt+shift+t",
+                "command": "org-vscode.insertTable",
+                "when": "editorTextFocus"
+            },
+			{
+				"key": "ctrl+shift+e",
+				"command": "extension.exportCurrentTasks",
+				"when": "editorTextFocus"
 			}
+				  
+					
 		],
 		"languages": [
 			{
@@ -174,9 +277,6 @@
 		]
 	},
 	"scripts": {
-		"vscode:prepublish": "npm run compile",
-		"compile": "tsc -p ./",
-		"watch": "tsc -watch -p ./",
 		"postinstall": "node ./node_modules/vscode/bin/install",
 		"test": "npm run compile && node ./node_modules/vscode/bin/test"
 	},

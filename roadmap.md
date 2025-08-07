@@ -15,6 +15,7 @@ These are the features that I have either already implemented, or plan to in the
 | Bulleted Lists            | Make an ordered or unordered list                                                          | In Progress |          | realDestroyer |
 | TODO Tracking             | Show TODO completion on the up-most level                                                  | In Progress |          | realDestroyer |
 | JIRA Integration          | Allow tasks to be pushed to JIRA (Epic, Story, Issues, sub-tasks, etc.)                    | In Progress |          | realDestroyer |
+| Centralized Task Keyword/Symbol Manager | Refactored all keyword/symbol logic into a single manager file (`taskKeywordManager.js`) for consistency and maintainability across all commands and views. | DONE        | v1.7.1   | realDestroyer |
 | Calendar Tag Filtering    | Filter calendar tasks by tag                                                              | DONE | v1.7.0 | realDestroyer |
 | Hide Tags in Calendar     | Display only task content in calendar view (remove visible tag syntax from entry)        | DONE | v1.7.0 | realDestroyer |
 | Calendar Filtering        | Filter tasks by status, date range, or deadline                                           | DONE | v1.7.0 | realDestroyer |
