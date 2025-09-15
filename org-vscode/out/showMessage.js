@@ -2,7 +2,6 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.WindowMessage = void 0;
 const vscode = require("vscode");
-const opn = require('opn');
 class WindowMessage {
     //attributes
     type;
@@ -34,7 +33,13 @@ class WindowMessage {
             //open in browswer
             if (this.haveUrl === true && this.haveButton === true && this.buttonText !== undefined) {
                 vscode.window.showInformationMessage(this.message, ...[this.buttonText]).then(selection => {
-                    opn(this.urlText);
+                    if (selection === this.buttonText && this.urlText) {
+                        try {
+                            vscode.env.openExternal(vscode.Uri.parse(this.urlText));
+                        } catch (e) {
+                            vscode.window.showErrorMessage(`Failed to open link: ${this.urlText}`);
+                        }
+                    }
                 });
             }
             else {
@@ -45,7 +50,13 @@ class WindowMessage {
             //open in browswer
             if (this.haveUrl === true && this.haveButton === true && this.buttonText !== undefined) {
                 vscode.window.showWarningMessage(this.message, ...[this.buttonText]).then(selection => {
-                    opn(this.urlText);
+                    if (selection === this.buttonText && this.urlText) {
+                        try {
+                            vscode.env.openExternal(vscode.Uri.parse(this.urlText));
+                        } catch (e) {
+                            vscode.window.showErrorMessage(`Failed to open link: ${this.urlText}`);
+                        }
+                    }
                 });
             }
             else {
@@ -56,7 +67,13 @@ class WindowMessage {
             //open in browswer
             if (this.haveUrl === true && this.haveButton === true && this.buttonText !== undefined) {
                 vscode.window.showErrorMessage(this.message, ...[this.buttonText]).then(selection => {
-                    opn(this.urlText);
+                    if (selection === this.buttonText && this.urlText) {
+                        try {
+                            vscode.env.openExternal(vscode.Uri.parse(this.urlText));
+                        } catch (e) {
+                            vscode.window.showErrorMessage(`Failed to open link: ${this.urlText}`);
+                        }
+                    }
                 });
             }
             else {

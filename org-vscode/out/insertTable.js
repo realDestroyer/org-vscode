@@ -10,7 +10,13 @@ function activate(context) {
       { enableScripts: true }
     );
 
-    panel.webview.html = getWebviewContent();
+    const nonce = (() => {
+      let text = '';
+      const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+      for (let i = 0; i < 32; i++) text += possible.charAt(Math.floor(Math.random() * possible.length));
+      return text;
+    })();
+    panel.webview.html = getWebviewContent(panel.webview, nonce);
 
     panel.webview.onDidReceiveMessage(
       message => {
@@ -41,12 +47,13 @@ function activate(context) {
   context.subscriptions.push(disposable);
 }
 
-function getWebviewContent() {
+function getWebviewContent(webview, nonce) {
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src ${webview.cspSource} data:; style-src ${webview.cspSource}; script-src 'nonce-${nonce}';">
   <title>Insert Org Table</title>
   <style>
     body {
@@ -130,7 +137,7 @@ function getWebviewContent() {
   <button onclick="submitTable()">Insert Table</button>
   <div id="tableContainer"></div>
 
-  <script>
+  <script nonce="${nonce}">
     const vscode = acquireVsCodeApi();
 
     function generateTable() {

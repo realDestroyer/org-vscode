@@ -123,7 +123,17 @@ function showTaggedAgendaView(tag, items) {
     { enableScripts: true }
   );
 
-  panel.webview.html = getTaggedWebviewContent(tag, items);
+  const nonce = (() => {
+    let text = '';
+    const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    for (let i = 0; i < 32; i++) text += possible.charAt(Math.floor(Math.random() * possible.length));
+    return text;
+  })();
+
+  const mediaDir = path.join(__dirname, "..", "media");
+  const localMoment = panel.webview.asWebviewUri(vscode.Uri.file(path.join(mediaDir, "moment.min.js")));
+
+  panel.webview.html = getTaggedWebviewContent(panel.webview, nonce, String(localMoment), tag, items);
 
   panel.webview.onDidReceiveMessage(message => {
     console.log("📩 Received message from webview:", message);
@@ -147,7 +157,7 @@ function showTaggedAgendaView(tag, items) {
   });
 }
 
-function getTaggedWebviewContent(tag, items) {
+function getTaggedWebviewContent(webview, nonce, localMomentJs, tag, items) {
   const grouped = {};
 
   for (const item of items) {
@@ -207,15 +217,20 @@ function getTaggedWebviewContent(tag, items) {
             </div>`;
   }).join("");
 
+  const csp = `default-src 'none'; img-src ${webview.cspSource} https: data:; style-src ${webview.cspSource} 'nonce-${nonce}' https:; script-src 'nonce-${nonce}' https:`;
+  const cdnMomentJs = "https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js";
+
   return `
 <!DOCTYPE html>
 <html>
 <head>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
   <meta charset="UTF-8">
+  <meta http-equiv="Content-Security-Policy" content="${csp}">
   <title>Tagged Agenda: ${tag}</title>
   <link href="https://fonts.googleapis.com/css?family=Roboto+Mono:400,700|Roboto:400,700" rel="stylesheet">
-  <style>
+  <script nonce="${nonce}" src="${localMomentJs}"></script>
+  <script nonce="${nonce}">(function(){ if (!window.moment){ var s=document.createElement('script'); s.src='${cdnMomentJs}'; document.head.appendChild(s);} })();</script>
+  <style nonce="${nonce}">
 body{
           font-family: 'Roboto', sans-serif;
         }
@@ -477,7 +492,7 @@ body{
   <div id="display-agenda">${filePanels}</div>
 
   
-  <script>
+  <script nonce="${nonce}">
       const vscode = acquireVsCodeApi();
 
       // Toggle file groups on file-tab click
