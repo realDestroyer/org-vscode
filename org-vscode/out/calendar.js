@@ -52,17 +52,17 @@ function sendTasksToCalendar(panel) {
       return;
     }
 
-    files.forEach(file => {
+  files.forEach(file => {
       // Ignore non-.org files and the special CurrentTasks.org export file
       if (file.endsWith(".org") && file !== "CurrentTasks.org") {
         let filePath = path.join(dirPath, file);
         let content = fs.readFileSync(filePath, "utf-8").split(/\r?\n/);
 
-        content.forEach(line => {
+        content.forEach((line, lineIndex) => {
           // Must be a scheduled task with a proper status keyword and start with a task symbol
           const scheduledMatch = line.match(/\bSCHEDULED:\s*\[(\d{2}-\d{2}-\d{4})\]/);
           const keywordMatch = line.match(/\b(TODO|IN_PROGRESS|DONE|CONTINUED|ABANDONED)\b/);
-          const startsWithSymbol = /^[⊙⊖⊘⊜⊗]/.test(line.trim());
+          const startsWithSymbol = /^[⊙⊖⊘⊜⊗]/.test(line.trim()); 
 
           if (scheduledMatch && startsWithSymbol && keywordMatch) {
             // Extract inline tags if they exist: [+TAG:foo,bar]
@@ -85,7 +85,8 @@ function sendTasksToCalendar(panel) {
               fullText: fullLine, // For backend matching (reschedule logic)
               date: moment(scheduledMatch[1], "MM-DD-YYYY").format("YYYY-MM-DD"),
               file: file,
-              tags: tags
+              tags: tags,
+              id: file + '#' + lineIndex // stable id for rescheduling
             });
           }
         });
@@ -147,6 +148,56 @@ function rescheduleTask(file, oldDate, newDate, taskText) {
   }
 }
 
+/**
+ * Reschedule by stable id formatted as "<file>#<lineIndex>" with newDate in MM-DD-YYYY or ISO format.
+ */
+function rescheduleTaskById(taskId, newDate) {
+  const parts = String(taskId).split('#');
+  if (parts.length !== 2) {
+    vscode.window.showErrorMessage('Invalid task id for reschedule.');
+    return;
+  }
+  const file = parts[0];
+  const lineIndex = parseInt(parts[1], 10);
+  if (!file || Number.isNaN(lineIndex)) {
+    vscode.window.showErrorMessage('Invalid task id components.');
+    return;
+  }
+
+  const filePath = path.join(setMainDir(), file);
+  if (!fs.existsSync(filePath)) {
+    vscode.window.showErrorMessage(`File not found: ${file}`);
+    return;
+  }
+
+  const fileContents = fs.readFileSync(filePath, 'utf-8');
+  const lines = fileContents.split(/\r?\n/);
+  if (lineIndex < 0 || lineIndex >= lines.length) {
+    vscode.window.showErrorMessage('Task line index out of range.');
+    return;
+  }
+
+  let parsedNewDate = moment(newDate, ["YYYY-MM-DD", "MM-DD-YYYY"], true);
+  if (!parsedNewDate.isValid()) {
+    vscode.window.showErrorMessage('Invalid date format for reschedule.');
+    return;
+  }
+  const formattedNewDate = parsedNewDate.format('MM-DD-YYYY');
+
+  // Replace or insert SCHEDULED: [MM-DD-YYYY] on that line
+  const scheduledRegex = /(SCHEDULED:\s*\[)(\d{2}-\d{2}-\d{4})(\])/;
+  if (scheduledRegex.test(lines[lineIndex])) {
+    lines[lineIndex] = lines[lineIndex].replace(scheduledRegex, `$1${formattedNewDate}$3`);
+  } else {
+    // Append SCHEDULED at end with a spacing dash if not present
+    lines[lineIndex] = lines[lineIndex].replace(/\s*$/, '') + `  SCHEDULED: [${formattedNewDate}]`;
+  }
+
+  fs.writeFileSync(filePath, lines.join('\n'), 'utf-8');
+  vscode.window.showInformationMessage(`Task rescheduled to ${formattedNewDate} in ${file}`);
+  refreshCalendarView();
+}
+
 
 /**
  * Opens the Calendar View as a Webview panel in VSCode.
@@ -205,7 +256,11 @@ function openCalendarView() {
 
     } else if (message.command === "rescheduleTask") {
       // Webview user dragged/dropped a task to a new date
-      rescheduleTask(message.file, message.oldDate, message.newDate, message.text);
+      if (message.id) {
+        rescheduleTaskById(message.id, message.newDate);
+      } else {
+        rescheduleTask(message.file, message.oldDate, message.newDate, message.text);
+      }
     }
   });
 }
@@ -309,6 +364,7 @@ function getCalendarWebviewContent({ webview, nonce, fullCalendarCss, fullCalend
           let newDate = moment(info.event.start).format("MM-DD-YYYY");
           vscode.postMessage({
             command: "rescheduleTask",
+            id: info.event.id,
             file: info.event.extendedProps.file,
             oldDate: info.event.extendedProps.originalDate,
             newDate: newDate,
@@ -339,6 +395,7 @@ function getCalendarWebviewContent({ webview, nonce, fullCalendarCss, fullCalend
         const events = filteredByTag.map(task => {
           const color = getColorForTag((task.tags || [])[0] || "");
           return {
+            id: task.id,
             title: task.text,
             start: task.date,
             file: task.file,

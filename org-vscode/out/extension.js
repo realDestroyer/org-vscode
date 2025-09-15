@@ -48,32 +48,32 @@ const GO_MODE = { language: "vso", scheme: "file" };
 // Auto-add ⊙/⊘/⊖ based on asterisk heading level when user types space
 class GoOnTypingFormatter {
   provideOnTypeFormattingEdits(document, position, ch, options, token) {
-    return new Promise((resolve, reject) => {
-      const { activeTextEditor } = vscode.window;
-      if (activeTextEditor && activeTextEditor.document.languageId === "vso") {
-        const { document } = activeTextEditor;
-        let currentLine = document.lineAt(position);
-        if (
-          currentLine.text.indexOf("⊙") === -1 &&
-          currentLine.text.indexOf("⊘") === -1 &&
-          currentLine.text.indexOf("⊖") === -1
-        ) {
-          if (currentLine.text.indexOf("*") > -1) {
-            let numOfAsterisk = currentLine.text.split("*").length - 1;
-            for (var i = 0; i < currentLine.text.length; i++) {
-              resolve(
-                textEdit(
-                  setUnicodeChar(numOfAsterisk),
-                  position,
-                  document,
-                  numOfSpaces(numOfAsterisk)
-                )
-              );
-            }
-          }
-        }
-      }
-    });
+    // Only respond to space key in vso docs
+    const editor = vscode.window.activeTextEditor;
+    if (!editor || editor.document.languageId !== "vso" || ch !== " ") {
+      return [];
+    }
+
+    const line = document.lineAt(position.line).text;
+    // Guard: don't re-insert if the line already begins with a status symbol
+    if (/^[\s]*[⊙⊘⊖⊜⊗]/.test(line)) {
+      return [];
+    }
+
+    // Only trigger when typing a space immediately after leading asterisks at line start
+    const prefix = line.slice(0, position.character);
+    const starMatch = prefix.match(/^\s*(\*+)\s$/);
+    if (!starMatch) {
+      return [];
+    }
+
+    const asterisks = starMatch[1].length;
+    const insertText = numOfSpaces(asterisks) + setUnicodeChar(asterisks);
+
+    // Replace from start-of-line through the just-typed space (removes the asterisks)
+    const start = new vscode.Position(position.line, 0);
+    const range = new vscode.Range(start, position);
+    return [vscode.TextEdit.replace(range, insertText)];
   }
 }
 
@@ -88,6 +88,7 @@ function setUnicodeChar(asterisks) {
 
 // Returns a compound text edit to delete line + insert formatted line
 function textEdit(char, position, document, spaces) {
+  // Deprecated by non-destructive formatter above; keep for backward compatibility if needed
   const getRange = document.lineAt(position).range;
   let removeText = vscode.TextEdit.delete(getRange);
   let insertText = vscode.TextEdit.insert(position, spaces + char);
