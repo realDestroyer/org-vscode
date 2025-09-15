@@ -7,6 +7,16 @@ const moment = require("moment");   // Date formatting library
 
 let calendarPanel = null; // Keeps reference to the Webview panel (singleton instance)
 
+// Generate a nonce for CSP
+function getNonce() {
+  let text = '';
+  const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  for (let i = 0; i < 32; i++) {
+    text += possible.charAt(Math.floor(Math.random() * possible.length));
+  }
+  return text;
+}
+
 /**
  * Retrieves the directory path where `.org` files are stored.
  * Falls back to ~/OrgFiles if no custom path is set in settings.
@@ -158,8 +168,22 @@ function openCalendarView() {
     { enableScripts: true }   // Allow scripts to run in the Webview
   );
 
-  // Set the initial HTML content for the calendar (injected from getCalendarWebviewContent)
-  calendarPanel.webview.html = getCalendarWebviewContent();
+  // Prepare local media URIs and CSP nonce
+  const webview = calendarPanel.webview;
+  const nonce = getNonce();
+  const mediaDir = path.join(__dirname, "..", "media");
+  const fullCalendarCss = webview.asWebviewUri(vscode.Uri.file(path.join(mediaDir, "fullcalendar.min.css")));
+  const fullCalendarJs = webview.asWebviewUri(vscode.Uri.file(path.join(mediaDir, "fullcalendar.min.js")));
+  const momentJs = webview.asWebviewUri(vscode.Uri.file(path.join(mediaDir, "moment.min.js")));
+
+  // Set the initial HTML content for the calendar (with CSP & local assets + CDN fallback)
+  calendarPanel.webview.html = getCalendarWebviewContent({
+    webview,
+    nonce,
+    fullCalendarCss: String(fullCalendarCss),
+    fullCalendarJs: String(fullCalendarJs),
+    momentJs: String(momentJs)
+  });
 
   // When the user closes the panel, release the reference so it can be recreated later
   calendarPanel.onDidDispose(() => {
@@ -190,17 +214,34 @@ function openCalendarView() {
  * Returns the full HTML content for the Calendar View Webview panel.
  * Integrates FullCalendar, styles, and sets up message passing to/from the extension.
  */
-function getCalendarWebviewContent() {
+function getCalendarWebviewContent({ webview, nonce, fullCalendarCss, fullCalendarJs, momentJs }) {
+  const csp = `default-src 'none'; img-src ${webview.cspSource} https: data:; style-src ${webview.cspSource} 'nonce-${nonce}' https:; script-src 'nonce-${nonce}' https:`;
+  const cdnFullCalendarCss = "https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css";
+  const cdnFullCalendarJs = "https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js";
+  const cdnMomentJs = "https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js";
+
   return `<!DOCTYPE html>
 <html>
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="${csp}">
   <title>Calendar View</title>
-  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
-  <style>
+  <!-- Prefer local bundled assets -->
+  <link href="${fullCalendarCss}" rel="stylesheet">
+  <script nonce="${nonce}" src="${fullCalendarJs}"></script>
+  <script nonce="${nonce}" src="${momentJs}"></script>
+  <!-- CDN fallback if local assets are missing -->
+  <script nonce="${nonce}">
+    (function() {
+      function loadScript(src, cb){ var s = document.createElement('script'); s.src = src; s.onload = cb; document.head.appendChild(s); }
+      function loadCss(href){ var l=document.createElement('link'); l.rel='stylesheet'; l.href=href; document.head.appendChild(l); }
+      window.addEventListener('DOMContentLoaded', function(){
+        if (!window.FullCalendar) { loadCss('${cdnFullCalendarCss}'); loadScript('${cdnMomentJs}', function(){ loadScript('${cdnFullCalendarJs}', function(){}); }); }
+      });
+    })();
+  </script>
+  <style nonce="${nonce}">
     body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background-color: #282c34; color: white; }
     #calendar { max-width: 900px; margin: auto; background: white; color: black; padding: 10px; border-radius: 8px; }
     .tag-badge {
@@ -233,7 +274,7 @@ function getCalendarWebviewContent() {
   <div id="tag-bubbles" style="margin-bottom: 20px;"></div>
   <div id="calendar"></div>
 
-  <script>
+  <script nonce="${nonce}">
     const vscode = acquireVsCodeApi();
     const tagColorMap = {};
     let allTasks = [];
@@ -247,7 +288,7 @@ function getCalendarWebviewContent() {
       return color;
     }
 
-    document.addEventListener("DOMContentLoaded", function () {
+    function initCalendar() {
       let calendarEl = document.getElementById("calendar");
       let calendar = new FullCalendar.Calendar(calendarEl, {
         initialView: "dayGridMonth",
@@ -271,7 +312,7 @@ function getCalendarWebviewContent() {
             file: info.event.extendedProps.file,
             oldDate: info.event.extendedProps.originalDate,
             newDate: newDate,
-            text: info.event.extendedProps.fullText // <--- this must be fullText
+            text: info.event.extendedProps.fullText
           });
         }
       });
@@ -323,7 +364,6 @@ function getCalendarWebviewContent() {
 
         document.getElementById("tag-bubbles").innerHTML = tagBubblesHtml;
 
-        // Reattach click handlers
         document.querySelectorAll(".tag-badge").forEach(el => {
           el.onclick = e => {
             const tag = el.dataset.tag;
@@ -339,13 +379,27 @@ function getCalendarWebviewContent() {
               activeTagFilter = activeTagFilter.includes(tag) ? [] : [tag];
             }
 
-            renderFilteredTasks(start, end); // Rerender with updated filter
+            renderFilteredTasks(start, end);
           };
         });
         calendar.removeAllEvents();
         calendar.addEventSource(events);
       }
-    });
+    }
+
+    function waitForDeps(callback) {
+      let tries = 0; const max = 50; const interval = 100;
+      const t = setInterval(() => {
+        if (window.FullCalendar && window.moment) {
+          clearInterval(t); callback();
+        } else if (++tries >= max) {
+          clearInterval(t);
+          console.error('Calendar dependencies failed to load.');
+        }
+      }, interval);
+    }
+
+    document.addEventListener("DOMContentLoaded", function () { waitForDeps(initCalendar); });
   </script>
 </body>
 </html>`;

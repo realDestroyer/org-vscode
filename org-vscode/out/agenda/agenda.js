@@ -9,7 +9,7 @@ const path = require("path");
 
 module.exports = function () {
   vscode.commands.executeCommand("workbench.action.files.save").then(() => {
-    let config = vscode.workspace.getConfiguration("org");
+  let config = vscode.workspace.getConfiguration("Org-vscode");
     let folderPath = config.get("folderPath");
     let dateFormat = config.get("dateFormat");
     let folder;
@@ -31,12 +31,8 @@ module.exports = function () {
             if (items[i] === "CurrentTasks.org") continue; // Skip export file
 
             // Read the contents of the .org file
-            let fileText;
-            if (os.platform() === "darwin" || os.platform() === "linux") {
-              fileText = fs.readFileSync(setMainDir() + "/" + items[i]).toString().split(/\r?\n/);
-            } else {
-              fileText = fs.readFileSync(setMainDir() + "\\" + items[i]).toString().split(/\r?\n/);
-            }
+            const fullPath = path.join(setMainDir(), items[i]);
+            const fileText = fs.readFileSync(fullPath).toString().split(/\r?\n/);
 
             // Iterate through lines to find scheduled, non-DONE tasks
             for (let j = 0; j < fileText.length; j++) {

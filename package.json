@@ -11,14 +11,9 @@
 	"vscode": "^1.70.0"
 	},
 	"categories": [
-	"Notebooks",
-	"Extension Packs",
 	"Other"
 	],
 	"activationEvents": [
-	"onLanguage:org",
-	"onLanguage:vsorg",
-	"onLanguage:org-vscode",
 	"onLanguage:vso",
 	"onCommand:extension.viewAgenda",
 	"onCommand:extension.createVsoFile"
@@ -56,9 +51,6 @@
 					"MM-DD-YYYY",
 					"DD-MM-YYYY"
 				],
-				"minItems": 1,
-				"maxItems": 3,
-				"uniqueItems": true,
 				"description": "The scheduled date format."
 				}
 			}
@@ -130,7 +122,7 @@
 			},
 			{
 				"command": "org-vscode.exportCurrentTasks",
-				"title": "org-vscode: Insert Org Table"
+				"title": "org-vscode: Export Current Tasks"
 			}
 
 			
@@ -204,7 +196,7 @@
 			{
 				"key": "ctrl+shift+t",
 				"command": "extension.insertDateStamp",
-				"when": "editorTextFocus"
+				"when": "editorLangId == 'vso' && editorTextFocus"
 			},
 			{
 				"key": "ctrl+right",
@@ -216,11 +208,11 @@
 				"command": "extension.decrementDate",
 				"when": "editorTextFocus"
 			},
-			{
-				"command": "extension.addTagToTask",
-				"key": "ctrl+shift+t",
-				"when": "editorTextFocus"
-			  },
+						{
+								"command": "extension.addTagToTask",
+								"key": "ctrl+alt+t",
+								"when": "editorLangId == 'vso' && editorTextFocus"
+							},
 			  {
 				"command": "extension.viewTaggedAgenda",
 				"key": "ctrl+shift+g",
