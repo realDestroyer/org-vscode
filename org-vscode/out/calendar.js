@@ -223,17 +223,26 @@ function openCalendarView() {
   const webview = calendarPanel.webview;
   const nonce = getNonce();
   const mediaDir = path.join(__dirname, "..", "media");
-  const fullCalendarCss = webview.asWebviewUri(vscode.Uri.file(path.join(mediaDir, "fullcalendar.min.css")));
-  const fullCalendarJs = webview.asWebviewUri(vscode.Uri.file(path.join(mediaDir, "fullcalendar.min.js")));
-  const momentJs = webview.asWebviewUri(vscode.Uri.file(path.join(mediaDir, "moment.min.js")));
+  const fcCssPath = path.join(mediaDir, "fullcalendar.min.css");
+  const fcJsPath = path.join(mediaDir, "fullcalendar.min.js");
+  const momentPath = path.join(mediaDir, "moment.min.js");
+  const hasFullCalendarCss = fs.existsSync(fcCssPath);
+  const hasFullCalendarJs = fs.existsSync(fcJsPath);
+  const hasMomentJs = fs.existsSync(momentPath);
+  const fullCalendarCss = hasFullCalendarCss ? webview.asWebviewUri(vscode.Uri.file(fcCssPath)) : null;
+  const fullCalendarJs = hasFullCalendarJs ? webview.asWebviewUri(vscode.Uri.file(fcJsPath)) : null;
+  const momentJs = hasMomentJs ? webview.asWebviewUri(vscode.Uri.file(momentPath)) : null;
 
   // Set the initial HTML content for the calendar (with CSP & local assets + CDN fallback)
   calendarPanel.webview.html = getCalendarWebviewContent({
     webview,
     nonce,
-    fullCalendarCss: String(fullCalendarCss),
-    fullCalendarJs: String(fullCalendarJs),
-    momentJs: String(momentJs)
+    fullCalendarCss: fullCalendarCss ? String(fullCalendarCss) : null,
+    fullCalendarJs: fullCalendarJs ? String(fullCalendarJs) : null,
+    momentJs: momentJs ? String(momentJs) : null,
+    hasFullCalendarCss,
+    hasFullCalendarJs,
+    hasMomentJs
   });
 
   // When the user closes the panel, release the reference so it can be recreated later
@@ -269,197 +278,83 @@ function openCalendarView() {
  * Returns the full HTML content for the Calendar View Webview panel.
  * Integrates FullCalendar, styles, and sets up message passing to/from the extension.
  */
-function getCalendarWebviewContent({ webview, nonce, fullCalendarCss, fullCalendarJs, momentJs }) {
-  const csp = `default-src 'none'; img-src ${webview.cspSource} https: data:; style-src ${webview.cspSource} 'nonce-${nonce}' https:; script-src 'nonce-${nonce}' https:`;
-  const cdnFullCalendarCss = "https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css";
-  const cdnFullCalendarJs = "https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js";
-  const cdnMomentJs = "https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js";
+function getCalendarWebviewContent({ webview, nonce }) {
+  const csp = `default-src 'none'; img-src ${webview.cspSource} https: data:; style-src ${webview.cspSource} 'nonce-${nonce}' https:; script-src ${webview.cspSource} 'nonce-${nonce}' https:; font-src ${webview.cspSource} https: data:`;
+  const fullCalendarCss = 'https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css';
+  const fullCalendarJs = 'https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js';
+  const momentJs = 'https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js';
 
-  return `<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="Content-Security-Policy" content="${csp}">
-  <title>Calendar View</title>
-  <!-- Prefer local bundled assets -->
-  <link href="${fullCalendarCss}" rel="stylesheet">
-  <script nonce="${nonce}" src="${fullCalendarJs}"></script>
-  <script nonce="${nonce}" src="${momentJs}"></script>
-  <!-- CDN fallback if local assets are missing -->
-  <script nonce="${nonce}">
-    (function() {
-      function loadScript(src, cb){ var s = document.createElement('script'); s.src = src; s.onload = cb; document.head.appendChild(s); }
-      function loadCss(href){ var l=document.createElement('link'); l.rel='stylesheet'; l.href=href; document.head.appendChild(l); }
-      window.addEventListener('DOMContentLoaded', function(){
-        if (!window.FullCalendar) { loadCss('${cdnFullCalendarCss}'); loadScript('${cdnMomentJs}', function(){ loadScript('${cdnFullCalendarJs}', function(){}); }); }
-      });
-    })();
-  </script>
-  <style nonce="${nonce}">
-    body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background-color: #282c34; color: white; }
-    #calendar { max-width: 900px; margin: auto; background: white; color: black; padding: 10px; border-radius: 8px; }
-    .tag-badge {
-      display: inline-block;
-      padding: 5px 10px;
-      font-weight: bold;
-      font-size: 10px;
-      color: white;
-      border-radius: 20px;
-      margin-right: 5px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-    }
-    .tag-badge.selected {
-      opacity: 1;
-      border: 2px solid white;
-      cursor: pointer;
-    }
-    .tag-badge.inactive {
-      opacity: 0.3;
-      filter: grayscale(100%);
-      cursor: pointer;
-    }
-    .tag-badge:hover {
-      opacity: 0.8;
-    }
-  </style>
-</head>
-<body>
-  <h1>Calendar View</h1>
-  <div id="tag-bubbles" style="margin-bottom: 20px;"></div>
-  <div id="calendar"></div>
-
-  <script nonce="${nonce}">
-    const vscode = acquireVsCodeApi();
-    const tagColorMap = {};
-    let allTasks = [];
-    let activeTagFilter = [];
-
-    function getColorForTag(tag) {
-      if (tagColorMap[tag]) return tagColorMap[tag];
-      const hue = Object.keys(tagColorMap).length * 47 % 360;
-      const color = 'hsl(' + hue + ', 70%, 60%)';
-      tagColorMap[tag] = color;
-      return color;
-    }
-
-    function initCalendar() {
-      let calendarEl = document.getElementById("calendar");
-      let calendar = new FullCalendar.Calendar(calendarEl, {
-        initialView: "dayGridMonth",
-        headerToolbar: {
-          left: "prev,next today",
-          center: "title",
-          right: "dayGridMonth,timeGridWeek,timeGridDay"
-        },
-        editable: true,
-        events: [],
-        datesSet: function(info) {
-          renderFilteredTasks(info.start, info.end);
-        },
-        eventClick: function (info) {
-          vscode.postMessage({ command: "openFile", file: info.event.extendedProps.file });
-        },
-        eventDrop: function (info) {
-          let newDate = moment(info.event.start).format("MM-DD-YYYY");
-          vscode.postMessage({
-            command: "rescheduleTask",
-            id: info.event.id,
-            file: info.event.extendedProps.file,
-            oldDate: info.event.extendedProps.originalDate,
-            newDate: newDate,
-            text: info.event.extendedProps.fullText
-          });
-        }
-      });
-
-      calendar.render();
-
-      window.addEventListener("message", (event) => {
-        allTasks = event.data.tasks;
-        renderFilteredTasks(calendar.view.activeStart, calendar.view.activeEnd);
-      });
-
-      vscode.postMessage({ command: "requestTasks" });
-
-      function renderFilteredTasks(start, end) {
-        const visibleTasks = allTasks.filter(task => {
-          const taskDate = moment(task.date);
-          return taskDate.isSameOrAfter(moment(start)) && taskDate.isBefore(moment(end));
+  // Utility JS (injected inline with nonce) kept compact to stay readable.
+  const script = `(()=>{
+    const vscode=acquireVsCodeApi();
+    let cal; let all=[]; let activeTags=[];
+    function tagSlug(t){return (t||'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'');}
+    function ensureTagColor(tag){
+      const id='tag-color-'+tagSlug(tag);
+      if(document.getElementById(id)) return id;
+      const palette=['#d97706','#2563eb','#059669','#dc2626','#7c3aed','#db2777','#0d9488','#b45309','#1d4ed8','#10b981','#9333ea','#f87171'];
+      // Deterministic-ish index: hash via char codes
+      let hash=0; for(let i=0;i<tag.length;i++){hash=(hash*31 + tag.charCodeAt(i))>>>0;} const color=palette[hash % palette.length];
+      const st=document.createElement('style'); st.id=id; st.setAttribute('nonce','${nonce}');
+      st.textContent='.'+id+'{background:'+color+';border:1px solid '+color+';}'; document.head.appendChild(st); return id; }
+    function renderTagChips(tasks){
+      const container=document.getElementById('tag-bubbles'); if(!container) return;
+      const tags=new Set(); tasks.forEach(t=> (t.tags||[]).forEach(tag=>tags.add(tag)));
+      const sorted=[...tags].sort();
+      container.innerHTML=sorted.map(tag=>{ const colorClass=ensureTagColor(tag); let cls='tag-chip '+colorClass; if(activeTags.length){cls+=activeTags.includes(tag)?' selected':' inactive';} return '<span class="'+cls+'" data-tag="'+tag+'">'+tag+'</span>'; }).join('');
+      container.querySelectorAll('.tag-chip').forEach(el=>{
+        el.addEventListener('click',e=>{
+          const tg=el.dataset.tag;
+            if(e.ctrlKey||e.metaKey){ if(activeTags.includes(tg)){ activeTags=activeTags.filter(x=>x!==tg);} else { activeTags.push(tg);} }
+            else { activeTags = activeTags.includes(tg)?[]:[tg]; }
+          syncEvents(); renderTagChips(all);
         });
-
-        const filteredByTag = activeTagFilter.length
-          ? visibleTasks.filter(task => task.tags.some(tag => activeTagFilter.includes(tag)))
-          : visibleTasks;
-
-        const events = filteredByTag.map(task => {
-          const color = getColorForTag((task.tags || [])[0] || "");
-          return {
-            id: task.id,
-            title: task.text,
-            start: task.date,
-            file: task.file,
-            originalDate: task.date,
-            backgroundColor: color,
-            borderColor: color,
-            fullText: task.fullText,
-            tags: task.tags
-          };
-        });
-
-        const visibleTags = new Set();
-        visibleTasks.forEach(task => task.tags.forEach(tag => visibleTags.add(tag)));
-
-        let tagBubblesHtml = Array.from(visibleTags).map(tag => {
-          const color = getColorForTag(tag);
-          let className = 'tag-badge';
-          if (activeTagFilter.length > 0) {
-            className += activeTagFilter.includes(tag) ? ' selected' : ' inactive';
-          }
-          return '<span class="' + className + '" data-tag="' + tag + '" style="background-color: ' + color + '">' + tag + '</span>';
-        }).join("");
-
-        document.getElementById("tag-bubbles").innerHTML = tagBubblesHtml;
-
-        document.querySelectorAll(".tag-badge").forEach(el => {
-          el.onclick = e => {
-            const tag = el.dataset.tag;
-            const ctrlPressed = e.ctrlKey || e.metaKey;
-
-            if (ctrlPressed) {
-              if (activeTagFilter.includes(tag)) {
-                activeTagFilter = activeTagFilter.filter(t => t !== tag);
-              } else {
-                activeTagFilter.push(tag);
-              }
-            } else {
-              activeTagFilter = activeTagFilter.includes(tag) ? [] : [tag];
-            }
-
-            renderFilteredTasks(start, end);
-          };
-        });
-        calendar.removeAllEvents();
-        calendar.addEventSource(events);
-      }
+      });
     }
-
-    function waitForDeps(callback) {
-      let tries = 0; const max = 50; const interval = 100;
-      const t = setInterval(() => {
-        if (window.FullCalendar && window.moment) {
-          clearInterval(t); callback();
-        } else if (++tries >= max) {
-          clearInterval(t);
-          console.error('Calendar dependencies failed to load.');
-        }
-      }, interval);
+    function syncEvents(){
+      if(!cal) return; cal.removeAllEvents();
+      let tasks=all; if(activeTags.length){ tasks = tasks.filter(t=> (t.tags||[]).some(tag=>activeTags.includes(tag))); }
+      cal.addEventSource(tasks.map(t=>({id:t.id,title:t.text,start:t.date,file:t.file,originalDate:t.date,fullText:t.fullText,extendedProps:{file:t.file,originalDate:t.date,fullText:t.fullText}})));
+      document.getElementById('status').textContent=tasks.length+' task(s)'+(activeTags.length?' (filtered)':'');
     }
+    function init(){
+      if(!window.FullCalendar||!window.moment){ document.getElementById('status').textContent='Deps failed'; return; }
+      cal=new FullCalendar.Calendar(document.getElementById('calendar'),{
+        initialView:'dayGridMonth',
+        headerToolbar:{left:'prev,next today',center:'title',right:'dayGridMonth,timeGridWeek,timeGridDay'},
+        editable:true,
+        eventClick:i=>vscode.postMessage({command:'openFile',file:i.event.extendedProps.file}),
+        eventDrop:i=>{ const nd=moment(i.event.start).format('MM-DD-YYYY'); vscode.postMessage({command:'rescheduleTask',id:i.event.id,file:i.event.extendedProps.file,oldDate:i.event.extendedProps.originalDate,newDate:nd,text:i.event.extendedProps.fullText}); }
+      });
+      cal.render();
+      vscode.postMessage({command:'requestTasks'});
+      window.addEventListener('message',ev=>{ if(!ev.data||!ev.data.tasks) return; all=ev.data.tasks; renderTagChips(all); syncEvents(); });
+    }
+    let tries=0; const poll=setInterval(()=>{ if(window.FullCalendar&&window.moment){ clearInterval(poll); init(); } else if(++tries>50){ clearInterval(poll); document.getElementById('status').textContent='Failed to load calendar'; } },120);
+  })();`;
 
-    document.addEventListener("DOMContentLoaded", function () { waitForDeps(initCalendar); });
-  </script>
-</body>
-</html>`;
+  return [
+    '<!DOCTYPE html>',
+    '<html lang="en">',
+    '<head>',
+    '<meta charset="UTF-8">',
+    '<meta http-equiv="Content-Security-Policy" content="'+csp+'">',
+    '<meta name="viewport" content="width=device-width,initial-scale=1">',
+    '<title>Calendar View</title>',
+    '<link rel="stylesheet" href="'+fullCalendarCss+'">',
+    '<style nonce="'+nonce+'">body{font-family:Arial, sans-serif;margin:0;padding:12px;background:#1e1e1e;color:#fff;}h1{font-size:18px;margin:0 0 8px}#toolbar{max-width:960px;margin:0 auto 6px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;}#tag-bubbles{display:flex;flex-wrap:wrap;gap:6px;}#calendar{max-width:960px;margin:0 auto;background:#fff;color:#000;padding:8px;border-radius:6px;box-shadow:0 2px 4px rgba(0,0,0,.4);}#status{font-size:11px;margin:6px auto 0;max-width:960px;text-align:center;opacity:.75}.tag-chip{display:inline-block;padding:2px 8px;font-size:10px;font-weight:600;letter-spacing:.5px;border-radius:12px;background:#555;color:#fff;cursor:pointer;user-select:none;transition:all .15s}.tag-chip.inactive{opacity:.25;filter:grayscale(70%)}.tag-chip.selected{outline:2px solid #fff;box-shadow:0 0 0 2px rgba(255,255,255,.3)}</style>',
+    '<script nonce="'+nonce+'" src="'+momentJs+'"></script>',
+    '<script nonce="'+nonce+'" src="'+fullCalendarJs+'"></script>',
+    '<script nonce="'+nonce+'">'+script+'</script>',
+    '</head>',
+    '<body>',
+    '<h1>Calendar View</h1>',
+    '<div id="toolbar"><div id="tag-bubbles" aria-label="Tag filters"></div></div>',
+    '<div id="calendar"></div>',
+    '<div id="status">Loading…</div>',
+    '</body>',
+    '</html>'
+  ].join('');
 }
 
 module.exports = {
