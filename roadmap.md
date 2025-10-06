@@ -1,6 +1,6 @@
 # Roadmap
 
-Live version: 1.7.0
+Live version: 1.7.2
 
 These are the features that I have either already implemented, or plan to in the near future.
 

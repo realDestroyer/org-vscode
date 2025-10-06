@@ -1,5 +1,11 @@
 # Change Log
 
+# [1.7.2] 10-05-25
+`Maintenance`
+
+- Version alignment: set extension version to 1.7.2.
+- Removed build.ps1 in favor of manual packaging (`npx vsce package`).
+
 # [1.7.1] 08-04-25
 `Refactored`
 
