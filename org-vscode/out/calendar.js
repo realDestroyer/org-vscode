@@ -219,31 +219,12 @@ function openCalendarView() {
     { enableScripts: true }   // Allow scripts to run in the Webview
   );
 
-  // Prepare local media URIs and CSP nonce
+  // Prepare CSP nonce and set Webview HTML
   const webview = calendarPanel.webview;
   const nonce = getNonce();
-  const mediaDir = path.join(__dirname, "..", "media");
-  const fcCssPath = path.join(mediaDir, "fullcalendar.min.css");
-  const fcJsPath = path.join(mediaDir, "fullcalendar.min.js");
-  const momentPath = path.join(mediaDir, "moment.min.js");
-  const hasFullCalendarCss = fs.existsSync(fcCssPath);
-  const hasFullCalendarJs = fs.existsSync(fcJsPath);
-  const hasMomentJs = fs.existsSync(momentPath);
-  const fullCalendarCss = hasFullCalendarCss ? webview.asWebviewUri(vscode.Uri.file(fcCssPath)) : null;
-  const fullCalendarJs = hasFullCalendarJs ? webview.asWebviewUri(vscode.Uri.file(fcJsPath)) : null;
-  const momentJs = hasMomentJs ? webview.asWebviewUri(vscode.Uri.file(momentPath)) : null;
 
-  // Set the initial HTML content for the calendar (with CSP & local assets + CDN fallback)
-  calendarPanel.webview.html = getCalendarWebviewContent({
-    webview,
-    nonce,
-    fullCalendarCss: fullCalendarCss ? String(fullCalendarCss) : null,
-    fullCalendarJs: fullCalendarJs ? String(fullCalendarJs) : null,
-    momentJs: momentJs ? String(momentJs) : null,
-    hasFullCalendarCss,
-    hasFullCalendarJs,
-    hasMomentJs
-  });
+  // Set the initial HTML content for the calendar (CSP + CDN assets)
+  calendarPanel.webview.html = getCalendarWebviewContent({ webview, nonce });
 
   // When the user closes the panel, release the reference so it can be recreated later
   calendarPanel.onDidDispose(() => {
