@@ -1,5 +1,36 @@
 # Change Log
 
+# [1.7.5] 12-02-25
+`Enhanced`
+
+- **Calendar Palette Sync:**
+  - Calendar events now inherit the same deterministic colors used by their tag chips, so each task block, chip, and tooltip all share a single visual identity.
+  - Updated the rendering logic to compute colors once per tag and reuse them for both the chip row and FullCalendar events, improving consistency and performance.
+  - Improved contrast handling so text automatically flips to a readable shade regardless of the assigned background color.
+
+# [1.7.4] 11-28-25
+`Enhanced`
+
+- **Calendar Status & Density Tweaks:**
+  - Added a slim status bar that mirrors the current view range, total task count, and any active tag filters to give quick context without leaving the webview.
+  - Streamlined event cards to highlight the title and scheduled day while keeping metadata tucked away in tooltips.
+  - Minor drag-and-drop polish so rescheduling feedback stays stable during rapid calendar navigation.
+
+# [1.7.3] 11-15-25
+`Enhanced`
+
+- **Calendar Tag Bubble Refresh:**
+  - Restored the classic "bubbly" styling with rounded capsules, gradients, and hover cues that make the filter bar easy to parse at a glance.
+  - Chip row now shows only the tags that exist inside the currently visible range (month/week), keeping the control surface tidy for large files.
+  - Added keyboard/mouse affordances (Ctrl/Cmd multi-select, desaturation of inactive chips) so advanced filtering feels natural.
+
+# [1.7.2] 11-04-25
+`Docs & Packaging`
+
+- Updated README, roadmap, and marketplace metadata to reflect the refreshed calendar efforts and to prep for the 1.7.3+ releases.
+- Cleaned up `package.json`, icon placement, and VSIX packaging so the Marketplace listing installs without warnings.
+- Added roadmap entries for the yearly summary/export initiatives to make upcoming work visible.
+
 # [1.7.1] 08-04-25
 `Refactored`
 
