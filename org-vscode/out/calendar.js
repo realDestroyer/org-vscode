@@ -268,50 +268,129 @@ function getCalendarWebviewContent({ webview, nonce }) {
   // Utility JS (injected inline with nonce) kept compact to stay readable.
   const script = `(()=>{
     const vscode=acquireVsCodeApi();
-    let cal; let all=[]; let activeTags=[];
+    let cal; let all=[]; let activeTags=[]; let lastRange=null;
+    const palette=['#f97316','#facc15','#0ea5e9','#22c55e','#a855f7','#ec4899','#14b8a6','#f87171','#6366f1','#eab308','#84cc16','#fb7185'];
+    const tagColors={};
+
     function tagSlug(t){return (t||'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'');}
+    function getTagColor(tag){
+      const key=tag||'__default__';
+      if(tagColors[key]) return tagColors[key];
+      if(!tag){ tagColors[key]='#2563eb'; return tagColors[key]; }
+      let hash=0; for(let i=0;i<tag.length;i++){hash=(hash*31 + tag.charCodeAt(i))>>>0;}
+      tagColors[key]=palette[hash % palette.length];
+      return tagColors[key];
+    }
     function ensureTagColor(tag){
-      const id='tag-color-'+tagSlug(tag);
+      const id='tag-color-'+tagSlug(tag||'default');
       if(document.getElementById(id)) return id;
-      const palette=['#d97706','#2563eb','#059669','#dc2626','#7c3aed','#db2777','#0d9488','#b45309','#1d4ed8','#10b981','#9333ea','#f87171'];
-      // Deterministic-ish index: hash via char codes
-      let hash=0; for(let i=0;i<tag.length;i++){hash=(hash*31 + tag.charCodeAt(i))>>>0;} const color=palette[hash % palette.length];
+      const color=getTagColor(tag);
       const st=document.createElement('style'); st.id=id; st.setAttribute('nonce','${nonce}');
-      st.textContent='.'+id+'{background:'+color+';border:1px solid '+color+';}'; document.head.appendChild(st); return id; }
+      st.textContent='.'+id+'{background:'+color+';border:1px solid '+color+';}';
+      document.head.appendChild(st);
+      return id;
+    }
+
+    const isWithinRange=(task,range)=>{
+      if(!range) return true;
+      const start=moment(range.start);
+      const end=moment(range.end);
+      const taskDate=moment(task.date);
+      return taskDate.isSameOrAfter(start,'day') && taskDate.isBefore(end,'day');
+    };
+
     function renderTagChips(tasks){
       const container=document.getElementById('tag-bubbles'); if(!container) return;
-      const tags=new Set(); tasks.forEach(t=> (t.tags||[]).forEach(tag=>tags.add(tag)));
+      const tags=new Set(); tasks.forEach(t=>(t.tags||[]).forEach(tag=>tags.add(tag)));
       const sorted=[...tags].sort();
-      container.innerHTML=sorted.map(tag=>{ const colorClass=ensureTagColor(tag); let cls='tag-chip '+colorClass; if(activeTags.length){cls+=activeTags.includes(tag)?' selected':' inactive';} return '<span class="'+cls+'" data-tag="'+tag+'">'+tag+'</span>'; }).join('');
+      container.innerHTML=sorted.map(tag=>{
+        const colorClass=ensureTagColor(tag);
+        let cls='tag-chip '+colorClass;
+        if(activeTags.length){cls+=activeTags.includes(tag)?' selected':' inactive';}
+        return '<span class="'+cls+'" data-tag="'+tag+'">'+tag+'</span>';
+      }).join('');
       container.querySelectorAll('.tag-chip').forEach(el=>{
         el.addEventListener('click',e=>{
           const tg=el.dataset.tag;
-            if(e.ctrlKey||e.metaKey){ if(activeTags.includes(tg)){ activeTags=activeTags.filter(x=>x!==tg);} else { activeTags.push(tg);} }
-            else { activeTags = activeTags.includes(tg)?[]:[tg]; }
-          syncEvents(); renderTagChips(all);
+          if(e.ctrlKey||e.metaKey){
+            activeTags = activeTags.includes(tg)
+              ? activeTags.filter(x=>x!==tg)
+              : [...activeTags,tg];
+          } else {
+            activeTags = activeTags.includes(tg) ? [] : [tg];
+          }
+          renderCurrentRange(lastRange);
         });
       });
     }
-    function syncEvents(){
-      if(!cal) return; cal.removeAllEvents();
-      let tasks=all; if(activeTags.length){ tasks = tasks.filter(t=> (t.tags||[]).some(tag=>activeTags.includes(tag))); }
-      cal.addEventSource(tasks.map(t=>({id:t.id,title:t.text,start:t.date,file:t.file,originalDate:t.date,fullText:t.fullText,extendedProps:{file:t.file,originalDate:t.date,fullText:t.fullText}})));
-      document.getElementById('status').textContent=tasks.length+' task(s)'+(activeTags.length?' (filtered)':'');
+
+    function syncEvents(visible){
+      if(!cal) return;
+      cal.removeAllEvents();
+      let tasks=visible||[];
+      if(activeTags.length){
+        tasks = tasks.filter(t=>(t.tags||[]).some(tag=>activeTags.includes(tag)));
+      }
+      cal.addEventSource(tasks.map(t=>{
+        const primary=(t.tags||[])[0] || '';
+        const color=getTagColor(primary);
+        return {
+          id:t.id,
+          title:t.text,
+          start:t.date,
+          file:t.file,
+          originalDate:t.date,
+          fullText:t.fullText,
+          backgroundColor:color,
+          borderColor:color,
+          textColor:'#ffffff',
+          extendedProps:{file:t.file,originalDate:t.date,fullText:t.fullText}
+        };
+      }));
+      const status=document.getElementById('status');
+      if(status){
+        const rangeNote=lastRange?moment(lastRange.start).format('MMM D')+' – '+moment(lastRange.end).subtract(1,'day').format('MMM D'):'';
+        status.textContent=tasks.length+' task(s) in view'+(rangeNote?' · '+rangeNote:'')+(activeTags.length?' · filtered':'' );
+      }
     }
+
+    function renderCurrentRange(range){
+      if(!range){
+        if(cal && cal.view){ range={start:cal.view.activeStart,end:cal.view.activeEnd}; } else { return; }
+      }
+      lastRange=range;
+      const visible=all.filter(task=>isWithinRange(task,range));
+      renderTagChips(visible);
+      syncEvents(visible);
+    }
+
     function init(){
       if(!window.FullCalendar||!window.moment){ document.getElementById('status').textContent='Deps failed'; return; }
       cal=new FullCalendar.Calendar(document.getElementById('calendar'),{
         initialView:'dayGridMonth',
         headerToolbar:{left:'prev,next today',center:'title',right:'dayGridMonth,timeGridWeek,timeGridDay'},
         editable:true,
+        datesSet:info=>renderCurrentRange({start:info.start,end:info.end}),
         eventClick:i=>vscode.postMessage({command:'openFile',file:i.event.extendedProps.file}),
-        eventDrop:i=>{ const nd=moment(i.event.start).format('MM-DD-YYYY'); vscode.postMessage({command:'rescheduleTask',id:i.event.id,file:i.event.extendedProps.file,oldDate:i.event.extendedProps.originalDate,newDate:nd,text:i.event.extendedProps.fullText}); }
+        eventDrop:i=>{
+          const nd=moment(i.event.start).format('MM-DD-YYYY');
+          vscode.postMessage({command:'rescheduleTask',id:i.event.id,file:i.event.extendedProps.file,oldDate:i.event.extendedProps.originalDate,newDate:nd,text:i.event.extendedProps.fullText});
+        }
       });
       cal.render();
       vscode.postMessage({command:'requestTasks'});
-      window.addEventListener('message',ev=>{ if(!ev.data||!ev.data.tasks) return; all=ev.data.tasks; renderTagChips(all); syncEvents(); });
+      window.addEventListener('message',ev=>{
+        if(!ev.data||!ev.data.tasks) return;
+        all=ev.data.tasks;
+        if(cal){
+          renderCurrentRange({start:cal.view.activeStart,end:cal.view.activeEnd});
+        }
+      });
     }
-    let tries=0; const poll=setInterval(()=>{ if(window.FullCalendar&&window.moment){ clearInterval(poll); init(); } else if(++tries>50){ clearInterval(poll); document.getElementById('status').textContent='Failed to load calendar'; } },120);
+    let tries=0; const poll=setInterval(()=>{
+      if(window.FullCalendar&&window.moment){ clearInterval(poll); init(); }
+      else if(++tries>50){ clearInterval(poll); document.getElementById('status').textContent='Failed to load calendar'; }
+    },120);
   })();`;
 
   return [
@@ -323,7 +402,7 @@ function getCalendarWebviewContent({ webview, nonce }) {
     '<meta name="viewport" content="width=device-width,initial-scale=1">',
     '<title>Calendar View</title>',
     '<link rel="stylesheet" href="'+fullCalendarCss+'">',
-    '<style nonce="'+nonce+'">body{font-family:Arial, sans-serif;margin:0;padding:12px;background:#1e1e1e;color:#fff;}h1{font-size:18px;margin:0 0 8px}#toolbar{max-width:960px;margin:0 auto 6px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;}#tag-bubbles{display:flex;flex-wrap:wrap;gap:6px;}#calendar{max-width:960px;margin:0 auto;background:#fff;color:#000;padding:8px;border-radius:6px;box-shadow:0 2px 4px rgba(0,0,0,.4);}#status{font-size:11px;margin:6px auto 0;max-width:960px;text-align:center;opacity:.75}.tag-chip{display:inline-block;padding:2px 8px;font-size:10px;font-weight:600;letter-spacing:.5px;border-radius:12px;background:#555;color:#fff;cursor:pointer;user-select:none;transition:all .15s}.tag-chip.inactive{opacity:.25;filter:grayscale(70%)}.tag-chip.selected{outline:2px solid #fff;box-shadow:0 0 0 2px rgba(255,255,255,.3)}</style>',
+    '<style nonce="'+nonce+'">body{font-family:"Segoe UI",Arial,sans-serif;margin:0;padding:16px;background:#1f1f24;color:#f4f4f5;}h1{font-size:18px;font-weight:600;margin:0 0 10px}#toolbar{max-width:980px;margin:0 auto 10px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;}#tag-bubbles{display:flex;flex-wrap:wrap;gap:8px;}#calendar{max-width:980px;margin:0 auto;background:#fff;color:#000;padding:10px;border-radius:10px;box-shadow:0 8px 30px rgba(0,0,0,.35);}#status{font-size:12px;margin:10px auto 0;max-width:980px;text-align:center;opacity:.8}.tag-chip{display:inline-flex;align-items:center;padding:4px 14px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.4px;border-radius:999px;color:#fff;cursor:pointer;user-select:none;box-shadow:0 3px 8px rgba(0,0,0,.25);transition:transform .1s ease,opacity .1s ease;border:1px solid transparent}.tag-chip:hover{transform:translateY(-1px);opacity:.95}.tag-chip.inactive{opacity:.25;filter:saturate(20%)}.tag-chip.selected{outline:2px solid rgba(255,255,255,.9);box-shadow:0 0 0 2px rgba(255,255,255,.25)}</style>',
     '<script nonce="'+nonce+'" src="'+momentJs+'"></script>',
     '<script nonce="'+nonce+'" src="'+fullCalendarJs+'"></script>',
     '<script nonce="'+nonce+'">'+script+'</script>',
