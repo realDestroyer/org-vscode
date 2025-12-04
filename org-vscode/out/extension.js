@@ -36,6 +36,9 @@ const insertTable = require("./insertTable");
 const updateDates = require("./updateDate");
 const { openCalendarView } = require("./calendar");
 const exportCurrentTasks = require("./exportCurrentTasks");
+const { exportYearSummary } = require("./yearSummary");
+const { generateExecutiveReport } = require("./yearExecutiveReport");
+const { openYearInReview } = require("./yearDashboard");
 
 // Startup log for debugging
 console.log("📌 agenda.js has been loaded in extension.js");
@@ -145,6 +148,9 @@ function activate(ctx) {
   ctx.subscriptions.push(vscode.commands.registerCommand("extension.createVsoFile", newFile));
   ctx.subscriptions.push(vscode.commands.registerCommand("extension.getTags", getTags));
   ctx.subscriptions.push(vscode.commands.registerCommand("extension.getTitles", titles));
+  ctx.subscriptions.push(vscode.commands.registerCommand("orgMode.exportYearSummary", exportYearSummary));
+  ctx.subscriptions.push(vscode.commands.registerCommand("orgMode.generateExecutiveReport", generateExecutiveReport));
+  ctx.subscriptions.push(vscode.commands.registerCommand("orgMode.openYearInReview", openYearInReview));
   ctx.subscriptions.push(vscode.commands.registerCommand("extension.toggleStatusRight", keywordRight));
   ctx.subscriptions.push(vscode.commands.registerCommand("extension.toggleStatusLeft", keywordLeft));
   ctx.subscriptions.push(vscode.commands.registerCommand("extension.scheduling", scheduling));

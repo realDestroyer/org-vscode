@@ -16,7 +16,8 @@
     "activationEvents": [
         "onLanguage:vso",
         "onCommand:extension.viewAgenda",
-        "onCommand:extension.createVsoFile"
+        "onCommand:extension.createVsoFile",
+        "onCommand:orgMode.exportYearSummary"
     ],
     "keywords": [
         "todo",
@@ -123,6 +124,11 @@
             {
                 "command": "org-vscode.exportCurrentTasks",
                 "title": "org-vscode: Export Current Tasks"
+            },
+            {
+                "command": "orgMode.exportYearSummary",
+                "title": "Org Mode: Export Year Summary",
+                "category": "Org Mode"
             }
         ],
         "keybindings": [
