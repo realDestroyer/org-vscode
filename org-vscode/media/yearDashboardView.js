@@ -2,7 +2,11 @@
   const vscode = acquireVsCodeApi();
   const state = {
     payload: null,
-    filters: { status: "ALL", tag: null, month: null, search: "" }
+    filters: { status: "ALL", tag: null, month: null, search: "" },
+    activeView: "insights",
+    rawCsv: "",
+    csvRows: null,
+    csvError: null
   };
 
   const elements = {
@@ -16,19 +20,34 @@
     taskList: document.getElementById("task-list"),
     activeFilters: document.getElementById("active-filters"),
     timeline: document.getElementById("timeline"),
-    searchInput: document.getElementById("search-input")
+    searchInput: document.getElementById("search-input"),
+    csvHead: document.getElementById("csv-head"),
+    csvBody: document.getElementById("csv-body"),
+    csvNote: document.getElementById("csv-note")
   };
+
+  const tabButtons = Array.from(document.querySelectorAll("[data-tab]"));
+  const viewContainers = Array.from(document.querySelectorAll("[data-view]"));
 
   document.getElementById("open-source").addEventListener("click", () => vscode.postMessage({ command: "openSource" }));
   document.getElementById("download-csv").addEventListener("click", () => vscode.postMessage({ command: "openArtifact", artifact: "csv" }));
   document.getElementById("download-md").addEventListener("click", () => vscode.postMessage({ command: "openArtifact", artifact: "markdown" }));
   document.getElementById("download-html").addEventListener("click", () => vscode.postMessage({ command: "openArtifact", artifact: "html" }));
   document.getElementById("reveal-folder").addEventListener("click", () => vscode.postMessage({ command: "revealFolder" }));
+  const openCsvButton = document.getElementById("open-csv-file");
+  if (openCsvButton) {
+    openCsvButton.addEventListener("click", () => vscode.postMessage({ command: "openArtifact", artifact: "csv" }));
+  }
   document.getElementById("clear-filters").addEventListener("click", () => {
     state.filters = { status: "ALL", tag: null, month: null, search: "" };
     elements.searchInput.value = "";
     render();
   });
+
+  tabButtons.forEach((button) => {
+    button.addEventListener("click", () => switchView(button.dataset.tab));
+  });
+  switchView("insights");
 
   elements.statusFilter.addEventListener("change", () => {
     state.filters.status = elements.statusFilter.value;
@@ -45,6 +64,9 @@
   window.addEventListener("message", (event) => {
     if (event.data?.command === "dashboardData") {
       state.payload = event.data.payload;
+      state.rawCsv = event.data.payload?.csv || "";
+      state.csvRows = null;
+      state.csvError = null;
       render();
     }
   });
@@ -63,6 +85,10 @@
     renderTasks();
     renderActiveFilters();
     toggleDownloads();
+    if (state.activeView === "raw") {
+      ensureCsvParsed();
+      renderCsvTable();
+    }
   }
 
   function renderMeta() {
@@ -264,13 +290,131 @@
   function toggleDownloads() {
     const buttons = [
       { id: "download-csv", key: "csv" },
+      { id: "open-csv-file", key: "csv" },
       { id: "download-md", key: "markdown" },
       { id: "download-html", key: "html" }
     ];
     buttons.forEach(btn => {
       const el = document.getElementById(btn.id);
       const available = Boolean(state.payload?.artifacts?.[btn.key]);
-      el.disabled = !available;
+      if (el) {
+        el.disabled = !available;
+      }
     });
+  }
+
+  function switchView(target) {
+    if (!target) {
+      return;
+    }
+    state.activeView = target;
+    tabButtons.forEach(btn => btn.classList.toggle("active", btn.dataset.tab === target));
+    viewContainers.forEach(section => {
+      section.classList.toggle("hidden", section.dataset.view !== target);
+    });
+    if (target === "raw") {
+      ensureCsvParsed();
+      renderCsvTable();
+    }
+  }
+
+  function ensureCsvParsed() {
+    if (state.csvRows || state.csvError) {
+      return;
+    }
+    if (!state.rawCsv) {
+      state.csvRows = [];
+      state.csvError = "CSV artifact missing. Run the export again.";
+      return;
+    }
+    try {
+      state.csvRows = parseCsv(state.rawCsv);
+      state.csvError = null;
+    } catch (error) {
+      state.csvRows = [];
+      state.csvError = error.message || "Unable to parse CSV export.";
+    }
+  }
+
+  function renderCsvTable() {
+    if (!elements.csvHead || !elements.csvBody || !elements.csvNote) {
+      return;
+    }
+    if (state.csvError) {
+      elements.csvHead.innerHTML = "";
+      elements.csvBody.innerHTML = '<tr><td class="empty" colspan="1">' + escapeHtml(state.csvError) + "</td></tr>";
+      elements.csvNote.textContent = "CSV export unavailable.";
+      return;
+    }
+    const rows = state.csvRows || [];
+    if (!rows.length) {
+      elements.csvHead.innerHTML = "";
+      elements.csvBody.innerHTML = '<tr><td class="empty" colspan="1">No rows were parsed from the CSV.</td></tr>';
+      elements.csvNote.textContent = "CSV export contains no data.";
+      return;
+    }
+    const [header, ...body] = rows;
+    const colCount = Math.max(header?.length || 1, 1);
+    elements.csvHead.innerHTML = `<tr>${header.map(col => `<th>${escapeHtml(col)}</th>`).join("")}</tr>`;
+    if (!body.length) {
+      elements.csvBody.innerHTML = `<tr><td class="empty" colspan="${colCount}">Header detected but no task rows were found.</td></tr>`;
+    } else {
+      elements.csvBody.innerHTML = body
+        .map(row => `<tr>${header.map((_, index) => `<td>${escapeHtml(row[index] || "")}</td>`).join("")}</tr>`)
+        .join("");
+    }
+    const rowCount = Math.max(body.length, 0).toLocaleString();
+    const artifactLabel = state.payload?.artifacts?.csv || "Year summary";
+    elements.csvNote.textContent = `${rowCount} rows · ${artifactLabel}`;
+  }
+
+  function parseCsv(text) {
+    const rows = [];
+    let current = "";
+    let row = [];
+    let inQuotes = false;
+    for (let i = 0; i < text.length; i++) {
+      const char = text[i];
+      if (inQuotes) {
+        if (char === '"') {
+          if (text[i + 1] === '"') {
+            current += '"';
+            i++;
+          } else {
+            inQuotes = false;
+          }
+        } else {
+          current += char;
+        }
+      } else if (char === '"') {
+        inQuotes = true;
+      } else if (char === ",") {
+        row.push(current);
+        current = "";
+      } else if (char === "\n") {
+        row.push(current);
+        rows.push(row);
+        row = [];
+        current = "";
+      } else if (char === "\r") {
+        continue;
+      } else {
+        current += char;
+      }
+    }
+    if (current.length || row.length) {
+      row.push(current);
+      rows.push(row);
+    }
+    return rows.filter(entry => entry.length);
+  }
+
+  function escapeHtml(value) {
+    return String(value ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
   }
 })();

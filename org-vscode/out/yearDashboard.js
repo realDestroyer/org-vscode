@@ -54,6 +54,13 @@ async function prepareDashboardForFile(orgPath) {
       : dashboardModel.generatedAt)
   };
 
+  let csvText = "";
+  try {
+    csvText = fs.readFileSync(summaryArtifacts.csvPath, "utf-8");
+  } catch (error) {
+    console.error("org-vscode: unable to read CSV for dashboard", error);
+  }
+
   dashboardState = {
     orgPath,
     model: normalizedModel,
@@ -63,7 +70,8 @@ async function prepareDashboardForFile(orgPath) {
       markdown: execArtifacts.markdownPath,
       html: execArtifacts.htmlPath,
       folder: summaryArtifacts.reportDir
-    }
+    },
+    csvText
   };
 
   const panel = ensureDashboardPanel();
@@ -127,7 +135,8 @@ function pushDashboardData(targetPanel) {
   }
   const payload = {
     model: dashboardState.model,
-    artifacts: dashboardState.artifacts
+    artifacts: dashboardState.artifacts,
+    csv: dashboardState.csvText || ""
   };
   const panel = targetPanel || dashboardPanel;
   if (panel) {
@@ -249,6 +258,40 @@ function getDashboardHtml(webview, nonce) {
     .hero p {
       margin: 0;
       color: var(--muted);
+    }
+    .tabs {
+      display: inline-flex;
+      gap: 12px;
+      align-items: center;
+      background: rgba(7, 11, 18, 0.8);
+      border: 1px solid var(--panel-border);
+      border-radius: 999px;
+      padding: 6px;
+      width: fit-content;
+    }
+    .tabs .tab {
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      padding: 8px 18px;
+      border-radius: 999px;
+      font-weight: 600;
+      letter-spacing: 0.12rem;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: background 120ms ease, color 120ms ease, box-shadow 120ms ease;
+      box-shadow: none;
+    }
+    .tabs .tab.active {
+      background: var(--accent);
+      color: #04111f;
+      box-shadow: 0 15px 30px rgba(56,189,248,0.35);
+    }
+    .tabs .tab:not(.active):hover {
+      color: var(--text);
+    }
+    .view.hidden {
+      display: none;
     }
     .eyebrow {
       text-transform: uppercase;
@@ -382,6 +425,60 @@ function getDashboardHtml(webview, nonce) {
     .panel.full {
       grid-column: 1 / -1;
     }
+    .raw-panel {
+      background: var(--panel);
+      border: 1px solid var(--panel-border);
+      border-radius: 20px;
+      padding: 24px;
+      box-shadow: 0 25px 50px rgba(0,0,0,0.35);
+    }
+    .raw-header {
+      display: flex;
+      justify-content: space-between;
+      gap: 18px;
+      flex-wrap: wrap;
+      margin-bottom: 18px;
+      align-items: flex-start;
+    }
+    .table-shell {
+      border: 1px solid rgba(255,255,255,0.05);
+      border-radius: 18px;
+      overflow: hidden;
+    }
+    .table-scroll {
+      max-height: 520px;
+      overflow: auto;
+    }
+    .raw-table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 600px;
+      font-size: 0.85rem;
+    }
+    .raw-table th,
+    .raw-table td {
+      padding: 12px 14px;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      border-right: 1px solid rgba(255,255,255,0.02);
+      text-align: left;
+      color: var(--text);
+      background: rgba(255,255,255,0.01);
+    }
+    .raw-table th {
+      position: sticky;
+      top: 0;
+      background: rgba(7,11,18,0.95);
+      text-transform: uppercase;
+      letter-spacing: 0.18rem;
+      font-size: 0.7rem;
+      color: var(--muted);
+      z-index: 2;
+    }
+    .raw-table td.empty {
+      text-align: center;
+      font-style: italic;
+      color: var(--muted);
+    }
     .filters {
       display: flex;
       flex-wrap: wrap;
@@ -471,6 +568,10 @@ function getDashboardHtml(webview, nonce) {
       .hero {
         flex-direction: column;
       }
+      .tabs {
+        flex-wrap: wrap;
+        width: 100%;
+      }
       canvas {
         height: 180px;
       }
@@ -495,31 +596,59 @@ function getDashboardHtml(webview, nonce) {
       </div>
     </header>
 
-    <section class="stats" id="stat-grid"></section>
+    <nav class="tabs" id="view-tabs">
+      <button class="tab active" data-tab="insights">Insights</button>
+      <button class="tab" data-tab="raw">Raw Tasks</button>
+    </nav>
 
-    <section class="panels">
-      <article class="panel">
-        <h2>Timeline Pulse</h2>
-        <div class="filters">
-          <select id="status-filter">
-            <option value="ALL">All statuses</option>
-          </select>
+    <section class="view" data-view="insights" id="view-insights">
+      <section class="stats" id="stat-grid"></section>
+
+      <section class="panels">
+        <article class="panel">
+          <h2>Timeline Pulse</h2>
+          <div class="filters">
+            <select id="status-filter">
+              <option value="ALL">All statuses</option>
+            </select>
+          </div>
+          <canvas id="timeline" width="900" height="260"></canvas>
+        </article>
+        <article class="panel">
+          <h2>Tag Heatmap</h2>
+          <div class="heatmap-header" id="heatmap-header"></div>
+          <div class="heatmap" id="heatmap"></div>
+        </article>
+        <article class="panel full">
+          <h2>Task Storyboard</h2>
+          <div class="filters">
+            <input type="search" id="search-input" placeholder="Search accomplishments" />
+            <button id="clear-filters" class="ghost">Reset filters</button>
+          </div>
+          <div class="active-filters" id="active-filters"></div>
+          <div class="task-list" id="task-list"></div>
+        </article>
+      </section>
+    </section>
+
+    <section class="view hidden" data-view="raw" id="view-raw">
+      <article class="raw-panel">
+        <div class="raw-header">
+          <div>
+            <p class="eyebrow">Raw Tasks</p>
+            <h2>Full CSV Export</h2>
+            <p class="muted" id="csv-note">Loading CSV…</p>
+          </div>
+          <button id="open-csv-file" class="ghost">Open CSV Artifact</button>
         </div>
-        <canvas id="timeline" width="900" height="260"></canvas>
-      </article>
-      <article class="panel">
-        <h2>Tag Heatmap</h2>
-        <div class="heatmap-header" id="heatmap-header"></div>
-        <div class="heatmap" id="heatmap"></div>
-      </article>
-      <article class="panel full">
-        <h2>Task Storyboard</h2>
-        <div class="filters">
-          <input type="search" id="search-input" placeholder="Search accomplishments" />
-          <button id="clear-filters" class="ghost">Reset filters</button>
+        <div class="table-shell">
+          <div class="table-scroll">
+            <table class="raw-table">
+              <thead id="csv-head"></thead>
+              <tbody id="csv-body"></tbody>
+            </table>
+          </div>
         </div>
-        <div class="active-filters" id="active-filters"></div>
-        <div class="task-list" id="task-list"></div>
       </article>
     </section>
   </div>
