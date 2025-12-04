@@ -224,16 +224,17 @@ function getDashboardHtml(webview, nonce) {
       --accent: #38bdf8;
       --accent-2: #f472b6;
       --accent-3: #facc15;
+      --shell-max: clamp(1200px, 88vw, 2200px);
       font-family: "Space Grotesk", "Fira Sans", "Segoe UI", sans-serif;
     }
     body {
       margin: 0;
-      padding: 32px;
+      padding: clamp(18px, 4vw, 56px);
       background: radial-gradient(circle at 20% 20%, #1a2440, #050914 70%);
       color: var(--text);
     }
     .shell {
-      max-width: 1200px;
+      width: min(var(--shell-max), 100%);
       margin: 0 auto;
       display: flex;
       flex-direction: column;
@@ -355,8 +356,8 @@ function getDashboardHtml(webview, nonce) {
     }
     .panels {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
-      gap: 18px;
+      grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+      gap: 20px;
     }
     .panel {
       background: var(--panel);
@@ -450,10 +451,11 @@ function getDashboardHtml(webview, nonce) {
       overflow: auto;
     }
     .raw-table {
-      width: 100%;
+      width: max(100%, var(--csv-table-width, 100%));
       border-collapse: collapse;
       min-width: 600px;
       font-size: 0.85rem;
+      table-layout: fixed;
     }
     .raw-table th,
     .raw-table td {
@@ -477,7 +479,7 @@ function getDashboardHtml(webview, nonce) {
     }
     .raw-table th button.header-button {
       width: 100%;
-      padding: 10px 12px;
+      padding: 10px 18px 10px 12px;
       background: transparent;
       border: none;
       color: inherit;
@@ -515,6 +517,26 @@ function getDashboardHtml(webview, nonce) {
       text-align: center;
       font-style: italic;
       color: var(--muted);
+    }
+    .raw-table th .column-resizer {
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 6px;
+      height: 100%;
+      cursor: col-resize;
+      user-select: none;
+      touch-action: none;
+      z-index: 4;
+    }
+    .raw-table th .column-resizer::after {
+      content: "";
+      position: absolute;
+      top: 25%;
+      bottom: 25%;
+      right: 2px;
+      width: 2px;
+      background: rgba(239,246,255,0.2);
     }
     .filters {
       display: flex;
@@ -682,6 +704,7 @@ function getDashboardHtml(webview, nonce) {
         <div class="table-shell">
           <div class="table-scroll">
             <table class="raw-table">
+              <colgroup id="csv-colgroup"></colgroup>
               <thead id="csv-head"></thead>
               <tbody id="csv-body"></tbody>
             </table>
