@@ -9,6 +9,23 @@
       "match": "\\[\\+TAG:[^\\]]*\\]"
     },
     {
+      "name": "meta.directive.vso",
+      "comment": "Org metadata directive",
+      "match": "^\\s*#\\+[A-Z0-9_@-]+:.*$"
+    },
+    {
+      "name": "meta.block.property.vso",
+      "comment": "Org property drawer",
+      "begin": "^\\s*:PROPERTIES:\\s*$",
+      "end": "^\\s*:END:\\s*$",
+      "patterns": [
+        {
+          "name": "variable.other.property-key.vso",
+          "match": "^\\s*:[A-Z0-9_@#%+\\-]+:\\s+.*$"
+        }
+      ]
+    },
+    {
       "name": "constant.character.in_progress.vso",
       "comment": "In Progress Task Symbol",
       "begin": "[\u2298]",
@@ -18,7 +35,9 @@
         { "include": "#tag" },
         { "include": "#task_text_in_progress" },
         { "include": "#sched" },
-        { "include": "#scheduled" }
+        { "include": "#scheduled" },
+        { "include": "#deadline" },
+        { "include": "#closed" }
       ]
     },
     {
@@ -30,7 +49,9 @@
         { "include": "#abandoned" },
         { "include": "#task_text_abandoned" },
         { "include": "#sched" },
-        { "include": "#scheduled" }
+        { "include": "#scheduled" },
+        { "include": "#deadline" },
+        { "include": "#closed" }
       ]
     },
     {
@@ -42,8 +63,45 @@
         { "include": "#tag" },
         { "include": "#task_text_continued" },
         { "include": "#sched" },
-        { "include": "#scheduled" }
+        { "include": "#scheduled" },
+        { "include": "#deadline" },
+        { "include": "#closed" }
       ]
+    },
+    {
+      "name": "constant.character.todo.vso",
+      "begin": "[⊙]",
+      "end": "$",
+      "patterns": [
+        { "include": "#todo" },
+        { "include": "#tag" },
+        { "include": "#task_text_todo" },
+        { "include": "#sched" },
+        { "include": "#scheduled" },
+        { "include": "#deadline" },
+        { "include": "#closed" }
+      ]
+    },
+    {
+      "name": "constant.character.done.vso",
+      "begin": "[\u2296]",
+      "end": "$",
+      "patterns": [
+        { "include": "#done" },
+        { "include": "#task_text_done" },
+        { "include": "#sched" },
+        { "include": "#scheduled" },
+        { "include": "#deadline" },
+        { "include": "#closed" }
+      ]
+    },
+    {
+      "name": "constant.numeric.date.vso",
+      "match": "\\[(\\d{2}-\\d{2}-\\d{4})\\]"
+    },
+    {
+      "name": "constant.numeric.date.header.vso",
+      "match": "\\[\\d{2}-\\d{2}-\\d{4} \\w{3}\\]"
     },
     {
       "name": "markup.heading.vso",
@@ -65,7 +123,7 @@
     },
     {
       "name": "comment.vso",
-      "comment": "Heading 3 unformatted",
+      "comment": "#+ directives as comments",
       "begin": "(\\#\\+)",
       "end": "$"
     },
@@ -73,37 +131,10 @@
       "name": "comment.vso",
       "match": "\\bCOMPLETED\\b"
     },
-    {
-      "name": "constant.character.todo.vso",
-      "begin": "[⊙]",
-      "end": "$",
-      "patterns": [
-        { "include": "#todo" },
-        { "include": "#tag" },
-        { "include": "#task_text_todo" },
-        { "include": "#sched" },
-        { "include": "#scheduled" }
-      ]
-    },
-    {
-      "name": "constant.character.done.vso",
-      "begin": "[\u2296]",
-      "end": "$",
-      "patterns": [
-        { "include": "#done" },
-        { "include": "#task_text_done" },
-        { "include": "#sched" },
-        { "include": "#scheduled" }
-      ]
-    },
-    {
-      "name": "constant.numeric.date.vso",
-      "match": "\\[(\\d{2}-\\d{2}-\\d{4})\\]"
-    },
-    {
-      "name": "constant.numeric.date.header.vso",
-      "match": "\\[\\d{2}-\\d{2}-\\d{4} \\w{3}\\]"
-    }
+    { "include": "#scheduled" },
+    { "include": "#deadline" },
+    { "include": "#closed" },
+    { "include": "#timestamp" }
   ],
   "repository": {
     "scheduled": {
@@ -113,7 +144,31 @@
           "match": "SCHEDULED:\\s*\\[\\d{2}-\\d{2}-\\d{4}\\]"
         }
       ]
-    },    
+    },
+    "deadline": {
+      "patterns": [
+        {
+          "name": "keyword.deadline.vso",
+          "match": "DEADLINE:\\s*\\[\\d{2}-\\d{2}-\\d{4}(?:\\s+\\d{2}:\\d{2}(?::\\d{2})?)?\\]"
+        }
+      ]
+    },
+    "closed": {
+      "patterns": [
+        {
+          "name": "keyword.closed.vso",
+          "match": "^\\s*CLOSED:\\s*\\[\\d{2}-\\d{2}-\\d{4}(?:\\s+\\d{2}:\\d{2}(?::\\d{2})?)?\\]"
+        }
+      ]
+    },
+    "timestamp": {
+      "patterns": [
+        {
+          "name": "constant.other.timestamp.vso",
+          "match": "[<\\[](?:\\d{4}-\\d{2}-\\d{2})(?:\\s+\\w{3})?(?:\\s+\\d{2}:\\d{2}(?::\\d{2})?)?[>\\]]"
+        }
+      ]
+    },
     "todo": {
       "patterns": [
         { "name": "keyword.control.todo.vso", "match": "\\bTODO\\b" }
