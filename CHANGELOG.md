@@ -1,5 +1,13 @@
 # Change Log
 
+# [1.7.6] 12-03-25
+`Enhanced`
+
+- **Syntax Highlighting Refresh:**
+  - Updated `vso.tmLanguage.json` so #+ directives, property drawers, and inline timestamps each receive their own scopes for clearer theming across editors.
+  - DEADLINE, CLOSED, and general SCHEDULED markers now share consistent keyword highlighting inside every task state row so the metadata is easier to scan.
+  - General Org timestamps (e.g., `<2025-12-03 Wed 09:00>`) are now scoped once and reused everywhere, reducing flicker between Agenda, Calendar, and file views.
+
 # [1.7.5] 12-02-25
 `Enhanced`
 
