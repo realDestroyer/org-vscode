@@ -1,6 +1,6 @@
 # Change Log
 
-# [1.7.7] 12-04-25
+# [1.8.0] 12-04-25
 `Enhanced`
 
 - **Year-in-Review Suite:**
