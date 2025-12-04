@@ -1,5 +1,6 @@
 (() => {
   const vscode = acquireVsCodeApi();
+  const DEFAULT_COLUMN_WIDTH = 160;
   const state = {
     payload: null,
     filters: { status: "ALL", tag: null, month: null, search: "" },
@@ -8,8 +9,11 @@
     csvRows: null,
     csvError: null,
     csvSort: { column: null, direction: "asc" },
-    csvFilters: []
+    csvFilters: [],
+    csvColumnWidths: [],
+    csvColumnCount: 0
   };
+  let activeColumnResize = null;
 
   const elements = {
     statGrid: document.getElementById("stat-grid"),
@@ -23,6 +27,8 @@
     activeFilters: document.getElementById("active-filters"),
     timeline: document.getElementById("timeline"),
     searchInput: document.getElementById("search-input"),
+    csvTable: document.querySelector(".raw-table"),
+    csvColgroup: document.getElementById("csv-colgroup"),
     csvHead: document.getElementById("csv-head"),
     csvBody: document.getElementById("csv-body"),
     csvNote: document.getElementById("csv-note")
@@ -71,6 +77,8 @@
       state.csvError = null;
       state.csvSort = { column: null, direction: "asc" };
       state.csvFilters = [];
+      state.csvColumnWidths = [];
+      state.csvColumnCount = 0;
       render();
     }
   });
@@ -356,6 +364,7 @@
       elements.csvHead.innerHTML = "";
       elements.csvBody.innerHTML = '<tr><td class="empty" colspan="1">' + escapeHtml(state.csvError) + "</td></tr>";
       elements.csvNote.textContent = "CSV export unavailable.";
+      updateCsvColgroup(0);
       return;
     }
     const { header, rows } = getFilteredCsvRows();
@@ -363,9 +372,11 @@
       elements.csvHead.innerHTML = "";
       elements.csvBody.innerHTML = '<tr><td class="empty" colspan="1">No rows were parsed from the CSV.</td></tr>';
       elements.csvNote.textContent = "CSV export contains no data.";
+      updateCsvColgroup(0);
       return;
     }
     const colCount = Math.max(header.length, 1);
+    updateCsvColgroup(colCount);
     elements.csvHead.innerHTML = buildCsvHeaderHtml(header);
     if (!rows.length) {
       elements.csvBody.innerHTML = `<tr><td class="empty" colspan="${colCount}">No tasks match the current column filters.</td></tr>`;
@@ -376,6 +387,8 @@
     }
     wireCsvHeaderEvents();
     wireCsvFilterInputs();
+    wireCsvColumnResizers();
+    initializeCsvColumnWidthsIfNeeded();
     if (shouldRestoreFocus && Number.isInteger(shouldRestoreFocus.index)) {
       const target = elements.csvHead.querySelector(`.filter-input[data-filter="${shouldRestoreFocus.index}"]`);
       if (target) {
@@ -390,13 +403,49 @@
     elements.csvNote.textContent = `${rowCount} rows · ${artifactLabel}`;
   }
 
+  function updateCsvColgroup(columnCount) {
+    if (!elements.csvColgroup) {
+      return;
+    }
+    state.csvColumnCount = columnCount;
+    if (state.csvColumnWidths.length > columnCount) {
+      state.csvColumnWidths.length = columnCount;
+    }
+    if (columnCount <= 0) {
+      elements.csvColgroup.innerHTML = "";
+      applyCsvTableWidth(null);
+      return;
+    }
+    const widths = Array.from({ length: columnCount }, (_, index) => {
+      const width = state.csvColumnWidths[index];
+      return Math.max(70, typeof width === "number" ? width : DEFAULT_COLUMN_WIDTH);
+    });
+    const cols = widths
+      .map((size, index) => `<col data-col="${index}" style="width:${size}px">`)
+      .join("");
+    elements.csvColgroup.innerHTML = cols;
+    const totalWidth = widths.reduce((sum, value) => sum + value, 0);
+    applyCsvTableWidth(totalWidth);
+  }
+
+  function applyCsvTableWidth(totalWidth) {
+    if (!document?.documentElement) {
+      return;
+    }
+    if (!totalWidth || totalWidth <= 0) {
+      document.documentElement.style.removeProperty("--csv-table-width");
+      return;
+    }
+    document.documentElement.style.setProperty("--csv-table-width", `${Math.max(600, totalWidth)}px`);
+  }
+
   function buildCsvHeaderHtml(header) {
     const sort = state.csvSort;
     const headerRow = header
       .map((col, index) => {
         const isActive = sort.column === index;
         const indicator = isActive ? (sort.direction === "asc" ? "↑" : "↓") : "";
-        return `<th><button class="header-button" data-col="${index}">${escapeHtml(col)}<span class="sort-indicator">${indicator}</span></button></th>`;
+        return `<th data-col="${index}"><button class="header-button" data-col="${index}">${escapeHtml(col)}<span class="sort-indicator">${indicator}</span></button><span class="column-resizer" data-resize="${index}" title="Drag to resize"></span></th>`;
       })
       .join("");
     const filterRow = header
@@ -406,6 +455,27 @@
       })
       .join("");
     return `<tr>${headerRow}</tr><tr class="filter-row">${filterRow}</tr>`;
+  }
+
+  function initializeCsvColumnWidthsIfNeeded() {
+    if (!elements.csvHead || !state.csvColumnCount) {
+      return;
+    }
+    const headerCells = elements.csvHead.querySelectorAll("tr:first-child th");
+    let updated = false;
+    headerCells.forEach((cell, index) => {
+      if (typeof state.csvColumnWidths[index] === "number") {
+        return;
+      }
+      const width = cell.getBoundingClientRect().width;
+      if (!Number.isNaN(width) && width > 0) {
+        state.csvColumnWidths[index] = width;
+        updated = true;
+      }
+    });
+    if (updated) {
+      updateCsvColgroup(state.csvColumnCount);
+    }
   }
 
   function wireCsvHeaderEvents() {
@@ -442,6 +512,52 @@
         renderCsvTable();
       });
     });
+  }
+
+  function wireCsvColumnResizers() {
+    if (!elements.csvHead) {
+      return;
+    }
+    elements.csvHead.querySelectorAll(".column-resizer").forEach(handle => {
+      handle.addEventListener("pointerdown", handleColumnResizePointerDown);
+    });
+  }
+
+  function handleColumnResizePointerDown(event) {
+    const index = Number(event.target.dataset.resize);
+    if (Number.isNaN(index)) {
+      return;
+    }
+    const headerCell = elements.csvHead.querySelector(`th[data-col="${index}"]`);
+    const startWidth = headerCell?.getBoundingClientRect().width || 120;
+    activeColumnResize = {
+      index,
+      startX: event.clientX,
+      startWidth
+    };
+    document.addEventListener("pointermove", handleColumnResizePointerMove);
+    document.addEventListener("pointerup", handleColumnResizePointerUp);
+    event.preventDefault();
+    event.stopPropagation();
+  }
+
+  function handleColumnResizePointerMove(event) {
+    if (!activeColumnResize) {
+      return;
+    }
+    const delta = event.clientX - activeColumnResize.startX;
+    const nextWidth = Math.max(70, activeColumnResize.startWidth + delta);
+    state.csvColumnWidths[activeColumnResize.index] = nextWidth;
+    updateCsvColgroup(state.csvColumnCount);
+  }
+
+  function handleColumnResizePointerUp() {
+    if (!activeColumnResize) {
+      return;
+    }
+    document.removeEventListener("pointermove", handleColumnResizePointerMove);
+    document.removeEventListener("pointerup", handleColumnResizePointerUp);
+    activeColumnResize = null;
   }
 
   function getFilteredCsvRows() {
