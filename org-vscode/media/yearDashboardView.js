@@ -6,7 +6,9 @@
     activeView: "insights",
     rawCsv: "",
     csvRows: null,
-    csvError: null
+    csvError: null,
+    csvSort: { column: null, direction: "asc" },
+    csvFilters: []
   };
 
   const elements = {
@@ -67,6 +69,8 @@
       state.rawCsv = event.data.payload?.csv || "";
       state.csvRows = null;
       state.csvError = null;
+      state.csvSort = { column: null, direction: "asc" };
+      state.csvFilters = [];
       render();
     }
   });
@@ -340,32 +344,144 @@
     if (!elements.csvHead || !elements.csvBody || !elements.csvNote) {
       return;
     }
+    const activeElement = document.activeElement;
+    const shouldRestoreFocus = activeElement?.classList?.contains("filter-input")
+      ? {
+          index: Number(activeElement.dataset.filter),
+          selectionStart: activeElement.selectionStart,
+          selectionEnd: activeElement.selectionEnd
+        }
+      : null;
     if (state.csvError) {
       elements.csvHead.innerHTML = "";
       elements.csvBody.innerHTML = '<tr><td class="empty" colspan="1">' + escapeHtml(state.csvError) + "</td></tr>";
       elements.csvNote.textContent = "CSV export unavailable.";
       return;
     }
-    const rows = state.csvRows || [];
-    if (!rows.length) {
+    const { header, rows } = getFilteredCsvRows();
+    if (!header.length) {
       elements.csvHead.innerHTML = "";
       elements.csvBody.innerHTML = '<tr><td class="empty" colspan="1">No rows were parsed from the CSV.</td></tr>';
       elements.csvNote.textContent = "CSV export contains no data.";
       return;
     }
-    const [header, ...body] = rows;
-    const colCount = Math.max(header?.length || 1, 1);
-    elements.csvHead.innerHTML = `<tr>${header.map(col => `<th>${escapeHtml(col)}</th>`).join("")}</tr>`;
-    if (!body.length) {
-      elements.csvBody.innerHTML = `<tr><td class="empty" colspan="${colCount}">Header detected but no task rows were found.</td></tr>`;
+    const colCount = Math.max(header.length, 1);
+    elements.csvHead.innerHTML = buildCsvHeaderHtml(header);
+    if (!rows.length) {
+      elements.csvBody.innerHTML = `<tr><td class="empty" colspan="${colCount}">No tasks match the current column filters.</td></tr>`;
     } else {
-      elements.csvBody.innerHTML = body
+      elements.csvBody.innerHTML = rows
         .map(row => `<tr>${header.map((_, index) => `<td>${escapeHtml(row[index] || "")}</td>`).join("")}</tr>`)
         .join("");
     }
-    const rowCount = Math.max(body.length, 0).toLocaleString();
+    wireCsvHeaderEvents();
+    wireCsvFilterInputs();
+    if (shouldRestoreFocus && Number.isInteger(shouldRestoreFocus.index)) {
+      const target = elements.csvHead.querySelector(`.filter-input[data-filter="${shouldRestoreFocus.index}"]`);
+      if (target) {
+        target.focus();
+        const start = shouldRestoreFocus.selectionStart ?? target.value.length;
+        const end = shouldRestoreFocus.selectionEnd ?? target.value.length;
+        target.setSelectionRange(start, end);
+      }
+    }
+    const rowCount = Math.max(rows.length, 0).toLocaleString();
     const artifactLabel = state.payload?.artifacts?.csv || "Year summary";
     elements.csvNote.textContent = `${rowCount} rows · ${artifactLabel}`;
+  }
+
+  function buildCsvHeaderHtml(header) {
+    const sort = state.csvSort;
+    const headerRow = header
+      .map((col, index) => {
+        const isActive = sort.column === index;
+        const indicator = isActive ? (sort.direction === "asc" ? "↑" : "↓") : "";
+        return `<th><button class="header-button" data-col="${index}">${escapeHtml(col)}<span class="sort-indicator">${indicator}</span></button></th>`;
+      })
+      .join("");
+    const filterRow = header
+      .map((_, index) => {
+        const value = state.csvFilters[index] || "";
+        return `<th><input type="text" class="filter-input" data-filter="${index}" value="${escapeHtml(value)}" placeholder="Filter" /></th>`;
+      })
+      .join("");
+    return `<tr>${headerRow}</tr><tr class="filter-row">${filterRow}</tr>`;
+  }
+
+  function wireCsvHeaderEvents() {
+    if (!elements.csvHead) {
+      return;
+    }
+    elements.csvHead.querySelectorAll(".header-button").forEach(button => {
+      button.addEventListener("click", () => {
+        const col = Number(button.dataset.col);
+        if (Number.isNaN(col)) {
+          return;
+        }
+        if (state.csvSort.column === col) {
+          state.csvSort.direction = state.csvSort.direction === "asc" ? "desc" : "asc";
+        } else {
+          state.csvSort = { column: col, direction: "asc" };
+        }
+        renderCsvTable();
+      });
+    });
+  }
+
+  function wireCsvFilterInputs() {
+    if (!elements.csvHead) {
+      return;
+    }
+    elements.csvHead.querySelectorAll(".filter-input").forEach(input => {
+      input.addEventListener("input", (event) => {
+        const col = Number(event.target.dataset.filter);
+        if (Number.isNaN(col)) {
+          return;
+        }
+        state.csvFilters[col] = event.target.value;
+        renderCsvTable();
+      });
+    });
+  }
+
+  function getFilteredCsvRows() {
+    const rows = state.csvRows || [];
+    if (!rows.length) {
+      return { header: [], rows: [] };
+    }
+    const header = rows[0];
+    let body = rows.slice(1);
+
+    if (state.csvFilters.length) {
+      body = body.filter(row => {
+        return header.every((_, index) => {
+          const filterValue = (state.csvFilters[index] || "").trim().toLowerCase();
+          if (!filterValue) {
+            return true;
+          }
+          return String(row[index] || "").toLowerCase().includes(filterValue);
+        });
+      });
+    }
+
+    if (state.csvSort.column !== null && state.csvSort.column < header.length) {
+      const { column, direction } = state.csvSort;
+      body = body.slice().sort((a, b) => {
+        const aVal = a[column] || "";
+        const bVal = b[column] || "";
+        const aNum = Number(aVal);
+        const bNum = Number(bVal);
+        let comparison;
+        if (!Number.isNaN(aNum) && !Number.isNaN(bNum)) {
+          comparison = aNum - bNum;
+        } else {
+          comparison = aVal.localeCompare(bVal, undefined, { sensitivity: "base" });
+        }
+        return direction === "asc" ? comparison : -comparison;
+      });
+    }
+
+    return { header, rows: body };
   }
 
   function parseCsv(text) {
