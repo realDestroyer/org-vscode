@@ -4,96 +4,6 @@
   "scopeName": "source.vso",
   "patterns": [
     {
-      "name": "constant.character.todo.vso",
-      "comment": "TODO Unicode Symbol",
-      "begin": "[\u2299]",
-      "end": "(?=\\bTODO\\b)"
-    },
-    {
-      "name": "string.task.todo.vso",
-      "comment": "TODO Task Text",
-      "begin": "\\bTODO\\b\\s*:.*?-",
-      "end": "(?=\\s*SCHEDULED:|$)",
-      "patterns": [
-        {
-          "include": "#todo"
-        }
-      ]
-    },
-    {
-      "name": "constant.character.in_progress.vso",
-      "comment": "IN_PROGRESS Unicode Symbol",
-      "begin": "[\u2298]",
-      "end": "(?=\\bIN_PROGRESS\\b)"
-    },
-    {
-      "name": "string.task.in_progress.vso",
-      "comment": "IN_PROGRESS Task Text",
-      "begin": "\\bIN_PROGRESS\\b\\s*:.*?-",
-      "end": "(?=\\s*SCHEDULED:|$)",
-      "patterns": [
-        {
-          "include": "#in_progress"
-        }
-      ]
-    },
-    {
-      "name": "constant.character.continued.vso",
-      "comment": "CONTINUED Unicode Symbol",
-      "begin": "[\u229c]",
-      "end": "(?=\\bCONTINUED\\b)"
-    },
-    {
-      "name": "string.task.continued.vso",
-      "comment": "CONTINUED Task Text",
-      "begin": "\\bCONTINUED\\b\\s*:.*?-",
-      "end": "(?=\\s*SCHEDULED:|$)",
-      "patterns": [
-        {
-          "include": "#continued"
-        }
-      ]
-    },
-    {
-      "name": "constant.character.done.vso",
-      "comment": "DONE Unicode Symbol",
-      "begin": "[\u2296]",
-      "end": "(?=\\bDONE\\b)"
-    },
-    {
-      "name": "string.task.done.vso",
-      "comment": "DONE Task Text",
-      "begin": "\\bDONE\\b\\s*:.*?-",
-      "end": "(?=\\s*SCHEDULED:|$)",
-      "patterns": [
-        {
-          "include": "#done"
-        }
-      ]
-    },
-    {
-      "name": "constant.character.abandoned.vso",
-      "comment": "ABANDONED Unicode Symbol",
-      "begin": "[\u2297]",
-      "end": "(?=\\bABANDONED\\b)"
-    },
-    {
-      "name": "string.task.abandoned.vso",
-      "comment": "ABANDONED Task Text",
-      "begin": "\\bABANDONED\\b\\s*:.*?-",
-      "end": "(?=\\s*SCHEDULED:|$)",
-      "patterns": [
-        {
-          "include": "#abandoned"
-        }
-      ]
-    },
-    {
-      "name": "entity.other.attribute-name.tag.vso",
-      "comment": "Inline TAG block",
-      "match": "\\[\\+TAG:[^\\]]*\\]"
-    },
-    {
       "name": "entity.other.attribute-name.tag.vso",
       "comment": "Inline TAG block",
       "match": "\\[\\+TAG:[^\\]]*\\]"
@@ -104,12 +14,11 @@
       "begin": "[\u2298]",
       "end": "$",
       "patterns": [
-        {
-          "include": "#in_progress"
-        },
-        {
-          "include": "#sched"
-        }
+        { "include": "#in_progress" },
+        { "include": "#tag" },
+        { "include": "#task_text_in_progress" },
+        { "include": "#sched" },
+        { "include": "#scheduled" }
       ]
     },
     {
@@ -118,77 +27,22 @@
       "begin": "[\u2297]",
       "end": "$",
       "patterns": [
-        {
-          "include": "#abandoned"
-        },
-        {
-          "include": "#sched"
-        }
+        { "include": "#abandoned" },
+        { "include": "#task_text_abandoned" },
+        { "include": "#sched" },
+        { "include": "#scheduled" }
       ]
     },
     {
       "name": "constant.character.continued.vso",
-      "comment": "Continued Task Symbol",
-      "begin": "[\u229c]",
+      "begin": "[⊜]",
       "end": "$",
       "patterns": [
-        {
-          "include": "#continued"
-        },
-        {
-          "include": "#sched"
-        }
-      ]
-    },
-    {
-      "name": "markup.heading.vso",
-      "comment": "Heading 1",
-      "begin": "[\u2299]",
-      "end": "$",
-      "patterns": [
-        {
-          "include": "#todo"
-        },
-        {
-          "include": "#done"
-        },
-        {
-          "include": "#sched"
-        }
-      ]
-    },
-    {
-      "name": "keyword.other.vso",
-      "comment": "Heading 2",
-      "begin": "[\u2298]",
-      "end": "$",
-      "patterns": [
-        {
-          "include": "#todo"
-        },
-        {
-          "include": "#done"
-        },
-        {
-          "include": "#sched"
-        }
-      ]
-    },
-    {
-      "name": "keyword.operator.vso",
-      "comment": "Heading 3",
-      "begin": "[\u2296]",
-      "end": "$",
-      "patterns": [
-        {
-          "include": "#todo"
-        },
-        {
-          "include": "#done"
-        },
-        {
-          "include": "#sched"
-        }
+        { "include": "#continued" },
+        { "include": "#tag" },
+        { "include": "#task_text_continued" },
+        { "include": "#sched" },
+        { "include": "#scheduled" }
       ]
     },
     {
@@ -217,66 +71,122 @@
     },
     {
       "name": "comment.vso",
-      "comment": "Heading 3 unformatted",
-      "begin": "([\bCOMPLETED\b])",
-      "end": "$"
+      "match": "\\bCOMPLETED\\b"
+    },
+    {
+      "name": "constant.character.todo.vso",
+      "begin": "[⊙]",
+      "end": "$",
+      "patterns": [
+        { "include": "#todo" },
+        { "include": "#tag" },
+        { "include": "#task_text_todo" },
+        { "include": "#sched" },
+        { "include": "#scheduled" }
+      ]
+    },
+    {
+      "name": "constant.character.done.vso",
+      "begin": "[\u2296]",
+      "end": "$",
+      "patterns": [
+        { "include": "#done" },
+        { "include": "#task_text_done" },
+        { "include": "#sched" },
+        { "include": "#scheduled" }
+      ]
+    },
+    {
+      "name": "constant.numeric.date.vso",
+      "match": "\\[(\\d{2}-\\d{2}-\\d{4})\\]"
+    },
+    {
+      "name": "constant.numeric.date.header.vso",
+      "match": "\\[\\d{2}-\\d{2}-\\d{4} \\w{3}\\]"
     }
   ],
   "repository": {
-    "todo": {
+    "scheduled": {
       "patterns": [
         {
-          "name": "keyword.control.todo.vso",
-          "match": "\\bTODO\\b"
+          "name": "keyword.scheduled.vso",
+          "match": "SCHEDULED:\\s*\\[\\d{2}-\\d{2}-\\d{4}\\]"
+        }
+      ]
+    },    
+    "todo": {
+      "patterns": [
+        { "name": "keyword.control.todo.vso", "match": "\\bTODO\\b" }
+      ]
+    },
+    "task_text_todo": {
+      "patterns": [
+        {
+          "name": "string.task.todo.vso",
+          "match": "(?<=TODO\\s+:\\s+\\[\\+TAG:[^\\]]*\\]\\s+-\\s+).*?(?=\\s+SCHEDULED:)"
+        }
+      ]
+    },
+    "task_text_in_progress": {
+      "patterns": [
+        {
+          "name": "string.task.in_progress.vso",
+          "match": "(?<=IN_PROGRESS\\s+:\\s+\\[\\+TAG:[^\\]]*\\]\\s+-\\s+).*?(?=\\s+SCHEDULED:)"
+        }
+      ]
+    },
+    "task_text_done": {
+      "patterns": [
+        {
+          "name": "string.task.done.vso",
+          "match": "(?<=DONE\\s+:\\s+\\[\\+TAG:[^\\]]*\\]\\s+-\\s+).*?(?=\\s+SCHEDULED:)"
+        }
+      ]
+    },
+    "task_text_abandoned": {
+      "patterns": [
+        {
+          "name": "string.task.abandoned.vso",
+          "match": "(?<=ABANDONED\\s+:\\s+\\[\\+TAG:[^\\]]*\\]\\s+-\\s+).*?(?=\\s+SCHEDULED:)"
+        }
+      ]
+    },
+    "task_text_continued": {
+      "patterns": [
+        {
+          "name": "string.task.continued.vso",
+          "match": "(?<=CONTINUED\\s+:\\s+\\[\\+TAG:[^\\]]*\\]\\s+-\\s+).*?(?=\\s+SCHEDULED:)"
         }
       ]
     },
     "done": {
       "patterns": [
-        {
-          "name": "keyword.control.done.vso",
-          "match": "\\bDONE\\b"
-        }
+        { "name": "entity.name.function.vso", "match": "\\bDONE\\b" }
       ]
     },
     "sched": {
       "patterns": [
-        {
-          "name": "comment.vso",
-          "match": "\\bSCHEDULED\\b(.*)"
-        }
+        { "name": "comment.vso", "match": "^\\s*COMPLETED:\\s*\\[.*?\\]" }
       ]
     },
     "abandoned": {
       "patterns": [
-        {
-          "name": "keyword.control.abandoned.vso",
-          "match": "\\bABANDONED\\b"
-        }
+        { "name": "keyword.control.abandoned.vso", "match": "\\bABANDONED\\b" }
       ]
     },
     "continued": {
       "patterns": [
-        {
-          "name": "keyword.control.continued.vso",
-          "match": "\\bCONTINUED\\b"
-        }
+        { "name": "markup.quote.continued.vso", "match": "\\bCONTINUED\\b" }
       ]
     },
     "in_progress": {
       "patterns": [
-        {
-          "name": "keyword.control.in_progress.vso",
-          "match": "\\bIN_PROGRESS\\b"
-        }
+        { "name": "support.constant.in_progress.vso", "match": "\\bIN_PROGRESS\\b" }
       ]
     },
     "tag": {
       "patterns": [
-        {
-          "name": "entity.other.attribute-name.tag.vso",
-          "match": "\\[\\+TAG:[^\\]]*\\]"
-        }
+        { "name": "entity.other.attribute-name.tag.vso", "match": "\\[\\+TAG:[^\\]]*\\]" }
       ]
     }
   }
