@@ -1,5 +1,16 @@
 # Change Log
 
+# [1.7.7] 12-04-25
+`Enhanced`
+
+- **Year-in-Review Suite:**
+  - Added three new commands — `orgMode.exportYearSummary`, `orgMode.generateExecutiveReport`, and `orgMode.openYearInReview` — to build JSON/CSV summaries, polished Markdown/HTML executive reports, and an interactive dashboard that visualizes tag heatmaps, status timelines, and task feeds for a full Org file.
+  - Shared the parsing/build pipeline across exporters so one Org scan feeds every artifact, reducing churn on large notebooks.
+  - Webview assets now load lazily with safe fallbacks if a packaged file goes missing, preventing activation failures.
+- **Heading Depth Controls:**
+  - `Alt+Right` / `Alt+Left` no longer fight each other — the commands now rotate Unicode symbols deterministically and optionally adjust indentation by two spaces.
+  - New setting `Org-vscode.adjustHeadingIndentation` (defaults to `true`) lets you decide whether heading depth should move with the symbol or stay pinned.
+
 # [1.7.6] 12-03-25
 `Enhanced`
 

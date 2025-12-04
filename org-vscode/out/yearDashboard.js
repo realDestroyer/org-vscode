@@ -6,7 +6,7 @@ const { generateExecutiveReportForFile } = require("./yearExecutiveReport");
 const { buildDashboardModel } = require("./yearReportBuilder");
 
 const dashboardScriptPath = path.join(__dirname, "..", "media", "yearDashboardView.js");
-const dashboardScript = fs.readFileSync(dashboardScriptPath, "utf-8");
+let cachedDashboardScript = null;
 
 let dashboardPanel = null;
 let dashboardState = null;
@@ -196,6 +196,7 @@ function revealReportFolder() {
 
 function getDashboardHtml(webview, nonce) {
   const csp = `default-src 'none'; img-src ${webview.cspSource} https: data:; style-src ${webview.cspSource} 'nonce-${nonce}'; script-src ${webview.cspSource} 'nonce-${nonce}'; font-src ${webview.cspSource} https: data:`;
+  const scriptSource = loadDashboardScript();
   return `<!doctype html>
 <html lang="en">
 <head>
@@ -523,9 +524,30 @@ function getDashboardHtml(webview, nonce) {
     </section>
   </div>
 
-  <script nonce="${nonce}">${dashboardScript}</script>
+  <script nonce="${nonce}">${scriptSource}</script>
 </body>
 </html>`;
+}
+
+function loadDashboardScript() {
+  if (cachedDashboardScript !== null) {
+    return cachedDashboardScript;
+  }
+
+  try {
+    cachedDashboardScript = fs.readFileSync(dashboardScriptPath, "utf-8");
+  } catch (error) {
+    console.error("org-vscode: unable to load Year-in-Review webview script", error);
+    cachedDashboardScript = `window.addEventListener('load', () => {
+      const shell = document.querySelector('.shell');
+      if (!shell) {
+        return;
+      }
+      shell.innerHTML = '<p style="color:#f87171;font-family:Segoe UI,sans-serif">Year-in-Review assets were missing when the extension activated. Please reinstall org-vscode or run the build so that media/yearDashboardView.js is included.</p>';
+    });`;
+  }
+
+  return cachedDashboardScript;
 }
 
 module.exports = {

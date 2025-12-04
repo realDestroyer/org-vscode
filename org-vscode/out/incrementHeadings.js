@@ -2,62 +2,65 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const vscode = require("vscode");
 
-// Main function to increment the heading symbol (⨀ style task marker)
-module.exports = function () {
-    const { activeTextEditor } = vscode.window;
-    if (activeTextEditor && activeTextEditor.document.languageId === "vso") {
-        const { document } = activeTextEditor;
-        // Define task symbol cycle order
-        let characterArray = ['⊖ ', '⊙ ', '⊘ ', '⊜ ', '⊗ '];
+const SYMBOLS = ["⊖", "⊙", "⊘", "⊜", "⊗"];
 
-        // Get current cursor line
-        let position = activeTextEditor.selection.active.line;
-        let getCurrentLine = document.lineAt(position);
-        let currentLineText = getCurrentLine.text;
-
-        // Decode current task symbol from line
-        let char = characterDecode(characterArray);
-
-        // Capture leading spaces (indentation) to preserve formatting
-        let getLeadingSpace = currentLineText.substr(0, currentLineText.indexOf(char));
-        let newSpaces = "";
-        let convertSpaces = [];
-
-        // Remove current symbol to isolate task text
-        let formattedText = currentLineText.replace(/[⊙⊘⊖⊜⊗\?]/g, "").trim();
-
-        // Prepare workspace edit
-        let edit = new vscode.WorkspaceEdit();
-        edit.delete(document.uri, getCurrentLine.range);
-
-        // Rotate to next symbol
-        let currentIndex = characterArray.indexOf(char);
-        let newChar = characterArray[(currentIndex + 1) % characterArray.length];
-
-        // Reapply same indentation
-        for (let i = 0; i <= getLeadingSpace.length; i++) {
-            convertSpaces.push(" ");
-            newSpaces = convertSpaces.join("");
-        }
-
-        // Insert updated line with new symbol
-        edit.insert(document.uri, getCurrentLine.range.start, newSpaces + newChar + formattedText);
-        vscode.workspace.applyEdit(edit);
-    }
-
-    // Helper to decode which symbol is currently on the line
-    function characterDecode(characterArray) {
-        const { activeTextEditor } = vscode.window;
-        if (activeTextEditor && activeTextEditor.document.languageId === "vso") {
-            const { document } = activeTextEditor;
-            let position = activeTextEditor.selection.active.line;
-            const getCurrentLine = document.lineAt(position);
-            let currentLineText = getCurrentLine.text;
-            for (let i = 0; i < characterArray.length; i++) {
-                if (currentLineText.includes(characterArray[i])) {
-                    return characterArray[i];
-                }
-            }
-        }
-    }
+module.exports = function incrementHeading() {
+    rotateSymbol(1);
 };
+
+function rotateSymbol(step) {
+    const editor = vscode.window.activeTextEditor;
+    if (!editor || editor.document.languageId !== "vso") {
+        return;
+    }
+
+    const document = editor.document;
+    const lineNumber = editor.selection.active.line;
+    const line = document.lineAt(lineNumber);
+    const parsed = parseLine(line.text);
+    if (!parsed) {
+        return;
+    }
+
+    const { indent, symbol, gap, rest } = parsed;
+    const index = SYMBOLS.indexOf(symbol);
+    if (index === -1) {
+        return;
+    }
+
+    const nextSymbol = SYMBOLS[(index + step + SYMBOLS.length) % SYMBOLS.length];
+    const config = vscode.workspace.getConfiguration("Org-vscode");
+    const adjustIndentation = config.get("adjustHeadingIndentation", true);
+    const adjustedIndent = adjustIndentation ? adjustIndent(indent, step) : indent;
+    const spacer = gap.length ? gap : " ";
+    const updatedLine = `${adjustedIndent}${nextSymbol}${spacer}${rest}`;
+
+    const edit = new vscode.WorkspaceEdit();
+    edit.replace(document.uri, line.range, updatedLine);
+    vscode.workspace.applyEdit(edit);
+}
+
+function parseLine(text) {
+    const match = text.match(/^(\s*)([⊖⊙⊘⊜⊗])(.*)$/);
+    if (!match) {
+        return null;
+    }
+
+    const indent = match[1];
+    const symbol = match[2];
+    const remainder = match[3];
+    const gapMatch = remainder.match(/^(\s*)(.*)$/);
+    const gap = gapMatch ? gapMatch[1] : "";
+    const rest = gapMatch ? gapMatch[2] : remainder;
+    return { indent, symbol, gap, rest };
+}
+
+function adjustIndent(indent, step) {
+    if (step > 0) {
+        return indent + "  ";
+    }
+    if (step < 0) {
+        return indent.length >= 2 ? indent.slice(0, indent.length - 2) : "";
+    }
+    return indent;
+}
