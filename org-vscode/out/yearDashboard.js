@@ -473,6 +473,43 @@ function getDashboardHtml(webview, nonce) {
       font-size: 0.7rem;
       color: var(--muted);
       z-index: 2;
+      padding: 0;
+    }
+    .raw-table th button.header-button {
+      width: 100%;
+      padding: 10px 12px;
+      background: transparent;
+      border: none;
+      color: inherit;
+      font: inherit;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      text-transform: inherit;
+      letter-spacing: inherit;
+    }
+    .raw-table th button.header-button:hover {
+      color: var(--text);
+    }
+    .raw-table .sort-indicator {
+      font-size: 0.85rem;
+      opacity: 0.8;
+    }
+    .raw-table .filter-row th {
+      position: sticky;
+      top: 36px;
+      padding: 8px 10px;
+      background: rgba(5,9,20,0.95);
+    }
+    .raw-table .filter-row input {
+      width: 100%;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 8px;
+      padding: 6px 8px;
+      color: var(--text);
+      font-size: 0.75rem;
     }
     .raw-table td.empty {
       text-align: center;
@@ -512,6 +549,7 @@ function getDashboardHtml(webview, nonce) {
       flex-direction: column;
       gap: 6px;
       text-align: left;
+      color: var(--text);
       cursor: pointer;
     }
     .task-title {
