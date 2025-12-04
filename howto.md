@@ -25,6 +25,7 @@
 * [Align Scheduled Task Tags](#align-scheduled-tasks)
 * [Tagged Agenda View](#tagged-agenda-view)
 * [📆 Calendar View](#calendar-view)
+* [📊 Year-In-Review Dashboard](#year-in-review-dashboard)
 
 ---
 
@@ -386,3 +387,40 @@ Use the command:
 * Updates automatically if you reschedule or change a task keyword.
 
 Use this view to stay on top of deadlines and visually manage your priorities!
+
+---
+
+## 📊 Year-In-Review Dashboard <a id="year-in-review-dashboard"></a>
+
+The Year-In-Review suite turns any Org journal into executive-ready artifacts (CSV, Markdown, HTML) and an interactive dashboard. Everything begins with a single command:
+
+### 1. Launch the dashboard command
+
+Run **`org-vscode: Open Year-In-Review Dashboard`** from the Command Palette.
+
+<img src="https://github.com/realDestroyer/org-vscode/blob/master/Images/year-in-review-dashboard-command.jpg?raw=true" width="700" height="120" />
+
+### 2. Pick the Org file you want to summarize
+
+Choose any `.org`, `.vsorg`, or `.vso` file from your Org-vscode directory. The extension parses the whole year, builds fresh CSV/JSON/Markdown/HTML reports, and then opens the dashboard beside your editor.
+
+<img src="https://github.com/realDestroyer/org-vscode/blob/master/Images/year-in-review-dashboard-step1.jpg?raw=true" width="700" height="420" />
+
+### 3. Explore the **Insights** tab
+
+- Use the **Open Org File / Reveal Report Folder / CSV / Markdown / HTML** bubbles to jump straight to the generated artifacts.
+- The **Timeline Pulse** bar chart respects the status dropdown so you can isolate DONE-only months or compare everything at once.
+- Click any square in the **Tag Heatmap** to filter the Task Storyboard by that month/tag combo; stack additional filters with the keyword search box and `Reset filters` button.
+
+<img src="https://github.com/realDestroyer/org-vscode/blob/master/Images/year-in-review-dashboard-example.jpg?raw=true" width="900" height="420" />
+
+### 4. Dive into the **Raw Tasks** tab
+
+- Every column header is sortable—click once for ascending, again for descending.
+- Type into the inline filter boxes to match exact strings (e.g., show only `ABANDONED` rows or a date range).
+- Drag the slim resize handle on the right edge of any header to widen or shrink that column; the table grows horizontally and stays scrollable so you can see long notes.
+- Use **Open CSV Artifact** at the top-right if you want to inspect or share the underlying `year-summary.csv` directly.
+
+<img src="https://github.com/realDestroyer/org-vscode/blob/master/Images/year-in-review-dashboard-rawTasks-example.jpg?raw=true" width="900" height="285" />
+
+Tip: Because the Year-In-Review model shares the same parser as the exporters, you can rerun the command any time you update your Org file—the dashboard will refresh immediately with the latest stats and files.
