@@ -54,6 +54,9 @@ Copy all non-DONE tasks to `CurrentTasks.org` for quick review or reporting.
 **Built-In Snippets**  
 Use `/todo`, `/template`, `/meeting`, `/checklist`, and more to insert pre-styled blocks.
 
+**Year-in-Review Suite**  
+Pick any yearly Org file and instantly produce JSON/CSV summaries, polished Markdown + HTML executive reports, and an interactive dashboard that highlights tag heatmaps, monthly throughput, and notable wins. Commands live in the palette as `Org Mode: Export Yearly Summary`, `Org Mode: Generate Executive Report`, and `Org Mode: Open Year-In-Review Dashboard`.
+
 ---
 
 ## Learn More
@@ -63,6 +66,19 @@ Full How-To Guide (with examples, images, and keyboard shortcuts):
 
 See recent changes in the [CHANGELOG](https://github.com/realdestroyer/org-vscode/blob/master/CHANGELOG.md)
 See what’s coming next on the [ROADMAP](https://github.com/realdestroyer/org-vscode/blob/master/roadmap.md)
+
+---
+
+## 📊 Year-in-Review Suite
+
+1. Run `Org Mode: Open Year-In-Review Dashboard` (or export-only commands) and choose the Org source file for the year.
+2. The extension parses every day/task once, then emits:
+	- `year-summary.json` and `year-summary.csv`
+	- `year-executive-report.md` and `.html`
+	- A dashboard webview with timelines, tag heatmaps, filters, and quick links back to source lines.
+3. Use the action buttons inside the dashboard to open artifacts, reveal the report folder, or jump straight to the original task lines inside VS Code.
+
+All artifacts land in `.vscode-orgmode/reports/<year>` next to your source file, making it easy to archive them with the rest of your planning docs.
 
 ---
 
@@ -92,6 +108,12 @@ See what’s coming next on the [ROADMAP](https://github.com/realdestroyer/org-v
 | `Alt + Shift + T`  | Open visual table builder                              |     |
 | `Ctrl + Alt + M`   | Show popup message (GitHub link)                       | --- |
 
+Additional Year-in-Review commands are palette-only:
+
+- `Org Mode: Export Yearly Summary` – saves JSON + CSV.
+- `Org Mode: Generate Executive Report` – saves Markdown + HTML.
+- `Org Mode: Open Year-In-Review Dashboard` – opens the visualization webview and regenerates every artifact.
+
 ## 📦 Install
 
 ### Option 1: Marketplace Install
@@ -104,6 +126,12 @@ Download the latest `.vsix` from [Releases](https://github.com/realDestroyer/org
 Then: Extensions Panel → More Actions (⋯) → *Install from VSIX...*
 
 <img src="https://github.com/realdestroyer/org-vscode/blob/master/Images/install-vsix.png?raw=true" width="700" height="400" />
+
+---
+
+## ⚙️ Configuration Highlights
+
+- `Org-vscode.adjustHeadingIndentation` (default `true`): When enabled, `Alt+Left/Right` both rotate the Unicode task symbol *and* shift indentation by two spaces so hierarchy is obvious. Set it to `false` if you want the symbols to change without moving the outline depth.
 
 ---
 

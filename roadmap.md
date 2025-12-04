@@ -1,6 +1,6 @@
 ﻿# Roadmap
 
-Live version: 1.7.6
+Live version: 1.7.7
 
 These are the features that I have either already implemented, or plan to in the near future.
 
@@ -15,9 +15,9 @@ These are the features that I have either already implemented, or plan to in the
 | Bulleted Lists            | Make an ordered or unordered list                                                          | In Progress |          | realDestroyer |
 | TODO Tracking             | Show TODO completion on the up-most level                                                  | In Progress |          | realDestroyer |
 | JIRA Integration          | Allow tasks to be pushed to JIRA (Epic, Story, Issues, sub-tasks, etc.)                    | In Progress |          | realDestroyer |
-| Yearly Summary Exporter   | Parse full-year Org files and emit CSV/JSON summaries with per-tag metrics for reviews     | Not Started |          | realDestroyer |
-| Executive Review Templates| Produce Markdown/HTML executive reports highlighting key accomplishments and timelines     | Not Started |          | realDestroyer |
-| Year-in-Review Dashboard  | Webview dashboard that visualizes yearly stats (tag heatmaps, timelines, filters)          | Not Started |          | realDestroyer |
+| Yearly Summary Exporter   | Parse full-year Org files and emit CSV/JSON summaries with per-tag metrics for reviews     | DONE        | v1.7.7   | realDestroyer |
+| Executive Review Templates| Produce Markdown/HTML executive reports highlighting key accomplishments and timelines     | DONE        | v1.7.7   | realDestroyer |
+| Year-in-Review Dashboard  | Webview dashboard that visualizes yearly stats (tag heatmaps, timelines, filters)          | DONE        | v1.7.7   | realDestroyer |
 | Syntax Highlighting Refresh | Extended Org scopes for #+ directives, property drawers, and DEADLINE/CLOSED metadata so file, Agenda, and Calendar views share the same colors. | DONE | v1.7.6 | realDestroyer |
 | Centralized Task Keyword/Symbol Manager | Refactored all keyword/symbol logic into a single manager file (`taskKeywordManager.js`) for consistency and maintainability across all commands and views. | DONE        | v1.7.1   | realDestroyer |
 | Calendar Tag Filtering    | Filter calendar tasks by tag                                                              | DONE | v1.7.0 | realDestroyer |
