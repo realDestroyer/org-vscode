@@ -424,3 +424,5 @@ Choose any `.org`, `.vsorg`, or `.vso` file from your Org-vscode directory. The 
 <img src="https://github.com/realDestroyer/org-vscode/blob/master/Images/year-in-review-dashboard-rawTasks-example.jpg?raw=true" width="900" height="285" />
 
 Tip: Because the Year-In-Review model shares the same parser as the exporters, you can rerun the command any time you update your Org file—the dashboard will refresh immediately with the latest stats and files.
+
+📄 **Want a starting point?** Copy the [example template](https://github.com/realDestroyer/org-vscode/blob/master/examples/year-template.org) into your own `.org` file and run the dashboard to see it in action.
