@@ -80,6 +80,41 @@ See what’s coming next on the [ROADMAP](https://github.com/realdestroyer/org-v
 
 All artifacts land in `.vscode-orgmode/reports/<year>` next to your source file, making it easy to archive them with the rest of your planning docs.
 
+### 📝 Recommended Org File Structure for Year-in-Review
+
+For best results, organize your yearly journal like this:
+
+```org
+#+TITLE: 2025 Work Journal
+#+TAGS: PROJECT_A, PROJECT_B, MEETING, ADMIN
+-------------------------
+
+⊘ [01-02-2025 Thu] ---------------------------------------------------------------
+    ⊖ DONE : [+TAG:PROJECT_A] - Completed the quarterly report
+    ⊖ DONE : Team standup
+    ⊜ CONTINUED : [+TAG:PROJECT_B] - Database migration                              SCHEDULED: [01-03-2025]
+
+⊘ [01-03-2025 Fri] ---------------------------------------------------------------
+    ⊖ DONE : [+TAG:PROJECT_B] - Database migration
+      COMPLETED:[3rd January 2025, 4:15:22 pm]
+    ⊙ TODO : [+TAG:ADMIN] - Submit expense report                                    SCHEDULED: [01-06-2025]
+```
+
+**Key elements the parser looks for:**
+
+| Element | Format | Purpose |
+|---------|--------|---------|
+| Day heading | `⊘ [MM-DD-YYYY Day] ---` | Groups tasks by calendar day |
+| Task status | `⊙ TODO`, `⊘ IN_PROGRESS`, `⊜ CONTINUED`, `⊖ DONE`, `⊗ ABANDONED` | Tracked in stats & heatmap |
+| Inline tags | `[+TAG:NAME]` or `[+TAG:A,B]` | Powers tag heatmap & filters |
+| Schedule | `SCHEDULED: [MM-DD-YYYY]` | Shown in Raw Tasks table |
+| Completion | `COMPLETED:[...]` | Auto-inserted when toggling to DONE |
+
+**Tips:**
+- Use the `/dayheading` snippet (coming soon) or copy the separator line pattern to stay consistent.
+- Keep one `.org` file per year for cleaner dashboards.
+- Tags declared in `#+TAGS:` at the top aren't required but help with other Org-vscode features like "Open By Tag."
+
 ---
 
 ## 🔑 Keyboard Shortcuts
