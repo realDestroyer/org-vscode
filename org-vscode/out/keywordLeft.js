@@ -2,6 +2,7 @@ const vscode = require("vscode");
 const fs = require("fs");
 const path = require("path");
 const taskKeywordManager = require("./taskKeywordManager");
+const continuedTaskHandler = require("./continuedTaskHandler");
 
 module.exports = function () {
   vscode.commands.executeCommand("workbench.action.files.save").then(() => {
@@ -11,7 +12,7 @@ module.exports = function () {
     const { document } = activeTextEditor;
     const position = activeTextEditor.selection.active.line;
     const currentLine = document.lineAt(position);
-    const nextLine = document.lineAt(position + 1);
+    const nextLine = position + 1 < document.lineCount ? document.lineAt(position + 1) : null;
 
     const workspaceEdit = new vscode.WorkspaceEdit();
     const leadingSpaces = currentLine.text.slice(0, currentLine.firstNonWhitespaceCharacterIndex);
@@ -20,12 +21,33 @@ module.exports = function () {
     let currentKeyword = keywordMatch ? keywordMatch[1] : null;
     const { keyword: nextKeyword, symbol: nextSymbol } = taskKeywordManager.rotateKeyword(currentKeyword, "left");
     let newLine = taskKeywordManager.buildTaskLine(leadingSpaces, nextKeyword, cleanedText);
+    
     // Add or remove COMPLETED line
     if (nextKeyword === 'DONE') {
       newLine += `\n${taskKeywordManager.buildCompletedStamp(leadingSpaces)}`;
-    } else if (currentLine.text.includes('DONE') && nextLine.text.includes('COMPLETED')) {
+    } else if (currentKeyword === 'DONE' && nextLine && nextLine.text.includes('COMPLETED')) {
       workspaceEdit.delete(document.uri, nextLine.range);
     }
+    
+    // Handle CONTINUED transitions
+    if (nextKeyword === 'CONTINUED' && currentKeyword !== 'CONTINUED') {
+      // Transitioning TO CONTINUED - forward task to next day
+      const forwardEdit = continuedTaskHandler.handleContinuedTransition(document, position);
+      if (forwardEdit) {
+        if (forwardEdit.type === "insert") {
+          workspaceEdit.insert(document.uri, forwardEdit.position, forwardEdit.text);
+        }
+      }
+    } else if (currentKeyword === 'CONTINUED' && nextKeyword !== 'CONTINUED') {
+      // Transitioning FROM CONTINUED - remove forwarded task
+      const removeEdit = continuedTaskHandler.handleContinuedRemoval(document, position);
+      if (removeEdit) {
+        if (removeEdit.type === "delete") {
+          workspaceEdit.delete(document.uri, removeEdit.range);
+        }
+      }
+    }
+    
     workspaceEdit.replace(document.uri, currentLine.range, newLine);
 
     vscode.workspace.applyEdit(workspaceEdit).then(() => {
