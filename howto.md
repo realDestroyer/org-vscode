@@ -73,6 +73,7 @@ Just type the prefix and hit `Tab` to expand the snippet inside a `.org` file.
 | `/table3`    | Quick 3x3 org-style table       |
 | `/section`   | Labeled section block           |
 | `/template`  | Full task template with tags    |
+| `/day`       | Day heading with date & separator |
 
 ### Example Expansions <a id="example-expansions"></a>
 

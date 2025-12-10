@@ -92,9 +92,8 @@ The Year-in-Review commands work with any `.org` file — no rigid template requ
 | Schedule | `SCHEDULED: [01-20-2025]` | Optional; shown in Raw Tasks |
 
 **Quick workflow to add a new day:**
-1. Type `** ` (two asterisks + space) to get the `⊘` symbol
-2. Press `Ctrl+Shift+D` to insert today's date
-3. Optionally press `Ctrl+Alt+D` to append a visual separator line
+- **Option A:** Type `/day` and press `Tab` — inserts the symbol, today's date, and separator in one step
+- **Option B:** Manual approach — type `** ` for the symbol, `Ctrl+Shift+D` for the date, `Ctrl+Alt+D` for the separator
 
 Everything else — separators, indentation, notes — is up to you. Keep one file per year for the cleanest dashboards, but even multi-year files will parse correctly (grouped by whichever year appears first).
 
@@ -171,6 +170,7 @@ Then: Extensions Panel → More Actions (⋯) → *Install from VSIX...*
 | `/meeting`   | Meeting notes structure   |
 | `/checklist` | Create checklist block    |
 | `/template`  | Full task block w/ fields |
+| `/day`       | Day heading with date     |
 | `/table2`    | 2x2 Org table             |
 | `/table3`    | 3x3 Org table             |
 
