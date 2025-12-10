@@ -80,40 +80,25 @@ See what’s coming next on the [ROADMAP](https://github.com/realdestroyer/org-v
 
 All artifacts land in `.vscode-orgmode/reports/<year>` next to your source file, making it easy to archive them with the rest of your planning docs.
 
-### 📝 Recommended Org File Structure for Year-in-Review
+### 💡 What the Parser Recognizes
 
-For best results, organize your yearly journal like this:
+The Year-in-Review commands work with any `.org` file — no rigid template required. The parser simply looks for:
 
-```org
-#+TITLE: 2025 Work Journal
-#+TAGS: PROJECT_A, PROJECT_B, MEETING, ADMIN
--------------------------
+| Pattern | Example | Notes |
+|---------|---------|-------|
+| Day heading | `⊘ [01-15-2025 Wed]` | Use `** ` then `Ctrl+Shift+D` to insert today's date |
+| Task line | `⊖ DONE : Fix the bug` | Any Unicode symbol + status keyword |
+| Tags | `[+TAG:PROJECT,URGENT]` | Optional; powers heatmap filters |
+| Schedule | `SCHEDULED: [01-20-2025]` | Optional; shown in Raw Tasks |
 
-⊘ [01-02-2025 Thu] ---------------------------------------------------------------
-    ⊖ DONE : [+TAG:PROJECT_A] - Completed the quarterly report
-    ⊖ DONE : Team standup
-    ⊜ CONTINUED : [+TAG:PROJECT_B] - Database migration                              SCHEDULED: [01-03-2025]
+**Quick workflow to add a new day:**
+1. Type `** ` (two asterisks + space) to get the `⊘` symbol
+2. Press `Ctrl+Shift+D` to insert today's date
+3. Optionally press `Ctrl+Alt+D` to append a visual separator line
 
-⊘ [01-03-2025 Fri] ---------------------------------------------------------------
-    ⊖ DONE : [+TAG:PROJECT_B] - Database migration
-      COMPLETED:[3rd January 2025, 4:15:22 pm]
-    ⊙ TODO : [+TAG:ADMIN] - Submit expense report                                    SCHEDULED: [01-06-2025]
-```
+Everything else — separators, indentation, notes — is up to you. Keep one file per year for the cleanest dashboards, but even multi-year files will parse correctly (grouped by whichever year appears first).
 
-**Key elements the parser looks for:**
-
-| Element | Format | Purpose |
-|---------|--------|---------|
-| Day heading | `⊘ [MM-DD-YYYY Day] ---` | Groups tasks by calendar day |
-| Task status | `⊙ TODO`, `⊘ IN_PROGRESS`, `⊜ CONTINUED`, `⊖ DONE`, `⊗ ABANDONED` | Tracked in stats & heatmap |
-| Inline tags | `[+TAG:NAME]` or `[+TAG:A,B]` | Powers tag heatmap & filters |
-| Schedule | `SCHEDULED: [MM-DD-YYYY]` | Shown in Raw Tasks table |
-| Completion | `COMPLETED:[...]` | Auto-inserted when toggling to DONE |
-
-**Tips:**
-- Use the `/dayheading` snippet (coming soon) or copy the separator line pattern to stay consistent.
-- Keep one `.org` file per year for cleaner dashboards.
-- Tags declared in `#+TAGS:` at the top aren't required but help with other Org-vscode features like "Open By Tag."
+📄 **Want a starting point?** Copy the [example template](https://github.com/realDestroyer/org-vscode/blob/master/examples/year-template.org) into your own `.org` file and run the Year-in-Review Dashboard to see it in action.
 
 ---
 

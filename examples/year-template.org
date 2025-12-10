@@ -1,0 +1,31 @@
+#+TITLE: 2025 Work Journal
+#+TAGS: PROJECT, MEETING, ADMIN, LEARNING
+-------------------------
+
+⊘ [01-02-2025 Thu] -------------------------------------------------------------------------------------------------------------------------------
+    ⊖ DONE : [+TAG:PROJECT] - Completed the quarterly report
+    ⊖ DONE : Team standup
+    ⊜ CONTINUED : [+TAG:PROJECT] - Database migration                                SCHEDULED: [01-03-2025]
+
+⊘ [01-03-2025 Fri] -------------------------------------------------------------------------------------------------------------------------------
+    ⊖ DONE : [+TAG:PROJECT] - Database migration
+      COMPLETED:[3rd January 2025, 4:15:22 pm]
+    ⊙ TODO : [+TAG:ADMIN] - Submit expense report                                    SCHEDULED: [01-06-2025]
+    ⊖ DONE : [+TAG:MEETING] - Weekly sync with team
+
+⊘ [01-06-2025 Mon] -------------------------------------------------------------------------------------------------------------------------------
+    ⊖ DONE : [+TAG:ADMIN] - Submit expense report
+      COMPLETED:[6th January 2025, 10:30:00 am]
+    ⊘ IN_PROGRESS : [+TAG:LEARNING] - Complete online training module                SCHEDULED: [01-10-2025]
+    ⊖ DONE : Review pull requests
+
+⊘ [01-07-2025 Tue] -------------------------------------------------------------------------------------------------------------------------------
+    ⊜ CONTINUED : [+TAG:LEARNING] - Complete online training module
+    ⊖ DONE : [+TAG:PROJECT] - Deploy hotfix to production
+    ⊗ ABANDONED : Old legacy cleanup task - no longer needed
+
+⊘ [01-10-2025 Fri] -------------------------------------------------------------------------------------------------------------------------------
+    ⊖ DONE : [+TAG:LEARNING] - Complete online training module
+      COMPLETED:[10th January 2025, 3:45:00 pm]
+    ⊖ DONE : [+TAG:MEETING] - Sprint retrospective
+    ⊙ TODO : [+TAG:PROJECT] - Start new feature development                          SCHEDULED: [01-13-2025]
