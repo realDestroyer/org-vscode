@@ -84,5 +84,13 @@
       "------------------------"
     ],
     "description": "Full task template block"
+  },
+  "day_heading": {
+    "prefix": "/day",
+    "body": [
+      "⊘ [${CURRENT_MONTH}-${CURRENT_DATE}-${CURRENT_YEAR} ${1|Mon,Tue,Wed,Thu,Fri,Sat,Sun|}] -------------------------------------------------------------------------------------------------------------------------------",
+      "    $0"
+    ],
+    "description": "New day heading with today's date and separator"
   }
 }
