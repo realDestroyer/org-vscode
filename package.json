@@ -2,7 +2,7 @@
 	"name": "org-vscode",
 	"displayName": "org-vscode",
 	"description": "Quickly create todo lists, take notes, plan projects and organize your thoughts.",
-	"version": "1.9.1",
+	"version": "1.10.0",
 	"repository": "https://www.github.com/realDestroyer/org-vscode",
 	"icon": "Logo.png",
 	"publisher": "realDestroyer",
@@ -22,6 +22,7 @@
 		"onLanguage:vso",
 		"onCommand:extension.viewAgenda",
 		"onCommand:extension.createVsoFile",
+		"onCommand:extension.openSyntaxColorCustomizer",
 		"onCommand:orgMode.exportYearSummary",
 		"onCommand:orgMode.generateExecutiveReport",
 		"onCommand:orgMode.openYearInReview"
@@ -246,6 +247,10 @@
 			{
 				"command": "extension.openCalendarView",
 				"title": "Open Calendar View"
+			},
+			{
+				"command": "extension.openSyntaxColorCustomizer",
+				"title": "org-vscode Customize Syntax Colors"
 			},
 			{
 				"command": "extension.createVsoFile",
