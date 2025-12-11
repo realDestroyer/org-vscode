@@ -302,12 +302,16 @@ function getCalendarWebviewContent({ webview, nonce }) {
     function renderTagChips(tasks){
       const container=document.getElementById('tag-bubbles'); if(!container) return;
       const tags=new Set(); tasks.forEach(t=>(t.tags||[]).forEach(tag=>tags.add(tag)));
-      const sorted=[...tags].sort();
+      const sorted=[...tags].sort((a,b)=>a.toLowerCase().localeCompare(b.toLowerCase()));
+      if(sorted.length===0){
+        container.innerHTML='<div class="no-tags">No tags in view</div>';
+        return;
+      }
       container.innerHTML=sorted.map(tag=>{
         const colorClass=ensureTagColor(tag);
         let cls='tag-chip '+colorClass;
         if(activeTags.length){cls+=activeTags.includes(tag)?' selected':' inactive';}
-        return '<span class="'+cls+'" data-tag="'+tag+'">'+tag+'</span>';
+        return '<span class="'+cls+'" data-tag="'+tag+'" title="'+tag+'">'+tag+'</span>';
       }).join('');
       container.querySelectorAll('.tag-chip').forEach(el=>{
         el.addEventListener('click',e=>{
@@ -402,16 +406,43 @@ function getCalendarWebviewContent({ webview, nonce }) {
     '<meta name="viewport" content="width=device-width,initial-scale=1">',
     '<title>Calendar View</title>',
     '<link rel="stylesheet" href="'+fullCalendarCss+'">',
-    '<style nonce="'+nonce+'">body{font-family:"Segoe UI",Arial,sans-serif;margin:0;padding:16px;background:#1f1f24;color:#f4f4f5;}h1{font-size:18px;font-weight:600;margin:0 0 10px}#toolbar{max-width:980px;margin:0 auto 10px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;}#tag-bubbles{display:flex;flex-wrap:wrap;gap:8px;}#calendar{max-width:980px;margin:0 auto;background:#fff;color:#000;padding:10px;border-radius:10px;box-shadow:0 8px 30px rgba(0,0,0,.35);}#status{font-size:12px;margin:10px auto 0;max-width:980px;text-align:center;opacity:.8}.tag-chip{display:inline-flex;align-items:center;padding:4px 14px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.4px;border-radius:999px;color:#fff;cursor:pointer;user-select:none;box-shadow:0 3px 8px rgba(0,0,0,.25);transition:transform .1s ease,opacity .1s ease;border:1px solid transparent}.tag-chip:hover{transform:translateY(-1px);opacity:.95}.tag-chip.inactive{opacity:.25;filter:saturate(20%)}.tag-chip.selected{outline:2px solid rgba(255,255,255,.9);box-shadow:0 0 0 2px rgba(255,255,255,.25)}</style>',
+    '<style nonce="'+nonce+'">',
+    'body{font-family:"Segoe UI",Arial,sans-serif;margin:0;padding:0;background:#1f1f24;color:#f4f4f5;height:100vh;overflow:hidden;}',
+    '#app-container{display:flex;height:100vh;overflow:hidden;}',
+    '#sidebar{width:200px;min-width:160px;max-width:280px;background:#2a2a30;border-right:1px solid #3a3a42;display:flex;flex-direction:column;overflow:hidden;}',
+    '#sidebar-header{padding:12px 14px;border-bottom:1px solid #3a3a42;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:#9ca3af;flex-shrink:0;}',
+    '#tag-bubbles{flex:1;overflow-y:auto;padding:8px;display:flex;flex-direction:column;gap:6px;}',
+    '#tag-bubbles::-webkit-scrollbar{width:6px;}',
+    '#tag-bubbles::-webkit-scrollbar-track{background:#2a2a30;}',
+    '#tag-bubbles::-webkit-scrollbar-thumb{background:#4a4a52;border-radius:3px;}',
+    '#tag-bubbles::-webkit-scrollbar-thumb:hover{background:#5a5a62;}',
+    '#main-content{flex:1;display:flex;flex-direction:column;overflow:hidden;padding:16px;}',
+    'h1{font-size:18px;font-weight:600;margin:0 0 10px;flex-shrink:0;}',
+    '#calendar-wrapper{flex:1;overflow:auto;max-width:980px;}',
+    '#calendar{background:#fff;color:#000;padding:10px;border-radius:10px;box-shadow:0 8px 30px rgba(0,0,0,.35);}',
+    '#status{font-size:12px;margin-top:10px;text-align:center;opacity:.8;flex-shrink:0;}',
+    '.tag-chip{display:flex;align-items:center;padding:6px 12px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.4px;border-radius:6px;color:#fff;cursor:pointer;user-select:none;box-shadow:0 2px 4px rgba(0,0,0,.2);transition:transform .1s ease,opacity .1s ease;border:1px solid transparent;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}',
+    '.tag-chip:hover{transform:translateX(2px);opacity:.95;box-shadow:0 3px 8px rgba(0,0,0,.3);}',
+    '.tag-chip.inactive{opacity:.35;filter:saturate(20%);}',
+    '.tag-chip.selected{outline:2px solid rgba(255,255,255,.9);box-shadow:0 0 0 2px rgba(255,255,255,.25);}',
+    '.no-tags{font-size:11px;color:#6b7280;padding:12px;text-align:center;font-style:italic;}',
+    '</style>',
     '<script nonce="'+nonce+'" src="'+momentJs+'"></script>',
     '<script nonce="'+nonce+'" src="'+fullCalendarJs+'"></script>',
     '<script nonce="'+nonce+'">'+script+'</script>',
     '</head>',
     '<body>',
+    '<div id="app-container">',
+    '<aside id="sidebar">',
+    '<div id="sidebar-header">Tag Filters</div>',
+    '<div id="tag-bubbles" aria-label="Tag filters"></div>',
+    '</aside>',
+    '<main id="main-content">',
     '<h1>Calendar View</h1>',
-    '<div id="toolbar"><div id="tag-bubbles" aria-label="Tag filters"></div></div>',
-    '<div id="calendar"></div>',
+    '<div id="calendar-wrapper"><div id="calendar"></div></div>',
     '<div id="status">Loading…</div>',
+    '</main>',
+    '</div>',
     '</body>',
     '</html>'
   ].join('');
