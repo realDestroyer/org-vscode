@@ -92,5 +92,21 @@
       "    $0"
     ],
     "description": "New day heading with today's date and separator"
+  },
+  "deadline_task": {
+    "prefix": "/deadline",
+    "body": [
+      "⊙ TODO $1",
+      "   SCHEDULED: [${CURRENT_MONTH}-${CURRENT_DATE}-${CURRENT_YEAR}]",
+      "   DEADLINE: [$2]"
+    ],
+    "description": "Task with scheduled date and deadline"
+  },
+  "add_deadline": {
+    "prefix": "/dl",
+    "body": [
+      "DEADLINE: [$1]"
+    ],
+    "description": "Add deadline to existing task"
   }
 }

@@ -100,6 +100,7 @@ function parseOrgContent(raw) {
         tags: metadata.tags,
         scheduled: metadata.scheduled,
         completed: metadata.completed,
+        deadline: metadata.deadline,
         notes: [],
         lineNumber: index + 1
       };
@@ -140,11 +141,13 @@ function extractMetadata(line) {
   const tags = tagMatch ? tagMatch[1].split(",").map(tag => tag.trim()) : [];
   const scheduledMatch = cleaned.match(/SCHEDULED:\s*\[(.*?)\]/);
   const completedMatch = cleaned.match(/COMPLETED:\s*\[(.*?)\]/);
+  const deadlineMatch = cleaned.match(/DEADLINE:\s*\[(.*?)\]/);
 
   const title = cleaned
     .replace(/\[\+TAG:[^\]]+\]/, "")
     .replace(/SCHEDULED:.*/, "")
     .replace(/COMPLETED:.*/, "")
+    .replace(/DEADLINE:.*/, "")
     .replace(/:+\s*$/, "")
     .trim();
 
@@ -152,7 +155,8 @@ function extractMetadata(line) {
     title,
     tags,
     scheduled: scheduledMatch ? scheduledMatch[1] : null,
-    completed: completedMatch ? completedMatch[1] : null
+    completed: completedMatch ? completedMatch[1] : null,
+    deadline: deadlineMatch ? deadlineMatch[1] : null
   };
 }
 
@@ -190,7 +194,7 @@ function buildAggregates(days) {
 }
 
 function buildCsv(days) {
-  const header = ["date", "weekday", "status", "title", "tags", "scheduled", "completed", "notes"].join(",");
+  const header = ["date", "weekday", "status", "title", "tags", "scheduled", "deadline", "completed", "notes"].join(",");
   const rows = [header];
 
   days.forEach(day => {
@@ -202,6 +206,7 @@ function buildCsv(days) {
         task.title,
         task.tags.join("|"),
         task.scheduled,
+        task.deadline,
         task.completed,
         task.notes.join(" | ")
       ].map(value => escapeCsv(sanitizeForCsv(value)));
