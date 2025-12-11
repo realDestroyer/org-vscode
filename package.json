@@ -1,294 +1,358 @@
 {
-    "name": "org-vscode",
-    "displayName": "org-vscode",
-    "description": "Quickly create todo lists, take notes, plan projects and organize your thoughts.",
-    "version": "1.8.0",
-    "repository": "https://www.github.com/realDestroyer/org-vscode",
-    "icon": "Logo.png",
-    "publisher": "realDestroyer",
-    "license": "MIT",
-    "engines": {
-        "vscode": "^1.70.0"
-    },
-    "categories": [
-        "Other"
-    ],
-    "activationEvents": [
-        "onLanguage:vso",
-        "onCommand:extension.viewAgenda",
-        "onCommand:extension.createVsoFile",
-        "onCommand:orgMode.exportYearSummary"
-    ],
-    "keywords": [
-        "todo",
-        "org-mode",
-        "list",
-        "organizer",
-        "planner",
-        "orgMode",
-        "scheduler"
-    ],
-    "main": "./out/extension",
-    "contributes": {
-        "configurationDefaults": {
-            "[vso]": {
-                "editor.formatOnType": true,
-                "files.insertFinalNewline": true
-            }
-        },
-        "configuration": {
-            "type": "object",
-            "title": "Org-vscode Config",
-            "properties": {
-                "Org-vscode.folderPath": {
-                    "type": "string",
-                    "default": "",
-                    "description": "Main folder"
-                },
-                "Org-vscode.dateFormat": {
-                    "type": "string",
-                    "default": "MM-DD-YYYY",
-                    "enum": [
-                        "MM-DD-YYYY",
-                        "DD-MM-YYYY"
-                    ],
-                    "description": "The scheduled date format."
-                }
-            }
-        },
-        "commands": [
-            {
-                "command": "extension.setFolderPath",
-                "title": "org-vscode Change Org-vscode Directory"
-            },
-            {
-                "command": "extension.rescheduleTaskForward",
-                "title": "Reschedule Task Forward"
-            },
-            {
-                "command": "extension.rescheduleTaskBackward",
-                "title": "Reschedule Task Backward"
-            },
-            {
-                "command": "extension.openCalendarView",
-                "title": "Open Calendar View"
-            },
-            {
-                "command": "extension.createVsoFile",
-                "title": "org-vscode Create New .org file"
-            },
-            {
-                "command": "extension.getTags",
-                "title": "org-vscode Open By Tag"
-            },
-            {
-                "command": "extension.getTitles",
-                "title": "org-vscode Open By Title "
-            },
-            {
-                "command": "extension.viewAgenda",
-                "title": "org-vscode Agenda View"
-            },
-            {
-                "command": "extension.alignSchedules",
-                "title": "Align Scheduled Tasks"
-            },
-            {
-                "command": "extension.insertDateStamp",
-                "title": "Insert Date Stamp"
-            },
-            {
-                "command": "extension.incrementDate",
-                "title": "Increment Date Stamp"
-            },
-            {
-                "command": "extension.decrementDate",
-                "title": "Decrement Date Stamp"
-            },
-            {
-                "command": "extension.addTagToTask",
-                "title": "Add Tag to Task"
-            },
-            {
-                "command": "extension.viewTaggedAgenda",
-                "title": "View Tagged Agenda"
-            },
-            {
-                "command": "extension.addSeparator",
-                "title": "Add Separator"
-            },
-            {
-                "command": "org-vscode.insertTable",
-                "title": "org-vscode: Insert Org Table"
-            },
-            {
-                "command": "org-vscode.exportCurrentTasks",
-                "title": "org-vscode: Export Current Tasks"
-            },
-            {
-                "command": "orgMode.exportYearSummary",
-                "title": "Org Mode: Export Year Summary",
-                "category": "Org Mode"
-            }
-        ],
-        "keybindings": [
-            {
-                "command": "extension.toggleStatusRight",
-                "key": "ctrl+right",
-                "when": "editorLangId == 'vso' && editorTextFocus"
-            },
-            {
-                "command": "extension.toggleStatusLeft",
-                "key": "ctrl+left",
-                "when": "editorLangId == 'vso' && editorTextFocus"
-            },
-            {
-                "command": "extension.openCalendarView",
-                "key": "ctrl+shift+c",
-                "when": "editorTextFocus"
-            },
-            {
-                "command": "extension.moveBlockUp",
-                "key": "shift+alt+up",
-                "when": "editorLangId == 'vso' && editorTextFocus"
-            },
-            {
-                "key": "alt+shift+right",
-                "command": "extension.rescheduleTaskForward",
-                "when": "editorTextFocus"
-            },
-            {
-                "key": "alt+shift+left",
-                "command": "extension.rescheduleTaskBackward",
-                "when": "editorTextFocus"
-            },
-            {
-                "command": "extension.moveBlockDown",
-                "key": "shift+alt+down",
-                "when": "editorLangId == 'vso' && editorTextFocus"
-            },
-            {
-                "command": "extension.increment",
-                "key": "alt+right",
-                "when": "editorLangId == 'vso' && editorTextFocus"
-            },
-            {
-                "command": "extension.decrement",
-                "key": "alt+left",
-                "when": "editorLangId == 'vso' && editorTextFocus"
-            },
-            {
-                "command": "editor.fold",
-                "key": "ctrl+shift+[",
-                "when": "editorLangId == 'vso' && editorTextFocus"
-            },
-            {
-                "command": "editor.unfold",
-                "key": "ctrl+shift+]",
-                "when": "editorLangId == 'vso' && editorTextFocus"
-            },
-            {
-                "command": "extension.scheduling",
-                "key": "ctrl+alt+s",
-                "when": "editorLangId == 'vso' && editorTextFocus"
-            },
-            {
-                "key": "alt+shift+a",
-                "command": "extension.alignSchedules",
-                "when": "editorTextFocus"
-            },
-            {
-                "key": "ctrl+shift+t",
-                "command": "extension.insertDateStamp",
-                "when": "editorLangId == 'vso' && editorTextFocus"
-            },
-            {
-                "key": "ctrl+right",
-                "command": "extension.incrementDate",
-                "when": "editorTextFocus"
-            },
-            {
-                "key": "ctrl+left",
-                "command": "extension.decrementDate",
-                "when": "editorTextFocus"
-            },
-            {
-                "command": "extension.addTagToTask",
-                "key": "ctrl+alt+t",
-                "when": "editorLangId == 'vso' && editorTextFocus"
-            },
-            {
-                "command": "extension.viewTaggedAgenda",
-                "key": "ctrl+shift+g",
-                "when": "editorTextFocus"
-            },
-            {
-                "key": "ctrl+alt+d",
-                "command": "extension.addSeparator",
-                "when": "editorTextFocus"
-            },
-            {
-                "key": "alt+shift+t",
-                "command": "org-vscode.insertTable",
-                "when": "editorTextFocus"
-            },
-            {
-                "key": "ctrl+shift+e",
-                "command": "extension.exportCurrentTasks",
-                "when": "editorTextFocus"
-            }
-        ],
-        "languages": [
-            {
-                "id": "vso",
-                "aliases": [
-                    "Org Mode",
-                    "orgmode",
-                    "org",
-                    "VSOrg",
-                    "vsorg",
-                    "vso"
-                ],
-                "extensions": [
-                    ".org",
-                    ".vsorg",
-                    ".vso"
-                ]
-            }
-        ],
-        "grammars": [
-            {
-                "language": "vso",
-                "scopeName": "source.vso",
-                "path": "vso.tmLanguage.json"
-            }
-        ],
-        "snippets": [
-            {
-                "language": "vso",
-                "path": "./snippets/vso.json"
-            }
-        ]
-    },
-    "scripts": {
-        "postinstall": "node ./node_modules/vscode/bin/install && node ./scripts/fetch-media.js",
-        "fetch-media": "node ./scripts/fetch-media.js",
-        "test": "npm run compile && node ./node_modules/vscode/bin/test"
-    },
-    "devDependencies": {
-        "@types/mocha": "^2.2.42",
-        "@types/node": "^8.10.66",
-        "typescript": "^5.5.4",
-        "vscode": "^1.1.21"
-    },
-    "dependencies": {
-        "fs-extra": "^7.0.0",
-        "gray-matter": "^4.0.1",
-        "klaw": "^3.0.0",
-        "moment": "^2.29.4"
-    },
-    "__metadata": {
-        "installedTimestamp": 1741714641927,
-        "size": 9505970
-    }
+	"name": "org-vscode",
+	"displayName": "org-vscode",
+	"description": "Quickly create todo lists, take notes, plan projects and organize your thoughts.",
+	"version": "1.9.1",
+	"repository": "https://www.github.com/realDestroyer/org-vscode",
+	"icon": "Logo.png",
+	"publisher": "realDestroyer",
+	"license": "MIT",
+	"engines": {
+		"vscode": "^1.70.0"
+	},
+	"categories": [
+		"Notebooks",
+		"Extension Packs",
+		"Other"
+	],
+	"activationEvents": [
+		"onLanguage:org",
+		"onLanguage:vsorg",
+		"onLanguage:org-vscode",
+		"onLanguage:vso",
+		"onCommand:extension.viewAgenda",
+		"onCommand:extension.createVsoFile",
+		"onCommand:orgMode.exportYearSummary",
+		"onCommand:orgMode.generateExecutiveReport",
+		"onCommand:orgMode.openYearInReview"
+	],
+	"keywords": [
+		"todo",
+		"org-mode",
+		"list",
+		"organizer",
+		"planner",
+		"orgMode",
+		"scheduler"
+	],
+	"main": "./out/extension",
+	"contributes": {
+		"configurationDefaults": {
+			"[vso]": {
+				"editor.formatOnType": true,
+				"files.insertFinalNewline": true
+			}
+		},
+		"configuration": {
+			"type": "object",
+			"title": "Org-vscode Config",
+			"properties": {
+				"Org-vscode.folderPath": {
+					"type": "string",
+					"default": "",
+					"description": "Main folder"
+				},
+				"Org-vscode.dateFormat": {
+					"type": "string",
+					"default": "MM-DD-YYYY",
+					"enum": [
+						"MM-DD-YYYY",
+						"DD-MM-YYYY"
+					],
+					"minItems": 1,
+					"maxItems": 3,
+					"uniqueItems": true,
+					"description": "The scheduled date format."
+				},
+				"Org-vscode.adjustHeadingIndentation": {
+					"type": "boolean",
+					"default": true,
+					"description": "When toggling heading symbols with Alt+Left/Alt+Right, also shift indentation by two spaces to reflect hierarchy."
+				}
+			}
+		},
+		"commands": [
+			{
+				"command": "extension.setFolderPath",
+				"title": "org-vscode Change Org-vscode Directory"
+			},
+			{
+				"command": "extension.rescheduleTaskForward",
+				"title": "Reschedule Task Forward"
+			},
+			{
+				"command": "extension.rescheduleTaskBackward",
+				"title": "Reschedule Task Backward"
+			},
+			{
+				"command": "extension.smartDateForward",
+				"title": "Smart Date Forward (Day Heading or SCHEDULED)"
+			},
+			{
+				"command": "extension.smartDateBackward",
+				"title": "Smart Date Backward (Day Heading or SCHEDULED)"
+			},
+			{
+				"command": "extension.deadlineDateForward",
+				"title": "Deadline Date Forward"
+			},
+			{
+				"command": "extension.deadlineDateBackward",
+				"title": "Deadline Date Backward"
+			},
+			{
+				"command": "extension.openCalendarView",
+				"title": "Open Calendar View"
+			},
+			{
+				"command": "extension.createVsoFile",
+				"title": "org-vscode Create New .org file"
+			},
+			{
+				"command": "extension.getTags",
+				"title": "org-vscode Open By Tag"
+			},
+			{
+				"command": "extension.getTitles",
+				"title": "org-vscode Open By Title "
+			},
+			{
+				"command": "extension.viewAgenda",
+				"title": "org-vscode Agenda View"
+			},
+			{
+				"command": "extension.alignSchedules",
+				"title": "Align Scheduled Tasks"
+			},
+			{
+				"command": "extension.deadline",
+				"title": "Add Deadline to Task"
+			},
+			{
+				"command": "extension.insertDateStamp",
+				"title": "Insert Date Stamp"
+			},
+			{
+				"command": "extension.incrementDate",
+				"title": "Increment Date Stamp"
+			},
+			{
+				"command": "extension.decrementDate",
+				"title": "Decrement Date Stamp"
+			},
+			{
+				"command": "extension.addTagToTask",
+				"title": "Add Tag to Task"
+			},
+			{
+				"command": "extension.viewTaggedAgenda",
+				"title": "View Tagged Agenda"
+			},
+			{
+				"command": "extension.addSeparator",
+				"title": "Add Separator"
+			},
+			{
+				"command": "orgMode.exportYearSummary",
+				"title": "org-vscode: Export Yearly Summary"
+			},
+			{
+				"command": "orgMode.generateExecutiveReport",
+				"title": "org-vscode: Generate Executive Report"
+			},
+			{
+				"command": "orgMode.openYearInReview",
+				"title": "org-vscode: Open Year-In-Review Dashboard"
+			},
+			{
+				"command": "org-vscode.insertTable",
+				"title": "org-vscode: Insert Org Table"
+			},
+			{
+				"command": "org-vscode.exportCurrentTasks",
+				"title": "org-vscode: Export Current Tasks"
+			}
+		],
+		"keybindings": [
+			{
+				"key": "ctrl+right",
+				"command": "-extension.incrementDate"
+			},
+			{
+				"key": "ctrl+left",
+				"command": "-extension.decrementDate"
+			},
+			{
+				"key": "alt+shift+right",
+				"command": "-extension.rescheduleTaskForward"
+			},
+			{
+				"key": "alt+shift+left",
+				"command": "-extension.rescheduleTaskBackward"
+			},
+			{
+				"command": "extension.toggleStatusRight",
+				"key": "ctrl+right",
+				"when": "editorLangId == 'vso' && editorTextFocus"
+			},
+			{
+				"command": "extension.toggleStatusLeft",
+				"key": "ctrl+left",
+				"when": "editorLangId == 'vso' && editorTextFocus"
+			},
+			{
+				"command": "extension.openCalendarView",
+				"key": "ctrl+shift+c",
+				"when": "editorTextFocus"
+			},
+			{
+				"command": "extension.moveBlockUp",
+				"key": "shift+alt+up",
+				"when": "editorLangId == 'vso' && editorTextFocus"
+			},
+			{
+				"key": "alt+shift+right",
+				"command": "extension.smartDateForward",
+				"when": "editorLangId == 'vso' && editorTextFocus"
+			},
+			{
+				"key": "alt+shift+left",
+				"command": "extension.smartDateBackward",
+				"when": "editorLangId == 'vso' && editorTextFocus"
+			},
+			{
+				"command": "extension.moveBlockDown",
+				"key": "shift+alt+down",
+				"when": "editorLangId == 'vso' && editorTextFocus"
+			},
+			{
+				"command": "extension.increment",
+				"key": "alt+right",
+				"when": "editorLangId == 'vso' && editorTextFocus"
+			},
+			{
+				"command": "extension.decrement",
+				"key": "alt+left",
+				"when": "editorLangId == 'vso' && editorTextFocus"
+			},
+			{
+				"command": "editor.fold",
+				"key": "ctrl+shift+[",
+				"when": "editorLangId == 'vso' && editorTextFocus"
+			},
+			{
+				"command": "editor.unfold",
+				"key": "ctrl+shift+]",
+				"when": "editorLangId == 'vso' && editorTextFocus"
+			},
+			{
+				"command": "extension.scheduling",
+				"key": "ctrl+alt+s",
+				"when": "editorLangId == 'vso' && editorTextFocus"
+			},
+			{
+				"command": "extension.deadline",
+				"key": "ctrl+alt+d",
+				"when": "editorLangId == 'vso' && editorTextFocus"
+			},
+			{
+				"key": "alt+shift+a",
+				"command": "extension.alignSchedules",
+				"when": "editorTextFocus"
+			},
+			{
+				"key": "ctrl+shift+t",
+				"command": "extension.insertDateStamp",
+				"when": "editorTextFocus"
+			},
+			{
+				"key": "ctrl+shift+right",
+				"command": "extension.deadlineDateForward",
+				"when": "editorLangId == 'vso' && editorTextFocus"
+			},
+			{
+				"key": "ctrl+shift+left",
+				"command": "extension.deadlineDateBackward",
+				"when": "editorLangId == 'vso' && editorTextFocus"
+			},
+			{
+				"command": "extension.addTagToTask",
+				"key": "ctrl+shift+t",
+				"when": "editorTextFocus"
+			},
+			{
+				"command": "extension.viewTaggedAgenda",
+				"key": "ctrl+shift+g",
+				"when": "editorTextFocus"
+			},
+			{
+				"key": "alt+shift+s",
+				"command": "extension.addSeparator",
+				"when": "editorTextFocus"
+			},
+			{
+				"key": "alt+shift+t",
+				"command": "org-vscode.insertTable",
+				"when": "editorTextFocus"
+			},
+			{
+				"key": "ctrl+shift+e",
+				"command": "extension.exportCurrentTasks",
+				"when": "editorTextFocus"
+			}
+		],
+		"languages": [
+			{
+				"id": "vso",
+				"aliases": [
+					"Org Mode",
+					"orgmode",
+					"org",
+					"VSOrg",
+					"vsorg",
+					"vso"
+				],
+				"extensions": [
+					".org",
+					".vsorg",
+					".vso"
+				]
+			}
+		],
+		"grammars": [
+			{
+				"language": "vso",
+				"scopeName": "source.vso",
+				"path": "vso.tmLanguage.json"
+			}
+		],
+		"snippets": [
+			{
+				"language": "vso",
+				"path": "./snippets/vso.json"
+			}
+		]
+	},
+	"scripts": {
+		"postinstall": "node ./node_modules/vscode/bin/install && node ./scripts/fetch-media.js",
+		"fetch-media": "node ./scripts/fetch-media.js",
+		"test": "npm run compile && node ./node_modules/vscode/bin/test"
+	},
+	"devDependencies": {
+		"@types/mocha": "^2.2.42",
+		"@types/node": "^8.10.66",
+		"typescript": "^5.5.4",
+		"vscode": "^1.1.21"
+	},
+	"dependencies": {
+		"fs-extra": "^7.0.0",
+		"gray-matter": "^4.0.1",
+		"klaw": "^3.0.0",
+		"moment": "^2.29.4"
+	},
+	"__metadata": {
+		"installedTimestamp": 1764861597190,
+		"size": 5067503,
+		"targetPlatform": "undefined"
+	}
 }

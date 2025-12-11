@@ -1,6 +1,6 @@
 # Org-vscode
 
-![Version](https://img.shields.io/badge/version-v1.9.0-blue.svg)
+![Version](https://img.shields.io/badge/version-v1.9.1-blue.svg)
 
 > A fast, keyboard-driven Org Mode–style task manager built for Visual Studio Code.
 > Inspired by Emacs Org Mode
