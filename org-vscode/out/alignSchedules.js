@@ -3,6 +3,7 @@ const vscode = require("vscode");
 /**
  * This command aligns all SCHEDULED: timestamps to a fixed column width.
  * It improves readability by right-aligning the timestamps in `.org` files.
+ * Also preserves DEADLINE: timestamps that may follow SCHEDULED.
  */
 function alignSchedules() {
     const editor = vscode.window.activeTextEditor;
@@ -46,15 +47,22 @@ function alignSchedules() {
         linesWithScheduled.forEach(({ lineNumber, indentation }) => {
             const lineText = document.lineAt(lineNumber).text;
 
-            // Full match that includes timestamp (e.g. SCHEDULED: [05-16-2025])
-            let match = lineText.match(/^(\s*)(.*?)(\s+SCHEDULED:\s*\[\d{2}-\d{2}-\d{4}\])/);
+            // Full match that includes SCHEDULED timestamp and optional DEADLINE
+            // Pattern: task text + SCHEDULED: [date] + optional DEADLINE: [date]
+            let match = lineText.match(/^(\s*)(.*?)(\s+SCHEDULED:\s*\[\d{2}-\d{2}-\d{4}\])(\s+DEADLINE:\s*\[\d{2}-\d{2}-\d{4}(?:\s+\d{2}:\d{2}(?::\d{2})?)?\])?/);
 
             if (match) {
                 const taskText = match[2].trim();            // Clean up task portion
                 const scheduledText = match[3].trim();       // SCHEDULED:[MM-DD-YYYY]
+                const deadlineText = match[4] ? match[4].trim() : "";  // DEADLINE:[MM-DD-YYYY] if present
 
                 // Pad the task text so all timestamps align to the same column
-                const adjustedLine = indentation + taskText.padEnd(scheduledColumn, " ") + scheduledText;
+                let adjustedLine = indentation + taskText.padEnd(scheduledColumn, " ") + scheduledText;
+                
+                // Append DEADLINE if it was present
+                if (deadlineText) {
+                    adjustedLine += "    " + deadlineText;
+                }
 
                 // Replace the entire original line
                 const fullRange = new vscode.Range(lineNumber, 0, lineNumber, lineText.length);
@@ -63,7 +71,7 @@ function alignSchedules() {
         });
     });
 
-    console.log(`✅ Aligned ${linesWithScheduled.length} scheduled tasks at column ${scheduledColumn} while preserving indentation.`);
+    console.log(`✅ Aligned ${linesWithScheduled.length} scheduled tasks at column ${scheduledColumn} while preserving indentation and deadlines.`);
     vscode.window.showInformationMessage(`Aligned ${linesWithScheduled.length} scheduled tasks!`);
 }
 
