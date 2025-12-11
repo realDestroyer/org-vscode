@@ -1,5 +1,24 @@
 # Change Log
 
+# [1.10.0] 12-11-25
+`Added`
+
+- **Syntax Color Customizer Webview:**
+  - New command **"org-vscode Customize Syntax Colors"** opens an interactive UI for customizing syntax highlighting.
+  - Visual color pickers for every task state: TODO, IN_PROGRESS, CONTINUED, DONE, ABANDONED.
+  - Also customize SCHEDULED stamps, inline tags, and agenda dates.
+  - Toggle bold/italic font styles for each element.
+  - Live preview shows exactly how your text will appear.
+  - Save changes directly to user settings or reset to extension defaults.
+  - Quick link to VS Code's Keyboard Shortcuts editor (filtered to org-vscode).
+
+- **Default Syntax Highlighting Colors:**
+  - Users now get proper syntax highlighting out of the box without manual configuration.
+  - Extension provides sensible default colors via `configurationDefaults` in package.json.
+  - Users can still override colors in their personal settings or use the new Customizer UI.
+
+<img src="https://github.com/realDestroyer/org-vscode/blob/master/Images/Syntax-Highlight-WebUI.png?raw=true" width="900" />
+
 # [1.9.1] 12-11-25
 `Fixed`
 

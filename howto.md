@@ -27,6 +27,7 @@
 * [Align Scheduled Task Tags](#align-scheduled-tasks)
 * [Tagged Agenda View](#tagged-agenda-view)
 * [📆 Calendar View](#calendar-view)
+* [🎨 Syntax Color Customizer](#syntax-color-customizer)
 * [📊 Year-In-Review Dashboard](#year-in-review-dashboard)
 
 ---
@@ -469,6 +470,71 @@ Use the command:
 * Updates automatically if you reschedule or change a task keyword.
 
 Use this view to stay on top of deadlines and visually manage your priorities!
+
+---
+
+## 🎨 Syntax Color Customizer <a id="syntax-color-customizer"></a>
+
+The **Syntax Color Customizer** provides a beautiful webview interface for customizing how your Org files look. No more manually editing JSON in settings.json!
+
+### 🧭 Open the Syntax Color Customizer <a id="open-the-syntax-color-customizer"></a>
+
+Use the Command Palette (`Ctrl + Shift + P`) and run:
+**`org-vscode Customize Syntax Colors`**
+
+<img src="https://github.com/realDestroyer/org-vscode/blob/master/Images/Syntax-Highlight-WebUI.png?raw=true" width="900" />
+
+### ✨ Features <a id="syntax-customizer-features"></a>
+
+#### 🎨 Visual Color Pickers <a id="visual-color-pickers"></a>
+
+* Click any color swatch to open the native color picker
+* Or type hex codes directly (e.g., `#FF5A5A`)
+* Changes sync instantly between picker and text input
+
+#### 📝 Font Style Toggles <a id="font-style-toggles"></a>
+
+* Toggle **Bold** and **Italic** for each element
+* Combine styles (bold + italic) for emphasis
+
+#### 👁 Live Preview <a id="live-preview"></a>
+
+* See exactly how each element will appear
+* Previews update in real-time as you adjust colors and styles
+
+#### 📂 Organized by Task Type <a id="organized-by-task-type"></a>
+
+Elements are grouped for easy navigation:
+* **TODO Tasks** - Symbol, keyword, and task text
+* **IN_PROGRESS Tasks** - Symbol, keyword, and task text
+* **CONTINUED Tasks** - Symbol, keyword, and task text
+* **DONE Tasks** - Symbol, keyword, and task text
+* **ABANDONED Tasks** - Symbol, keyword, and task text
+* **Other Elements** - SCHEDULED stamp, inline tags, agenda dates
+
+#### 💾 Save & Reset <a id="save-and-reset"></a>
+
+* **Save Colors** - Writes your customizations to VS Code user settings
+* **Reset to Defaults** - Restores the extension's default color scheme
+
+#### ⌨️ Keyboard Shortcuts Link <a id="keyboard-shortcuts-link"></a>
+
+At the bottom of the customizer, there's a quick link to open VS Code's Keyboard Shortcuts editor, pre-filtered to org-vscode commands. This makes it easy to customize your keybindings alongside your colors.
+
+### 🎯 Default Colors <a id="default-colors"></a>
+
+Even without customization, the extension now provides sensible default colors that work out of the box:
+
+| Element | Default Color | Style |
+|---------|--------------|-------|
+| TODO | Green (`#24FF02`) | Bold |
+| IN_PROGRESS | Blue (`#33BFFF`) | Italic |
+| CONTINUED | Gray (`#888888`) | Italic |
+| DONE | Bright Green (`#3AF605`) | Bold |
+| ABANDONED | Red (`#FF3B3B`) | Bold |
+| SCHEDULED | Yellow (`#d1e800`) | Bold |
+| Tags | Purple (`#C984F7`) | Bold |
+| Dates | Gold (`#F7CA18`) | Italic |
 
 ---
 
