@@ -46,15 +46,25 @@ module.exports = function () {
                 // Capture indented child lines that belong to the current task
                 const baseIndent = element.match(/^\s*/)?.[0] || "";
                 const children = [];
+                let deadlineFromChildren = null;
                 for (let k = j + 1; k < fileText.length; k++) {
                   const nextLine = fileText[k];
                   const nextIndent = nextLine.match(/^\s*/)?.[0] || "";
                   if (nextIndent.length > baseIndent.length) {
                     children.push(nextLine);
+                    // Check for DEADLINE in child lines
+                    const dlMatch = nextLine.match(/DEADLINE:\s*\[([\d-]+(?:\s+[\d:]+)?)\]/);
+                    if (dlMatch && !deadlineFromChildren) {
+                      deadlineFromChildren = dlMatch[1];
+                    }
                   } else {
                     break;
                   }
                 }
+                
+                // Also check for DEADLINE on the task line itself
+                const inlineDeadlineMatch = element.match(/DEADLINE:\s*\[([\d-]+(?:\s+[\d:]+)?)\]/);
+                const deadlineStr = inlineDeadlineMatch ? inlineDeadlineMatch[1] : deadlineFromChildren;
 
                 // Extract core task text and scheduled date
                 const taskTextMatch = element.trim().match(/.*(?=.*SCHEDULED)/g);
@@ -81,6 +91,24 @@ module.exports = function () {
                     ? `<details class=\"children-block\"><summary>Show Details</summary><pre>${children.join("\n")}</pre></details>`
                     : "";
 
+                  // Build deadline warning badge if task has a deadline
+                  let deadlineBadge = "";
+                  if (deadlineStr) {
+                    const deadlineDate = moment(deadlineStr.split(" ")[0], "MM-DD-YYYY");
+                    const today = moment().startOf("day");
+                    const daysUntil = deadlineDate.diff(today, "days");
+                    
+                    if (daysUntil < 0) {
+                      deadlineBadge = `<span class="deadline deadline-overdue">⚠ OVERDUE: ${deadlineDate.format("MMM Do")}</span>`;
+                    } else if (daysUntil === 0) {
+                      deadlineBadge = `<span class="deadline deadline-today">⚠ DUE TODAY</span>`;
+                    } else if (daysUntil <= 3) {
+                      deadlineBadge = `<span class="deadline deadline-soon">⏰ Due in ${daysUntil} day${daysUntil > 1 ? 's' : ''}</span>`;
+                    } else {
+                      deadlineBadge = `<span class="deadline deadline-future">📅 Due: ${deadlineDate.format("MMM Do")}</span>`;
+                    }
+                  }
+
                   // Build HTML task entry
                   let renderedTask = "";
                   if (taskKeywordMatch !== null) {
@@ -88,12 +116,14 @@ module.exports = function () {
                       '<span class="filename" data-file="' + items[i] + '">' + items[i] + ":</span> " +
                       '<span class="' + taskKeywordMatch[0].toLowerCase() + '" data-filename="' + items[i] + '" data-text="' + taskText + '" data-date="' + cleanDate + '">' + taskKeywordMatch[0] + '</span>' +
                       '<span class="taskText">' + taskText + "</span>" +
-                      '<span class="scheduled">SCHEDULED</span>';
+                      '<span class="scheduled">SCHEDULED</span>' +
+                      deadlineBadge;
                   } else {
                     renderedTask =
                       '<span class="filename" data-file="' + items[i] + '">' + items[i] + ":</span> " +
                       '<span class="taskText">' + taskText + "</span>" +
-                      '<span class="scheduled">SCHEDULED</span>';
+                      '<span class="scheduled">SCHEDULED</span>' +
+                      deadlineBadge;
                   }
 
                   // Clear the current date array and group task appropriately by date
@@ -431,6 +461,40 @@ module.exports = function () {
           margin-left: 10px;
           margin-top: 10px;
           box-shadow: 0 3px 6px rgba(0,0,0,0.16), 0 3px 6px rgba(0,0,0,0.23);
+        }
+        .deadline{
+          padding-left: 10px;
+          padding-right: 10px;
+          padding-top: 5px;
+          font-weight: 700;
+          border-radius: 27px;
+          font-size: 9px;
+          height: 15px;
+          float: right;
+          margin-left: 10px;
+          margin-top: 10px;
+          box-shadow: 0 3px 6px rgba(0,0,0,0.16), 0 3px 6px rgba(0,0,0,0.23);
+        }
+        .deadline-overdue{
+          background-color: #dc3545;
+          color: #ffffff;
+          animation: pulse 1s infinite;
+        }
+        .deadline-today{
+          background-color: #ff6b35;
+          color: #ffffff;
+        }
+        .deadline-soon{
+          background-color: #ffc107;
+          color: #333333;
+        }
+        .deadline-future{
+          background-color: #6c757d;
+          color: #ffffff;
+        }
+        @keyframes pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.6; }
         }
        .children-block {
             margin-top: 6px;
