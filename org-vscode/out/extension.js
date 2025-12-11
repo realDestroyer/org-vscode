@@ -42,6 +42,7 @@ const exportCurrentTasks = require("./exportCurrentTasks");
 const { exportYearSummary } = require("./yearSummary");
 const { generateExecutiveReport } = require("./yearExecutiveReport");
 const { openYearInReview } = require("./yearDashboard");
+const { openSyntaxColorCustomizer } = require("./syntaxColorCustomizer");
 
 // Startup log for debugging
 console.log("📌 agenda.js has been loaded in extension.js");
@@ -168,6 +169,7 @@ function activate(ctx) {
   ctx.subscriptions.push(vscode.commands.registerCommand("extension.decrement", decrement));
   ctx.subscriptions.push(vscode.commands.registerCommand("extension.viewTaggedAgenda", taggedAgenda));
   ctx.subscriptions.push(vscode.commands.registerCommand("extension.openCalendarView", openCalendarView));
+  ctx.subscriptions.push(vscode.commands.registerCommand("extension.openSyntaxColorCustomizer", openSyntaxColorCustomizer));
 
   // Register real-time formatter for " " after typing an asterisk heading
   ctx.subscriptions.push(

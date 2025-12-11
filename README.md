@@ -1,6 +1,6 @@
 # Org-vscode
 
-![Version](https://img.shields.io/badge/version-v1.9.1-blue.svg)
+![Version](https://img.shields.io/badge/version-v1.10.0-blue.svg)
 
 > A fast, keyboard-driven Org Mode–style task manager built for Visual Studio Code.
 > Inspired by Emacs Org Mode
@@ -23,6 +23,7 @@ Whether you're an Emacs power user or just want a highly structured task system,
 * Search/open files based on tag or title
 * Export current active tasks for quick review
 * Quickly build tables, checklists, and templates
+* **Customize syntax colors with a visual UI**
 * Work entirely from the keyboard
 
 ---
@@ -61,6 +62,11 @@ Copy all non-DONE tasks to `CurrentTasks.org` for quick review or reporting.
 
 **Year-in-Review Dashboard**  
 Select a full-year Org file, export CSV/JSON summaries, render executive Markdown/HTML, and explore an interactive dashboard with timelines, tag heatmaps, and download buttons directly inside VS Code.
+
+**Syntax Color Customizer**  
+Customize your syntax highlighting colors with a beautiful webview UI. Pick colors for each task state, toggle bold/italic styles, see live previews, and save directly to your settings. No manual JSON editing required!
+
+<img src="https://github.com/realDestroyer/org-vscode/blob/master/Images/Syntax-Highlight-WebUI.png?raw=true" width="700" />
 
 **Built-In Snippets**  
 Use `/todo`, `/template`, `/meeting`, `/checklist`, and more to insert pre-styled blocks.
