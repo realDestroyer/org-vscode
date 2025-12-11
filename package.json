@@ -41,6 +41,149 @@
 			"[vso]": {
 				"editor.formatOnType": true,
 				"files.insertFinalNewline": true
+			},
+			"editor.tokenColorCustomizations": {
+				"textMateRules": [
+					{
+						"name": "TODO Unicode Symbol",
+						"scope": "constant.character.todo.vso",
+						"settings": {
+							"foreground": "#5CFF5C",
+							"fontStyle": "bold"
+						}
+					},
+					{
+						"name": "TODO Keyword",
+						"scope": "keyword.control.todo.vso",
+						"settings": {
+							"foreground": "#24FF02",
+							"fontStyle": "bold"
+						}
+					},
+					{
+						"name": "TODO Task Text",
+						"scope": "string.task.todo.vso",
+						"settings": {
+							"foreground": "#C0FCCC"
+						}
+					},
+					{
+						"name": "IN_PROGRESS Unicode Symbol",
+						"scope": "constant.character.in_progress.vso",
+						"settings": {
+							"foreground": "#0062ff",
+							"fontStyle": "bold"
+						}
+					},
+					{
+						"name": "IN_PROGRESS Keyword",
+						"scope": "keyword.control.in_progress.vso",
+						"settings": {
+							"foreground": "#33BFFF",
+							"fontStyle": "italic"
+						}
+					},
+					{
+						"name": "IN_PROGRESS Task Text",
+						"scope": "string.task.in_progress.vso",
+						"settings": {
+							"foreground": "#C0E9FF"
+						}
+					},
+					{
+						"name": "CONTINUED Unicode Symbol",
+						"scope": "constant.character.continued.vso",
+						"settings": {
+							"foreground": "#AAAAAA",
+							"fontStyle": "bold"
+						}
+					},
+					{
+						"name": "CONTINUED Keyword",
+						"scope": "keyword.control.continued.vso",
+						"settings": {
+							"foreground": "#888888",
+							"fontStyle": "italic"
+						}
+					},
+					{
+						"name": "CONTINUED Task Text",
+						"scope": "string.task.continued.vso",
+						"settings": {
+							"foreground": "#CCCCCC"
+						}
+					},
+					{
+						"name": "DONE Unicode Symbol",
+						"scope": "constant.character.done.vso",
+						"settings": {
+							"foreground": "#9AFF8A",
+							"fontStyle": "bold"
+						}
+					},
+					{
+						"name": "DONE Keyword",
+						"scope": "keyword.control.done.vso",
+						"settings": {
+							"foreground": "#3AF605",
+							"fontStyle": "bold"
+						}
+					},
+					{
+						"name": "DONE Task Text",
+						"scope": "string.task.done.vso",
+						"settings": {
+							"foreground": "#B3FFB3"
+						}
+					},
+					{
+						"name": "ABANDONED Unicode Symbol",
+						"scope": "constant.character.abandoned.vso",
+						"settings": {
+							"foreground": "#FF5A5A",
+							"fontStyle": "bold"
+						}
+					},
+					{
+						"name": "ABANDONED Keyword",
+						"scope": "keyword.control.abandoned.vso",
+						"settings": {
+							"foreground": "#FF3B3B",
+							"fontStyle": "bold"
+						}
+					},
+					{
+						"name": "ABANDONED Task Text",
+						"scope": "string.task.abandoned.vso",
+						"settings": {
+							"foreground": "#FFC0C0"
+						}
+					},
+					{
+						"name": "Scheduled Stamp",
+						"scope": "keyword.scheduled.vso",
+						"settings": {
+							"foreground": "#d1e800",
+							"fontStyle": "bold"
+						}
+					},
+					{
+						"name": "Inline Tags [+TAG:]",
+						"scope": "entity.other.attribute-name.tag.vso",
+						"settings": {
+							"foreground": "#C984F7",
+							"fontStyle": "bold"
+						}
+					},
+					{
+						"name": "Agenda Date",
+						"scope": "constant.numeric.date.vso",
+						"settings": {
+							"foreground": "#F7CA18",
+							"fontStyle": "italic"
+						}
+					}
+				]
 			}
 		},
 		"configuration": {
