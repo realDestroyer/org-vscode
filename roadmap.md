@@ -1,6 +1,6 @@
 ﻿# Roadmap
 
-Live version: 1.7.7
+Live version: 1.9.0
 
 These are the features that I have either already implemented, or plan to in the near future.
 
@@ -10,15 +10,22 @@ These are the features that I have either already implemented, or plan to in the
 | ------------------------- | ------------------------------------------------------------------------------------------ | ----------- | -------- | ------------- |
 | TODO Notifications        | Notify users of status outside VSCode (email, sms, etc.)                                   | Not Started |          | realDestroyer |
 | Make Titles Unique        | Don't allow duplicate titles                                                               | Not Started |          | realDestroyer |
-| Insert Deadline Support   | Add deadline insertion command (like scheduled)                                           | Not Started |          | realDestroyer |
 | Calendar Right-Click Menu | Right-click task to create, duplicate, or delete in calendar                              | In Progress |          | realDestroyer |
 | Bulleted Lists            | Make an ordered or unordered list                                                          | In Progress |          | realDestroyer |
 | TODO Tracking             | Show TODO completion on the up-most level                                                  | In Progress |          | realDestroyer |
 | JIRA Integration          | Allow tasks to be pushed to JIRA (Epic, Story, Issues, sub-tasks, etc.)                    | In Progress |          | realDestroyer |
-| Yearly Summary Exporter   | Parse full-year Org files and emit CSV/JSON summaries with per-tag metrics for reviews     | DONE        | v1.7.7   | realDestroyer |
-| Executive Review Templates| Produce Markdown/HTML executive reports highlighting key accomplishments and timelines     | DONE        | v1.7.7   | realDestroyer |
-| Year-in-Review Dashboard  | Webview dashboard that visualizes yearly stats (tag heatmaps, timelines, filters)          | DONE        | v1.7.7   | realDestroyer |
-| Syntax Highlighting Refresh | Extended Org scopes for #+ directives, property drawers, and DEADLINE/CLOSED metadata so file, Agenda, and Calendar views share the same colors. | DONE | v1.7.6 | realDestroyer |
+| CONTINUED Auto-Forwarding | When toggling to CONTINUED, auto-copy task to next day as TODO; remove on toggle-away     | DONE        | v1.9.0   | realDestroyer |
+| DEADLINE Support          | Add DEADLINE dates with Ctrl+Alt+D, snippets, and color-coded Agenda badges               | DONE        | v1.9.0   | realDestroyer |
+| Smart Date Keybinds       | Consolidated Alt+Shift+Arrow for day heading/SCHEDULED; Ctrl+Shift+Arrow for DEADLINE     | DONE        | v1.9.0   | realDestroyer |
+| Day Heading Snippet       | /day snippet inserts day heading with today's date and weekday picker                     | DONE        | v1.9.0   | realDestroyer |
+| Agenda View Filter        | Show only TODO and IN_PROGRESS tasks (exclude CONTINUED/DONE/ABANDONED)                   | DONE        | v1.9.0   | realDestroyer |
+| Yearly Summary Exporter   | Parse full-year Org files and emit CSV/JSON summaries with per-tag metrics for reviews     | DONE        | v1.8.0   | realDestroyer |
+| Executive Review Templates| Produce Markdown/HTML executive reports highlighting key accomplishments and timelines     | DONE        | v1.8.0   | realDestroyer |
+| Year-in-Review Dashboard  | Webview dashboard that visualizes yearly stats (tag heatmaps, timelines, filters)          | DONE        | v1.8.0   | realDestroyer |
+| Syntax Highlighting Refresh | Extended Org scopes for #+ directives, property drawers, and DEADLINE/CLOSED metadata so syntax colors match Calendar and Agenda views. | DONE | v1.7.6 | realDestroyer |
+| Calendar Palette Sync     | Match calendar event colors to their tag chips for unified visuals                        | DONE        | v1.7.5   | realDestroyer |
+| Calendar Status Bar       | Add calendar status strip + density tweaks for quick context                              | DONE        | v1.7.4   | realDestroyer |
+| Calendar Tag Bubble Refresh| Restore bubbly tag chips scoped to current view with multi-select filtering              | DONE        | v1.7.3   | realDestroyer |
 | Centralized Task Keyword/Symbol Manager | Refactored all keyword/symbol logic into a single manager file (`taskKeywordManager.js`) for consistency and maintainability across all commands and views. | DONE        | v1.7.1   | realDestroyer |
 | Calendar Tag Filtering    | Filter calendar tasks by tag                                                              | DONE | v1.7.0 | realDestroyer |
 | Hide Tags in Calendar     | Display only task content in calendar view (remove visible tag syntax from entry)        | DONE | v1.7.0 | realDestroyer |
