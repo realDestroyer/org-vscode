@@ -34,10 +34,14 @@ module.exports = function () {
             const fullPath = path.join(setMainDir(), items[i]);
             const fileText = fs.readFileSync(fullPath).toString().split(/\r?\n/);
 
-            // Iterate through lines to find scheduled, non-DONE tasks
+            // Iterate through lines to find scheduled, non-completed tasks (only TODO and IN_PROGRESS)
             for (let j = 0; j < fileText.length; j++) {
               const element = fileText[j];
-              if (element.includes("SCHEDULED") && !element.includes("DONE")) {
+              // Only show TODO and IN_PROGRESS tasks - exclude DONE, CONTINUED, and ABANDONED
+              const hasScheduled = element.includes("SCHEDULED");
+              const isTodoOrInProgress = /\b(TODO|IN_PROGRESS)\b/.test(element);
+              
+              if (hasScheduled && isTodoOrInProgress) {
 
                 // Capture indented child lines that belong to the current task
                 const baseIndent = element.match(/^\s*/)?.[0] || "";
