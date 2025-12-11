@@ -22,6 +22,7 @@
 		"onLanguage:vso",
 		"onCommand:extension.viewAgenda",
 		"onCommand:extension.createVsoFile",
+		"onCommand:extension.openSyntaxColorCustomizer",
 		"onCommand:orgMode.exportYearSummary",
 		"onCommand:orgMode.generateExecutiveReport",
 		"onCommand:orgMode.openYearInReview"
@@ -246,6 +247,10 @@
 			{
 				"command": "extension.openCalendarView",
 				"title": "Open Calendar View"
+			},
+			{
+				"command": "extension.openSyntaxColorCustomizer",
+				"title": "org-vscode Customize Syntax Colors"
 			},
 			{
 				"command": "extension.createVsoFile",
