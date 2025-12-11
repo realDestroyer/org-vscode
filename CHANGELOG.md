@@ -1,5 +1,44 @@
 # Change Log
 
+# [1.9.0] 12-10-25
+`Enhanced`
+
+- **CONTINUED Task Auto-Forwarding:**
+  - When toggling a task to `CONTINUED` status, the task is automatically copied to the next day as a `TODO` with an updated `SCHEDULED:` date.
+  - When toggling away from `CONTINUED`, the forwarded copy is automatically removed from the next day.
+  - Creates the next day's heading if it doesn't already exist.
+
+- **DEADLINE Support:**
+  - New `DEADLINE: [MM-DD-YYYY]` metadata for tasks with due dates.
+  - New snippet `/deadline` creates a task with both SCHEDULED and DEADLINE dates.
+  - New snippet `/dl` adds a DEADLINE line to an existing task.
+  - Agenda View now displays deadline badges with color-coded warnings:
+    - 🔴 **OVERDUE** (pulsing red) - Past deadline
+    - 🟠 **DUE TODAY** (orange) - Deadline is today
+    - 🟡 **Due in X days** (yellow) - 1-3 day warning
+    - ⚫ **Due: date** (gray) - Future deadline (4+ days)
+  - Year Summary parser now tracks DEADLINE dates in exports.
+  - Distinct syntax highlighting for DEADLINE (red/orange vs SCHEDULED cyan).
+
+- **Smart Date Keybind Consolidation:**
+  - `Alt+Shift+Left/Right` now intelligently detects whether cursor is on a day heading or SCHEDULED line and adjusts accordingly.
+  - `Ctrl+Shift+Left/Right` now adjusts DEADLINE dates.
+  - Added negative keybindings to properly unbind old commands on update.
+
+- **New Keybindings:**
+  - `Ctrl+Alt+D` - Add/remove DEADLINE to task (prompts for date)
+  - `Alt+Shift+S` - Add separator line (moved from Ctrl+Alt+D)
+
+- **Agenda View Improvements:**
+  - Now shows only `TODO` and `IN_PROGRESS` tasks (excludes CONTINUED, DONE, ABANDONED).
+  - CONTINUED tasks are excluded since their forwarded TODO copy will appear instead.
+
+- **Align Schedules Fix:**
+  - `Alt+Shift+A` now preserves DEADLINE tags when aligning SCHEDULED timestamps.
+
+- **Day Heading Snippet:**
+  - New `/day` snippet inserts a day heading with today's date and weekday picker.
+
 # [1.8.0] 12-04-25
 `Enhanced`
 

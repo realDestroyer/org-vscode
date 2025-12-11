@@ -17,6 +17,8 @@
 * [🧩 Org-vscode Snippets](#org-vscode-snippets)
 * [📂 Open a File by Tags or Titles](#open-a-file-by-tags-or-titles)
 * [📅 Agenda View & Scheduling](#agenda-view--scheduling)
+* [⏰ Deadlines](#deadlines)
+* [🔄 CONTINUED Auto-Forwarding](#continued-auto-forwarding)
 * [📼 Partial Demo](#partial-demo)
 * [🔤 Unicode Headings](#unicode-headings-based-on-asterisk-level)
 * [🔁 Cycle Task Statuses](#cycle-task-statuses)
@@ -69,6 +71,8 @@ Just type the prefix and hit `Tab` to expand the snippet inside a `.org` file.
 | `/checklist` | Checklist block with boxes      |
 | `/meeting`   | Daily log or meeting notes      |
 | `/tagged`    | Tagged task template            |
+| `/deadline`  | Task with SCHEDULED + DEADLINE  |
+| `/dl`        | Add DEADLINE to existing task   |
 | `/table2`    | Quick 2x2 org-style table       |
 | `/table3`    | Quick 3x3 org-style table       |
 | `/section`   | Labeled section block           |
@@ -134,7 +138,84 @@ You can open a file using either:
 * **Schedule an item** → Use `Ctrl + Alt + S`.
 * **View all scheduled items** → Use **`Org-vscode: Agenda View`**.
 
+The Agenda View shows only **TODO** and **IN_PROGRESS** tasks. Tasks marked as CONTINUED, DONE, or ABANDONED are excluded for a cleaner view of what still needs attention.
+
 <img src="https://github.com/realdestroyer/org-vscode/blob/master/Images/openAgenda.gif?raw=true" width="700" height="400" />
+
+---
+
+## ⏰ Deadlines <a id="deadlines"></a>
+
+Add deadline dates to tasks to track when they're due. Deadlines appear in the Agenda View with color-coded warning badges.
+
+### Adding a Deadline
+
+**Option 1: Keyboard Shortcut**
+* Press `Ctrl + Alt + D` on a task line
+* Enter month, day, and year when prompted
+* The deadline is inserted after the SCHEDULED date (if present)
+
+**Option 2: Snippet**
+* Type `/deadline` for a new task with both SCHEDULED and DEADLINE
+* Type `/dl` to add just a DEADLINE line to an existing task
+
+### Deadline Format
+
+```org
+⊙ TODO : [+TAG:PROJECT] - Complete documentation    SCHEDULED: [12-10-2025]    DEADLINE: [12-15-2025]
+```
+
+### Adjusting Deadline Dates
+
+* `Ctrl + Shift + →` — Move deadline forward one day
+* `Ctrl + Shift + ←` — Move deadline backward one day
+
+### Agenda View Deadline Badges
+
+Tasks with deadlines show color-coded badges:
+
+| Badge | Color | Meaning |
+|-------|-------|---------|
+| ⚠ OVERDUE | 🔴 Red (pulsing) | Past the deadline |
+| ⚠ DUE TODAY | 🟠 Orange | Deadline is today |
+| ⏰ Due in X days | 🟡 Yellow | 1-3 days until deadline |
+| 📅 Due: date | ⚫ Gray | 4+ days until deadline |
+
+---
+
+## 🔄 CONTINUED Auto-Forwarding <a id="continued-auto-forwarding"></a>
+
+When you toggle a task to `CONTINUED` status, Org-vscode automatically copies it to the next day as a `TODO` task with an updated scheduled date.
+
+### How It Works
+
+1. **Toggle to CONTINUED** (`Ctrl + →` or `Ctrl + ←`)
+   - The task on the current day gets the ⊜ CONTINUED status
+   - A copy appears under the next day's heading as ⊙ TODO
+   - The SCHEDULED date is updated to the next day
+
+2. **Toggle away from CONTINUED**
+   - If you change the task back to TODO, IN_PROGRESS, DONE, or ABANDONED
+   - The forwarded copy is automatically removed from the next day
+
+### Example
+
+**Before toggling to CONTINUED:**
+```org
+⊘ [12-10-2025 Wed] -------
+  ⊙ TODO : Review pull request    SCHEDULED: [12-10-2025]
+```
+
+**After toggling to CONTINUED:**
+```org
+⊘ [12-10-2025 Wed] -------
+  ⊜ CONTINUED : Review pull request    SCHEDULED: [12-10-2025]
+
+⊘ [12-11-2025 Thu] -------
+  ⊙ TODO : Review pull request    SCHEDULED: [12-11-2025]
+```
+
+This feature ensures tasks that roll over to the next day are automatically tracked without manual copying.
 
 ---
 
