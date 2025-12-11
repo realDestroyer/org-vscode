@@ -1,6 +1,6 @@
 # Org-vscode
 
-![Version](https://img.shields.io/badge/version-v1.99.3-blue.svg)
+![Version](https://img.shields.io/badge/version-v1.9.0-blue.svg)
 
 > A fast, keyboard-driven Org Mode–style task manager built for Visual Studio Code.
 > Inspired by Emacs Org Mode
@@ -15,7 +15,9 @@ Whether you're an Emacs power user or just want a highly structured task system,
 
 * Stay focused
 * Schedule your work
+* Set deadlines with visual warnings
 * Track task progress
+* Auto-forward CONTINUED tasks to the next day
 * Visually plan via calendar and agenda views
 * Tag tasks/projects
 * Search/open files based on tag or title
@@ -30,8 +32,14 @@ Whether you're an Emacs power user or just want a highly structured task system,
 **Unicode Task States**  
 `⊙` TODO, `⊘` IN\_PROGRESS, `⊜` CONTINUED, `⊖` DONE, `⊗` ABANDONED
 
+**CONTINUED Auto-Forwarding**  
+When you mark a task as CONTINUED, it automatically copies to the next day as TODO. Toggle away from CONTINUED and the copy is removed.
+
+**Deadline Support**  
+Add `DEADLINE: [MM-DD-YYYY]` to tasks. Agenda View shows color-coded warnings (overdue, due today, due soon).
+
 **Agenda View**  
-See all scheduled tasks from all `.org` files in one clean, date-grouped panel. Fully clickable + status toggleable.
+See all scheduled TODO and IN\_PROGRESS tasks from all `.org` files in one clean, date-grouped panel. Fully clickable + status toggleable.
 
 **Calendar View**  
 Drag & drop tasks to reschedule. Filter by tag. Auto-syncs to file.
@@ -51,11 +59,21 @@ Neatly formats all `SCHEDULED:` timestamps to the same column width.
 **Export Active Tasks**  
 Copy all non-DONE tasks to `CurrentTasks.org` for quick review or reporting.
 
+**Year-in-Review Dashboard**  
+Select a full-year Org file, export CSV/JSON summaries, render executive Markdown/HTML, and explore an interactive dashboard with timelines, tag heatmaps, and download buttons directly inside VS Code.
+
 **Built-In Snippets**  
 Use `/todo`, `/template`, `/meeting`, `/checklist`, and more to insert pre-styled blocks.
 
-**Year-in-Review Suite**  
-Pick any yearly Org file and instantly produce JSON/CSV summaries, polished Markdown + HTML executive reports, and an interactive dashboard that highlights tag heatmaps, monthly throughput, and notable wins. Commands live in the palette as `Org Mode: Export Yearly Summary`, `Org Mode: Generate Executive Report`, and `Org Mode: Open Year-In-Review Dashboard`.
+---
+
+## 📊 Yearly Review Workflow
+
+1. Run **Org Mode: Export Year Summary** to emit `year-summary.csv` + `year-summary.json` inside `.vscode-orgmode/reports/<year>`.
+2. Run **Org Mode: Generate Executive Report** to produce polished Markdown/HTML briefs for leadership updates.
+3. Open **Org Mode: Open Year-in-Review Dashboard** to browse timelines, tag heatmaps, and filterable task lists with quick-open links back to the source file and download buttons for each artifact.
+
+The dashboard reuses the same parser as the exporter, so updates stay in sync and can be regenerated at any time.
 
 ---
 
@@ -69,69 +87,31 @@ See what’s coming next on the [ROADMAP](https://github.com/realdestroyer/org-v
 
 ---
 
-## 📊 Year-in-Review Suite
-
-1. Run `Org Mode: Open Year-In-Review Dashboard` (or export-only commands) and choose the Org source file for the year.
-2. The extension parses every day/task once, then emits:
-	- `year-summary.json` and `year-summary.csv`
-	- `year-executive-report.md` and `.html`
-	- A dashboard webview with timelines, tag heatmaps, filters, and quick links back to source lines.
-3. Use the action buttons inside the dashboard to open artifacts, reveal the report folder, or jump straight to the original task lines inside VS Code.
-
-All artifacts land in `.vscode-orgmode/reports/<year>` next to your source file, making it easy to archive them with the rest of your planning docs.
-
-### 💡 What the Parser Recognizes
-
-The Year-in-Review commands work with any `.org` file — no rigid template required. The parser simply looks for:
-
-| Pattern | Example | Notes |
-|---------|---------|-------|
-| Day heading | `⊘ [01-15-2025 Wed]` | Use `** ` then `Ctrl+Shift+D` to insert today's date |
-| Task line | `⊖ DONE : Fix the bug` | Any Unicode symbol + status keyword |
-| Tags | `[+TAG:PROJECT,URGENT]` | Optional; powers heatmap filters |
-| Schedule | `SCHEDULED: [01-20-2025]` | Optional; shown in Raw Tasks |
-
-**Quick workflow to add a new day:**
-- **Option A:** Type `/day` and press `Tab` — inserts the symbol, today's date, and separator in one step
-- **Option B:** Manual approach — type `** ` for the symbol, `Ctrl+Shift+D` for the date, `Ctrl+Alt+D` for the separator
-
-Everything else — separators, indentation, notes — is up to you. Keep one file per year for the cleanest dashboards, but even multi-year files will parse correctly (grouped by whichever year appears first).
-
-📄 **Want a starting point?** Copy the [example template](https://github.com/realDestroyer/org-vscode/blob/master/examples/year-template.org) into your own `.org` file and run the Year-in-Review Dashboard to see it in action.
-
----
-
 ## 🔑 Keyboard Shortcuts
 
-| Shortcut           | Description                                            |     |
-| ------------------ | ------------------------------------------------------ | --- |
-| `Ctrl + →`         | Cycle TODO keyword forward                             |     |
-| `Ctrl + ←`         | Cycle TODO keyword backward                            |     |
-| `Shift + Alt + ↑`  | Move task block up                                     |     |
-| `Shift + Alt + ↓`  | Move task block down                                   |     |
-| `Alt + →`          | Increase heading level                                 |     |
-| `Alt + ←`          | Decrease heading level                                 |     |
-| `Ctrl + Shift + [` | Fold section                                           |     |
-| `Ctrl + Shift + ]` | Unfold section                                         |     |
-| `Ctrl + Alt + S`   | Schedule a task                                        |     |
-| `Alt + Shift + →`  | Reschedule task forward                                |     |
-| `Alt + Shift + ←`  | Reschedule task backward                               |     |
-| `Alt + Shift + A`  | Align all scheduled timestamps                         |     |
-| `Ctrl + Shift + T` | Insert date stamp or add tag to current task           |     |
-| `Ctrl + Right`     | Increment inline date                                  |     |
-| `Ctrl + Left`      | Decrement inline date                                  |     |
-| `Ctrl + Shift + G` | Open the Tagged Agenda View                            |     |
-| `Ctrl + Shift + C` | Open the Calendar View                                 |     |
-| `Ctrl + Shift + E` | Export all active (non-DONE) tasks to CurrentTasks.org |     |
-| `Ctrl + Alt + D`   | Insert visual separator line                           |     |
-| `Alt + Shift + T`  | Open visual table builder                              |     |
-| `Ctrl + Alt + M`   | Show popup message (GitHub link)                       | --- |
-
-Additional Year-in-Review commands are palette-only:
-
-- `Org Mode: Export Yearly Summary` – saves JSON + CSV.
-- `Org Mode: Generate Executive Report` – saves Markdown + HTML.
-- `Org Mode: Open Year-In-Review Dashboard` – opens the visualization webview and regenerates every artifact.
+| Shortcut             | Description                                            |
+| -------------------- | ------------------------------------------------------ |
+| `Ctrl + →`           | Cycle TODO keyword forward                             |
+| `Ctrl + ←`           | Cycle TODO keyword backward                            |
+| `Shift + Alt + ↑`    | Move task block up                                     |
+| `Shift + Alt + ↓`    | Move task block down                                   |
+| `Alt + →`            | Increase heading level                                 |
+| `Alt + ←`            | Decrease heading level                                 |
+| `Ctrl + Shift + [`   | Fold section                                           |
+| `Ctrl + Shift + ]`   | Unfold section                                         |
+| `Ctrl + Alt + S`     | Schedule a task                                        |
+| `Ctrl + Alt + D`     | Add deadline to task                                   |
+| `Alt + Shift + →`    | Smart date forward (day heading or SCHEDULED)          |
+| `Alt + Shift + ←`    | Smart date backward (day heading or SCHEDULED)         |
+| `Ctrl + Shift + →`   | Deadline date forward                                  |
+| `Ctrl + Shift + ←`   | Deadline date backward                                 |
+| `Alt + Shift + A`    | Align all scheduled timestamps                         |
+| `Alt + Shift + S`    | Add separator line (hyphens)                           |
+| `Ctrl + Shift + T`   | Add tag to current task                                |
+| `Ctrl + Shift + G`   | Open the Tagged Agenda View                            |
+| `Ctrl + Shift + C`   | Open the Calendar View                                 |
+| `Ctrl + Shift + E`   | Export all active (non-DONE) tasks to CurrentTasks.org |
+| `Ctrl + Alt + M`     | Show popup message (GitHub link)                       |
 
 ## 📦 Install
 
@@ -148,12 +128,6 @@ Then: Extensions Panel → More Actions (⋯) → *Install from VSIX...*
 
 ---
 
-## ⚙️ Configuration Highlights
-
-- `Org-vscode.adjustHeadingIndentation` (default `true`): When enabled, `Alt+Left/Right` both rotate the Unicode task symbol *and* shift indentation by two spaces so hierarchy is obvious. Set it to `false` if you want the symbols to change without moving the outline depth.
-
----
-
 ## 🎬 Demo
 
 <img src="https://github.com/realdestroyer/org-vscode/blob/master/Images/fullDemo.gif?raw=true" width="700" height="400" />
@@ -162,17 +136,19 @@ Then: Extensions Panel → More Actions (⋯) → *Install from VSIX...*
 
 ## Snippets Cheat Sheet
 
-| Snippet      | Description               |
-| ------------ | ------------------------- |
-| `/header`    | Insert header block       |
-| `/todo`      | New scheduled TODO        |
-| `/tagged`    | TODO with tags            |
-| `/meeting`   | Meeting notes structure   |
-| `/checklist` | Create checklist block    |
-| `/template`  | Full task block w/ fields |
-| `/day`       | Day heading with date     |
-| `/table2`    | 2x2 Org table             |
-| `/table3`    | 3x3 Org table             |
+| Snippet      | Description                        |
+| ------------ | ---------------------------------- |
+| `/header`    | Insert header block                |
+| `/todo`      | New scheduled TODO                 |
+| `/tagged`    | TODO with tags                     |
+| `/deadline`  | TODO with SCHEDULED and DEADLINE   |
+| `/dl`        | Add DEADLINE line to existing task |
+| `/day`       | Day heading with date & separator  |
+| `/meeting`   | Meeting notes structure            |
+| `/checklist` | Create checklist block             |
+| `/template`  | Full task block w/ fields          |
+| `/table2`    | 2x2 Org table                      |
+| `/table3`    | 3x3 Org table                      |
 
 ---
 
