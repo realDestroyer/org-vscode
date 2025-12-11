@@ -1,5 +1,13 @@
 # Change Log
 
+# [1.9.1] 12-11-25
+`Fixed`
+
+- **SCHEDULED Tag Ordering:**
+  - Fixed issue where adding a SCHEDULED date to a line that already had a DEADLINE would place SCHEDULED after DEADLINE, breaking syntax highlighting.
+  - The `Ctrl+Alt+S` command now correctly inserts SCHEDULED before any existing DEADLINE tag.
+  - Also added zero-padding for single-digit months/days (e.g., `1` → `01`).
+
 # [1.9.0] 12-10-25
 `Enhanced`
 

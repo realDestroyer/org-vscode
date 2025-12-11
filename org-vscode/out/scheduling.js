@@ -40,9 +40,23 @@ module.exports = function () {
             return notADateMessage.showMessage();
         }
         
-        const formattedDate = `${month}-${day}-${year}`;
+        const formattedDate = `${month.padStart(2, '0')}-${day.padStart(2, '0')}-${year}`;
+        const scheduledTag = `SCHEDULED: [${formattedDate}]`;
+        
+        let newLineText;
+        // If line has DEADLINE, insert SCHEDULED before it
+        if (currentLine.text.includes("DEADLINE:")) {
+            newLineText = currentLine.text.replace(
+                /(\s*)(DEADLINE:\s*\[[^\]]*\])/,
+                `    ${scheduledTag}$1$2`
+            );
+        } else {
+            // Otherwise append to end of line
+            newLineText = `${currentLine.text}    ${scheduledTag}`;
+        }
+        
         workspaceEdit.delete(document.uri, currentLine.range);
-        workspaceEdit.insert(document.uri, currentLine.range.start, `${currentLine.text}    SCHEDULED: [${formattedDate}]`);
+        workspaceEdit.insert(document.uri, currentLine.range.start, newLineText);
         await vscode.workspace.applyEdit(workspaceEdit);
         vscode.commands.executeCommand("workbench.action.files.save");
     })();
