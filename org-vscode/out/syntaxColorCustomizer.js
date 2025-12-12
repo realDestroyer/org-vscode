@@ -214,23 +214,31 @@ function openSyntaxColorCustomizer() {
   customizerPanel.webview.html = getWebviewContent(nonce, currentColors);
 
   customizerPanel.webview.onDidReceiveMessage(async (message) => {
-    switch (message.command) {
-      case "saveColors":
-        await saveColors(message.colors);
-        vscode.window.showInformationMessage("Syntax colors saved successfully!");
-        break;
-      case "resetToDefaults":
-        await resetToDefaults();
-        // Send updated colors back to webview
-        customizerPanel.webview.postMessage({
-          command: "colorsUpdated",
-          colors: DEFAULT_COLORS
-        });
-        vscode.window.showInformationMessage("Colors reset to defaults!");
-        break;
-      case "openKeyboardShortcuts":
-        vscode.commands.executeCommand("workbench.action.openGlobalKeybindings", "org-vscode");
-        break;
+    try {
+      switch (message.command) {
+        case "saveColors":
+          await saveColors(message.colors);
+          vscode.window.showInformationMessage("Syntax colors saved successfully!");
+          break;
+        case "resetToDefaults":
+          await resetToDefaults();
+          // Send updated colors back to webview
+          customizerPanel.webview.postMessage({
+            command: "colorsUpdated",
+            colors: DEFAULT_COLORS
+          });
+          vscode.window.showInformationMessage("Colors reset to defaults!");
+          break;
+        case "openKeyboardShortcuts":
+          vscode.commands.executeCommand("workbench.action.openGlobalKeybindings", "org-vscode");
+          break;
+        case "webviewError":
+          vscode.window.showErrorMessage(`Syntax Color Customizer error: ${message?.error || "Unknown error"}`);
+          break;
+      }
+    } catch (err) {
+      const msg = err && err.message ? err.message : String(err);
+      vscode.window.showErrorMessage(`Syntax Color Customizer failed: ${msg}`);
     }
   });
 
@@ -284,16 +292,26 @@ function getCurrentColors() {
  */
 async function saveColors(colors) {
   const config = vscode.workspace.getConfiguration("editor");
+
+  if (!colors || typeof colors !== "object") {
+    throw new Error("No color payload received from webview");
+  }
   
   // Build textMateRules array
-  const textMateRules = Object.entries(colors).map(([name, settings]) => ({
-    name: name,
-    scope: settings.scope,
-    settings: {
-      foreground: settings.foreground,
-      ...(settings.fontStyle ? { fontStyle: settings.fontStyle } : {})
-    }
-  }));
+  const textMateRules = Object.entries(colors)
+    .filter(([_, settings]) => settings && settings.scope)
+    .map(([name, settings]) => ({
+      name: name,
+      scope: settings.scope,
+      settings: {
+        foreground: settings.foreground,
+        ...(settings.fontStyle ? { fontStyle: settings.fontStyle } : {})
+      }
+    }));
+
+  if (textMateRules.length === 0) {
+    throw new Error("No valid TextMate rules generated (unexpected)");
+  }
 
   // Get existing tokenColorCustomizations and preserve non-vso rules
   const existing = config.get("tokenColorCustomizations") || {};
@@ -733,13 +751,13 @@ function getWebviewContent(nonce, currentColors) {
       }
 
       function rgbToHex(rgb) {
-        const match = String(rgb).match(/rgba?\((\d+)\s*,\s*(\d+)\s*,\s*(\d+)/i);
-        if (!match) return null;
+        const nums = String(rgb).match(/[0-9]+/g);
+        if (!nums || nums.length < 3) return null;
         const toHex = (n) => {
           const h = Number(n).toString(16);
           return h.length === 1 ? '0' + h : h;
         };
-        return '#' + toHex(match[1]) + toHex(match[2]) + toHex(match[3]);
+        return '#' + toHex(nums[0]) + toHex(nums[1]) + toHex(nums[2]);
       }
 
       function getThemeForegroundHex() {
@@ -873,21 +891,36 @@ function getWebviewContent(nonce, currentColors) {
 
       // Save button
       document.getElementById('save-btn').addEventListener('click', function() {
-        const colorsToSave = JSON.parse(JSON.stringify(colors));
+        try {
+          const colorsToSave = JSON.parse(JSON.stringify(colors));
 
-        // Avoid freezing base text color unless the user explicitly changed it.
-        if (colorsToSave[BODY_NOTES_KEY] && themeForeground && !isBodyNotesUserCustomized()) {
-          const current = normalizeHex(colorsToSave[BODY_NOTES_KEY].foreground);
-          const baseline = normalizeHex(themeForeground);
-          const style = (colorsToSave[BODY_NOTES_KEY].fontStyle || '').trim();
-          if (current === baseline && style === '') {
-            delete colorsToSave[BODY_NOTES_KEY];
+          // Avoid freezing base text color unless the user explicitly changed it.
+          if (colorsToSave[BODY_NOTES_KEY] && themeForeground && !isBodyNotesUserCustomized()) {
+            const current = normalizeHex(colorsToSave[BODY_NOTES_KEY].foreground);
+            const baseline = normalizeHex(themeForeground);
+            const style = (colorsToSave[BODY_NOTES_KEY].fontStyle || '').trim();
+            if (current === baseline && style === '') {
+              delete colorsToSave[BODY_NOTES_KEY];
+            }
           }
-        }
 
-        vscode.postMessage({ command: 'saveColors', colors: colorsToSave });
-        hasUnsavedChanges = false;
-        document.getElementById('unsaved').classList.remove('visible');
+          vscode.postMessage({ command: 'saveColors', colors: colorsToSave });
+          hasUnsavedChanges = false;
+          document.getElementById('unsaved').classList.remove('visible');
+        } catch (err) {
+          const msg = (err && err.message) ? err.message : String(err);
+          vscode.postMessage({ command: 'webviewError', error: msg });
+        }
+      });
+
+      // Surface any unexpected runtime errors back to the extension.
+      window.addEventListener('error', function(event) {
+        try {
+          const msg = event && event.message ? event.message : 'Unknown webview error';
+          vscode.postMessage({ command: 'webviewError', error: msg });
+        } catch (_) {
+          // ignore
+        }
       });
 
       // Reset button
