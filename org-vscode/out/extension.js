@@ -151,6 +151,8 @@ function activate(ctx) {
   ctx.subscriptions.push(vscode.commands.registerCommand("extension.decrementDate", decrementDateBackward));
   ctx.subscriptions.push(vscode.commands.registerCommand("extension.addSeparator", addSeparator));
   ctx.subscriptions.push(vscode.commands.registerCommand("extension.exportCurrentTasks", exportCurrentTasks));
+  // Keep legacy keybinding command, but also register the contributed command id.
+  ctx.subscriptions.push(vscode.commands.registerCommand("org-vscode.exportCurrentTasks", exportCurrentTasks));
   ctx.subscriptions.push(vscode.commands.registerCommand("extension.addTagToTask", addTagToTask));
   ctx.subscriptions.push(vscode.commands.registerCommand("extension.setFolderPath", changeDirectory));
   ctx.subscriptions.push(vscode.commands.registerCommand("extension.createVsoFile", newFile));
