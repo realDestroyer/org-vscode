@@ -1,5 +1,12 @@
 # Change Log
 
+# [1.10.1] 12-11-25
+`Fixed`
+
+- **Agenda / TaggedAgenda CONTINUED parity:**
+  - Clicking task keywords in Agenda and TaggedAgenda now triggers the same CONTINUED auto-forward/remove behavior as the editor hotkeys.
+  - Agenda no longer collapses (dispose/reopen) after changing a task status.
+
 # [1.10.0] 12-11-25
 `Added`
 

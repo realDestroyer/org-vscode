@@ -3,6 +3,8 @@ const fs = require("fs");
 const path = require("path");
 const os = require("os");
 const moment = require("moment");
+const taskKeywordManager = require("./taskKeywordManager");
+const continuedTaskHandler = require("./continuedTaskHandler");
 
 module.exports = async function taggedAgenda() {
   const tagInput = await vscode.window.showInputBox({
@@ -49,63 +51,67 @@ module.exports = async function taggedAgenda() {
   showTaggedAgendaView(tagString, agendaItems);
 };
 
-function updateTaskStatusInFile(file, taskText, scheduledDate, newStatus, removeCompleted) {
+async function updateTaskStatusInFile(file, taskText, scheduledDate, newStatus, removeCompleted) {
   const orgDir = getOrgFolder();
   const filePath = path.join(orgDir, file);
-  const lines = fs.readFileSync(filePath, "utf-8").split(/\r?\n/);
+  const uri = vscode.Uri.file(filePath);
+  const document = await vscode.workspace.openTextDocument(uri);
 
   const dateTag = scheduledDate ? `SCHEDULED: [${scheduledDate}]` : null;
   console.log("🛠 Updating file:", filePath);
   console.log("🔍 Looking for task text:", taskText);
   if (dateTag) console.log("🔍 With scheduled date tag:", dateTag);
 
-  let found = false;
-
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
-    const matchesTask = line.includes(taskText);
-    const matchesDate = dateTag ? line.includes(dateTag) : true;
-
+  let taskLineNumber = -1;
+  for (let i = 0; i < document.lineCount; i++) {
+    const lineText = document.lineAt(i).text;
+    const matchesTask = lineText.includes(taskText);
+    const matchesDate = dateTag ? lineText.includes(dateTag) : true;
     if (matchesTask && matchesDate) {
-        console.log("✅ Found matching line:", line);
-
-        // Swap status
-        const symbols = {
-          TODO: '⊙ ',
-          IN_PROGRESS: '⊘ ',
-          CONTINUED: '⊜ ',
-          DONE: '⊖ ',
-          ABANDONED: '⊗ '
-        };
-
-        let indent = line.match(/^\s*/)?.[0] || "";
-        let cleaned = line
-          .replace(/[⊙⊘⊜⊖⊗]/g, '')
-          .replace(/\b(TODO|DONE|IN_PROGRESS|CONTINUED|ABANDONED)\b/, '')
-          .trim();
-
-        lines[i] = `${indent}${symbols[newStatus]}${newStatus} ${cleaned}`;
-
-
-      if (newStatus === "DONE" && !lines[i + 1]?.includes("COMPLETED:")) {
-        const indent = lines[i].match(/^\s*/)?.[0] || "";
-        const formatted = moment().format("Do MMMM YYYY, h:mm:ss a");
-        lines.splice(i + 1, 0, `${indent}  COMPLETED:[${formatted}]`);
-      }
-
-      if (removeCompleted && lines[i + 1]?.includes("COMPLETED:")) {
-        lines.splice(i + 1, 1);
-      }
-
-      found = true;
+      taskLineNumber = i;
       break;
     }
   }
 
-  if (found) {
-    fs.writeFileSync(filePath, lines.join("\n"), "utf-8");
-  } else {
+  if (taskLineNumber === -1) {
     console.error("❌ No matching line found to update.");
+    return;
+  }
+
+  const workspaceEdit = new vscode.WorkspaceEdit();
+  const currentLine = document.lineAt(taskLineNumber);
+  const nextLine = taskLineNumber + 1 < document.lineCount ? document.lineAt(taskLineNumber + 1) : null;
+  const currentStatusMatch = currentLine.text.match(/\b(TODO|DONE|IN_PROGRESS|CONTINUED|ABANDONED)\b/);
+  const currentStatus = currentStatusMatch ? currentStatusMatch[1] : null;
+
+  const indent = currentLine.text.match(/^\s*/)?.[0] || "";
+  const cleaned = taskKeywordManager.cleanTaskText(currentLine.text);
+  let newLine = taskKeywordManager.buildTaskLine(indent, newStatus, cleaned);
+
+  // Add or remove COMPLETED line
+  if (newStatus === "DONE") {
+    newLine += `\n${taskKeywordManager.buildCompletedStamp(indent)}`;
+  } else if (currentStatus === "DONE" && removeCompleted && nextLine && nextLine.text.includes("COMPLETED")) {
+    workspaceEdit.delete(uri, nextLine.range);
+  }
+
+  // Handle CONTINUED transitions
+  if (newStatus === "CONTINUED" && currentStatus !== "CONTINUED") {
+    const forwardEdit = continuedTaskHandler.handleContinuedTransition(document, taskLineNumber);
+    if (forwardEdit && forwardEdit.type === "insert") {
+      workspaceEdit.insert(uri, forwardEdit.position, forwardEdit.text);
+    }
+  } else if (currentStatus === "CONTINUED" && newStatus !== "CONTINUED") {
+    const removeEdit = continuedTaskHandler.handleContinuedRemoval(document, taskLineNumber);
+    if (removeEdit && removeEdit.type === "delete") {
+      workspaceEdit.delete(uri, removeEdit.range);
+    }
+  }
+
+  workspaceEdit.replace(uri, currentLine.range, newLine);
+  const applied = await vscode.workspace.applyEdit(workspaceEdit);
+  if (applied) {
+    await document.save();
   }
 }
 
