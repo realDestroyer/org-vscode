@@ -188,9 +188,11 @@ Tasks with deadlines show color-coded badges:
 
 When you toggle a task to `CONTINUED` status, Org-vscode automatically copies it to the next day as a `TODO` task with an updated scheduled date.
 
+This works both from the editor hotkeys and when you click the keyword in Agenda/TaggedAgenda views.
+
 ### How It Works
 
-1. **Toggle to CONTINUED** (`Ctrl + →` or `Ctrl + ←`)
+1. **Toggle to CONTINUED** (`Ctrl + →` or `Ctrl + ←`, or click the task keyword in Agenda/TaggedAgenda)
    - The task on the current day gets the ⊜ CONTINUED status
    - A copy appears under the next day's heading as ⊙ TODO
    - The SCHEDULED date is updated to the next day

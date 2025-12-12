@@ -5,6 +5,7 @@ const fs = require("fs");
 const os = require("os");
 const moment = require("moment");
 const taskKeywordManager = require("../taskKeywordManager");
+const continuedTaskHandler = require("../continuedTaskHandler");
 const path = require("path");
 
 module.exports = function () {
@@ -197,15 +198,21 @@ module.exports = function () {
 
     function createWebview() {
       let reload = false;
+      let suppressReloadForFsPath = null;
       let fullAgendaView = vscode.window.createWebviewPanel("fullAgenda", "Full Agenda View", vscode.ViewColumn.Beside, { enableScripts: true });
       fullAgendaView.webview.html = getWebviewContent(sortedObject);
 
-      vscode.workspace.onDidSaveTextDocument(() => {
+      const saveDisposable = vscode.workspace.onDidSaveTextDocument((savedDoc) => {
+        if (suppressReloadForFsPath && savedDoc && savedDoc.uri && savedDoc.uri.fsPath === suppressReloadForFsPath) {
+          suppressReloadForFsPath = null;
+          return;
+        }
         reload = true;
         fullAgendaView.dispose();
       });
 
       fullAgendaView.onDidDispose(() => {
+        saveDisposable.dispose();
         if (reload) vscode.commands.executeCommand("extension.viewAgenda");
       });
 
@@ -218,30 +225,67 @@ module.exports = function () {
         } else if (message.command === "changeStatus") {
           let [newStatus, fileName, taskText, date, additionalFlag] = message.text.split(",");
           let filePath = path.join(setMainDir(), fileName);
-          let fileContents = fs.readFileSync(filePath, "utf-8");
-          let fileLines = fileContents.split(/\r?\n/);
+          const uri = vscode.Uri.file(filePath);
 
-          for (let i = 0; i < fileLines.length; i++) {
-            if (fileLines[i].includes(taskText) && fileLines[i].includes(date)) {
-              let currentStatus = fileLines[i].match(/\b(TODO|DONE|IN_PROGRESS|CONTINUED|ABANDONED)\b/);
-              if (currentStatus) {
-                let indent = fileLines[i].match(/^\s*/)?.[0] || "";
-                let cleaned = taskKeywordManager.cleanTaskText(fileLines[i]);
-                fileLines[i] = taskKeywordManager.buildTaskLine(indent, newStatus, cleaned);
-                if (newStatus === "DONE") {
-                  fileLines.splice(i + 1, 0, taskKeywordManager.buildCompletedStamp(indent));
-                }
-                if (currentStatus[0] === "DONE" && additionalFlag === "REMOVE_COMPLETED") {
-                  if (fileLines[i + 1] && fileLines[i + 1].trim().startsWith("COMPLETED:")) {
-                    fileLines.splice(i + 1, 1);
-                  }
-                }
-                fs.writeFileSync(filePath, fileLines.join("\n"), "utf-8");
-                vscode.window.showInformationMessage(`Updated: ${taskText} -> ${newStatus}`);
+          vscode.workspace.openTextDocument(uri).then(document => {
+            let taskLineNumber = -1;
+            for (let i = 0; i < document.lineCount; i++) {
+              const lineText = document.lineAt(i).text;
+              if (lineText.includes(taskText) && lineText.includes(date)) {
+                taskLineNumber = i;
+                break;
               }
-              break;
             }
-          }
+
+            if (taskLineNumber === -1) {
+              vscode.window.showErrorMessage(`Unable to find task to update: ${taskText}`);
+              return;
+            }
+
+            const workspaceEdit = new vscode.WorkspaceEdit();
+            const currentLine = document.lineAt(taskLineNumber);
+            const nextLine = taskLineNumber + 1 < document.lineCount ? document.lineAt(taskLineNumber + 1) : null;
+
+            const currentStatusMatch = currentLine.text.match(/\b(TODO|DONE|IN_PROGRESS|CONTINUED|ABANDONED)\b/);
+            const currentStatus = currentStatusMatch ? currentStatusMatch[1] : null;
+
+            const indent = currentLine.text.match(/^\s*/)?.[0] || "";
+            const cleaned = taskKeywordManager.cleanTaskText(currentLine.text);
+            let newLine = taskKeywordManager.buildTaskLine(indent, newStatus, cleaned);
+
+            // Add or remove COMPLETED line
+            if (newStatus === "DONE") {
+              newLine += `\n${taskKeywordManager.buildCompletedStamp(indent)}`;
+            } else if (currentStatus === "DONE" && additionalFlag === "REMOVE_COMPLETED" && nextLine && nextLine.text.includes("COMPLETED")) {
+              workspaceEdit.delete(uri, nextLine.range);
+            }
+
+            // Handle CONTINUED transitions (same logic as Ctrl+Left/Right)
+            if (newStatus === "CONTINUED" && currentStatus !== "CONTINUED") {
+              const forwardEdit = continuedTaskHandler.handleContinuedTransition(document, taskLineNumber);
+              if (forwardEdit && forwardEdit.type === "insert") {
+                workspaceEdit.insert(uri, forwardEdit.position, forwardEdit.text);
+              }
+            } else if (currentStatus === "CONTINUED" && newStatus !== "CONTINUED") {
+              const removeEdit = continuedTaskHandler.handleContinuedRemoval(document, taskLineNumber);
+              if (removeEdit && removeEdit.type === "delete") {
+                workspaceEdit.delete(uri, removeEdit.range);
+              }
+            }
+
+            workspaceEdit.replace(uri, currentLine.range, newLine);
+
+            vscode.workspace.applyEdit(workspaceEdit).then(applied => {
+              if (!applied) {
+                vscode.window.showErrorMessage("Unable to apply task update.");
+                return;
+              }
+              suppressReloadForFsPath = uri.fsPath;
+              document.save().then(() => {
+                vscode.window.showInformationMessage(`Updated: ${taskText} -> ${newStatus}`);
+              });
+            });
+          });
         }
       });
     }
