@@ -8,8 +8,14 @@
 
 const vscode = require("vscode");
 
-// Default color definitions matching the extension's configurationDefaults
+// Default color definitions matching the extension's configurationDefaults.
+// Note: "Body / Notes Text" uses theme default unless the user explicitly saves a value.
 const DEFAULT_COLORS = {
+  "Body / Notes Text": {
+    scope: "source.vso",
+    foreground: "#cccccc",
+    fontStyle: ""
+  },
   "TODO Symbol": {
     scope: "constant.character.todo.vso",
     foreground: "#5CFF5C",
@@ -31,7 +37,7 @@ const DEFAULT_COLORS = {
     fontStyle: "bold"
   },
   "IN_PROGRESS Keyword": {
-    scope: "keyword.control.in_progress.vso",
+    scope: ["keyword.control.in_progress.vso", "support.constant.in_progress.vso"],
     foreground: "#33BFFF",
     fontStyle: "italic"
   },
@@ -46,7 +52,7 @@ const DEFAULT_COLORS = {
     fontStyle: "bold"
   },
   "CONTINUED Keyword": {
-    scope: "keyword.control.continued.vso",
+    scope: ["keyword.control.continued.vso", "markup.quote.continued.vso"],
     foreground: "#888888",
     fontStyle: "italic"
   },
@@ -61,7 +67,7 @@ const DEFAULT_COLORS = {
     fontStyle: "bold"
   },
   "DONE Keyword": {
-    scope: "keyword.control.done.vso",
+    scope: ["keyword.control.done.vso", "entity.name.function.vso"],
     foreground: "#3AF605",
     fontStyle: "bold"
   },
@@ -90,6 +96,26 @@ const DEFAULT_COLORS = {
     foreground: "#d1e800",
     fontStyle: "bold"
   },
+  "DEADLINE Stamp": {
+    scope: ["keyword.deadline.vso", "markup.deleted.deadline.vso"],
+    foreground: "#ff6b35",
+    fontStyle: "bold"
+  },
+  "CLOSED Stamp": {
+    scope: "keyword.closed.vso",
+    foreground: "#6c757d",
+    fontStyle: "italic"
+  },
+  "COMPLETED Stamp": {
+    scope: "comment.vso",
+    foreground: "#9d9d9d",
+    fontStyle: "italic"
+  },
+  "Timestamp": {
+    scope: "constant.other.timestamp.vso",
+    foreground: "#9d9d9d",
+    fontStyle: ""
+  },
   "Inline Tags": {
     scope: "entity.other.attribute-name.tag.vso",
     foreground: "#C984F7",
@@ -99,17 +125,64 @@ const DEFAULT_COLORS = {
     scope: "constant.numeric.date.vso",
     foreground: "#F7CA18",
     fontStyle: "italic"
+  },
+  "Day Header Date": {
+    scope: "constant.numeric.date.header.vso",
+    foreground: "#F7CA18",
+    fontStyle: "bold"
+  },
+  "Org Directive": {
+    scope: "meta.directive.vso",
+    foreground: "#569cd6",
+    fontStyle: ""
+  },
+  "Property Key": {
+    scope: "variable.other.property-key.vso",
+    foreground: "#b5cea8",
+    fontStyle: ""
+  },
+  "Heading Level 1": {
+    scope: "markup.heading.vso",
+    foreground: "#dcdcaa",
+    fontStyle: "bold"
+  },
+  "Heading Level 2": {
+    scope: "keyword.other.vso",
+    foreground: "#dcdcaa",
+    fontStyle: "bold"
+  },
+  "Heading Level 3": {
+    scope: "keyword.operator.vso",
+    foreground: "#dcdcaa",
+    fontStyle: "bold"
   }
 };
 
 // Group definitions for better UI organization
 const SCOPE_GROUPS = {
+  "General": ["Body / Notes Text"],
   "TODO Tasks": ["TODO Symbol", "TODO Keyword", "TODO Task Text"],
   "IN_PROGRESS Tasks": ["IN_PROGRESS Symbol", "IN_PROGRESS Keyword", "IN_PROGRESS Task Text"],
   "CONTINUED Tasks": ["CONTINUED Symbol", "CONTINUED Keyword", "CONTINUED Task Text"],
   "DONE Tasks": ["DONE Symbol", "DONE Keyword", "DONE Task Text"],
   "ABANDONED Tasks": ["ABANDONED Symbol", "ABANDONED Keyword", "ABANDONED Task Text"],
-  "Other Elements": ["SCHEDULED Stamp", "Inline Tags", "Agenda Date"]
+  "Dates & Stamps": [
+    "SCHEDULED Stamp",
+    "DEADLINE Stamp",
+    "CLOSED Stamp",
+    "COMPLETED Stamp",
+    "Timestamp",
+    "Agenda Date",
+    "Day Header Date",
+    "Inline Tags"
+  ],
+  "Structure": [
+    "Heading Level 1",
+    "Heading Level 2",
+    "Heading Level 3",
+    "Org Directive",
+    "Property Key"
+  ]
 };
 
 let customizerPanel = null;
@@ -177,11 +250,19 @@ function getCurrentColors() {
   // Start with defaults, overlay user customizations
   const colors = JSON.parse(JSON.stringify(DEFAULT_COLORS));
 
+  const normalizeScopes = (value) => {
+    if (!value) return [];
+    return Array.isArray(value) ? value : [value];
+  };
+
   for (const rule of textMateRules) {
+    const ruleScopes = normalizeScopes(rule.scope);
     // Find which default this rule matches
     for (const [name, def] of Object.entries(colors)) {
-      if (rule.scope === def.scope || 
-          (Array.isArray(rule.scope) && rule.scope.includes(def.scope))) {
+      const defScopes = normalizeScopes(def.scope);
+      const matches = defScopes.some(s => ruleScopes.includes(s));
+      if (matches) {
+        colors[name]._isUserCustomized = true;
         if (rule.settings) {
           if (rule.settings.foreground) {
             colors[name].foreground = rule.settings.foreground;
@@ -284,13 +365,14 @@ function getWebviewContent(nonce, currentColors) {
   const groupsHtml = Object.entries(SCOPE_GROUPS).map(([groupName, scopeNames]) => {
     const scopesHtml = scopeNames.map(name => {
       const settings = currentColors[name];
+      const technicalScope = Array.isArray(settings.scope) ? settings.scope.join(", ") : settings.scope;
       const previewStyle = `color: ${settings.foreground}; ${settings.fontStyle ? `font-style: ${settings.fontStyle.includes('italic') ? 'italic' : 'normal'}; font-weight: ${settings.fontStyle.includes('bold') ? 'bold' : 'normal'};` : ''}`;
       
       return `
         <div class="scope-row" data-scope="${name}">
           <div class="scope-info">
             <span class="scope-name">${name}</span>
-            <span class="scope-technical">${settings.scope}</span>
+            <span class="scope-technical">${technicalScope}</span>
           </div>
           <div class="scope-controls">
             <div class="color-picker-wrapper">
@@ -642,6 +724,53 @@ function getWebviewContent(nonce, currentColors) {
       
       // Store current colors state
       const colors = ${JSON.stringify(currentColors)};
+
+      const BODY_NOTES_KEY = 'Body / Notes Text';
+
+      function normalizeHex(hex) {
+        if (!hex) return '';
+        return String(hex).trim().toLowerCase();
+      }
+
+      function rgbToHex(rgb) {
+        const match = String(rgb).match(/rgba?\((\d+)\s*,\s*(\d+)\s*,\s*(\d+)/i);
+        if (!match) return null;
+        const toHex = (n) => {
+          const h = Number(n).toString(16);
+          return h.length === 1 ? '0' + h : h;
+        };
+        return '#' + toHex(match[1]) + toHex(match[2]) + toHex(match[3]);
+      }
+
+      function getThemeForegroundHex() {
+        const raw = getComputedStyle(document.documentElement).getPropertyValue('--vscode-editor-foreground').trim();
+        if (!raw) return null;
+        if (raw.startsWith('#')) return raw;
+        const asHex = rgbToHex(raw);
+        return asHex;
+      }
+
+      function syncBodyNotesControls(foreground) {
+        if (!colors[BODY_NOTES_KEY]) return;
+        colors[BODY_NOTES_KEY].foreground = foreground;
+
+        const picker = document.querySelector('.color-picker[data-scope="' + BODY_NOTES_KEY + '"]');
+        const textInput = document.querySelector('.color-text[data-scope="' + BODY_NOTES_KEY + '"]');
+        if (picker) picker.value = foreground;
+        if (textInput) textInput.value = foreground;
+
+        updatePreview(BODY_NOTES_KEY);
+      }
+
+      function isBodyNotesUserCustomized() {
+        return !!(colors[BODY_NOTES_KEY] && colors[BODY_NOTES_KEY]._isUserCustomized);
+      }
+
+      // Initialize body/notes default to the current theme foreground unless the user already customized it.
+      const themeForeground = getThemeForegroundHex();
+      if (themeForeground && !isBodyNotesUserCustomized()) {
+        syncBodyNotesControls(themeForeground);
+      }
       
       // Mark as having unsaved changes
       function markUnsaved() {
@@ -744,7 +873,19 @@ function getWebviewContent(nonce, currentColors) {
 
       // Save button
       document.getElementById('save-btn').addEventListener('click', function() {
-        vscode.postMessage({ command: 'saveColors', colors: colors });
+        const colorsToSave = JSON.parse(JSON.stringify(colors));
+
+        // Avoid freezing base text color unless the user explicitly changed it.
+        if (colorsToSave[BODY_NOTES_KEY] && themeForeground && !isBodyNotesUserCustomized()) {
+          const current = normalizeHex(colorsToSave[BODY_NOTES_KEY].foreground);
+          const baseline = normalizeHex(themeForeground);
+          const style = (colorsToSave[BODY_NOTES_KEY].fontStyle || '').trim();
+          if (current === baseline && style === '') {
+            delete colorsToSave[BODY_NOTES_KEY];
+          }
+        }
+
+        vscode.postMessage({ command: 'saveColors', colors: colorsToSave });
         hasUnsavedChanges = false;
         document.getElementById('unsaved').classList.remove('visible');
       });
@@ -781,6 +922,10 @@ function getWebviewContent(nonce, currentColors) {
             
             updatePreview(name);
           });
+
+          if (themeForeground && !isBodyNotesUserCustomized()) {
+            syncBodyNotesControls(themeForeground);
+          }
           
           hasUnsavedChanges = false;
           document.getElementById('unsaved').classList.remove('visible');
@@ -797,24 +942,35 @@ function getWebviewContent(nonce, currentColors) {
  */
 function getPreviewText(scopeName) {
   const previews = {
+    "Body / Notes Text": "Notes / description text",
     "TODO Symbol": "⊙",
     "TODO Keyword": "TODO",
     "TODO Task Text": "Buy groceries",
     "IN_PROGRESS Symbol": "⊘",
     "IN_PROGRESS Keyword": "IN_PROGRESS",
     "IN_PROGRESS Task Text": "Working on it",
-    "CONTINUED Symbol": "⊖",
+    "CONTINUED Symbol": "⊜",
     "CONTINUED Keyword": "CONTINUED",
     "CONTINUED Task Text": "From yesterday",
-    "DONE Symbol": "⊗",
+    "DONE Symbol": "⊖",
     "DONE Keyword": "DONE",
     "DONE Task Text": "Completed task",
-    "ABANDONED Symbol": "⊜",
+    "ABANDONED Symbol": "⊗",
     "ABANDONED Keyword": "ABANDONED",
     "ABANDONED Task Text": "No longer needed",
     "SCHEDULED Stamp": "SCHEDULED: [12-11-2025]",
-    "Inline Tags": "[+WORK:PROJECT:]",
-    "Agenda Date": "Wednesday, Dec 11"
+    "DEADLINE Stamp": "DEADLINE: [12-15-2025]",
+    "CLOSED Stamp": "CLOSED: [12-11-2025 09:00]",
+    "COMPLETED Stamp": "COMPLETED: [12-11-2025 09:00]",
+    "Timestamp": "<2025-12-11 Thu 09:00>",
+    "Inline Tags": "[+TAG:WORK,PROJECT]",
+    "Agenda Date": "[12-11-2025]",
+    "Day Header Date": "[12-11-2025 Thu]",
+    "Org Directive": "#+TITLE: Work",
+    "Property Key": ":OWNER: Doug",
+    "Heading Level 1": "* Heading",
+    "Heading Level 2": "** Subheading",
+    "Heading Level 3": "*** Detail"
   };
   return previews[scopeName] || scopeName;
 }

@@ -1,5 +1,12 @@
 # Change Log
 
+# [1.10.2] 12-12-25
+`Enhanced`
+
+- **Syntax Color Customizer scope expansion:**
+  - Added defaults for additional Org elements (DEADLINE/CLOSED/COMPLETED/timestamps/day headers/headings/directives/properties).
+  - Added an optional **Body / Notes Text** control (uses theme default unless you explicitly set it).
+
 # [1.10.1] 12-11-25
 `Fixed`
 
