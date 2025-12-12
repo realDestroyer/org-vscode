@@ -1,5 +1,12 @@
 # Change Log
 
+# [1.10.3] 12-12-25
+`Fixed`
+
+- **Syntax Color Customizer:**
+  - Fixed **Save Colors** button not applying settings.
+  - Synced Marketplace README content with the main repo README.
+
 # [1.10.2] 12-12-25
 `Enhanced`
 
