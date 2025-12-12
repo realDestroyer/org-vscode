@@ -2,7 +2,7 @@
 	"name": "org-vscode",
 	"displayName": "org-vscode",
 	"description": "Quickly create todo lists, take notes, plan projects and organize your thoughts.",
-	"version": "1.10.1",
+	"version": "1.10.2",
 	"repository": "https://www.github.com/realDestroyer/org-vscode",
 	"icon": "Logo.png",
 	"publisher": "realDestroyer",
@@ -78,7 +78,7 @@
 					},
 					{
 						"name": "IN_PROGRESS Keyword",
-						"scope": "keyword.control.in_progress.vso",
+						"scope": ["keyword.control.in_progress.vso", "support.constant.in_progress.vso"],
 						"settings": {
 							"foreground": "#33BFFF",
 							"fontStyle": "italic"
@@ -101,7 +101,7 @@
 					},
 					{
 						"name": "CONTINUED Keyword",
-						"scope": "keyword.control.continued.vso",
+						"scope": ["keyword.control.continued.vso", "markup.quote.continued.vso"],
 						"settings": {
 							"foreground": "#888888",
 							"fontStyle": "italic"
@@ -124,7 +124,7 @@
 					},
 					{
 						"name": "DONE Keyword",
-						"scope": "keyword.control.done.vso",
+						"scope": ["keyword.control.done.vso", "entity.name.function.vso"],
 						"settings": {
 							"foreground": "#3AF605",
 							"fontStyle": "bold"
@@ -182,6 +182,83 @@
 						"settings": {
 							"foreground": "#F7CA18",
 							"fontStyle": "italic"
+						}
+					},
+					{
+						"name": "Day Header Date",
+						"scope": "constant.numeric.date.header.vso",
+						"settings": {
+							"foreground": "#F7CA18",
+							"fontStyle": "bold"
+						}
+					},
+					{
+						"name": "DEADLINE Stamp",
+						"scope": ["keyword.deadline.vso", "markup.deleted.deadline.vso"],
+						"settings": {
+							"foreground": "#ff6b35",
+							"fontStyle": "bold"
+						}
+					},
+					{
+						"name": "CLOSED Stamp",
+						"scope": "keyword.closed.vso",
+						"settings": {
+							"foreground": "#6c757d",
+							"fontStyle": "italic"
+						}
+					},
+					{
+						"name": "COMPLETED Stamp",
+						"scope": "comment.vso",
+						"settings": {
+							"foreground": "#9d9d9d",
+							"fontStyle": "italic"
+						}
+					},
+					{
+						"name": "Timestamp",
+						"scope": "constant.other.timestamp.vso",
+						"settings": {
+							"foreground": "#9d9d9d"
+						}
+					},
+					{
+						"name": "Org Directive",
+						"scope": "meta.directive.vso",
+						"settings": {
+							"foreground": "#569cd6"
+						}
+					},
+					{
+						"name": "Property Key",
+						"scope": "variable.other.property-key.vso",
+						"settings": {
+							"foreground": "#b5cea8"
+						}
+					},
+					{
+						"name": "Heading Level 1",
+						"scope": "markup.heading.vso",
+						"settings": {
+							"foreground": "#dcdcaa",
+							"fontStyle": "bold"
+						}
+					},
+					{
+						"name": "Heading Level 2",
+						"scope": "keyword.other.vso",
+						"settings": {
+							"foreground": "#dcdcaa",
+							"fontStyle": "bold"
+						}
+					},
+					{
+						"name": "Heading Level 3",
+						"scope": "keyword.operator.vso",
+						"settings": {
+							"foreground": "#dcdcaa",
+							"fontStyle": "bold"
 						}
 					}
 				]
