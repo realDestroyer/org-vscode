@@ -1,5 +1,11 @@
 # Change Log
 
+# [1.10.4] 12-12-25
+`Fixed`
+
+- **Insert Table:**
+  - Fixed `org-vscode.insertTable` not being registered on activation (command not found).
+
 # [1.10.3] 12-12-25
 `Fixed`
 

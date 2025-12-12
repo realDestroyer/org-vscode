@@ -171,6 +171,9 @@ function activate(ctx) {
   ctx.subscriptions.push(vscode.commands.registerCommand("extension.openCalendarView", openCalendarView));
   ctx.subscriptions.push(vscode.commands.registerCommand("extension.openSyntaxColorCustomizer", openSyntaxColorCustomizer));
 
+  // org-vscode.insertTable is registered inside insertTable.activate()
+  insertTable.activate(ctx);
+
   // Register real-time formatter for " " after typing an asterisk heading
   ctx.subscriptions.push(
     vscode.languages.registerOnTypeFormattingEditProvider(GO_MODE, new GoOnTypingFormatter(), " ")
