@@ -17,12 +17,7 @@ module.exports = function () {
             for (let i = 0; i < items.length; i++) {
                 if (items[i].includes(".vsorg")) {
                     let fileText;
-                    if (os.platform() === 'darwin') {
-                        fileText = fs.readFileSync(setMainDir() + "/" + items[i], "utf8");
-                    }
-                    else {
-                        fileText = fs.readFileSync(setMainDir() + "\\" + items[i], "utf8");
-                    }
+                    fileText = fs.readFileSync(path.join(setMainDir(), items[i]), "utf8");
                     if (fileText.includes("#+TITLE:") && fileText.match(/\#\+TITLE.*/gi) !== null) {
                         let fileName = items[i];
                         let getTitle = fileText.match(/\#\+TITLE.*/gi);
@@ -62,12 +57,7 @@ module.exports = function () {
     function setMainDir() {
         if (folderPath === "") {
             let homeDir = os.homedir();
-            if (os.platform() === "darwin" || os.platform() === "linux") {
-                folder = homeDir + "/VSOrgFiles";
-            }
-            else {
-                folder = homeDir + "\\VSOrgFiles";
-            }
+            folder = path.join(homeDir, "VSOrgFiles");
         }
         else {
             folder = folderPath;

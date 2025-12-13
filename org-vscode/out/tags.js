@@ -71,10 +71,7 @@ module.exports = function () {
      */
     function setMainDir() {
         if (!folderPath || folderPath.trim() === "") {
-            let home = os.homedir();
-            return os.platform() === "win32"
-              ? path.join(home, "VSOrgFiles")
-              : path.join(home, "VSOrgFiles");
+            return path.join(os.homedir(), "VSOrgFiles");
         }
         return folderPath;
     }
