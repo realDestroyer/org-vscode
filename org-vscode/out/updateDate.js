@@ -3,6 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const showMessage_1 = require("./showMessage");
 const vscode = require("vscode");
 const fs = require("fs");
+const path = require("path");
 const os = require("os");
 module.exports = function () {
     let config = vscode.workspace.getConfiguration("vsorg");
@@ -16,18 +17,10 @@ module.exports = function () {
             //make sure its a vsorg file
             if (items[i].includes(".vsorg")) {
                 let fileText;
-                if (os.platform() === "darwin" || os.platform() === "linux") {
-                    fileText = fs
-                        .readFileSync(setMainDir() + "/" + items[i])
-                        .toString()
-                        .split(/\r?\n/);
-                }
-                else {
-                    fileText = fs
-                        .readFileSync(setMainDir() + "\\" + items[i])
-                        .toString()
-                        .split(/\r?\n/);
-                }
+                fileText = fs
+                    .readFileSync(path.join(setMainDir(), items[i]))
+                    .toString()
+                    .split(/\r?\n/);
                 for (let i = 0; i < fileText.length; i++) {
                     if (fileText[i].includes("SCHEDULED")) {
                         getDateFromTaskText = fileText[i].match(/\[(.*)\]/);
@@ -60,12 +53,7 @@ module.exports = function () {
     function setMainDir() {
         if (folderPath === "") {
             let homeDir = os.homedir();
-            if (os.platform() === "darwin" || os.platform() === "linux") {
-                folder = homeDir + "/VSOrgFiles";
-            }
-            else {
-                folder = homeDir + "\\VSOrgFiles";
-            }
+            folder = path.join(homeDir, "VSOrgFiles");
         }
         else {
             folder = folderPath;
