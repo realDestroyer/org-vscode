@@ -2,10 +2,20 @@
 
 > Organize your thoughts and tasks into hierarchical lists.
 >
-> * Create items using `*`. The number of `*` determines the heading level.
+> * Create items using `*` (Org-mode compatible) or Unicode symbols (default).
 > * Mark tasks as `TODO`, `IN_PROGRESS`, `CONTINUED`, `ABANDONED`, or `DONE`.
 > * Fold lists with `Tab`.
 > * Increment or decrement headings using `Alt + Left/Right`.
+
+**Org-mode compatibility tip:**
+
+If you want to preserve plain `*` headings in your files for use in other editors (Emacs/org-mode), set:
+
+```json
+"Org-vscode.headingMarkerStyle": "asterisks"
+```
+
+Default is `"unicode"`.
 
 ---
 
@@ -230,9 +240,12 @@ This feature ensures tasks that roll over to the next day are automatically trac
 
 ---
 
-## 🔤 Unicode Headings Based on Asterisk Level <a id="unicode-headings-based-on-asterisk-level"></a>
+## 🔤 Heading Marker Styles <a id="unicode-headings-based-on-asterisk-level"></a>
 
-In Org-vscode, heading levels are visually enhanced with custom Unicode symbols to give structure and clarity to your task lists.
+Org-vscode supports two heading marker styles:
+
+- **unicode** (default): uses custom Unicode symbols to visually represent task state / depth.
+- **asterisks**: preserves Org-style `*` headings in-file for interoperability.
 
 | Asterisk Level | Unicode Symbol | Description                    |
 | -------------- | -------------- | ------------------------------ |
@@ -245,7 +258,8 @@ In Org-vscode, heading levels are visually enhanced with custom Unicode symbols 
 **Note:**
 
 * The number of asterisks (`*`) at the start of a line determines indentation and task symbol.
-* Org-vscode auto-replaces keywords like `TODO` with their visual Unicode counterparts.
+* In `unicode` mode, Org-vscode can replace `*` headings with Unicode markers (and provides keyboard-driven status cycling).
+* In `asterisks` mode, Org-vscode keeps `* TODO ...` headings in the file and commands preserve the asterisk prefix.
 * You can still toggle task status by clicking the symbol in Agenda Views or manually updating it.
 
 ---

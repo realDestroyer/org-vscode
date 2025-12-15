@@ -1,5 +1,15 @@
 # Change Log
 
+# [1.10.5] 12-15-25
+`Enhanced`
+
+- **Org-mode interoperability:**
+  - Added `Org-vscode.headingMarkerStyle` setting (`unicode` default, `asterisks` to preserve `*` headings in-file).
+  - Disabled the on-type `*` → Unicode conversion when `headingMarkerStyle` is set to `asterisks`.
+  - Updated commands and views (Agenda/TaggedAgenda/Calendar/Move Up/Down/Continued auto-forwarding) to support and preserve either marker style.
+  - Updated syntax highlighting so `* TODO ...` task headings are properly scoped in asterisk mode.
+  - Year Summary now detects day headings written with either `⊘ [...]` or `* [...]`.
+
 # [1.10.4] 12-12-25
 `Fixed`
 

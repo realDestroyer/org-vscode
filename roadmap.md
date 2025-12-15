@@ -1,6 +1,6 @@
 ﻿# Roadmap
 
-Live version: 1.10.4
+Live version: 1.10.5
 
 These are the features that I have either already implemented, or plan to in the near future.
 
@@ -14,6 +14,7 @@ These are the features that I have either already implemented, or plan to in the
 | Bulleted Lists            | Make an ordered or unordered list                                                          | In Progress |          | realDestroyer |
 | TODO Tracking             | Show TODO completion on the up-most level                                                  | In Progress |          | realDestroyer |
 | JIRA Integration          | Allow tasks to be pushed to JIRA (Epic, Story, Issues, sub-tasks, etc.)                    | In Progress |          | realDestroyer |
+| Preserve Org `*` Headings | Optional marker style toggle (`headingMarkerStyle`) to keep `* TODO` headings for Emacs/org-mode compatibility | DONE | v1.10.5 | realDestroyer |
 | Syntax Color Customizer   | Webview UI with color pickers for all task states, live preview, save/reset to defaults   | DONE        | v1.10.0  | realDestroyer |
 | Default Syntax Colors     | Extension provides out-of-box syntax highlighting via configurationDefaults               | DONE        | v1.10.0  | realDestroyer |
 | CONTINUED Auto-Forwarding | When toggling to CONTINUED, auto-copy task to next day as TODO; remove on toggle-away     | DONE        | v1.9.0   | realDestroyer |
