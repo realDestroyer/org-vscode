@@ -3,7 +3,7 @@ const vscode = require("vscode");
 const moment = require("moment");
 const taskKeywordManager = require("./taskKeywordManager");
 
-const DAY_HEADING_REGEX = /^(\s*)[⊘]\s*\[(\d{2}-\d{2}-\d{4})\s+([A-Za-z]{3})\](.*)$/;
+const DAY_HEADING_REGEX = /^(\s*)(⊘|\*+)\s*\[(\d{2}-\d{2}-\d{4})\s+([A-Za-z]{3})\](.*)$/;
 const SCHEDULED_REGEX = /SCHEDULED:\s*\[(\d{2}-\d{2}-\d{4})\]/;
 
 /**
@@ -15,9 +15,11 @@ function findContainingDayHeading(lines, lineNumber) {
     if (match) {
       return {
         lineIndex: i,
-        date: match[2],
-        weekday: match[3],
-        suffix: match[4] || ""
+        indent: match[1] || "",
+        marker: match[2],
+        date: match[3],
+        weekday: match[4],
+        suffix: match[5] || ""
       };
     }
   }
@@ -33,9 +35,11 @@ function findNextDayHeading(lines, afterLineIndex) {
     if (match) {
       return {
         lineIndex: i,
-        date: match[2],
-        weekday: match[3],
-        suffix: match[4] || ""
+        indent: match[1] || "",
+        marker: match[2],
+        date: match[3],
+        weekday: match[4],
+        suffix: match[5] || ""
       };
     }
   }
@@ -79,9 +83,9 @@ function getNextDay(dateStr) {
 /**
  * Build a day heading line
  */
-function buildDayHeading(date, weekday, suffix = "") {
+function buildDayHeading(date, weekday, suffix = "", indent = "", marker = "⊘") {
   const separator = " -------------------------------------------------------------------------------------------------------------------------------";
-  return `⊘ [${date} ${weekday}]${suffix || separator}`;
+  return `${indent}${marker} [${date} ${weekday}]${suffix || separator}`;
 }
 
 /**
@@ -150,6 +154,10 @@ function handleContinuedTransition(document, taskLineNumber) {
   if (!currentDay) {
     return null; // Can't find day heading, skip forwarding
   }
+
+  const config = vscode.workspace.getConfiguration("Org-vscode");
+  const headingMarkerStyle = config.get("headingMarkerStyle", "unicode");
+  const fallbackMarker = headingMarkerStyle === "asterisks" ? "*" : "⊘";
   
   // Calculate next day
   const nextDayInfo = getNextDay(currentDay.date);
@@ -187,7 +195,13 @@ function handleContinuedTransition(document, taskLineNumber) {
       ? nextDayHeading.lineIndex - 1 
       : findLastTaskLineUnderHeading(lines, currentDay.lineIndex);
     
-    const newDayHeading = buildDayHeading(nextDayInfo.date, nextDayInfo.weekday);
+    const newDayHeading = buildDayHeading(
+      nextDayInfo.date,
+      nextDayInfo.weekday,
+      "",
+      currentDay.indent || "",
+      currentDay.marker || fallbackMarker
+    );
     const insertText = `\n${newDayHeading}\n${forwardedTask}`;
     
     return {

@@ -203,6 +203,7 @@ function getTaggedWebviewContent(webview, nonce, localMomentJs, tag, items) {
         .replace(/\s+SCHEDULED:.*/, "")
         .replace(/\[\+TAG:.*?\]/, "")
         .replace(/[⊙⊖⊘⊜⊗]/g, "")  // Unicode cleanup
+        .replace(/^\s*\*+\s+/, "") // Org headline cleanup
         .trim();
 
       const lateLabel = scheduledDate && moment(scheduledDate, "MM-DD-YYYY").isBefore(moment())

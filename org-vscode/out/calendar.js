@@ -62,7 +62,7 @@ function sendTasksToCalendar(panel) {
           // Must be a scheduled task with a proper status keyword and start with a task symbol
           const scheduledMatch = line.match(/\bSCHEDULED:\s*\[(\d{2}-\d{2}-\d{4})\]/);
           const keywordMatch = line.match(/\b(TODO|IN_PROGRESS|DONE|CONTINUED|ABANDONED)\b/);
-          const startsWithSymbol = /^[⊙⊖⊘⊜⊗]/.test(line.trim()); 
+          const startsWithSymbol = /^([⊙⊖⊘⊜⊗]|\*+)/.test(line.trim()); 
 
           if (scheduledMatch && startsWithSymbol && keywordMatch) {
             // Extract inline tags if they exist: [+TAG:foo,bar]
@@ -78,6 +78,7 @@ function sendTasksToCalendar(panel) {
               .replace(/:?\s*\[\+TAG:[^\]]+\]\s*-?/, '')                  // Remove inline tag structure
               .replace(/SCHEDULED:.*/, '')                                     // Strip scheduled portion
               .replace(/[⊙⊖⊘⊜⊗]/g, '')                                         // Remove the leading Unicode symbol
+              .replace(/^\*+\s+/, '')                                         // Remove the leading org '*' heading marker(s)
               .trim();
 
             tasks.push({

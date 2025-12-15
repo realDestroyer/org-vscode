@@ -15,8 +15,8 @@ function decrementDate() {
     const line = document.lineAt(cursorPosition.line);
     let text = line.text;
 
-    // Match Date Format: [DD-MM-YYYY DDD]
-    const dateRegex = /⊘ \[(\d{2}-\d{2}-\d{4}) (\w{3})\]/;
+    // Match Date Format: ⊘ [MM-DD-YYYY DDD] OR * [MM-DD-YYYY DDD]
+    const dateRegex = /^(\s*)(⊘|\*+)\s*\[(\d{2}-\d{2}-\d{4}) (\w{3})\]/;
     const match = text.match(dateRegex);
 
     if (!match) {
@@ -24,11 +24,13 @@ function decrementDate() {
         return;
     }
 
-    const currentDate = match[1]; // Extract date part
+    const indent = match[1] || "";
+    const marker = match[2];
+    const currentDate = match[3]; // Extract date part
     const newDate = moment(currentDate, "MM-DD-YYYY").subtract(1, "day"); // Decrement by one day
 
     // Generate new formatted date
-    const newFormattedDate = `⊘ [${newDate.format("MM-DD-YYYY ddd")}]`;
+    const newFormattedDate = `${indent}${marker} [${newDate.format("MM-DD-YYYY ddd")}]`;
 
     // Replace old date with new date
     const updatedText = text.replace(dateRegex, newFormattedDate);

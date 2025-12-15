@@ -40,8 +40,8 @@ module.exports = function addTag() {
         } else {
             // Insert a new tag block after the task keyword if it doesn't exist yet
             newLine = lineText.replace(
-              /([⊙⊘⊜⊖⊗]\s*(TODO|IN_PROGRESS|CONTINUED|DONE|ABANDONED))/,
-              `$1 : [+TAG:${inputTagUpper}] -`
+                            /^(\s*(?:[⊙⊘⊜⊖⊗]\s*)?(?:\*+\s+)?(?:TODO|IN_PROGRESS|CONTINUED|DONE|ABANDONED)\b)/,
+                            `$1 : [+TAG:${inputTagUpper}] -`
             );
         }
 
