@@ -9,6 +9,9 @@ module.exports = function () {
     const { activeTextEditor } = vscode.window;
     if (!activeTextEditor || activeTextEditor.document.languageId !== 'vso') return;
 
+    const config = vscode.workspace.getConfiguration("Org-vscode");
+    const headingMarkerStyle = config.get("headingMarkerStyle", "unicode");
+
     const { document } = activeTextEditor;
     const position = activeTextEditor.selection.active.line;
     const currentLine = document.lineAt(position);
@@ -16,11 +19,13 @@ module.exports = function () {
 
     const workspaceEdit = new vscode.WorkspaceEdit();
     const leadingSpaces = currentLine.text.slice(0, currentLine.firstNonWhitespaceCharacterIndex);
+    const starPrefixMatch = currentLine.text.match(/^\s*(\*+)/);
+    const starPrefix = starPrefixMatch ? starPrefixMatch[1] : "*";
     const cleanedText = taskKeywordManager.cleanTaskText(currentLine.text);
     const keywordMatch = currentLine.text.match(/\b(TODO|IN_PROGRESS|CONTINUED|DONE|ABANDONED)\b/);
     let currentKeyword = keywordMatch ? keywordMatch[1] : null;
     const { keyword: nextKeyword, symbol: nextSymbol } = taskKeywordManager.rotateKeyword(currentKeyword, "right");
-    let newLine = taskKeywordManager.buildTaskLine(leadingSpaces, nextKeyword, cleanedText);
+    let newLine = taskKeywordManager.buildTaskLine(leadingSpaces, nextKeyword, cleanedText, { headingMarkerStyle, starPrefix });
     
     // Add or remove COMPLETED line
     if (nextKeyword === 'DONE') {
@@ -66,7 +71,7 @@ module.exports = function () {
         }
 
         if (originalFile) {
-          const folderPath = vscode.workspace.getConfiguration("Org-vscode").get("folderPath");
+          const folderPath = config.get("folderPath");
           const fullPath = path.join(folderPath, originalFile);
 
           if (fs.existsSync(fullPath)) {
@@ -77,7 +82,9 @@ module.exports = function () {
               let lineClean = taskKeywordManager.cleanTaskText(line);
               if (lineClean === cleanedText) {
                 const origIndent = line.slice(0, line.search(/\S/));
-                originalLines[i] = taskKeywordManager.buildTaskLine(origIndent, nextKeyword, lineClean);
+                const origStarPrefixMatch = line.match(/^\s*(\*+)/);
+                const origStarPrefix = origStarPrefixMatch ? origStarPrefixMatch[1] : "*";
+                originalLines[i] = taskKeywordManager.buildTaskLine(origIndent, nextKeyword, lineClean, { headingMarkerStyle, starPrefix: origStarPrefix });
                 if (nextKeyword === 'DONE' && !originalLines[i + 1]?.includes("COMPLETED")) {
                   originalLines.splice(i + 1, 0, taskKeywordManager.buildCompletedStamp(origIndent));
                 } else if (originalLines[i + 1]?.includes("COMPLETED")) {

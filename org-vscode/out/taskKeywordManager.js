@@ -30,12 +30,21 @@ function rotateKeyword(currentKeyword, direction = 'left') {
 
 function cleanTaskText(lineText) {
   return lineText
+    .replace(/^\s*\*+\s+/, '')
     .replace(/[⊙⊘⊖⊜⊗]/g, '')
     .replace(/\b(TODO|IN_PROGRESS|CONTINUED|DONE|ABANDONED)\b/g, '')
     .trim();
 }
 
-function buildTaskLine(leadingSpaces, keyword, cleanedText) {
+function buildTaskLine(leadingSpaces, keyword, cleanedText, options = {}) {
+  const headingMarkerStyle = options.headingMarkerStyle || "unicode";
+  const starPrefix = (options.starPrefix || "*").trim() || "*";
+
+  if (headingMarkerStyle === "asterisks") {
+    const suffix = cleanedText ? ` ${cleanedText}` : "";
+    return `${leadingSpaces}${starPrefix} ${keyword}${suffix}`;
+  }
+
   return `${leadingSpaces}${getSymbolForKeyword(keyword)}${keyword} ${cleanedText}`;
 }
 

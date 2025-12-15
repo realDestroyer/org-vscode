@@ -78,6 +78,7 @@ module.exports = function () {
                   // Clean up task line: remove symbols, keyword, tags
                   taskText = taskTextMatch[0]
                     .replace(/[⊙⊖⊘⊜⊗]/g, "")
+                    .replace(/^\*+\s+/, "")
                     .replace(/\b(TODO|DONE|IN_PROGRESS|CONTINUED|ABANDONED)\b/, "")
                     .replace(/: \[\+TAG:.*?\] -/, "")
                     .trim();
@@ -249,9 +250,13 @@ module.exports = function () {
             const currentStatusMatch = currentLine.text.match(/\b(TODO|DONE|IN_PROGRESS|CONTINUED|ABANDONED)\b/);
             const currentStatus = currentStatusMatch ? currentStatusMatch[1] : null;
 
+            const headingMarkerStyle = config.get("headingMarkerStyle", "unicode");
+            const starPrefixMatch = currentLine.text.match(/^\s*(\*+)/);
+            const starPrefix = starPrefixMatch ? starPrefixMatch[1] : "*";
+
             const indent = currentLine.text.match(/^\s*/)?.[0] || "";
             const cleaned = taskKeywordManager.cleanTaskText(currentLine.text);
-            let newLine = taskKeywordManager.buildTaskLine(indent, newStatus, cleaned);
+            let newLine = taskKeywordManager.buildTaskLine(indent, newStatus, cleaned, { headingMarkerStyle, starPrefix });
 
             // Add or remove COMPLETED line
             if (newStatus === "DONE") {

@@ -14,9 +14,29 @@ function rotateSymbol(step) {
         return;
     }
 
+    const config = vscode.workspace.getConfiguration("Org-vscode");
+    const headingMarkerStyle = config.get("headingMarkerStyle", "unicode");
+
     const document = editor.document;
     const lineNumber = editor.selection.active.line;
     const line = document.lineAt(lineNumber);
+
+    if (headingMarkerStyle === "asterisks") {
+        const starParsed = parseStarLine(line.text);
+        if (!starParsed) {
+            return;
+        }
+
+        const { indent, stars, gap, rest } = starParsed;
+        const nextStars = step > 0 ? `${stars}*` : (stars.length > 1 ? stars.slice(0, -1) : stars);
+        const spacer = gap.length ? gap : " ";
+        const updatedLine = `${indent}${nextStars}${spacer}${rest}`;
+
+        const edit = new vscode.WorkspaceEdit();
+        edit.replace(document.uri, line.range, updatedLine);
+        vscode.workspace.applyEdit(edit);
+        return;
+    }
     const parsed = parseLine(line.text);
     if (!parsed) {
         return;
@@ -29,7 +49,6 @@ function rotateSymbol(step) {
     }
 
     const nextSymbol = SYMBOLS[(index + step + SYMBOLS.length) % SYMBOLS.length];
-    const config = vscode.workspace.getConfiguration("Org-vscode");
     const adjustIndentation = config.get("adjustHeadingIndentation", true);
     const adjustedIndent = adjustIndentation ? adjustIndent(indent, step) : indent;
     const spacer = gap.length ? gap : " ";
@@ -63,4 +82,19 @@ function adjustIndent(indent, step) {
         return indent.length >= 2 ? indent.slice(0, indent.length - 2) : "";
     }
     return indent;
+}
+
+function parseStarLine(text) {
+    const match = text.match(/^(\s*)(\*+)(.*)$/);
+    if (!match) {
+        return null;
+    }
+
+    const indent = match[1];
+    const stars = match[2];
+    const remainder = match[3];
+    const gapMatch = remainder.match(/^(\s*)(.*)$/);
+    const gap = gapMatch ? gapMatch[1] : "";
+    const rest = gapMatch ? gapMatch[2] : remainder;
+    return { indent, stars, gap, rest };
 }

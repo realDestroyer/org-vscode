@@ -69,7 +69,7 @@ async function ensureReportDirectory(sourcePath, year) {
 function parseOrgContent(raw) {
   const lines = raw.split(/\r?\n/);
   const dayRegex = /^\s*[⊘]\s*\[(\d{2}-\d{2}-\d{4})(?:\s+([A-Za-z]{3}))?.*$/;
-  const taskRegex = /^(?<indent>\s*)[⊙⊖⊘⊜⊗]\s+(TODO|IN_PROGRESS|CONTINUED|DONE|ABANDONED)\b(.*)$/;
+  const taskRegex = /^(?<indent>\s*)(?:[⊙⊖⊘⊜⊗]|\*+)\s+(TODO|IN_PROGRESS|CONTINUED|DONE|ABANDONED)\b(.*)$/;
   const days = [];
   let currentDay = null;
   let currentTask = null;
@@ -134,6 +134,7 @@ function parseOrgContent(raw) {
 function extractMetadata(line) {
   const cleaned = line
     .replace(/^[\s]*[⊙⊖⊘⊜⊗]\s+/, "")
+    .replace(/^[\s]*\*+\s+/, "")
     .replace(/\b(TODO|IN_PROGRESS|CONTINUED|DONE|ABANDONED)\b\s*:*/, "")
     .trim();
 

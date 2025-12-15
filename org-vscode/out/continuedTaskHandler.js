@@ -90,6 +90,11 @@ function buildDayHeading(date, weekday, suffix = "") {
 function buildForwardedTask(originalLine, newDate, indent = "  ") {
   // Clean the task and rebuild as TODO
   const cleanedText = taskKeywordManager.cleanTaskText(originalLine);
+
+  const config = vscode.workspace.getConfiguration("Org-vscode");
+  const headingMarkerStyle = config.get("headingMarkerStyle", "unicode");
+  const starPrefixMatch = originalLine.match(/^\s*(\*+)/);
+  const starPrefix = starPrefixMatch ? starPrefixMatch[1] : "*";
   
   // Update the SCHEDULED date if present
   let updatedText = cleanedText;
@@ -97,7 +102,7 @@ function buildForwardedTask(originalLine, newDate, indent = "  ") {
     updatedText = cleanedText.replace(SCHEDULED_REGEX, `SCHEDULED: [${newDate}]`);
   }
   
-  return taskKeywordManager.buildTaskLine(indent, "TODO", updatedText);
+  return taskKeywordManager.buildTaskLine(indent, "TODO", updatedText, { headingMarkerStyle, starPrefix });
 }
 
 /**
@@ -105,6 +110,7 @@ function buildForwardedTask(originalLine, newDate, indent = "  ") {
  */
 function getTaskIdentifier(lineText) {
   return lineText
+    .replace(/^\s*\*+\s+/, "")
     .replace(/[⊙⊘⊖⊜⊗]/g, "")
     .replace(/\b(TODO|IN_PROGRESS|CONTINUED|DONE|ABANDONED)\b/g, "")
     .replace(/SCHEDULED:\s*\[\d{2}-\d{2}-\d{4}\]/g, "")

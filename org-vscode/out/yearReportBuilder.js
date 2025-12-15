@@ -254,7 +254,10 @@ function sanitizeText(value) {
   if (!value) {
     return "";
   }
-  return String(value).replace(ORG_SYMBOL_REGEX, " ").trim();
+  return String(value)
+    .replace(/^\s*\*+\s+/, " ")
+    .replace(ORG_SYMBOL_REGEX, " ")
+    .trim();
 }
 
 function flattenTasks(days = []) {
