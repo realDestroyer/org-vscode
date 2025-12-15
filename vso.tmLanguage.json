@@ -27,8 +27,81 @@
     },
     {
       "name": "constant.character.in_progress.vso",
+      "comment": "In Progress Task (asterisk heading)",
+      "begin": "^\\s*\\*+\\s+(?=IN_PROGRESS\\b)",
+      "end": "$",
+      "patterns": [
+        { "include": "#in_progress" },
+        { "include": "#tag" },
+        { "include": "#task_text_in_progress" },
+        { "include": "#sched" },
+        { "include": "#scheduled" },
+        { "include": "#deadline" },
+        { "include": "#closed" }
+      ]
+    },
+    {
+      "name": "constant.character.abandoned.vso",
+      "comment": "Abandoned Task (asterisk heading)",
+      "begin": "^\\s*\\*+\\s+(?=ABANDONED\\b)",
+      "end": "$",
+      "patterns": [
+        { "include": "#abandoned" },
+        { "include": "#task_text_abandoned" },
+        { "include": "#sched" },
+        { "include": "#scheduled" },
+        { "include": "#deadline" },
+        { "include": "#closed" }
+      ]
+    },
+    {
+      "name": "constant.character.continued.vso",
+      "comment": "Continued Task (asterisk heading)",
+      "begin": "^\\s*\\*+\\s+(?=CONTINUED\\b)",
+      "end": "$",
+      "patterns": [
+        { "include": "#continued" },
+        { "include": "#tag" },
+        { "include": "#task_text_continued" },
+        { "include": "#sched" },
+        { "include": "#scheduled" },
+        { "include": "#deadline" },
+        { "include": "#closed" }
+      ]
+    },
+    {
+      "name": "constant.character.todo.vso",
+      "comment": "TODO Task (asterisk heading)",
+      "begin": "^\\s*\\*+\\s+(?=TODO\\b)",
+      "end": "$",
+      "patterns": [
+        { "include": "#todo" },
+        { "include": "#tag" },
+        { "include": "#task_text_todo" },
+        { "include": "#sched" },
+        { "include": "#scheduled" },
+        { "include": "#deadline" },
+        { "include": "#closed" }
+      ]
+    },
+    {
+      "name": "constant.character.done.vso",
+      "comment": "DONE Task (asterisk heading)",
+      "begin": "^\\s*\\*+\\s+(?=DONE\\b)",
+      "end": "$",
+      "patterns": [
+        { "include": "#done" },
+        { "include": "#task_text_done" },
+        { "include": "#sched" },
+        { "include": "#scheduled" },
+        { "include": "#deadline" },
+        { "include": "#closed" }
+      ]
+    },
+    {
+      "name": "constant.character.in_progress.vso",
       "comment": "In Progress Task Symbol",
-      "begin": "[\u2298]",
+      "begin": "^\\s*[\u2298]",
       "end": "$",
       "patterns": [
         { "include": "#in_progress" },
@@ -43,7 +116,7 @@
     {
       "name": "constant.character.abandoned.vso",
       "comment": "Abandoned Task Symbol",
-      "begin": "[\u2297]",
+      "begin": "^\\s*[\u2297]",
       "end": "$",
       "patterns": [
         { "include": "#abandoned" },
@@ -56,7 +129,7 @@
     },
     {
       "name": "constant.character.continued.vso",
-      "begin": "[⊜]",
+      "begin": "^\\s*[⊜]",
       "end": "$",
       "patterns": [
         { "include": "#continued" },
@@ -70,7 +143,7 @@
     },
     {
       "name": "constant.character.todo.vso",
-      "begin": "[⊙]",
+      "begin": "^\\s*[⊙]",
       "end": "$",
       "patterns": [
         { "include": "#todo" },
@@ -84,7 +157,7 @@
     },
     {
       "name": "constant.character.done.vso",
-      "begin": "[\u2296]",
+      "begin": "^\\s*[\u2296]",
       "end": "$",
       "patterns": [
         { "include": "#done" },
@@ -106,19 +179,19 @@
     {
       "name": "markup.heading.vso",
       "comment": "Heading 1 unformatted",
-      "begin": "[*]",
+      "begin": "^\\s*\\*\\s+",
       "end": "$"
     },
     {
       "name": "keyword.other.vso",
       "comment": "Heading 2 unformatted",
-      "begin": "(\\*{2})",
+      "begin": "^\\s*(\\*{2})\\s+",
       "end": "$"
     },
     {
       "name": "keyword.operator.vso",
       "comment": "Heading 3 unformatted",
-      "begin": "(\\*{3})",
+      "begin": "^\\s*(\\*{3})\\s+",
       "end": "$"
     },
     {

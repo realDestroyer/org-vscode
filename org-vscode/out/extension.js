@@ -61,6 +61,12 @@ class GoOnTypingFormatter {
       return [];
     }
 
+    const config = vscode.workspace.getConfiguration("Org-vscode");
+    const headingMarkerStyle = config.get("headingMarkerStyle", "unicode");
+    if (headingMarkerStyle !== "unicode") {
+      return [];
+    }
+
     const line = document.lineAt(position.line).text;
     // Guard: don't re-insert if the line already begins with a status symbol
     if (/^[\s]*[⊙⊘⊖⊜⊗]/.test(line)) {
