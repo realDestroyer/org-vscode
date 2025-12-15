@@ -605,13 +605,6 @@ module.exports = function () {
             let currentIndex = statuses.indexOf(currentStatus);
 
             if (currentIndex !== -1) {
-              const symbols = {
-                TODO: '⊙ ',
-                IN_PROGRESS: '⊘ ',
-                CONTINUED: '⊜ ',
-                DONE: '⊖ ',
-                ABANDONED: '⊗ '
-              };
               let nextStatus = statuses[(currentIndex + 1) % statuses.length];
               event.target.innerText = nextStatus;
 

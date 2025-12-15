@@ -8,7 +8,11 @@ module.exports = function () {
   const position = editor.selection.active.line;
   const lines = document.getText().split(/\r?\n/);
 
-  const characterArray = ['⊙ ', '⊘ ', '⊜ ', '⊖ ', '⊗ '];
+  const unicodeHeadingRegex = /^\s*[⊙⊘⊜⊖⊗]\s/;
+  const starHeadingRegex = /^\s*\*+\s/;
+  function isHeadingLine(line) {
+    return unicodeHeadingRegex.test(line) || starHeadingRegex.test(line);
+  }
 
   function getIndent(line) {
     return line.match(/^\s*/)?.[0].length || 0;
@@ -16,7 +20,7 @@ module.exports = function () {
 
   const currentIndent = getIndent(lines[position]);
 
-  if (!characterArray.some(sym => lines[position].includes(sym))) return;
+  if (!isHeadingLine(lines[position])) return;
 
   // Grab block to move
   const block = [];
@@ -39,7 +43,7 @@ module.exports = function () {
   while (insertAt < lines.length) {
     const indent = getIndent(lines[insertAt]);
     if (
-      characterArray.some(sym => lines[insertAt].includes(sym)) &&
+      isHeadingLine(lines[insertAt]) &&
       indent <= currentIndent
     ) {
       // Skip the next task's own block

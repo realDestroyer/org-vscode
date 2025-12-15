@@ -19,14 +19,16 @@ function smartDateAdjust(forward = true) {
     const line = document.lineAt(cursorPosition.line);
     let text = line.text;
 
-    // Pattern 1: Day heading - ⊘ [MM-DD-YYYY DDD]
-    const dayHeadingRegex = /⊘ \[(\d{2}-\d{2}-\d{4}) (\w{3})\]/;
+    // Pattern 1: Day heading - ⊘ [MM-DD-YYYY DDD] OR * [MM-DD-YYYY DDD]
+    const dayHeadingRegex = /^(\s*)(⊘|\*+)\s*\[(\d{2}-\d{2}-\d{4}) (\w{3})\]/;
     const dayMatch = text.match(dayHeadingRegex);
 
     if (dayMatch) {
-        const currentDate = dayMatch[1];
+        const indent = dayMatch[1] || "";
+        const marker = dayMatch[2];
+        const currentDate = dayMatch[3];
         const newDate = moment(currentDate, "MM-DD-YYYY").add(forward ? 1 : -1, "days");
-        const newFormattedDate = `⊘ [${newDate.format("MM-DD-YYYY")} ${newDate.format("ddd")}]`;
+        const newFormattedDate = `${indent}${marker} [${newDate.format("MM-DD-YYYY")} ${newDate.format("ddd")}]`;
         const updatedText = text.replace(dayHeadingRegex, newFormattedDate);
 
         editor.edit(editBuilder => {

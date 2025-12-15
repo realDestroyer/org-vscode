@@ -68,7 +68,7 @@ async function ensureReportDirectory(sourcePath, year) {
 
 function parseOrgContent(raw) {
   const lines = raw.split(/\r?\n/);
-  const dayRegex = /^\s*[⊘]\s*\[(\d{2}-\d{2}-\d{4})(?:\s+([A-Za-z]{3}))?.*$/;
+  const dayRegex = /^\s*(?:⊘|\*+)\s*\[(\d{2}-\d{2}-\d{4})(?:\s+([A-Za-z]{3}))?.*$/;
   const taskRegex = /^(?<indent>\s*)(?:[⊙⊖⊘⊜⊗]|\*+)\s+(TODO|IN_PROGRESS|CONTINUED|DONE|ABANDONED)\b(.*)$/;
   const days = [];
   let currentDay = null;
