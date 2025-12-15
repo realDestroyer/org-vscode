@@ -1,6 +1,6 @@
 # Org-vscode
 
-![Version](https://img.shields.io/badge/version-v1.10.4-blue.svg)
+![Version](https://img.shields.io/badge/version-v1.10.5-blue.svg)
 
 > A fast, keyboard-driven Org Mode–style task manager built for Visual Studio Code.
 > Inspired by Emacs Org Mode
@@ -9,7 +9,7 @@
 
 ## 🚀 What is Org-vscode?
 
-Organize your thoughts, tasks, projects, and notes — all inside VSCode — using a minimal Org file format powered by Unicode symbols and intuitive keyboard controls.
+Organize your thoughts, tasks, projects, and notes — all inside VSCode — using a minimal Org file format powered by Unicode symbols (optional) and intuitive keyboard controls.
 
 Whether you're an Emacs power user or just want a highly structured task system, Org-vscode is built to help you:
 
@@ -32,6 +32,16 @@ Whether you're an Emacs power user or just want a highly structured task system,
 
 **Unicode Task States**  
 `⊙` TODO, `⊘` IN\_PROGRESS, `⊜` CONTINUED, `⊖` DONE, `⊗` ABANDONED
+
+**Org-mode Compatibility (Preserve `*` Headings)**
+
+If you edit your files in Emacs/org-mode (or want plain Org interoperability), set:
+
+```json
+"Org-vscode.headingMarkerStyle": "asterisks"
+```
+
+This keeps `* TODO ...` headings in the file (no Unicode replacement) while still allowing Org-vscode commands/views to work.
 
 **CONTINUED Auto-Forwarding**  
 When you mark a task as CONTINUED, it automatically copies to the next day as TODO. Toggle away from CONTINUED and the copy is removed.
