@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const vscode = require("vscode");
 const showMessage_1 = require("./showMessage");
+const moment = require("moment");
 module.exports = function () {
     const { activeTextEditor } = vscode.window;
     if (!activeTextEditor || activeTextEditor.document.languageId !== "vso") {
@@ -11,8 +12,8 @@ module.exports = function () {
     const position = activeTextEditor.selection.active.line;
     const currentLine = document.lineAt(position);
     let workspaceEdit = new vscode.WorkspaceEdit();
-    const config = vscode.workspace.getConfiguration("vsorg");
-    const dateFormat = config.get("dateFormat");
+    const config = vscode.workspace.getConfiguration("Org-vscode");
+    const dateFormat = config.get("dateFormat", "MM-DD-YYYY");
     // Messages
     const fullDateMessage = new showMessage_1.WindowMessage("warning", "Full date must be entered", false, false);
     const notADateMessage = new showMessage_1.WindowMessage("warning", "That's not a valid date.", false, false);
@@ -40,7 +41,11 @@ module.exports = function () {
             return notADateMessage.showMessage();
         }
         
-        const formattedDate = `${month.padStart(2, '0')}-${day.padStart(2, '0')}-${year}`;
+        const formattedDate = moment(
+            `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`,
+            "YYYY-MM-DD",
+            true
+        ).format(dateFormat);
         const scheduledTag = `SCHEDULED: [${formattedDate}]`;
         
         let newLineText;

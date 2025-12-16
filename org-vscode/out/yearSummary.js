@@ -166,7 +166,7 @@ function deriveYear(days) {
   if (!first) {
     return new Date().getFullYear();
   }
-  const parsed = moment(first.date, "MM-DD-YYYY", true);
+  const parsed = moment(first.date, ["MM-DD-YYYY", "DD-MM-YYYY"], true);
   return parsed.isValid() ? parsed.year() : new Date().getFullYear();
 }
 
@@ -185,7 +185,7 @@ function buildAggregates(days) {
       task.tags.forEach(tag => {
         aggregates.perTag[tag] = (aggregates.perTag[tag] || 0) + 1;
       });
-      const monthKey = moment(task.scheduled || day.date, "MM-DD-YYYY", true);
+      const monthKey = moment(task.scheduled || day.date, ["MM-DD-YYYY", "DD-MM-YYYY"], true);
       const bucket = monthKey.isValid() ? monthKey.format("YYYY-MM") : "unscheduled";
       aggregates.perMonth[bucket] = (aggregates.perMonth[bucket] || 0) + 1;
     });

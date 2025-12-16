@@ -1,5 +1,27 @@
 # Change Log
 
+# [Unreleased]
+`Enhanced`
+
+- *(Nothing yet)*
+
+# [1.10.6] 12-16-25
+`Enhanced`
+
+- **Org-compatible source + decorative headings:**
+  - `Org-vscode.decorateUnicodeHeadings` can render Unicode heading markers visually while keeping `*` headings in the file.
+  - `Org-vscode.decorateHeadingIndentation` optionally adds org-indent-like visual indentation for headings.
+  - `Org-vscode.adjustHeadingIndentation` is now numeric (spaces per level; `0` disables), used by heading increment/decrement and decoration indentation width.
+
+- **Date formatting correctness:**
+  - Commands and views that parse/write scheduled/deadline dates now use `Org-vscode.dateFormat` consistently.
+  - Calendar drag/drop rescheduling now writes dates using the configured format.
+  - Added **Org-vscode: Convert Dates in Current File** for explicit, safe date format conversion.
+
+- **Snippets + tests:**
+  - Built-in snippets emit `*` headings (Org-friendly) instead of forcing Unicode markers.
+  - Added functional integration coverage for asterisk-mode workflows.
+
 # [1.10.5] 12-15-25
 `Enhanced`
 
