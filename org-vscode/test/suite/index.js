@@ -9,6 +9,7 @@ function run() {
 
   const testsRoot = path.resolve(__dirname);
   mocha.addFile(path.resolve(testsRoot, 'commands.test.js'));
+  mocha.addFile(path.resolve(testsRoot, 'asterisk-mode-functional.test.js'));
 
   return new Promise((resolve, reject) => {
     mocha.run((failures) => {

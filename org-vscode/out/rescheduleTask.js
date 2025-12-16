@@ -16,6 +16,9 @@ function rescheduleTask(forward = true) {
     const line = document.lineAt(cursorPosition.line);
     let text = line.text;
 
+    const config = vscode.workspace.getConfiguration("Org-vscode");
+    const dateFormat = config.get("dateFormat", "MM-DD-YYYY");
+
     // Match SCHEDULED date format: [YYYY-MM-DD]
     const dateRegex = /SCHEDULED:\s*\[(\d{2}-\d{2}-\d{4})\]/;
     const match = text.match(dateRegex);
@@ -26,7 +29,12 @@ function rescheduleTask(forward = true) {
     }
 
     const currentDate = match[1]; // Extract date
-    const newDate = moment(currentDate, "MM-DD-YYYY").add(forward ? 1 : -1, "day").format("MM-DD-YYYY");
+    const parsed = moment(currentDate, dateFormat, true);
+    if (!parsed.isValid()) {
+        vscode.window.showWarningMessage(`Could not parse scheduled date using format ${dateFormat}.`);
+        return;
+    }
+    const newDate = parsed.add(forward ? 1 : -1, "day").format(dateFormat);
 
     // Replace the old date with the new date
     const updatedText = text.replace(dateRegex, `SCHEDULED: [${newDate}]`);

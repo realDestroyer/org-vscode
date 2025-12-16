@@ -69,13 +69,15 @@ function findLastTaskLineUnderHeading(lines, headingLineIndex) {
  * Calculate the next calendar day from a date string
  */
 function getNextDay(dateStr) {
-  const parsed = moment(dateStr, "MM-DD-YYYY");
+  const config = vscode.workspace.getConfiguration("Org-vscode");
+  const dateFormat = config.get("dateFormat", "MM-DD-YYYY");
+  const parsed = moment(dateStr, [dateFormat, "MM-DD-YYYY", "DD-MM-YYYY"], true);
   if (!parsed.isValid()) {
     return null;
   }
   const next = parsed.add(1, "day");
   return {
-    date: next.format("MM-DD-YYYY"),
+    date: next.format(dateFormat),
     weekday: next.format("ddd")
   };
 }

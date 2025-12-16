@@ -15,6 +15,9 @@ function decrementDate() {
     const line = document.lineAt(cursorPosition.line);
     let text = line.text;
 
+    const config = vscode.workspace.getConfiguration("Org-vscode");
+    const dateFormat = config.get("dateFormat", "MM-DD-YYYY");
+
     // Match Date Format: ⊘ [MM-DD-YYYY DDD] OR * [MM-DD-YYYY DDD]
     const dateRegex = /^(\s*)(⊘|\*+)\s*\[(\d{2}-\d{2}-\d{4}) (\w{3})\]/;
     const match = text.match(dateRegex);
@@ -27,10 +30,15 @@ function decrementDate() {
     const indent = match[1] || "";
     const marker = match[2];
     const currentDate = match[3]; // Extract date part
-    const newDate = moment(currentDate, "MM-DD-YYYY").subtract(1, "day"); // Decrement by one day
+    const parsed = moment(currentDate, dateFormat, true);
+    if (!parsed.isValid()) {
+        vscode.window.showWarningMessage(`Could not parse date using format ${dateFormat}.`);
+        return;
+    }
+    const newDate = parsed.subtract(1, "day"); // Decrement by one day
 
     // Generate new formatted date
-    const newFormattedDate = `${indent}${marker} [${newDate.format("MM-DD-YYYY ddd")}]`;
+    const newFormattedDate = `${indent}${marker} [${newDate.format(dateFormat)} ${newDate.format("ddd")}]`;
 
     // Replace old date with new date
     const updatedText = text.replace(dateRegex, newFormattedDate);

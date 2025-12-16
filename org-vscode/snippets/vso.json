@@ -11,7 +11,7 @@
   "todo_task": {
     "prefix": "/todo",
     "body": [
-      "⊙ TODO $1",
+      "* TODO $1",
       "   SCHEDULED: [${CURRENT_DATE}]"
     ],
     "description": "New TODO task with scheduled date"
@@ -38,7 +38,7 @@
   "tagged_task": {
     "prefix": "/tagged",
     "body": [
-      "⊙ TODO $1 : [+TAG:project,urgent] -",
+      "* TODO $1 : [+TAG:project,urgent] -",
       "   SCHEDULED: [${CURRENT_DATE}]"
     ],
     "description": "Tagged task template"
@@ -74,7 +74,7 @@
   "template_block": {
     "prefix": "/template",
     "body": [
-      "⊙ TODO Task Name",
+      "* TODO Task Name",
       "   SCHEDULED: [${CURRENT_DATE}]",
       "   COMPLETED: []",
       "",
@@ -88,7 +88,7 @@
   "day_heading": {
     "prefix": "/day",
     "body": [
-      "⊘ [${CURRENT_MONTH}-${CURRENT_DATE}-${CURRENT_YEAR} ${1|Mon,Tue,Wed,Thu,Fri,Sat,Sun|}] -------------------------------------------------------------------------------------------------------------------------------",
+      "* [${CURRENT_MONTH}-${CURRENT_DATE}-${CURRENT_YEAR} ${1|Mon,Tue,Wed,Thu,Fri,Sat,Sun|}] -------------------------------------------------------------------------------------------------------------------------------",
       "    $0"
     ],
     "description": "New day heading with today's date and separator"
@@ -96,7 +96,7 @@
   "deadline_task": {
     "prefix": "/deadline",
     "body": [
-      "⊙ TODO $1",
+      "* TODO $1",
       "   SCHEDULED: [${CURRENT_MONTH}-${CURRENT_DATE}-${CURRENT_YEAR}]",
       "   DEADLINE: [$2]"
     ],

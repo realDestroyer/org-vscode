@@ -2,7 +2,7 @@
 
 > Organize your thoughts and tasks into hierarchical lists.
 >
-> * Create items using `*` (Org-mode compatible) or Unicode symbols (default).
+> * Create items using `*` (Org-mode compatible, recommended) with optional decorative Unicode rendering.
 > * Mark tasks as `TODO`, `IN_PROGRESS`, `CONTINUED`, `ABANDONED`, or `DONE`.
 > * Fold lists with `Tab`.
 > * Increment or decrement headings using `Alt + Left/Right`.
@@ -16,6 +16,20 @@ If you want to preserve plain `*` headings in your files for use in other editor
 ```
 
 Default is `"unicode"`.
+
+**Recommended (Org-compatible source + pretty UI):**
+
+```json
+"Org-vscode.headingMarkerStyle": "asterisks",
+"Org-vscode.decorateUnicodeHeadings": true
+```
+
+Optional indentation controls (decorations + Alt+Left/Right indentation):
+
+```json
+"Org-vscode.decorateHeadingIndentation": true,
+"Org-vscode.adjustHeadingIndentation": 2
+```
 
 ---
 
@@ -95,8 +109,8 @@ Just type the prefix and hit `Tab` to expand the snippet inside a `.org` file.
 #### `/todo` <a id="todo"></a>
 
 ```org
-⊙ TODO Task description
-   SCHEDULED: [04-21-2025]
+* TODO Task description
+  SCHEDULED: [04-21-2025]
 ```
 
 #### `/checklist` <a id="checklist"></a>
@@ -119,9 +133,9 @@ Just type the prefix and hit `Tab` to expand the snippet inside a `.org` file.
 #### `/template` <a id="template"></a>
 
 ```org
-⊙ TODO Task Name
-   SCHEDULED: [04-21-2025]
-   COMPLETED: []
+* TODO Task Name
+  SCHEDULED: [04-21-2025]
+  COMPLETED: []
 
 - Description:
 - Tags: [+TAG:]
@@ -173,8 +187,10 @@ Add deadline dates to tasks to track when they're due. Deadlines appear in the A
 ### Deadline Format
 
 ```org
-⊙ TODO : [+TAG:PROJECT] - Complete documentation    SCHEDULED: [12-10-2025]    DEADLINE: [12-15-2025]
+* TODO : [+TAG:PROJECT] - Complete documentation    SCHEDULED: [12-10-2025]    DEADLINE: [12-15-2025]
 ```
+
+Date formatting is controlled by `Org-vscode.dateFormat` (default: `MM-DD-YYYY`).
 
 ### Adjusting Deadline Dates
 
@@ -203,8 +219,8 @@ This works both from the editor hotkeys and when you click the keyword in Agenda
 ### How It Works
 
 1. **Toggle to CONTINUED** (`Ctrl + →` or `Ctrl + ←`, or click the task keyword in Agenda/TaggedAgenda)
-   - The task on the current day gets the ⊜ CONTINUED status
-   - A copy appears under the next day's heading as ⊙ TODO
+  - The task on the current day becomes `CONTINUED`
+  - A copy appears under the next day's heading as `TODO`
    - The SCHEDULED date is updated to the next day
 
 2. **Toggle away from CONTINUED**
@@ -215,17 +231,17 @@ This works both from the editor hotkeys and when you click the keyword in Agenda
 
 **Before toggling to CONTINUED:**
 ```org
-⊘ [12-10-2025 Wed] -------
-  ⊙ TODO : Review pull request    SCHEDULED: [12-10-2025]
+* [12-10-2025 Wed] -------
+** TODO : Review pull request    SCHEDULED: [12-10-2025]
 ```
 
 **After toggling to CONTINUED:**
 ```org
-⊘ [12-10-2025 Wed] -------
-  ⊜ CONTINUED : Review pull request    SCHEDULED: [12-10-2025]
+* [12-10-2025 Wed] -------
+** CONTINUED : Review pull request    SCHEDULED: [12-10-2025]
 
-⊘ [12-11-2025 Thu] -------
-  ⊙ TODO : Review pull request    SCHEDULED: [12-11-2025]
+* [12-11-2025 Thu] -------
+** TODO : Review pull request    SCHEDULED: [12-11-2025]
 ```
 
 This feature ensures tasks that roll over to the next day are automatically tracked without manual copying.
@@ -257,16 +273,16 @@ Org-vscode supports two heading marker styles:
 
 **Note:**
 
-* The number of asterisks (`*`) at the start of a line determines indentation and task symbol.
-* In `unicode` mode, Org-vscode can replace `*` headings with Unicode markers (and provides keyboard-driven status cycling).
-* In `asterisks` mode, Org-vscode keeps `* TODO ...` headings in the file and commands preserve the asterisk prefix.
-* You can still toggle task status by clicking the symbol in Agenda Views or manually updating it.
+* The number of asterisks (`*`) at the start of a line determines heading depth.
+* In `unicode` mode, Org-vscode stores Unicode markers directly in the file.
+* In `asterisks` mode, Org-vscode stores plain `* TODO ...` headings in the file.
+* If you enable `Org-vscode.decorateUnicodeHeadings`, Org-vscode can render Unicode markers visually via editor decorations while keeping the file content as `*`.
 
 ---
 
 ## 🔁 Cycle Task Statuses <a id="cycle-task-statuses"></a>
 
-Org-vscode supports five task states, each represented with a unique Unicode symbol:
+Org-vscode supports five task states. In `unicode` marker style, each state is represented with a symbol:
 
 | Status Keyword | Symbol | Description               |
 | -------------- | ------ | ------------------------- |
@@ -290,7 +306,7 @@ Org-vscode supports five task states, each represented with a unique Unicode sym
 You can manually change task keywords:
 
 ```org
-* ⊙ TODO : [+TAG:PROJECT] - Finish feature documentation
+* TODO : [+TAG:PROJECT] - Finish feature documentation
 ```
 
 Or remove/change the keyword symbol, and the extension will update it accordingly on save.
@@ -306,7 +322,7 @@ Org-vscode supports **inline tagging** to categorize tasks and enable advanced f
 To tag a task, use the special `[+TAG:...]` syntax directly after the task keyword:
 
 ```org
-* ⊙ TODO : [+TAG:WORK,URGENT] - Prepare project proposal
+* TODO : [+TAG:WORK,URGENT] - Prepare project proposal
 ```
 
 * Tags are comma-separated
@@ -335,7 +351,7 @@ This improves readability by ensuring every scheduled date starts in the same co
 
 ### 🛠 What It Does <a id="what-it-does"></a>
 
-* Scans the file for any line containing `SCHEDULED: [MM-DD-YYYY]`
+* Scans the file for any line containing `SCHEDULED: [<date>]` (format controlled by `Org-vscode.dateFormat`)
 * Determines the longest task description in the file
 * Pads shorter task lines so that all timestamps align to the same column
 * Preserves original indentation
@@ -347,17 +363,17 @@ This improves readability by ensuring every scheduled date starts in the same co
 **Before:**
 
 ```org
-⊙ TODO Review meeting notes           SCHEDULED: [06-21-2025]
-⊖ DONE Email client      SCHEDULED: [06-20-2025]
-⊘ IN_PROGRESS Fix bug             SCHEDULED: [06-22-2025]
+* TODO Review meeting notes           SCHEDULED: [06-21-2025]
+* DONE Email client      SCHEDULED: [06-20-2025]
+* IN_PROGRESS Fix bug             SCHEDULED: [06-22-2025]
 ```
 
 **After Running Align:**
 
 ```org
-⊙ TODO Review meeting notes           SCHEDULED: [06-21-2025]
-⊖ DONE Email client                   SCHEDULED: [06-20-2025]
-⊘ IN_PROGRESS Fix bug                 SCHEDULED: [06-22-2025]
+* TODO Review meeting notes           SCHEDULED: [06-21-2025]
+* DONE Email client                   SCHEDULED: [06-20-2025]
+* IN_PROGRESS Fix bug                 SCHEDULED: [06-22-2025]
 ```
 
 ---
@@ -454,8 +470,8 @@ Use the command:
 
 #### ✅ Displays Scheduled Tasks <a id="displays-scheduled-tasks"></a>
 
-* Tasks with `SCHEDULED: [MM-DD-YYYY]` are shown as calendar events.
-* Unicode and Org keyword support: ⊙ TODO, ⊘ IN\_PROGRESS, ⊖ DONE, etc.
+* Tasks with `SCHEDULED: [<date>]` are shown as calendar events (format controlled by `Org-vscode.dateFormat`).
+* Supports both marker styles (`unicode` and `asterisks`).
 * Automatically parses `.org` files in your main directory (excluding `CurrentTasks.org`).
 
 #### 🖱 Click to Open Task <a id="click-to-open-task"></a>

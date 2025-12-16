@@ -45,6 +45,8 @@ function refreshCalendarView() {
 function sendTasksToCalendar(panel) {
   let tasks = [];
   let dirPath = setMainDir();
+  const config = vscode.workspace.getConfiguration("Org-vscode");
+  const dateFormat = config.get("dateFormat", "MM-DD-YYYY");
 
   fs.readdir(dirPath, (err, files) => {
     if (err) {
@@ -84,7 +86,7 @@ function sendTasksToCalendar(panel) {
             tasks.push({
               text: cleanedText, // For display in calendar
               fullText: fullLine, // For backend matching (reschedule logic)
-              date: moment(scheduledMatch[1], "MM-DD-YYYY").format("YYYY-MM-DD"),
+              date: moment(scheduledMatch[1], [dateFormat, "MM-DD-YYYY", "DD-MM-YYYY"], true).format("YYYY-MM-DD"),
               file: file,
               tags: tags,
               id: file + '#' + lineIndex // stable id for rescheduling
@@ -109,16 +111,19 @@ function rescheduleTask(file, oldDate, newDate, taskText) {
   let fileContents = fs.readFileSync(filePath, "utf-8");
   let fileLines = fileContents.split(/\r?\n/);
 
-  // Try to parse the new date using known formats (ISO or MM-DD-YYYY)
-  let parsedNewDate = moment(newDate, ["YYYY-MM-DD", "MM-DD-YYYY"], true);
+  const config = vscode.workspace.getConfiguration("Org-vscode");
+  const dateFormat = config.get("dateFormat", "MM-DD-YYYY");
+
+  // Try to parse the new date using known formats (ISO or configured format)
+  let parsedNewDate = moment(newDate, ["YYYY-MM-DD", dateFormat, "MM-DD-YYYY", "DD-MM-YYYY"], true);
   if (!parsedNewDate.isValid()) {
     vscode.window.showErrorMessage(`Failed to reschedule task: Invalid date format.`);
     return;
   }
 
-  // Format both old and new dates into standard [MM-DD-YYYY] org format
-  let formattedOldDate = moment(oldDate, "YYYY-MM-DD").format("MM-DD-YYYY");
-  let formattedNewDate = parsedNewDate.format("MM-DD-YYYY");
+  // Format both old and new dates into the user's configured org format
+  let formattedOldDate = moment(oldDate, "YYYY-MM-DD").format(dateFormat);
+  let formattedNewDate = parsedNewDate.format(dateFormat);
 
   // Build a regex pattern that matches the original scheduled date
   let scheduledRegex = new RegExp(`SCHEDULED:\\s*\\[${formattedOldDate}\\]`);
@@ -178,12 +183,15 @@ function rescheduleTaskById(taskId, newDate) {
     return;
   }
 
-  let parsedNewDate = moment(newDate, ["YYYY-MM-DD", "MM-DD-YYYY"], true);
+  const config = vscode.workspace.getConfiguration("Org-vscode");
+  const dateFormat = config.get("dateFormat", "MM-DD-YYYY");
+
+  let parsedNewDate = moment(newDate, ["YYYY-MM-DD", dateFormat, "MM-DD-YYYY", "DD-MM-YYYY"], true);
   if (!parsedNewDate.isValid()) {
     vscode.window.showErrorMessage('Invalid date format for reschedule.');
     return;
   }
-  const formattedNewDate = parsedNewDate.format('MM-DD-YYYY');
+  const formattedNewDate = parsedNewDate.format(dateFormat);
 
   // Replace or insert SCHEDULED: [MM-DD-YYYY] on that line
   const scheduledRegex = /(SCHEDULED:\s*\[)(\d{2}-\d{2}-\d{4})(\])/;
@@ -261,6 +269,8 @@ function openCalendarView() {
  * Integrates FullCalendar, styles, and sets up message passing to/from the extension.
  */
 function getCalendarWebviewContent({ webview, nonce }) {
+  const config = vscode.workspace.getConfiguration("Org-vscode");
+  const dateFormat = config.get("dateFormat", "MM-DD-YYYY");
   const csp = `default-src 'none'; img-src ${webview.cspSource} https: data:; style-src ${webview.cspSource} 'nonce-${nonce}' https:; script-src ${webview.cspSource} 'nonce-${nonce}' https:; font-src ${webview.cspSource} https: data:`;
   const fullCalendarCss = 'https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css';
   const fullCalendarJs = 'https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js';
@@ -269,6 +279,7 @@ function getCalendarWebviewContent({ webview, nonce }) {
   // Utility JS (injected inline with nonce) kept compact to stay readable.
   const script = `(()=>{
     const vscode=acquireVsCodeApi();
+    const orgDateFormat=${JSON.stringify(dateFormat)};
     let cal; let all=[]; let activeTags=[]; let lastRange=null;
     const palette=['#f97316','#facc15','#0ea5e9','#22c55e','#a855f7','#ec4899','#14b8a6','#f87171','#6366f1','#eab308','#84cc16','#fb7185'];
     const tagColors={};
@@ -378,7 +389,7 @@ function getCalendarWebviewContent({ webview, nonce }) {
         datesSet:info=>renderCurrentRange({start:info.start,end:info.end}),
         eventClick:i=>vscode.postMessage({command:'openFile',file:i.event.extendedProps.file}),
         eventDrop:i=>{
-          const nd=moment(i.event.start).format('MM-DD-YYYY');
+          const nd=moment(i.event.start).format(orgDateFormat);
           vscode.postMessage({command:'rescheduleTask',id:i.event.id,file:i.event.extendedProps.file,oldDate:i.event.extendedProps.originalDate,newDate:nd,text:i.event.extendedProps.fullText});
         }
       });
