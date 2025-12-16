@@ -31,6 +31,16 @@ Optional indentation controls (decorations + Alt+Left/Right indentation):
 "Org-vscode.adjustHeadingIndentation": 2
 ```
 
+### Settings screenshots
+
+Extensions → org-vscode → Settings:
+
+<img src="https://github.com/realDestroyer/org-vscode/blob/master/Images/extension-settings.png?raw=true" width="900" />
+
+VS Code Settings editor (search for `Org-vscode:`):
+
+<img src="https://github.com/realDestroyer/org-vscode/blob/master/Images/extension-settingsJson.png?raw=true" width="900" />
+
 ---
 
 ## 📘 Table of Contents <a id="table-of-contents"></a>
@@ -191,6 +201,9 @@ Add deadline dates to tasks to track when they're due. Deadlines appear in the A
 ```
 
 Date formatting is controlled by `Org-vscode.dateFormat` (default: `MM-DD-YYYY`).
+
+If you change `Org-vscode.dateFormat`, Org-vscode does not automatically rewrite existing dates.
+Use **Org-vscode: Convert Dates in Current File** from the Command Palette to convert day headings, `SCHEDULED:`, and `DEADLINE:` stamps.
 
 ### Adjusting Deadline Dates
 
