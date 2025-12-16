@@ -12,8 +12,11 @@ function insertDateStamp() {
     const selection = editor.selection;
     const cursorPosition = selection.active;
 
+    const config = vscode.workspace.getConfiguration("Org-vscode");
+    const dateFormat = config.get("dateFormat", "MM-DD-YYYY");
+
     // **Generate the formatted date**
-    const formattedDate = `[${moment().format("MM-DD-YYYY ddd")}]`;
+    const formattedDate = `[${moment().format(`${dateFormat} ddd`)}]`;
 
     editor.edit(editBuilder => {
         editBuilder.insert(cursorPosition, formattedDate + "\n");

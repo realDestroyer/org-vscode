@@ -37,12 +37,14 @@ const taggedAgenda = require("./taggedAgenda");
 const addSeparator = require("./addSeparator");
 const insertTable = require("./insertTable");
 const updateDates = require("./updateDate");
+const { convertDatesInActiveFile } = require("./convertDates");
 const { openCalendarView } = require("./calendar");
 const exportCurrentTasks = require("./exportCurrentTasks");
 const { exportYearSummary } = require("./yearSummary");
 const { generateExecutiveReport } = require("./yearExecutiveReport");
 const { openYearInReview } = require("./yearDashboard");
 const { openSyntaxColorCustomizer } = require("./syntaxColorCustomizer");
+const { registerUnicodeHeadingDecorations } = require("./unicodeHeadingDecorations");
 
 // Startup log for debugging
 console.log("📌 agenda.js has been loaded in extension.js");
@@ -81,7 +83,12 @@ class GoOnTypingFormatter {
     }
 
     const asterisks = starMatch[1].length;
-    const insertText = numOfSpaces(asterisks) + setUnicodeChar(asterisks);
+    const spacesPerLevelRaw = config.get("adjustHeadingIndentation", 2);
+    const spacesPerLevel = typeof spacesPerLevelRaw === "boolean"
+      ? (spacesPerLevelRaw ? 2 : 0)
+      : Math.max(0, Math.floor(Number(spacesPerLevelRaw) || 0));
+    const padCount = Math.max(0, asterisks - 1) * spacesPerLevel;
+    const insertText = " ".repeat(padCount) + setUnicodeChar(asterisks);
 
     // Replace from start-of-line through the just-typed space (removes the asterisks)
     const start = new vscode.Position(position.line, 0);
@@ -121,11 +128,16 @@ function numOfSpaces(asterisk) {
 // Extension Activation
 // ─────────────────────────────────────────────────────────────
 function activate(ctx) {
-  // Auto-refresh when date format setting is changed
+  // Visual-only unicode headings for org-style '*' files (no file rewrites)
+  registerUnicodeHeadingDecorations(ctx);
+
+  // Date format changes are not auto-applied to existing files because swapping
+  // MM-DD and DD-MM can be ambiguous (e.g. 04-05-2026). Provide an explicit command instead.
   vscode.workspace.onDidChangeConfiguration((event) => {
-    let settingChanged = event.affectsConfiguration("Org-vscode.dateFormat");
-    if (settingChanged) {
-      vscode.commands.executeCommand("extension.updateDates");
+    if (event.affectsConfiguration("Org-vscode.dateFormat")) {
+      vscode.window.showInformationMessage(
+        "Org-vscode dateFormat changed. Run 'Org-vscode: Convert Dates in Current File' to rewrite existing dates."
+      );
     }
   });
 
@@ -144,7 +156,9 @@ function activate(ctx) {
 
   ctx.subscriptions.push(showMessageCommand);
   ctx.subscriptions.push(vscode.commands.registerCommand("extension.viewAgenda", agenda));
-  ctx.subscriptions.push(vscode.commands.registerCommand("extension.updateDates", updateDates));
+  // Back-compat: keep existing command id, but steer users to the explicit converter.
+  ctx.subscriptions.push(vscode.commands.registerCommand("extension.updateDates", convertDatesInActiveFile));
+  ctx.subscriptions.push(vscode.commands.registerCommand("extension.convertDatesInActiveFile", convertDatesInActiveFile));
   ctx.subscriptions.push(vscode.commands.registerCommand("extension.rescheduleTaskForward", moveDateForward));
   ctx.subscriptions.push(vscode.commands.registerCommand("extension.rescheduleTaskBackward", moveDateBackward));
   ctx.subscriptions.push(vscode.commands.registerCommand("extension.smartDateForward", smartDateForward));

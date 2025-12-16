@@ -17,6 +17,10 @@ function deadlineDateAdjust(forward = true) {
     const line = document.lineAt(cursorPosition.line);
     let text = line.text;
 
+    const config = vscode.workspace.getConfiguration("Org-vscode");
+    const dateFormat = config.get("dateFormat", "MM-DD-YYYY");
+    const acceptedDateFormats = [dateFormat, "MM-DD-YYYY", "DD-MM-YYYY"];
+
     // Match DEADLINE: [MM-DD-YYYY] with optional time
     const deadlineRegex = /DEADLINE:\s*\[(\d{2}-\d{2}-\d{4})(?:\s+(\d{2}:\d{2}(?::\d{2})?))?\]/;
     const match = text.match(deadlineRegex);
@@ -28,7 +32,12 @@ function deadlineDateAdjust(forward = true) {
 
     const currentDate = match[1];
     const timeComponent = match[2] || null;
-    const newDate = moment(currentDate, "MM-DD-YYYY").add(forward ? 1 : -1, "day").format("MM-DD-YYYY");
+    const parsed = moment(currentDate, acceptedDateFormats, true);
+    if (!parsed.isValid()) {
+        vscode.window.showWarningMessage(`Could not parse deadline date using format ${dateFormat}.`);
+        return;
+    }
+    const newDate = parsed.add(forward ? 1 : -1, "day").format(dateFormat);
 
     // Rebuild the DEADLINE with optional time
     const newDeadline = timeComponent 

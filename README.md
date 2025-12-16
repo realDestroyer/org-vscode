@@ -1,6 +1,6 @@
 # Org-vscode
 
-![Version](https://img.shields.io/badge/version-v1.10.5-blue.svg)
+![Version](https://img.shields.io/badge/version-v1.10.6-blue.svg)
 
 > A fast, keyboard-driven Org Mode–style task manager built for Visual Studio Code.
 > Inspired by Emacs Org Mode
@@ -9,7 +9,7 @@
 
 ## 🚀 What is Org-vscode?
 
-Organize your thoughts, tasks, projects, and notes — all inside VSCode — using a minimal Org file format powered by Unicode symbols (optional) and intuitive keyboard controls.
+Organize your thoughts, tasks, projects, and notes — all inside VSCode — using a minimal Org file format with Org-compatible `*` headings (recommended) and optional decorative Unicode rendering.
 
 Whether you're an Emacs power user or just want a highly structured task system, Org-vscode is built to help you:
 
@@ -30,8 +30,11 @@ Whether you're an Emacs power user or just want a highly structured task system,
 
 ## 🧩 Core Features
 
-**Unicode Task States**  
-`⊙` TODO, `⊘` IN\_PROGRESS, `⊜` CONTINUED, `⊖` DONE, `⊗` ABANDONED
+**Task States**  
+`TODO`, `IN_PROGRESS`, `CONTINUED`, `DONE`, `ABANDONED`.
+
+If you use `Org-vscode.headingMarkerStyle: "unicode"`, those task states are rendered as symbols:
+`⊙` TODO, `⊘` IN\_PROGRESS, `⊜` CONTINUED, `⊖` DONE, `⊗` ABANDONED.
 
 **Org-mode Compatibility (Preserve `*` Headings)**
 
@@ -43,11 +46,35 @@ If you edit your files in Emacs/org-mode (or want plain Org interoperability), s
 
 This keeps `* TODO ...` headings in the file (no Unicode replacement) while still allowing Org-vscode commands/views to work.
 
+**Recommended setup (Org-compatible source + pretty UI)**
+
+```json
+"Org-vscode.headingMarkerStyle": "asterisks",
+"Org-vscode.decorateUnicodeHeadings": true
+```
+
+Optional indentation controls (decorations + Alt+Left/Right indentation):
+
+```json
+"Org-vscode.decorateHeadingIndentation": true,
+"Org-vscode.adjustHeadingIndentation": 2
+```
+
+**Extension Settings (Screenshots)**
+
+Extensions → org-vscode → Settings:
+
+<img src="https://github.com/realDestroyer/org-vscode/blob/master/Images/extension-settings.png?raw=true" width="900" />
+
+VS Code Settings editor (search for `Org-vscode:`):
+
+<img src="https://github.com/realDestroyer/org-vscode/blob/master/Images/extension-settingsJson.png?raw=true" width="900" />
+
 **CONTINUED Auto-Forwarding**  
 When you mark a task as CONTINUED, it automatically copies to the next day as TODO. Toggle away from CONTINUED and the copy is removed.
 
 **Deadline Support**  
-Add `DEADLINE: [MM-DD-YYYY]` to tasks. Agenda View shows color-coded warnings (overdue, due today, due soon).
+Add `DEADLINE: [<date>]` to tasks. Date formatting is controlled by `Org-vscode.dateFormat` (default: `MM-DD-YYYY`). Agenda View shows color-coded warnings (overdue, due today, due soon).
 
 **Agenda View**  
 See all scheduled TODO and IN\_PROGRESS tasks from all `.org` files in one clean, date-grouped panel. Fully clickable + status toggleable.
@@ -66,6 +93,9 @@ Visually generate Org-style tables with alignment, row headers, and optional lab
 
 **Align Timestamps**  
 Neatly formats all `SCHEDULED:` timestamps to the same column width.
+
+**Convert Date Formats**
+If you change `Org-vscode.dateFormat`, run **Org-vscode: Convert Dates in Current File** to rewrite day headings, `SCHEDULED:`, and `DEADLINE:` stamps in the active file.
 
 **Export Active Tasks**  
 Copy all non-DONE tasks to `CurrentTasks.org` for quick review or reporting.
@@ -124,6 +154,7 @@ See what’s coming next on the [ROADMAP](https://github.com/realdestroyer/org-v
 | `Alt + Shift + A`    | Align all scheduled timestamps                         |
 | `Alt + Shift + S`    | Add separator line (hyphens)                           |
 | `Ctrl + Shift + T`   | Add tag to current task                                |
+| *(Command Palette)*  | Org-vscode: Convert Dates in Current File              |
 | `Ctrl + Shift + G`   | Open the Tagged Agenda View                            |
 | `Ctrl + Shift + C`   | Open the Calendar View                                 |
 | `Ctrl + Shift + E`   | Export all active (non-DONE) tasks to CurrentTasks.org |

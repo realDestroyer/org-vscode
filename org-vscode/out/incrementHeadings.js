@@ -49,8 +49,11 @@ function rotateSymbol(step) {
     }
 
     const nextSymbol = SYMBOLS[(index + step + SYMBOLS.length) % SYMBOLS.length];
-    const adjustIndentation = config.get("adjustHeadingIndentation", true);
-    const adjustedIndent = adjustIndentation ? adjustIndent(indent, step) : indent;
+    const spacesPerLevelRaw = config.get("adjustHeadingIndentation", 2);
+    const spacesPerLevel = typeof spacesPerLevelRaw === "boolean"
+        ? (spacesPerLevelRaw ? 2 : 0)
+        : Math.max(0, Math.floor(Number(spacesPerLevelRaw) || 0));
+    const adjustedIndent = spacesPerLevel > 0 ? adjustIndent(indent, step, spacesPerLevel) : indent;
     const spacer = gap.length ? gap : " ";
     const updatedLine = `${adjustedIndent}${nextSymbol}${spacer}${rest}`;
 
@@ -74,12 +77,13 @@ function parseLine(text) {
     return { indent, symbol, gap, rest };
 }
 
-function adjustIndent(indent, step) {
+function adjustIndent(indent, step, spacesPerLevel) {
+    const chunk = " ".repeat(spacesPerLevel);
     if (step > 0) {
-        return indent + "  ";
+        return indent + chunk;
     }
     if (step < 0) {
-        return indent.length >= 2 ? indent.slice(0, indent.length - 2) : "";
+        return indent.length >= spacesPerLevel ? indent.slice(0, indent.length - spacesPerLevel) : "";
     }
     return indent;
 }

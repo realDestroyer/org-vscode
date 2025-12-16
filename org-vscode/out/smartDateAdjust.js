@@ -14,6 +14,10 @@ function smartDateAdjust(forward = true) {
         return;
     }
 
+    const config = vscode.workspace.getConfiguration("Org-vscode");
+    const dateFormat = config.get("dateFormat", "MM-DD-YYYY");
+    const acceptedDateFormats = [dateFormat, "MM-DD-YYYY", "DD-MM-YYYY"];
+
     const document = editor.document;
     const cursorPosition = editor.selection.active;
     const line = document.lineAt(cursorPosition.line);
@@ -27,8 +31,13 @@ function smartDateAdjust(forward = true) {
         const indent = dayMatch[1] || "";
         const marker = dayMatch[2];
         const currentDate = dayMatch[3];
-        const newDate = moment(currentDate, "MM-DD-YYYY").add(forward ? 1 : -1, "days");
-        const newFormattedDate = `${indent}${marker} [${newDate.format("MM-DD-YYYY")} ${newDate.format("ddd")}]`;
+        const parsed = moment(currentDate, acceptedDateFormats, true);
+        if (!parsed.isValid()) {
+            vscode.window.showWarningMessage(`Could not parse date using format ${dateFormat}.`);
+            return;
+        }
+        const newDate = parsed.add(forward ? 1 : -1, "days");
+        const newFormattedDate = `${indent}${marker} [${newDate.format(dateFormat)} ${newDate.format("ddd")}]`;
         const updatedText = text.replace(dayHeadingRegex, newFormattedDate);
 
         editor.edit(editBuilder => {
@@ -46,7 +55,12 @@ function smartDateAdjust(forward = true) {
 
     if (scheduledMatch) {
         const currentDate = scheduledMatch[1];
-        const newDate = moment(currentDate, "MM-DD-YYYY").add(forward ? 1 : -1, "day").format("MM-DD-YYYY");
+        const parsed = moment(currentDate, acceptedDateFormats, true);
+        if (!parsed.isValid()) {
+            vscode.window.showWarningMessage(`Could not parse scheduled date using format ${dateFormat}.`);
+            return;
+        }
+        const newDate = parsed.add(forward ? 1 : -1, "day").format(dateFormat);
         const updatedText = text.replace(scheduledRegex, `SCHEDULED: [${newDate}]`);
 
         editor.edit(editBuilder => {

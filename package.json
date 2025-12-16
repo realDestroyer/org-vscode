@@ -2,7 +2,7 @@
 	"name": "org-vscode",
 	"displayName": "org-vscode",
 	"description": "Quickly create todo lists, take notes, plan projects and organize your thoughts.",
-	"version": "1.10.5",
+	"version": "1.10.6",
 	"repository": "https://www.github.com/realDestroyer/org-vscode",
 	"icon": "Logo.png",
 	"publisher": "realDestroyer",
@@ -270,6 +270,7 @@
 			"properties": {
 				"Org-vscode.headingMarkerStyle": {
 					"type": "string",
+					"order": 1,
 					"default": "unicode",
 					"enum": [
 						"unicode",
@@ -277,27 +278,41 @@
 					],
 					"description": "Controls how headings/tasks are written when changing status/level. 'unicode' uses the extension's unicode symbols (current behavior). 'asterisks' preserves org-mode '*' heading markers for better compatibility with other editors (e.g. Emacs org-mode)."
 				},
+				"Org-vscode.decorateUnicodeHeadings": {
+					"type": "boolean",
+					"order": 2,
+					"default": false,
+					"description": "When enabled (and headingMarkerStyle is 'asterisks'), Org-vscode will render unicode task/day markers via editor decorations without modifying your file content."
+				},
+				"Org-vscode.decorateHeadingIndentation": {
+					"type": "boolean",
+					"order": 3,
+					"default": true,
+					"description": "When decorateUnicodeHeadings is enabled, visually indent decorated headings based on asterisk depth (Emacs org-indent-style) without changing file content."
+				},
+				"Org-vscode.adjustHeadingIndentation": {
+					"type": "number",
+					"order": 4,
+					"default": 2,
+					"minimum": 0,
+					"multipleOf": 1,
+					"description": "Spaces per level used when toggling heading symbols with Alt+Left/Alt+Right (0 disables). Also used by decorated heading indentation when enabled."
+				},
 				"Org-vscode.folderPath": {
 					"type": "string",
+					"order": 6,
 					"default": "",
 					"description": "Main folder"
 				},
 				"Org-vscode.dateFormat": {
 					"type": "string",
+					"order": 5,
 					"default": "MM-DD-YYYY",
 					"enum": [
 						"MM-DD-YYYY",
 						"DD-MM-YYYY"
 					],
-					"minItems": 1,
-					"maxItems": 3,
-					"uniqueItems": true,
 					"description": "The scheduled date format."
-				},
-				"Org-vscode.adjustHeadingIndentation": {
-					"type": "boolean",
-					"default": true,
-					"description": "When toggling heading symbols with Alt+Left/Alt+Right, also shift indentation by two spaces to reflect hierarchy."
 				}
 			}
 		},
@@ -305,6 +320,10 @@
 			{
 				"command": "extension.setFolderPath",
 				"title": "org-vscode Change Org-vscode Directory"
+			},
+			{
+				"command": "extension.convertDatesInActiveFile",
+				"title": "Org-vscode: Convert Dates in Current File"
 			},
 			{
 				"command": "extension.rescheduleTaskForward",
