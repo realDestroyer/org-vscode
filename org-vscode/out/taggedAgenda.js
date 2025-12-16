@@ -169,6 +169,8 @@ function showTaggedAgendaView(tag, items) {
 }
 
 function getTaggedWebviewContent(webview, nonce, localMomentJs, tag, items) {
+  const config = vscode.workspace.getConfiguration("Org-vscode");
+  const dateFormat = config.get("dateFormat", "MM-DD-YYYY");
   const grouped = {};
 
   for (const item of items) {
@@ -206,7 +208,7 @@ function getTaggedWebviewContent(webview, nonce, localMomentJs, tag, items) {
         .replace(/^\s*\*+\s+/, "") // Org headline cleanup
         .trim();
 
-      const lateLabel = scheduledDate && moment(scheduledDate, "MM-DD-YYYY").isBefore(moment())
+      const lateLabel = scheduledDate && moment(scheduledDate, dateFormat, true).isBefore(moment(), "day")
         ? `<span class="late">LATE: ${scheduledDate}</span>` : "";
 
       return `

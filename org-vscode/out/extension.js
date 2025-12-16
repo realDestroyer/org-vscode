@@ -82,7 +82,12 @@ class GoOnTypingFormatter {
     }
 
     const asterisks = starMatch[1].length;
-    const insertText = numOfSpaces(asterisks) + setUnicodeChar(asterisks);
+    const spacesPerLevelRaw = config.get("adjustHeadingIndentation", 2);
+    const spacesPerLevel = typeof spacesPerLevelRaw === "boolean"
+      ? (spacesPerLevelRaw ? 2 : 0)
+      : Math.max(0, Math.floor(Number(spacesPerLevelRaw) || 0));
+    const padCount = Math.max(0, asterisks - 1) * spacesPerLevel;
+    const insertText = " ".repeat(padCount) + setUnicodeChar(asterisks);
 
     // Replace from start-of-line through the just-typed space (removes the asterisks)
     const start = new vscode.Position(position.line, 0);

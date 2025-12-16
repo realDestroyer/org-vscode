@@ -9,7 +9,7 @@
 
 ## 🚀 What is Org-vscode?
 
-Organize your thoughts, tasks, projects, and notes — all inside VSCode — using a minimal Org file format powered by Unicode symbols (optional) and intuitive keyboard controls.
+Organize your thoughts, tasks, projects, and notes — all inside VSCode — using a minimal Org file format with Org-compatible `*` headings (recommended) and optional decorative Unicode rendering.
 
 Whether you're an Emacs power user or just want a highly structured task system, Org-vscode is built to help you:
 
@@ -30,8 +30,11 @@ Whether you're an Emacs power user or just want a highly structured task system,
 
 ## 🧩 Core Features
 
-**Unicode Task States**  
-`⊙` TODO, `⊘` IN\_PROGRESS, `⊜` CONTINUED, `⊖` DONE, `⊗` ABANDONED
+**Task States**  
+`TODO`, `IN_PROGRESS`, `CONTINUED`, `DONE`, `ABANDONED`.
+
+If you use `Org-vscode.headingMarkerStyle: "unicode"`, those task states are rendered as symbols:
+`⊙` TODO, `⊘` IN\_PROGRESS, `⊜` CONTINUED, `⊖` DONE, `⊗` ABANDONED.
 
 **Org-mode Compatibility (Preserve `*` Headings)**
 
@@ -43,11 +46,25 @@ If you edit your files in Emacs/org-mode (or want plain Org interoperability), s
 
 This keeps `* TODO ...` headings in the file (no Unicode replacement) while still allowing Org-vscode commands/views to work.
 
+**Recommended setup (Org-compatible source + pretty UI)**
+
+```json
+"Org-vscode.headingMarkerStyle": "asterisks",
+"Org-vscode.decorateUnicodeHeadings": true
+```
+
+Optional indentation controls (decorations + Alt+Left/Right indentation):
+
+```json
+"Org-vscode.decorateHeadingIndentation": true,
+"Org-vscode.adjustHeadingIndentation": 2
+```
+
 **CONTINUED Auto-Forwarding**  
 When you mark a task as CONTINUED, it automatically copies to the next day as TODO. Toggle away from CONTINUED and the copy is removed.
 
 **Deadline Support**  
-Add `DEADLINE: [MM-DD-YYYY]` to tasks. Agenda View shows color-coded warnings (overdue, due today, due soon).
+Add `DEADLINE: [<date>]` to tasks. Date formatting is controlled by `Org-vscode.dateFormat` (default: `MM-DD-YYYY`). Agenda View shows color-coded warnings (overdue, due today, due soon).
 
 **Agenda View**  
 See all scheduled TODO and IN\_PROGRESS tasks from all `.org` files in one clean, date-grouped panel. Fully clickable + status toggleable.

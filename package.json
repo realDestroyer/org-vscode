@@ -282,6 +282,18 @@
 					"default": false,
 					"description": "When enabled (and headingMarkerStyle is 'asterisks'), Org-vscode will render unicode task/day markers via editor decorations without modifying your file content."
 				},
+				"Org-vscode.decorateHeadingIndentation": {
+					"type": "boolean",
+					"default": true,
+					"description": "When decorateUnicodeHeadings is enabled, visually indent decorated headings based on asterisk depth (Emacs org-indent-style) without changing file content."
+				},
+				"Org-vscode.adjustHeadingIndentation": {
+					"type": "number",
+					"default": 2,
+					"minimum": 0,
+					"multipleOf": 1,
+					"description": "Spaces per level used when toggling heading symbols with Alt+Left/Alt+Right (0 disables). Also used by decorated heading indentation when enabled."
+				},
 				"Org-vscode.folderPath": {
 					"type": "string",
 					"default": "",
@@ -294,15 +306,7 @@
 						"MM-DD-YYYY",
 						"DD-MM-YYYY"
 					],
-					"minItems": 1,
-					"maxItems": 3,
-					"uniqueItems": true,
 					"description": "The scheduled date format."
-				},
-				"Org-vscode.adjustHeadingIndentation": {
-					"type": "boolean",
-					"default": true,
-					"description": "When toggling heading symbols with Alt+Left/Alt+Right, also shift indentation by two spaces to reflect hierarchy."
 				}
 			}
 		},

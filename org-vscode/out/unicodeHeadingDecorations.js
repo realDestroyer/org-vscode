@@ -121,7 +121,12 @@ function computeDecorationsForEditor(editor) {
   const revealLines = getRevealLines(editor);
   const getForegroundForScope = createTokenColorResolver();
   const config = vscode.workspace.getConfiguration("Org-vscode");
-  const adjustHeadingIndentation = config.get("adjustHeadingIndentation", true);
+  const decorateHeadingIndentation = config.get("decorateHeadingIndentation", true);
+  const INDENT_SPACE = "\u00A0";
+  const spacesPerLevelRaw = config.get("adjustHeadingIndentation", 2);
+  const spacesPerLevel = typeof spacesPerLevelRaw === "boolean"
+    ? (spacesPerLevelRaw ? 2 : 0)
+    : Math.max(0, Math.floor(Number(spacesPerLevelRaw) || 0));
 
   for (const visibleRange of editor.visibleRanges) {
     const startLine = Math.max(0, visibleRange.start.line);
@@ -146,10 +151,10 @@ function computeDecorationsForEditor(editor) {
         if (!symbol) continue;
 
         const stars = taskMatch[2] || "";
-        const visualIndent =
-          adjustHeadingIndentation && stars.length > 1
-            ? " ".repeat((stars.length - 1) * 2)
-            : "";
+        const indentCount = decorateHeadingIndentation
+          ? Math.max(0, stars.length - 1) * spacesPerLevel
+          : 0;
+        const visualIndent = indentCount > 0 ? INDENT_SPACE.repeat(indentCount) : "";
 
         // Insert unicode symbol at the start of the asterisk prefix.
         const insertAt = new vscode.Position(lineNumber, indent.length);
@@ -184,10 +189,10 @@ function computeDecorationsForEditor(editor) {
       if (dayMatch) {
         const indent = dayMatch[1] || "";
         const stars = dayMatch[2] || "";
-        const visualIndent =
-          adjustHeadingIndentation && stars.length > 1
-            ? " ".repeat((stars.length - 1) * 2)
-            : "";
+        const indentCount = decorateHeadingIndentation
+          ? Math.max(0, stars.length - 1) * spacesPerLevel
+          : 0;
+        const visualIndent = indentCount > 0 ? INDENT_SPACE.repeat(indentCount) : "";
         const insertAt = new vscode.Position(lineNumber, indent.length);
         const markerRange = new vscode.Range(insertAt, insertAt);
         const foreground = getForegroundForScope(STATUS_TO_SCOPE.IN_PROGRESS);
@@ -218,6 +223,11 @@ function computeDecorationsForEditor(editor) {
 }
 
 function registerUnicodeHeadingDecorations(ctx) {
+  // Unit tests mock vscode; skip decoration wiring when APIs aren't present.
+  if (!vscode.window || typeof vscode.window.createTextEditorDecorationType !== "function") {
+    return;
+  }
+
   const markerDecorationType = vscode.window.createTextEditorDecorationType({});
   const hideDecorationType = vscode.window.createTextEditorDecorationType({
     // Collapse the asterisk prefix visually so the unicode marker replaces it.

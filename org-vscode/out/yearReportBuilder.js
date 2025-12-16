@@ -265,8 +265,8 @@ function flattenTasks(days = []) {
   let id = 1;
   days.forEach(day => {
     (day.tasks || []).forEach(task => {
-      const scheduledMoment = moment(task.scheduled || day.date, "MM-DD-YYYY", true);
-      const dayMoment = moment(day.date, "MM-DD-YYYY", true);
+      const scheduledMoment = moment(task.scheduled || day.date, ["MM-DD-YYYY", "DD-MM-YYYY"], true);
+      const dayMoment = moment(day.date, ["MM-DD-YYYY", "DD-MM-YYYY"], true);
       tasks.push({
         id: id++,
         date: day.date,
@@ -374,7 +374,7 @@ function buildTaskFeed(tasks, limit) {
 }
 
 function formatDisplayDate(date, weekday) {
-  const parsed = moment(date, "MM-DD-YYYY", true);
+  const parsed = moment(date, ["MM-DD-YYYY", "DD-MM-YYYY"], true);
   if (!parsed.isValid()) {
     return date || "";
   }

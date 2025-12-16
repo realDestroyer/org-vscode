@@ -12,7 +12,7 @@ module.exports = function () {
   vscode.commands.executeCommand("workbench.action.files.save").then(() => {
   let config = vscode.workspace.getConfiguration("Org-vscode");
     let folderPath = config.get("folderPath");
-    let dateFormat = config.get("dateFormat");
+    let dateFormat = config.get("dateFormat", "MM-DD-YYYY");
     let folder;
     let taskText;
     let taskKeywordMatch = "";
@@ -84,8 +84,12 @@ module.exports = function () {
                     .trim();
 
                   // Format the task's scheduled date for grouping and display
-                  let formattedDate = moment(getDateFromTaskText[1], dateFormat).format("MM-DD-YYYY");
-                  let nameOfDay = moment(formattedDate, "MM-DD-YYYY").format("dddd");
+                  const scheduledMoment = moment(getDateFromTaskText[1], dateFormat, true);
+                  if (!scheduledMoment.isValid()) {
+                    continue;
+                  }
+                  let formattedDate = scheduledMoment.format(dateFormat);
+                  let nameOfDay = scheduledMoment.format("dddd");
                   let cleanDate = `[${formattedDate}]`;
 
                   // Create collapsible child block (if child lines exist)
@@ -96,7 +100,7 @@ module.exports = function () {
                   // Build deadline warning badge if task has a deadline
                   let deadlineBadge = "";
                   if (deadlineStr) {
-                    const deadlineDate = moment(deadlineStr.split(" ")[0], "MM-DD-YYYY");
+                    const deadlineDate = moment(deadlineStr.split(" ")[0], dateFormat, true);
                     const today = moment().startOf("day");
                     const daysUntil = deadlineDate.diff(today, "days");
                     
@@ -132,17 +136,17 @@ module.exports = function () {
                   convertedDateArray = [];
 
                   // If task is today or future
-                  if (moment(formattedDate, "MM-DD-YYYY") >= moment(new Date(), "MM-DD-YYYY")) {
+                  if (scheduledMoment.isSameOrAfter(moment().startOf("day"), "day")) {
                     convertedDateArray.push({
                       date: `<div class=\"heading${nameOfDay} ${cleanDate}\"><h4 class=\"${cleanDate}\">${cleanDate}, ${nameOfDay.toUpperCase()}</h4></div>`,
                       text: `<div class=\"panel ${cleanDate}\">${renderedTask}${childrenBlock}</div>`
                     });
                   } else {
                     // If task is overdue
-                    let today = moment().format("MM-DD-YYYY");
+                    let today = moment().format(dateFormat);
                     let overdue = moment().format("dddd");
 
-                    if (moment(formattedDate, "MM-DD-YYYY") < moment(today, "MM-DD-YYYY")) {
+                    if (scheduledMoment.isBefore(moment().startOf("day"), "day")) {
                       convertedDateArray.push({
                         date: `<div class=\"heading${overdue} [${today}]\"><h4 class=\"[${today}]\">[${today}], ${overdue.toUpperCase()}</h4></div>`,
                         text: `<div class=\"panel [${today}]\">${renderedTask}<span class=\"late\">LATE: ${moment(getDateFromTaskText[1], dateFormat).format("Do MMMM YYYY")}</span>${childrenBlock}</div>`
@@ -168,8 +172,8 @@ module.exports = function () {
             // Sort agenda items by date and store in sortedObject for ordered rendering
             Object.keys(unsortedObject)
               .sort((a, b) => {
-                let dateA = moment(a.match(/\[(.*)\]/)[1], "MM-DD-YYYY").toDate();
-                let dateB = moment(b.match(/\[(.*)\]/)[1], "MM-DD-YYYY").toDate();
+                let dateA = moment(a.match(/\[(.*)\]/)[1], dateFormat, true).toDate();
+                let dateB = moment(b.match(/\[(.*)\]/)[1], dateFormat, true).toDate();
                 return dateA - dateB;
               })
               .forEach(key => {
