@@ -6,6 +6,14 @@ const TASK_LINE_REGEX = /^(\s*)(\*+)\s+(TODO|IN_PROGRESS|CONTINUED|DONE|ABANDONE
 const DAY_HEADING_REGEX = /^(\s*)(\*+)\s*\[(\d{2}-\d{2}-\d{4})(?:\s+([A-Za-z]{3}))?.*$/;
 const UNICODE_PREFIX_REGEX = /^(\s*)[⊙⊘⊜⊖⊗]\s/;
 
+const STATUS_TO_SCOPE = {
+  TODO: "constant.character.todo.vso",
+  IN_PROGRESS: "constant.character.in_progress.vso",
+  CONTINUED: "constant.character.continued.vso",
+  DONE: "constant.character.done.vso",
+  ABANDONED: "constant.character.abandoned.vso"
+};
+
 function statusToSymbol(status) {
   switch (status) {
     case "TODO":
@@ -23,6 +31,77 @@ function statusToSymbol(status) {
   }
 }
 
+function normalizeScopes(scope) {
+  if (!scope) return [];
+  if (Array.isArray(scope)) {
+    return scope
+      .flatMap((entry) => String(entry).split(","))
+      .map((entry) => entry.trim())
+      .filter(Boolean);
+  }
+  return String(scope)
+    .split(",")
+    .map((entry) => entry.trim())
+    .filter(Boolean);
+}
+
+function createTokenColorResolver() {
+  const config = vscode.workspace.getConfiguration();
+  const customizations = config.get("editor.tokenColorCustomizations") || {};
+  const rules = Array.isArray(customizations.textMateRules)
+    ? customizations.textMateRules
+    : [];
+
+  const resolved = new Map();
+
+  return function getForegroundForScope(scope) {
+    if (!scope) return undefined;
+    if (resolved.has(scope)) return resolved.get(scope);
+
+    for (const rule of rules) {
+      const scopes = normalizeScopes(rule && rule.scope);
+      if (!scopes.length) continue;
+      if (!scopes.includes(scope)) continue;
+
+      const foreground = rule && rule.settings && rule.settings.foreground;
+      if (typeof foreground === "string" && foreground.trim()) {
+        resolved.set(scope, foreground.trim());
+        return foreground.trim();
+      }
+    }
+
+    resolved.set(scope, undefined);
+    return undefined;
+  };
+}
+
+function getRevealLines(editor) {
+  const revealLines = new Set();
+  if (!editor) return revealLines;
+
+  for (const selection of editor.selections || []) {
+    const lineNumber = selection.active.line;
+    if (lineNumber < 0 || lineNumber >= editor.document.lineCount) continue;
+
+    const lineText = editor.document.lineAt(lineNumber).text;
+    const taskMatch = lineText.match(TASK_LINE_REGEX);
+    const dayMatch = !taskMatch ? lineText.match(DAY_HEADING_REGEX) : null;
+    const match = taskMatch || dayMatch;
+    if (!match) continue;
+
+    const indent = match[1] || "";
+    const stars = match[2] || "";
+    const prefixEnd = indent.length + stars.length;
+
+    // If cursor is in (or before) the asterisk prefix region, reveal the raw stars.
+    if (selection.active.character <= prefixEnd) {
+      revealLines.add(lineNumber);
+    }
+  }
+
+  return revealLines;
+}
+
 function shouldDecorate(editor) {
   if (!editor) return false;
   if (editor.document.languageId !== "vso") return false;
@@ -36,8 +115,11 @@ function shouldDecorate(editor) {
 }
 
 function computeDecorationsForEditor(editor) {
-  const decorations = [];
+  const markerDecorations = [];
+  const hideRanges = [];
   const document = editor.document;
+  const revealLines = getRevealLines(editor);
+  const getForegroundForScope = createTokenColorResolver();
 
   for (const visibleRange of editor.visibleRanges) {
     const startLine = Math.max(0, visibleRange.start.line);
@@ -50,6 +132,10 @@ function computeDecorationsForEditor(editor) {
         continue;
       }
 
+      if (revealLines.has(lineNumber)) {
+        continue;
+      }
+
       const taskMatch = lineText.match(TASK_LINE_REGEX);
       if (taskMatch) {
         const indent = taskMatch[1] || "";
@@ -57,18 +143,32 @@ function computeDecorationsForEditor(editor) {
         const symbol = statusToSymbol(status);
         if (!symbol) continue;
 
+        // Insert unicode symbol at the start of the asterisk prefix.
         const insertAt = new vscode.Position(lineNumber, indent.length);
-        const range = new vscode.Range(insertAt, insertAt);
-        decorations.push({
-          range,
+        const markerRange = new vscode.Range(insertAt, insertAt);
+        const scope = STATUS_TO_SCOPE[status];
+        const foreground = scope ? getForegroundForScope(scope) : undefined;
+        markerDecorations.push({
+          range: markerRange,
           renderOptions: {
             before: {
               contentText: symbol + " ",
-              // Keep theme-friendly foreground unless overridden by user theme.
-              color: new vscode.ThemeColor("editor.foreground")
+              ...(foreground ? { color: foreground } : {})
             }
           }
         });
+
+        // Hide the asterisks (and a single trailing space) so unicode takes their place.
+        const stars = taskMatch[2] || "";
+        let hideEnd = indent.length + stars.length;
+        if (lineText.length > hideEnd && lineText[hideEnd] === " ") {
+          hideEnd += 1;
+        }
+        const hideStart = new vscode.Position(lineNumber, indent.length);
+        const hideStop = new vscode.Position(lineNumber, Math.min(hideEnd, lineText.length));
+        if (hideStop.character > hideStart.character) {
+          hideRanges.push(new vscode.Range(hideStart, hideStop));
+        }
 
         continue;
       }
@@ -77,26 +177,44 @@ function computeDecorationsForEditor(editor) {
       if (dayMatch) {
         const indent = dayMatch[1] || "";
         const insertAt = new vscode.Position(lineNumber, indent.length);
-        const range = new vscode.Range(insertAt, insertAt);
-        decorations.push({
-          range,
+        const markerRange = new vscode.Range(insertAt, insertAt);
+        const foreground = getForegroundForScope(STATUS_TO_SCOPE.IN_PROGRESS);
+        markerDecorations.push({
+          range: markerRange,
           renderOptions: {
             before: {
               contentText: "⊘ ",
-              color: new vscode.ThemeColor("editor.foreground")
+              ...(foreground ? { color: foreground } : {})
             }
           }
         });
+
+        const stars = dayMatch[2] || "";
+        let hideEnd = indent.length + stars.length;
+        if (lineText.length > hideEnd && lineText[hideEnd] === " ") {
+          hideEnd += 1;
+        }
+        const hideStart = new vscode.Position(lineNumber, indent.length);
+        const hideStop = new vscode.Position(lineNumber, Math.min(hideEnd, lineText.length));
+        if (hideStop.character > hideStart.character) {
+          hideRanges.push(new vscode.Range(hideStart, hideStop));
+        }
       }
     }
   }
 
-  return decorations;
+  return { markerDecorations, hideRanges };
 }
 
 function registerUnicodeHeadingDecorations(ctx) {
-  const decorationType = vscode.window.createTextEditorDecorationType({});
-  ctx.subscriptions.push(decorationType);
+  const markerDecorationType = vscode.window.createTextEditorDecorationType({});
+  const hideDecorationType = vscode.window.createTextEditorDecorationType({
+    // Collapse the asterisk prefix visually so the unicode marker replaces it.
+    color: "transparent",
+    textDecoration: "none; font-size: 0;"
+  });
+  ctx.subscriptions.push(markerDecorationType);
+  ctx.subscriptions.push(hideDecorationType);
 
   let pendingTimer = null;
 
@@ -104,12 +222,14 @@ function registerUnicodeHeadingDecorations(ctx) {
     if (!editor) return;
 
     if (!shouldDecorate(editor)) {
-      editor.setDecorations(decorationType, []);
+      editor.setDecorations(markerDecorationType, []);
+      editor.setDecorations(hideDecorationType, []);
       return;
     }
 
-    const decorations = computeDecorationsForEditor(editor);
-    editor.setDecorations(decorationType, decorations);
+    const { markerDecorations, hideRanges } = computeDecorationsForEditor(editor);
+    editor.setDecorations(markerDecorationType, markerDecorations);
+    editor.setDecorations(hideDecorationType, hideRanges);
   }
 
   function scheduleApply(editor) {
@@ -128,6 +248,11 @@ function registerUnicodeHeadingDecorations(ctx) {
 
   ctx.subscriptions.push(
     vscode.window.onDidChangeActiveTextEditor((editor) => scheduleApply(editor)),
+    vscode.window.onDidChangeTextEditorSelection((event) => {
+      if (event.textEditor === vscode.window.activeTextEditor) {
+        scheduleApply(event.textEditor);
+      }
+    }),
     vscode.window.onDidChangeTextEditorVisibleRanges((event) => {
       if (event.textEditor === vscode.window.activeTextEditor) {
         scheduleApply(event.textEditor);
