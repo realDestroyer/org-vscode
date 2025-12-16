@@ -13,6 +13,7 @@ module.exports = function () {
   let config = vscode.workspace.getConfiguration("Org-vscode");
     let folderPath = config.get("folderPath");
     let dateFormat = config.get("dateFormat", "MM-DD-YYYY");
+    let acceptedDateFormats = [dateFormat, "MM-DD-YYYY", "DD-MM-YYYY"];
     let folder;
     let taskText;
     let taskKeywordMatch = "";
@@ -84,7 +85,7 @@ module.exports = function () {
                     .trim();
 
                   // Format the task's scheduled date for grouping and display
-                  const scheduledMoment = moment(getDateFromTaskText[1], dateFormat, true);
+                  const scheduledMoment = moment(getDateFromTaskText[1], acceptedDateFormats, true);
                   if (!scheduledMoment.isValid()) {
                     continue;
                   }
@@ -100,7 +101,7 @@ module.exports = function () {
                   // Build deadline warning badge if task has a deadline
                   let deadlineBadge = "";
                   if (deadlineStr) {
-                    const deadlineDate = moment(deadlineStr.split(" ")[0], dateFormat, true);
+                    const deadlineDate = moment(deadlineStr.split(" ")[0], acceptedDateFormats, true);
                     const today = moment().startOf("day");
                     const daysUntil = deadlineDate.diff(today, "days");
                     
@@ -149,7 +150,7 @@ module.exports = function () {
                     if (scheduledMoment.isBefore(moment().startOf("day"), "day")) {
                       convertedDateArray.push({
                         date: `<div class=\"heading${overdue} [${today}]\"><h4 class=\"[${today}]\">[${today}], ${overdue.toUpperCase()}</h4></div>`,
-                        text: `<div class=\"panel [${today}]\">${renderedTask}<span class=\"late\">LATE: ${moment(getDateFromTaskText[1], dateFormat).format("Do MMMM YYYY")}</span>${childrenBlock}</div>`
+                        text: `<div class=\"panel [${today}]\">${renderedTask}<span class=\"late\">LATE: ${moment(getDateFromTaskText[1], acceptedDateFormats, true).format("Do MMMM YYYY")}</span>${childrenBlock}</div>`
                       });
                     }
                   }
@@ -172,8 +173,8 @@ module.exports = function () {
             // Sort agenda items by date and store in sortedObject for ordered rendering
             Object.keys(unsortedObject)
               .sort((a, b) => {
-                let dateA = moment(a.match(/\[(.*)\]/)[1], dateFormat, true).toDate();
-                let dateB = moment(b.match(/\[(.*)\]/)[1], dateFormat, true).toDate();
+                let dateA = moment(a.match(/\[(.*)\]/)[1], acceptedDateFormats, true).toDate();
+                let dateB = moment(b.match(/\[(.*)\]/)[1], acceptedDateFormats, true).toDate();
                 return dateA - dateB;
               })
               .forEach(key => {

@@ -16,6 +16,7 @@ function smartDateAdjust(forward = true) {
 
     const config = vscode.workspace.getConfiguration("Org-vscode");
     const dateFormat = config.get("dateFormat", "MM-DD-YYYY");
+    const acceptedDateFormats = [dateFormat, "MM-DD-YYYY", "DD-MM-YYYY"];
 
     const document = editor.document;
     const cursorPosition = editor.selection.active;
@@ -30,7 +31,7 @@ function smartDateAdjust(forward = true) {
         const indent = dayMatch[1] || "";
         const marker = dayMatch[2];
         const currentDate = dayMatch[3];
-        const parsed = moment(currentDate, dateFormat, true);
+        const parsed = moment(currentDate, acceptedDateFormats, true);
         if (!parsed.isValid()) {
             vscode.window.showWarningMessage(`Could not parse date using format ${dateFormat}.`);
             return;
@@ -54,7 +55,7 @@ function smartDateAdjust(forward = true) {
 
     if (scheduledMatch) {
         const currentDate = scheduledMatch[1];
-        const parsed = moment(currentDate, dateFormat, true);
+        const parsed = moment(currentDate, acceptedDateFormats, true);
         if (!parsed.isValid()) {
             vscode.window.showWarningMessage(`Could not parse scheduled date using format ${dateFormat}.`);
             return;
