@@ -120,6 +120,8 @@ function computeDecorationsForEditor(editor) {
   const document = editor.document;
   const revealLines = getRevealLines(editor);
   const getForegroundForScope = createTokenColorResolver();
+  const config = vscode.workspace.getConfiguration("Org-vscode");
+  const adjustHeadingIndentation = config.get("adjustHeadingIndentation", true);
 
   for (const visibleRange of editor.visibleRanges) {
     const startLine = Math.max(0, visibleRange.start.line);
@@ -143,6 +145,12 @@ function computeDecorationsForEditor(editor) {
         const symbol = statusToSymbol(status);
         if (!symbol) continue;
 
+        const stars = taskMatch[2] || "";
+        const visualIndent =
+          adjustHeadingIndentation && stars.length > 1
+            ? " ".repeat((stars.length - 1) * 2)
+            : "";
+
         // Insert unicode symbol at the start of the asterisk prefix.
         const insertAt = new vscode.Position(lineNumber, indent.length);
         const markerRange = new vscode.Range(insertAt, insertAt);
@@ -152,14 +160,13 @@ function computeDecorationsForEditor(editor) {
           range: markerRange,
           renderOptions: {
             before: {
-              contentText: symbol + " ",
+              contentText: visualIndent + symbol + " ",
               ...(foreground ? { color: foreground } : {})
             }
           }
         });
 
         // Hide the asterisks (and a single trailing space) so unicode takes their place.
-        const stars = taskMatch[2] || "";
         let hideEnd = indent.length + stars.length;
         if (lineText.length > hideEnd && lineText[hideEnd] === " ") {
           hideEnd += 1;
@@ -176,6 +183,11 @@ function computeDecorationsForEditor(editor) {
       const dayMatch = lineText.match(DAY_HEADING_REGEX);
       if (dayMatch) {
         const indent = dayMatch[1] || "";
+        const stars = dayMatch[2] || "";
+        const visualIndent =
+          adjustHeadingIndentation && stars.length > 1
+            ? " ".repeat((stars.length - 1) * 2)
+            : "";
         const insertAt = new vscode.Position(lineNumber, indent.length);
         const markerRange = new vscode.Range(insertAt, insertAt);
         const foreground = getForegroundForScope(STATUS_TO_SCOPE.IN_PROGRESS);
@@ -183,13 +195,12 @@ function computeDecorationsForEditor(editor) {
           range: markerRange,
           renderOptions: {
             before: {
-              contentText: "⊘ ",
+              contentText: visualIndent + "⊘ ",
               ...(foreground ? { color: foreground } : {})
             }
           }
         });
 
-        const stars = dayMatch[2] || "";
         let hideEnd = indent.length + stars.length;
         if (lineText.length > hideEnd && lineText[hideEnd] === " ") {
           hideEnd += 1;
