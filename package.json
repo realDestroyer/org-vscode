@@ -270,6 +270,7 @@
 			"properties": {
 				"Org-vscode.headingMarkerStyle": {
 					"type": "string",
+					"order": 1,
 					"default": "unicode",
 					"enum": [
 						"unicode",
@@ -279,16 +280,19 @@
 				},
 				"Org-vscode.decorateUnicodeHeadings": {
 					"type": "boolean",
+					"order": 2,
 					"default": false,
 					"description": "When enabled (and headingMarkerStyle is 'asterisks'), Org-vscode will render unicode task/day markers via editor decorations without modifying your file content."
 				},
 				"Org-vscode.decorateHeadingIndentation": {
 					"type": "boolean",
+					"order": 3,
 					"default": true,
 					"description": "When decorateUnicodeHeadings is enabled, visually indent decorated headings based on asterisk depth (Emacs org-indent-style) without changing file content."
 				},
 				"Org-vscode.adjustHeadingIndentation": {
 					"type": "number",
+					"order": 4,
 					"default": 2,
 					"minimum": 0,
 					"multipleOf": 1,
@@ -296,11 +300,13 @@
 				},
 				"Org-vscode.folderPath": {
 					"type": "string",
+					"order": 6,
 					"default": "",
 					"description": "Main folder"
 				},
 				"Org-vscode.dateFormat": {
 					"type": "string",
+					"order": 5,
 					"default": "MM-DD-YYYY",
 					"enum": [
 						"MM-DD-YYYY",
@@ -314,6 +320,10 @@
 			{
 				"command": "extension.setFolderPath",
 				"title": "org-vscode Change Org-vscode Directory"
+			},
+			{
+				"command": "extension.convertDatesInActiveFile",
+				"title": "Org-vscode: Convert Dates in Current File"
 			},
 			{
 				"command": "extension.rescheduleTaskForward",

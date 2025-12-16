@@ -37,6 +37,7 @@ const taggedAgenda = require("./taggedAgenda");
 const addSeparator = require("./addSeparator");
 const insertTable = require("./insertTable");
 const updateDates = require("./updateDate");
+const { convertDatesInActiveFile } = require("./convertDates");
 const { openCalendarView } = require("./calendar");
 const exportCurrentTasks = require("./exportCurrentTasks");
 const { exportYearSummary } = require("./yearSummary");
@@ -130,11 +131,13 @@ function activate(ctx) {
   // Visual-only unicode headings for org-style '*' files (no file rewrites)
   registerUnicodeHeadingDecorations(ctx);
 
-  // Auto-refresh when date format setting is changed
+  // Date format changes are not auto-applied to existing files because swapping
+  // MM-DD and DD-MM can be ambiguous (e.g. 04-05-2026). Provide an explicit command instead.
   vscode.workspace.onDidChangeConfiguration((event) => {
-    let settingChanged = event.affectsConfiguration("Org-vscode.dateFormat");
-    if (settingChanged) {
-      vscode.commands.executeCommand("extension.updateDates");
+    if (event.affectsConfiguration("Org-vscode.dateFormat")) {
+      vscode.window.showInformationMessage(
+        "Org-vscode dateFormat changed. Run 'Org-vscode: Convert Dates in Current File' to rewrite existing dates."
+      );
     }
   });
 
@@ -153,7 +156,9 @@ function activate(ctx) {
 
   ctx.subscriptions.push(showMessageCommand);
   ctx.subscriptions.push(vscode.commands.registerCommand("extension.viewAgenda", agenda));
-  ctx.subscriptions.push(vscode.commands.registerCommand("extension.updateDates", updateDates));
+  // Back-compat: keep existing command id, but steer users to the explicit converter.
+  ctx.subscriptions.push(vscode.commands.registerCommand("extension.updateDates", convertDatesInActiveFile));
+  ctx.subscriptions.push(vscode.commands.registerCommand("extension.convertDatesInActiveFile", convertDatesInActiveFile));
   ctx.subscriptions.push(vscode.commands.registerCommand("extension.rescheduleTaskForward", moveDateForward));
   ctx.subscriptions.push(vscode.commands.registerCommand("extension.rescheduleTaskBackward", moveDateBackward));
   ctx.subscriptions.push(vscode.commands.registerCommand("extension.smartDateForward", smartDateForward));

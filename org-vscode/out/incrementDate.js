@@ -17,6 +17,7 @@ function incrementDate(forward = true) {
 
     const config = vscode.workspace.getConfiguration("Org-vscode");
     const dateFormat = config.get("dateFormat", "MM-DD-YYYY");
+    const acceptedDateFormats = [dateFormat, "MM-DD-YYYY", "DD-MM-YYYY"];
 
     // Match Date Format: ⊘ [MM-DD-YYYY DDD] OR * [MM-DD-YYYY DDD]
     const dateRegex = /^(\s*)(⊘|\*+)\s*\[(\d{2}-\d{2}-\d{4}) (\w{3})\]/;
@@ -30,7 +31,7 @@ function incrementDate(forward = true) {
     const indent = match[1] || "";
     const marker = match[2];
     const currentDate = match[3]; // Extract date part
-    const parsed = moment(currentDate, dateFormat, true);
+    const parsed = moment(currentDate, acceptedDateFormats, true);
     if (!parsed.isValid()) {
         vscode.window.showWarningMessage(`Could not parse date using format ${dateFormat}.`);
         return;
