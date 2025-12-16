@@ -277,6 +277,11 @@
 					],
 					"description": "Controls how headings/tasks are written when changing status/level. 'unicode' uses the extension's unicode symbols (current behavior). 'asterisks' preserves org-mode '*' heading markers for better compatibility with other editors (e.g. Emacs org-mode)."
 				},
+				"Org-vscode.decorateUnicodeHeadings": {
+					"type": "boolean",
+					"default": false,
+					"description": "When enabled (and headingMarkerStyle is 'asterisks'), Org-vscode will render unicode task/day markers via editor decorations without modifying your file content."
+				},
 				"Org-vscode.folderPath": {
 					"type": "string",
 					"default": "",

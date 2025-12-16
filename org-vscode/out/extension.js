@@ -43,6 +43,7 @@ const { exportYearSummary } = require("./yearSummary");
 const { generateExecutiveReport } = require("./yearExecutiveReport");
 const { openYearInReview } = require("./yearDashboard");
 const { openSyntaxColorCustomizer } = require("./syntaxColorCustomizer");
+const { registerUnicodeHeadingDecorations } = require("./unicodeHeadingDecorations");
 
 // Startup log for debugging
 console.log("📌 agenda.js has been loaded in extension.js");
@@ -121,6 +122,9 @@ function numOfSpaces(asterisk) {
 // Extension Activation
 // ─────────────────────────────────────────────────────────────
 function activate(ctx) {
+  // Visual-only unicode headings for org-style '*' files (no file rewrites)
+  registerUnicodeHeadingDecorations(ctx);
+
   // Auto-refresh when date format setting is changed
   vscode.workspace.onDidChangeConfiguration((event) => {
     let settingChanged = event.affectsConfiguration("Org-vscode.dateFormat");
