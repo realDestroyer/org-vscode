@@ -1,6 +1,6 @@
 # Org-vscode
 
-![Version](https://img.shields.io/badge/version-v1.10.5-blue.svg)
+![Version](https://img.shields.io/badge/version-v1.10.6-blue.svg)
 
 > A fast, keyboard-driven Org Mode–style task manager built for Visual Studio Code.
 > Inspired by Emacs Org Mode
@@ -60,6 +60,16 @@ Optional indentation controls (decorations + Alt+Left/Right indentation):
 "Org-vscode.adjustHeadingIndentation": 2
 ```
 
+**Extension Settings (Screenshots)**
+
+Extensions → org-vscode → Settings:
+
+<img src="https://github.com/realDestroyer/org-vscode/blob/master/Images/extension-settings.png?raw=true" width="900" />
+
+VS Code Settings editor (search for `Org-vscode:`):
+
+<img src="https://github.com/realDestroyer/org-vscode/blob/master/Images/extension-settingsJson.png?raw=true" width="900" />
+
 **CONTINUED Auto-Forwarding**  
 When you mark a task as CONTINUED, it automatically copies to the next day as TODO. Toggle away from CONTINUED and the copy is removed.
 
@@ -83,6 +93,9 @@ Visually generate Org-style tables with alignment, row headers, and optional lab
 
 **Align Timestamps**  
 Neatly formats all `SCHEDULED:` timestamps to the same column width.
+
+**Convert Date Formats**
+If you change `Org-vscode.dateFormat`, run **Org-vscode: Convert Dates in Current File** to rewrite day headings, `SCHEDULED:`, and `DEADLINE:` stamps in the active file.
 
 **Export Active Tasks**  
 Copy all non-DONE tasks to `CurrentTasks.org` for quick review or reporting.
@@ -141,6 +154,7 @@ See what’s coming next on the [ROADMAP](https://github.com/realdestroyer/org-v
 | `Alt + Shift + A`    | Align all scheduled timestamps                         |
 | `Alt + Shift + S`    | Add separator line (hyphens)                           |
 | `Ctrl + Shift + T`   | Add tag to current task                                |
+| *(Command Palette)*  | Org-vscode: Convert Dates in Current File              |
 | `Ctrl + Shift + G`   | Open the Tagged Agenda View                            |
 | `Ctrl + Shift + C`   | Open the Calendar View                                 |
 | `Ctrl + Shift + E`   | Export all active (non-DONE) tasks to CurrentTasks.org |
