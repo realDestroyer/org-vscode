@@ -102,4 +102,154 @@ suite('Asterisk-mode functional behavior', function () {
     await waitFor(() => doc.getText().includes('*** DONE I like chicken SCHEDULED: [12-14-2025]'));
     await waitFor(() => !doc.getText().includes('*** TODO I like chicken SCHEDULED: [12-15-2025]'));
   });
+
+  test('Selection toggles status for multiple task lines', async () => {
+    const separator = ' -------------------------------------------------------------------------------------------------------------------------------';
+    const contents = [
+      `* [12-14-2025 Sun]${separator}`,
+      '  *** TODO Task A',
+      '  *** TODO Task B',
+      '  *** TODO Task C',
+      ''
+    ].join('\n');
+
+    const uri = await writeTempVsoFile(contents);
+    const { doc, editor } = await openFileInEditor(uri);
+
+    // Select from the day heading through the last task.
+    const start = new vscode.Position(0, 0);
+    const end = new vscode.Position(3, doc.lineAt(3).text.length);
+    editor.selection = new vscode.Selection(start, end);
+
+    await vscode.commands.executeCommand('extension.toggleStatusRight');
+
+    await waitFor(() => doc.getText().includes('*** IN_PROGRESS Task A'));
+    await waitFor(() => doc.getText().includes('*** IN_PROGRESS Task B'));
+    await waitFor(() => doc.getText().includes('*** IN_PROGRESS Task C'));
+
+    // Ensure the day heading did not get converted into a TODO item.
+    assert.ok(doc.getText().includes(`* [12-14-2025 Sun]${separator}`));
+  });
+
+  test('Selection can add TODO keyword to headings (but not day headings)', async () => {
+    const separator = ' -------------------------------------------------------------------------------------------------------------------------------';
+    const contents = [
+      `* [12-14-2025 Sun]${separator}`,
+      '  ** Project Notes',
+      '  ** Create JIRA project EPIC',
+      '  ** Create Stories for Equipment Ordering',
+      ''
+    ].join('\n');
+
+    const uri = await writeTempVsoFile(contents);
+    const { doc, editor } = await openFileInEditor(uri);
+
+    // Select the two note headings only (no existing TODO keywords).
+    const start = new vscode.Position(2, 0);
+    const end = new vscode.Position(4, 0);
+    editor.selection = new vscode.Selection(start, end);
+
+    await vscode.commands.executeCommand('extension.toggleStatusRight');
+
+    await waitFor(() => doc.getText().includes('** TODO Create JIRA project EPIC'));
+    await waitFor(() => doc.getText().includes('** TODO Create Stories for Equipment Ordering'));
+
+    // Ensure the day heading did not get converted into a TODO item.
+    assert.ok(doc.getText().includes(`* [12-14-2025 Sun]${separator}`));
+  });
+
+  test('Selection adds SCHEDULED to multiple tasks', async () => {
+    const separator = ' -------------------------------------------------------------------------------------------------------------------------------';
+    const contents = [
+      `* [12-14-2025 Sun]${separator}`,
+      '  *** TODO Task A',
+      '  *** TODO Task B',
+      '  *** TODO Task C',
+      ''
+    ].join('\n');
+
+    const uri = await writeTempVsoFile(contents);
+    const { doc, editor } = await openFileInEditor(uri);
+
+    const originalShowInputBox = vscode.window.showInputBox;
+    const answers = ['12', '31', '2025'];
+    vscode.window.showInputBox = async () => answers.shift();
+
+    try {
+      const start = new vscode.Position(0, 0);
+      const end = new vscode.Position(3, doc.lineAt(3).text.length);
+      editor.selection = new vscode.Selection(start, end);
+
+      await vscode.commands.executeCommand('extension.scheduling');
+
+      await waitFor(() => doc.getText().includes('*** TODO Task A    SCHEDULED: [12-31-2025]'));
+      await waitFor(() => doc.getText().includes('*** TODO Task B    SCHEDULED: [12-31-2025]'));
+      await waitFor(() => doc.getText().includes('*** TODO Task C    SCHEDULED: [12-31-2025]'));
+      assert.ok(doc.getText().includes(`* [12-14-2025 Sun]${separator}`));
+    } finally {
+      vscode.window.showInputBox = originalShowInputBox;
+    }
+  });
+
+  test('Selection adds DEADLINE to multiple tasks', async () => {
+    const separator = ' -------------------------------------------------------------------------------------------------------------------------------';
+    const contents = [
+      `* [12-14-2025 Sun]${separator}`,
+      '  *** TODO Task A',
+      '  *** TODO Task B',
+      '  *** TODO Task C',
+      ''
+    ].join('\n');
+
+    const uri = await writeTempVsoFile(contents);
+    const { doc, editor } = await openFileInEditor(uri);
+
+    const originalShowInputBox = vscode.window.showInputBox;
+    const answers = ['12', '31', '2025'];
+    vscode.window.showInputBox = async () => answers.shift();
+
+    try {
+      const start = new vscode.Position(0, 0);
+      const end = new vscode.Position(3, doc.lineAt(3).text.length);
+      editor.selection = new vscode.Selection(start, end);
+
+      await vscode.commands.executeCommand('extension.deadline');
+
+      await waitFor(() => doc.getText().includes('*** TODO Task A    DEADLINE: [12-31-2025]'));
+      await waitFor(() => doc.getText().includes('*** TODO Task B    DEADLINE: [12-31-2025]'));
+      await waitFor(() => doc.getText().includes('*** TODO Task C    DEADLINE: [12-31-2025]'));
+      assert.ok(doc.getText().includes(`* [12-14-2025 Sun]${separator}`));
+    } finally {
+      vscode.window.showInputBox = originalShowInputBox;
+    }
+  });
+
+  test('Selection adds TAG to multiple tasks and updates header', async () => {
+    const contents = [
+      '#+TAGS: FOO',
+      '  *** TODO Task A',
+      '  *** TODO Task B',
+      ''
+    ].join('\n');
+
+    const uri = await writeTempVsoFile(contents);
+    const { doc, editor } = await openFileInEditor(uri);
+
+    const originalShowInputBox = vscode.window.showInputBox;
+    vscode.window.showInputBox = async () => 'test';
+
+    try {
+      const start = new vscode.Position(1, 0);
+      const end = new vscode.Position(3, 0);
+      editor.selection = new vscode.Selection(start, end);
+
+      await vscode.commands.executeCommand('extension.addTagToTask');
+
+      await waitFor(() => doc.getText().includes('*** TODO : [+TAG:TEST] - Task A'));
+      await waitFor(() => doc.getText().includes('*** TODO : [+TAG:TEST] - Task B'));
+      await waitFor(() => doc.getText().includes('#+TAGS: FOO, TEST'));
+    } finally {
+      vscode.window.showInputBox = originalShowInputBox;
+    }
+  });
 });

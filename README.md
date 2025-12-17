@@ -135,25 +135,27 @@ See what’s coming next on the [ROADMAP](https://github.com/realdestroyer/org-v
 
 ## 🔑 Keyboard Shortcuts
 
+Most editing shortcuts support multi-line selection: highlight multiple task lines (or use multi-cursor) and run the command to apply it to every selected line.
+
 | Shortcut             | Description                                            |
 | -------------------- | ------------------------------------------------------ |
-| `Ctrl + →`           | Cycle TODO keyword forward                             |
-| `Ctrl + ←`           | Cycle TODO keyword backward                            |
+| `Ctrl + →`           | Cycle TODO keyword forward (selection-aware)           |
+| `Ctrl + ←`           | Cycle TODO keyword backward (selection-aware)          |
 | `Shift + Alt + ↑`    | Move task block up                                     |
 | `Shift + Alt + ↓`    | Move task block down                                   |
-| `Alt + →`            | Increase heading level                                 |
-| `Alt + ←`            | Decrease heading level                                 |
+| `Alt + →`            | Increase heading level (selection-aware)               |
+| `Alt + ←`            | Decrease heading level (selection-aware)               |
 | `Ctrl + Shift + [`   | Fold section                                           |
 | `Ctrl + Shift + ]`   | Unfold section                                         |
-| `Ctrl + Alt + S`     | Schedule a task                                        |
-| `Ctrl + Alt + D`     | Add deadline to task                                   |
-| `Alt + Shift + →`    | Smart date forward (day heading or SCHEDULED)          |
-| `Alt + Shift + ←`    | Smart date backward (day heading or SCHEDULED)         |
-| `Ctrl + Shift + →`   | Deadline date forward                                  |
-| `Ctrl + Shift + ←`   | Deadline date backward                                 |
+| `Ctrl + Alt + S`     | Schedule a task (selection-aware)                      |
+| `Ctrl + Alt + D`     | Add deadline to task (selection-aware)                 |
+| `Alt + Shift + →`    | Smart date forward (selection-aware)                   |
+| `Alt + Shift + ←`    | Smart date backward (selection-aware)                  |
+| `Ctrl + Shift + →`   | Deadline date forward (selection-aware)                |
+| `Ctrl + Shift + ←`   | Deadline date backward (selection-aware)               |
 | `Alt + Shift + A`    | Align all scheduled timestamps                         |
 | `Alt + Shift + S`    | Add separator line (hyphens)                           |
-| `Ctrl + Shift + T`   | Add tag to current task                                |
+| `Ctrl + Shift + T`   | Add tag to task (selection-aware)                      |
 | *(Command Palette)*  | Org-vscode: Convert Dates in Current File              |
 | `Ctrl + Shift + G`   | Open the Tagged Agenda View                            |
 | `Ctrl + Shift + C`   | Open the Calendar View                                 |
@@ -178,6 +180,10 @@ Then: Extensions Panel → More Actions (⋯) → *Install from VSIX...*
 ## 🎬 Demo
 
 <img src="https://github.com/realdestroyer/org-vscode/blob/master/Images/fullDemo.gif?raw=true" width="700" height="400" />
+
+### Multi-line selection editing
+
+<img src="https://github.com/realdestroyer/org-vscode/blob/master/Images/multiline-support-example.gif?raw=true" width="700" height="400" />
 
 ---
 

@@ -66,6 +66,22 @@ VS Code Settings editor (search for `Org-vscode:`):
 
 ---
 
+## ✅ Multi-line selection editing
+
+Most editing commands can operate on multiple tasks at once.
+
+1. Select multiple task lines (or use multi-cursor).
+2. Run the normal shortcut/command.
+
+Notes:
+
+* Prompts (like picking a date or tag) happen once and apply to all selected tasks.
+* Day headings are skipped where it wouldn’t make sense to edit them.
+
+<img src="https://github.com/realdestroyer/org-vscode/blob/master/Images/multiline-support-example.gif?raw=true" width="700" height="400" />
+
+---
+
 ## 📁 Change the Main Directory <a id="change-the-main-directory"></a>
 
 By default, the main directory is set to your home folder.
