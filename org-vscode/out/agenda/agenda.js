@@ -28,6 +28,15 @@ module.exports = function () {
     // Reads all .org files and builds agenda view HTML blocks grouped by scheduled date
     function readFiles() {
       fs.readdir(setMainDir(), (err, items) => {
+        function getSortTimestampFromAgendaKey(key) {
+          const dateMatch = key.match(/\[(\d{2}-\d{2}-\d{4})\]/);
+          if (!dateMatch) {
+            return null;
+          }
+          const parsed = moment(dateMatch[1], acceptedDateFormats, true);
+          return parsed.isValid() ? parsed.valueOf() : null;
+        }
+
         for (let i = 0; i < items.length; i++) {
           if (items[i].includes(".org")) {
             if (items[i] === "CurrentTasks.org") continue; // Skip export file
@@ -170,18 +179,30 @@ module.exports = function () {
               }
             }
 
-            // Sort agenda items by date and store in sortedObject for ordered rendering
-            Object.keys(unsortedObject)
-              .sort((a, b) => {
-                let dateA = moment(a.match(/\[(.*)\]/)[1], acceptedDateFormats, true).toDate();
-                let dateB = moment(b.match(/\[(.*)\]/)[1], acceptedDateFormats, true).toDate();
-                return dateA - dateB;
-              })
-              .forEach(key => {
-                sortedObject[key] = unsortedObject[key];
-              });
           }
         }
+
+        // Sort agenda items by date and store in sortedObject for ordered rendering.
+        // Important: do this once after scanning all files, otherwise overwriting existing
+        // keys will not update insertion order and results may appear out of chronological order.
+        Object.keys(unsortedObject)
+          .sort((a, b) => {
+            const tsA = getSortTimestampFromAgendaKey(a);
+            const tsB = getSortTimestampFromAgendaKey(b);
+            if (tsA == null && tsB == null) {
+              return a.localeCompare(b);
+            }
+            if (tsA == null) {
+              return 1;
+            }
+            if (tsB == null) {
+              return -1;
+            }
+            return tsA - tsB;
+          })
+          .forEach(key => {
+            sortedObject[key] = unsortedObject[key];
+          });
 
         // Build final webview string from sorted agenda entries
         Object.keys(sortedObject).forEach(property => {
