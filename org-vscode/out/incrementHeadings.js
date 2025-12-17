@@ -16,59 +16,82 @@ function rotateSymbol(step) {
         return;
     }
 
+    const selections = (editor.selections && editor.selections.length)
+        ? editor.selections
+        : [editor.selection];
+    const targetLines = new Set();
+    for (const selection of selections) {
+        if (selection.isEmpty) {
+            targetLines.add(selection.active.line);
+            continue;
+        }
+        const startLine = Math.min(selection.start.line, selection.end.line);
+        let endLine = Math.max(selection.start.line, selection.end.line);
+        if (selection.end.character === 0 && endLine > startLine) {
+            endLine -= 1;
+        }
+        for (let line = startLine; line <= endLine; line++) {
+            targetLines.add(line);
+        }
+    }
+    const sortedLines = Array.from(targetLines).sort((a, b) => b - a);
+
     const config = vscode.workspace.getConfiguration("Org-vscode");
     const headingMarkerStyle = config.get("headingMarkerStyle", "unicode");
 
     const document = editor.document;
-    const lineNumber = editor.selection.active.line;
-    const line = document.lineAt(lineNumber);
 
-    const starParsed = parseStarLine(line.text);
-    const unicodeParsed = parseLine(line.text);
+    const edit = new vscode.WorkspaceEdit();
+    let touched = false;
 
-    if (headingMarkerStyle === "asterisks") {
-        if (starParsed) {
-            const { indent, stars, gap, rest } = starParsed;
-            const nextStars = step > 0 ? `${stars}*` : (stars.length > 1 ? stars.slice(0, -1) : stars);
-            const spacer = gap.length ? gap : " ";
-            const updatedLine = `${indent}${nextStars}${spacer}${rest}`;
+    for (const lineNumber of sortedLines) {
+        const line = document.lineAt(lineNumber);
+        const starParsed = parseStarLine(line.text);
+        const unicodeParsed = parseLine(line.text);
 
-            const edit = new vscode.WorkspaceEdit();
+        let updatedLine = null;
+
+        if (headingMarkerStyle === "asterisks") {
+            if (starParsed) {
+                const { indent, stars, gap, rest } = starParsed;
+                const nextStars = step > 0 ? `${stars}*` : (stars.length > 1 ? stars.slice(0, -1) : stars);
+                const spacer = gap.length ? gap : " ";
+                updatedLine = `${indent}${nextStars}${spacer}${rest}`;
+            }
+            else if (unicodeParsed) {
+                maybePromptHeadingMarkerMismatch(document, "unicode", "asterisks");
+                updatedLine = rotateUnicodeText(unicodeParsed, step, config);
+            }
+        }
+        else {
+            if (unicodeParsed) {
+                updatedLine = rotateUnicodeText(unicodeParsed, step, config);
+            }
+            else if (starParsed) {
+                maybePromptHeadingMarkerMismatch(document, "asterisks", "unicode");
+                const { indent, stars, gap, rest } = starParsed;
+                const nextStars = step > 0 ? `${stars}*` : (stars.length > 1 ? stars.slice(0, -1) : stars);
+                const spacer = gap.length ? gap : " ";
+                updatedLine = `${indent}${nextStars}${spacer}${rest}`;
+            }
+        }
+
+        if (updatedLine && updatedLine !== line.text) {
             edit.replace(document.uri, line.range, updatedLine);
-            vscode.workspace.applyEdit(edit);
-            return;
+            touched = true;
         }
-
-        if (unicodeParsed) {
-            maybePromptHeadingMarkerMismatch(document, "unicode", "asterisks");
-            rotateUnicode(document, line, unicodeParsed, step, config);
-        }
-        return;
     }
 
-    if (unicodeParsed) {
-        rotateUnicode(document, line, unicodeParsed, step, config);
-        return;
-    }
-
-    if (starParsed) {
-        maybePromptHeadingMarkerMismatch(document, "asterisks", "unicode");
-        const { indent, stars, gap, rest } = starParsed;
-        const nextStars = step > 0 ? `${stars}*` : (stars.length > 1 ? stars.slice(0, -1) : stars);
-        const spacer = gap.length ? gap : " ";
-        const updatedLine = `${indent}${nextStars}${spacer}${rest}`;
-
-        const edit = new vscode.WorkspaceEdit();
-        edit.replace(document.uri, line.range, updatedLine);
+    if (touched) {
         vscode.workspace.applyEdit(edit);
     }
 }
 
-function rotateUnicode(document, line, parsed, step, config) {
+function rotateUnicodeText(parsed, step, config) {
     const { indent, symbol, gap, rest } = parsed;
     const index = SYMBOLS.indexOf(symbol);
     if (index === -1) {
-        return;
+        return null;
     }
 
     const nextSymbol = SYMBOLS[(index + step + SYMBOLS.length) % SYMBOLS.length];
@@ -78,11 +101,7 @@ function rotateUnicode(document, line, parsed, step, config) {
         : Math.max(0, Math.floor(Number(spacesPerLevelRaw) || 0));
     const adjustedIndent = spacesPerLevel > 0 ? adjustIndent(indent, step, spacesPerLevel) : indent;
     const spacer = gap.length ? gap : " ";
-    const updatedLine = `${adjustedIndent}${nextSymbol}${spacer}${rest}`;
-
-    const edit = new vscode.WorkspaceEdit();
-    edit.replace(document.uri, line.range, updatedLine);
-    vscode.workspace.applyEdit(edit);
+    return `${adjustedIndent}${nextSymbol}${spacer}${rest}`;
 }
 
 function maybePromptHeadingMarkerMismatch(document, detectedStyle, settingStyle) {

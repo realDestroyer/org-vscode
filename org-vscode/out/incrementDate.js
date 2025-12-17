@@ -9,11 +9,25 @@ function incrementDate(forward = true) {
     }
 
     const document = editor.document;
-    const selection = editor.selection;
-    const cursorPosition = selection.active;
-
-    const line = document.lineAt(cursorPosition.line);
-    let text = line.text;
+    const selections = (editor.selections && editor.selections.length)
+        ? editor.selections
+        : [editor.selection];
+    const targetLines = new Set();
+    for (const selection of selections) {
+        if (selection.isEmpty) {
+            targetLines.add(selection.active.line);
+            continue;
+        }
+        const startLine = Math.min(selection.start.line, selection.end.line);
+        let endLine = Math.max(selection.start.line, selection.end.line);
+        if (selection.end.character === 0 && endLine > startLine) {
+            endLine -= 1;
+        }
+        for (let line = startLine; line <= endLine; line++) {
+            targetLines.add(line);
+        }
+    }
+    const sortedLines = Array.from(targetLines).sort((a, b) => b - a);
 
     const config = vscode.workspace.getConfiguration("Org-vscode");
     const dateFormat = config.get("dateFormat", "MM-DD-YYYY");
@@ -21,36 +35,46 @@ function incrementDate(forward = true) {
 
     // Match Date Format: ⊘ [MM-DD-YYYY DDD] OR * [MM-DD-YYYY DDD]
     const dateRegex = /^(\s*)(⊘|\*+)\s*\[(\d{2}-\d{2}-\d{4}) (\w{3})\]/;
-    const match = text.match(dateRegex);
 
-    if (!match) {
-        vscode.window.showWarningMessage("No date stamp found on this line.");
+    const edit = new vscode.WorkspaceEdit();
+    let touched = false;
+    let warnedParse = false;
+
+    for (const lineNumber of sortedLines) {
+        const line = document.lineAt(lineNumber);
+        const text = line.text;
+        const match = text.match(dateRegex);
+        if (!match) {
+            continue;
+        }
+        const indent = match[1] || "";
+        const marker = match[2];
+        const currentDate = match[3];
+        const parsed = moment(currentDate, acceptedDateFormats, true);
+        if (!parsed.isValid()) {
+            warnedParse = true;
+            continue;
+        }
+        const newDate = parsed.add(forward ? 1 : -1, "days");
+        const newFormattedDate = `${indent}${marker} [${newDate.format(dateFormat)} ${newDate.format("ddd")}]`;
+        const updatedText = text.replace(dateRegex, newFormattedDate);
+        if (updatedText !== text) {
+            edit.replace(document.uri, line.range, updatedText);
+            touched = true;
+        }
+    }
+
+    if (!touched) {
+        if (warnedParse) {
+            vscode.window.showWarningMessage(`Could not parse one or more date stamps using format ${dateFormat}.`);
+        }
+        else {
+            vscode.window.showWarningMessage("No date stamp found on selected line(s).");
+        }
         return;
     }
 
-    const indent = match[1] || "";
-    const marker = match[2];
-    const currentDate = match[3]; // Extract date part
-    const parsed = moment(currentDate, acceptedDateFormats, true);
-    if (!parsed.isValid()) {
-        vscode.window.showWarningMessage(`Could not parse date using format ${dateFormat}.`);
-        return;
-    }
-    const newDate = parsed.add(forward ? 1 : -1, "days"); // Increment or decrement by one day
-
-    // Generate new formatted date
-    const newFormattedDate = `${indent}${marker} [${newDate.format(dateFormat)} ${newDate.format("ddd")}]`;
-
-    // Replace old date with new date
-    const updatedText = text.replace(dateRegex, newFormattedDate);
-
-    // Edit document
-    editor.edit(editBuilder => {
-        const lineRange = new vscode.Range(cursorPosition.line, 0, cursorPosition.line, text.length);
-        editBuilder.replace(lineRange, updatedText);
-    });
-
-    console.log(`📅 Date changed: ${match[0]} → ${newFormattedDate}`);
+    vscode.workspace.applyEdit(edit);
 }
 
 // ** Command to increment the date forward **
