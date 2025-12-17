@@ -45,6 +45,7 @@ VS Code Settings editor (search for `Org-vscode:`):
 
 ## 📘 Table of Contents <a id="table-of-contents"></a>
 
+* [✅ Multi-line selection editing](#-multi-line-selection-editing)
 * [📁 Change the Main Directory](#change-the-main-directory)
 * [📝 Create a New .org File](#create-a-new-org-file)
 * [🔖 Create a Header](#create-a-header)
