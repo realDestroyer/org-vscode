@@ -5,6 +5,21 @@
 
 - *(Nothing yet)*
 
+# [1.10.7] 12-16-25
+`Fixed`
+
+- **Agenda View chronological ordering:**
+  - Fixed date-group sorting so agenda sections display in true chronological order.
+  - Avoids unstable sorting caused by greedy bracket parsing in the agenda header key.
+
+`Enhanced`
+
+- **Cross-platform file paths (Linux/macOS/Windows):**
+  - Commands that create/open/read org files now consistently use `path.join(...)` for directory/file paths.
+
+- **Docs:**
+  - Added CONTRIBUTING workflow guide (Issue -> Branch -> PR -> Review -> Merge).
+
 # [1.10.6] 12-16-25
 `Enhanced`
 

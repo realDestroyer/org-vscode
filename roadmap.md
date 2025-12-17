@@ -1,6 +1,6 @@
 ﻿# Roadmap
 
-Live version: 1.10.6
+Live version: 1.10.7
 
 These are the features that I have either already implemented, or plan to in the near future.
 
@@ -14,6 +14,8 @@ These are the features that I have either already implemented, or plan to in the
 | Bulleted Lists            | Make an ordered or unordered list                                                          | In Progress |          | realDestroyer |
 | TODO Tracking             | Show TODO completion on the up-most level                                                  | In Progress |          | realDestroyer |
 | JIRA Integration          | Allow tasks to be pushed to JIRA (Epic, Story, Issues, sub-tasks, etc.)                    | In Progress |          | realDestroyer |
+| Agenda View Date Sorting  | Ensure Agenda View date groups render in chronological order                               | DONE        | v1.10.7  | realDestroyer |
+| Cross-platform Paths      | Use `path.join(...)` for file open/read/create paths so commands work on Linux/macOS/Windows | DONE      | v1.10.7  | realDestroyer |
 | Preserve Org `*` Headings | Optional marker style toggle (`headingMarkerStyle`) to keep `* TODO` headings for Emacs/org-mode compatibility | DONE | v1.10.5 | realDestroyer |
 | Decorative Unicode Headings | Render Unicode markers via editor decorations while keeping `*` headings as the source of truth | DONE | v1.10.6 | realDestroyer |
 | Configurable Date Format  | Ensure all date parsing/writing respects `Org-vscode.dateFormat` across commands/views     | DONE | v1.10.6 | realDestroyer |
