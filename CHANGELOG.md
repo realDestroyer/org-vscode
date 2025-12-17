@@ -12,6 +12,7 @@
   - `Org-vscode.decorateUnicodeHeadings` can render Unicode heading markers visually while keeping `*` headings in the file.
   - `Org-vscode.decorateHeadingIndentation` optionally adds org-indent-like visual indentation for headings.
   - `Org-vscode.adjustHeadingIndentation` is now numeric (spaces per level; `0` disables), used by heading increment/decrement and decoration indentation width.
+  - Heading increment/decrement now works even if `headingMarkerStyle` doesn't match the current file, and prompts to update settings.
 
 - **Date formatting correctness:**
   - Commands and views that parse/write scheduled/deadline dates now use `Org-vscode.dateFormat` consistently.
