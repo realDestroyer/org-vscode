@@ -54,7 +54,7 @@ module.exports = function () {
     function setMainDir() {
         if (folderPath === "") {
             let homeDir = os.homedir();
-            folder = homeDir + "\\OrgFiles";
+            folder = path.join(homeDir, "OrgFiles");
         }
         else {
             folder = folderPath;
