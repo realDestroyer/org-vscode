@@ -4,6 +4,8 @@ const vscode = require("vscode");
 
 const SYMBOLS = ["⊖", "⊙", "⊘", "⊜", "⊗"];
 
+const mismatchPrompted = new Set();
+
 module.exports = function decrementHeading() {
     rotateSymbol(-1);
 };
@@ -21,12 +23,36 @@ function rotateSymbol(step) {
     const lineNumber = editor.selection.active.line;
     const line = document.lineAt(lineNumber);
 
+    const starParsed = parseStarLine(line.text);
+    const unicodeParsed = parseLine(line.text);
+
     if (headingMarkerStyle === "asterisks") {
-        const starParsed = parseStarLine(line.text);
-        if (!starParsed) {
+        if (starParsed) {
+            const { indent, stars, gap, rest } = starParsed;
+            const nextStars = step > 0 ? `${stars}*` : (stars.length > 1 ? stars.slice(0, -1) : stars);
+            const spacer = gap.length ? gap : " ";
+            const updatedLine = `${indent}${nextStars}${spacer}${rest}`;
+
+            const edit = new vscode.WorkspaceEdit();
+            edit.replace(document.uri, line.range, updatedLine);
+            vscode.workspace.applyEdit(edit);
             return;
         }
 
+        if (unicodeParsed) {
+            maybePromptHeadingMarkerMismatch(document, "unicode", "asterisks");
+            rotateUnicode(document, line, unicodeParsed, step, config);
+        }
+        return;
+    }
+
+    if (unicodeParsed) {
+        rotateUnicode(document, line, unicodeParsed, step, config);
+        return;
+    }
+
+    if (starParsed) {
+        maybePromptHeadingMarkerMismatch(document, "asterisks", "unicode");
         const { indent, stars, gap, rest } = starParsed;
         const nextStars = step > 0 ? `${stars}*` : (stars.length > 1 ? stars.slice(0, -1) : stars);
         const spacer = gap.length ? gap : " ";
@@ -35,13 +61,10 @@ function rotateSymbol(step) {
         const edit = new vscode.WorkspaceEdit();
         edit.replace(document.uri, line.range, updatedLine);
         vscode.workspace.applyEdit(edit);
-        return;
     }
-    const parsed = parseLine(line.text);
-    if (!parsed) {
-        return;
-    }
+}
 
+function rotateUnicode(document, line, parsed, step, config) {
     const { indent, symbol, gap, rest } = parsed;
     const index = SYMBOLS.indexOf(symbol);
     if (index === -1) {
@@ -60,6 +83,25 @@ function rotateSymbol(step) {
     const edit = new vscode.WorkspaceEdit();
     edit.replace(document.uri, line.range, updatedLine);
     vscode.workspace.applyEdit(edit);
+}
+
+function maybePromptHeadingMarkerMismatch(document, detectedStyle, settingStyle) {
+    const key = `${document.uri.toString()}|${detectedStyle}|${settingStyle}`;
+    if (mismatchPrompted.has(key)) {
+        return;
+    }
+    mismatchPrompted.add(key);
+
+    vscode.window
+        .showInformationMessage(
+        `This file appears to use ${detectedStyle === "asterisks" ? "* headings" : "Unicode headings"}, but Org-vscode.headingMarkerStyle is set to '${settingStyle}'.`,
+        "Open Setting"
+    )
+        .then((choice) => {
+        if (choice === "Open Setting") {
+            vscode.commands.executeCommand("workbench.action.openSettings", "Org-vscode.headingMarkerStyle");
+        }
+    });
 }
 
 function parseLine(text) {
