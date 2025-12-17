@@ -70,12 +70,8 @@ module.exports = function () {
      * Resolves the working folder path from user config or defaults to ~/VSOrgFiles
      */
     function setMainDir() {
-        if (!folderPath || folderPath.trim() === "") {
-            let home = os.homedir();
-            return os.platform() === "win32"
-              ? path.join(home, "VSOrgFiles")
-              : path.join(home, "VSOrgFiles");
-        }
-        return folderPath;
+        return folderPath && folderPath.trim() !== ""
+            ? folderPath
+            : path.join(os.homedir(), "VSOrgFiles");
     }
 };
