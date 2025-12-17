@@ -280,7 +280,7 @@ function getCalendarWebviewContent({ webview, nonce }) {
   const script = `(()=>{
     const vscode=acquireVsCodeApi();
     const orgDateFormat=${JSON.stringify(dateFormat)};
-    let cal; let all=[]; let activeTags=[]; let lastRange=null;
+    let cal; let all=[]; let activeTags=[]; let activeFile=''; let lastRange=null;
     const palette=['#f97316','#facc15','#0ea5e9','#22c55e','#a855f7','#ec4899','#14b8a6','#f87171','#6366f1','#eab308','#84cc16','#fb7185'];
     const tagColors={};
 
@@ -310,6 +310,31 @@ function getCalendarWebviewContent({ webview, nonce }) {
       const taskDate=moment(task.date);
       return taskDate.isSameOrAfter(start,'day') && taskDate.isBefore(end,'day');
     };
+
+    function renderFileChips(tasks){
+      const container=document.getElementById('file-bubbles');
+      if(!container) return;
+      const files=new Set();
+      (tasks||[]).forEach(t=>{ if(t && t.file) files.add(t.file); });
+      const sorted=[...files].sort((a,b)=>String(a).toLowerCase().localeCompare(String(b).toLowerCase()));
+      if(activeFile && !files.has(activeFile)) activeFile='';
+      if(sorted.length===0){
+        container.innerHTML='<div class="no-tags">No files in view</div>';
+        return;
+      }
+      container.innerHTML=sorted.map(f=>{
+        let cls='file-chip';
+        if(activeFile){ cls+= (activeFile===f)?' selected':' inactive'; }
+        return '<span class="'+cls+'" data-file="'+String(f).replace(/"/g,'&quot;')+'" title="'+String(f).replace(/"/g,'&quot;')+'">'+String(f)+'</span>';
+      }).join('');
+      container.querySelectorAll('.file-chip').forEach(el=>{
+        el.addEventListener('click',()=>{
+          const f=el.dataset.file;
+          activeFile = (activeFile===f) ? '' : f;
+          renderCurrentRange(lastRange);
+        });
+      });
+    }
 
     function renderTagChips(tasks){
       const container=document.getElementById('tag-bubbles'); if(!container) return;
@@ -344,6 +369,9 @@ function getCalendarWebviewContent({ webview, nonce }) {
       if(!cal) return;
       cal.removeAllEvents();
       let tasks=visible||[];
+      if(activeFile){
+        tasks = tasks.filter(t=>t.file===activeFile);
+      }
       if(activeTags.length){
         tasks = tasks.filter(t=>(t.tags||[]).some(tag=>activeTags.includes(tag)));
       }
@@ -366,7 +394,10 @@ function getCalendarWebviewContent({ webview, nonce }) {
       const status=document.getElementById('status');
       if(status){
         const rangeNote=lastRange?moment(lastRange.start).format('MMM D')+' – '+moment(lastRange.end).subtract(1,'day').format('MMM D'):'';
-        status.textContent=tasks.length+' task(s) in view'+(rangeNote?' · '+rangeNote:'')+(activeTags.length?' · filtered':'' );
+        status.textContent=tasks.length+' task(s) in view'
+          +(rangeNote?' · '+rangeNote:'')
+          +(activeFile?' · '+activeFile:'')
+          +(activeTags.length?' · filtered':'' );
       }
     }
 
@@ -375,9 +406,11 @@ function getCalendarWebviewContent({ webview, nonce }) {
         if(cal && cal.view){ range={start:cal.view.activeStart,end:cal.view.activeEnd}; } else { return; }
       }
       lastRange=range;
-      const visible=all.filter(task=>isWithinRange(task,range));
-      renderTagChips(visible);
-      syncEvents(visible);
+      const inRange=all.filter(task=>isWithinRange(task,range));
+      renderFileChips(inRange);
+      const afterFile = activeFile ? inRange.filter(t=>t.file===activeFile) : inRange;
+      renderTagChips(afterFile);
+      syncEvents(afterFile);
     }
 
     function init(){
@@ -423,7 +456,12 @@ function getCalendarWebviewContent({ webview, nonce }) {
     '#app-container{display:flex;height:100vh;overflow:hidden;}',
     '#sidebar{width:200px;min-width:160px;max-width:280px;background:#2a2a30;border-right:1px solid #3a3a42;display:flex;flex-direction:column;overflow:hidden;}',
     '#sidebar-header{padding:12px 14px;border-bottom:1px solid #3a3a42;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:#9ca3af;flex-shrink:0;}',
+    '#file-bubbles{flex:0 0 auto;max-height:170px;overflow-y:auto;padding:8px;display:flex;flex-direction:column;gap:6px;border-bottom:1px solid #3a3a42;}',
     '#tag-bubbles{flex:1;overflow-y:auto;padding:8px;display:flex;flex-direction:column;gap:6px;}',
+    '#file-bubbles::-webkit-scrollbar{width:6px;}',
+    '#file-bubbles::-webkit-scrollbar-track{background:#2a2a30;}',
+    '#file-bubbles::-webkit-scrollbar-thumb{background:#4a4a52;border-radius:3px;}',
+    '#file-bubbles::-webkit-scrollbar-thumb:hover{background:#5a5a62;}',
     '#tag-bubbles::-webkit-scrollbar{width:6px;}',
     '#tag-bubbles::-webkit-scrollbar-track{background:#2a2a30;}',
     '#tag-bubbles::-webkit-scrollbar-thumb{background:#4a4a52;border-radius:3px;}',
@@ -437,6 +475,10 @@ function getCalendarWebviewContent({ webview, nonce }) {
     '.tag-chip:hover{transform:translateX(2px);opacity:.95;box-shadow:0 3px 8px rgba(0,0,0,.3);}',
     '.tag-chip.inactive{opacity:.35;filter:saturate(20%);}',
     '.tag-chip.selected{outline:2px solid rgba(255,255,255,.9);box-shadow:0 0 0 2px rgba(255,255,255,.25);}',
+    '.file-chip{display:flex;align-items:center;padding:6px 12px;font-size:11px;font-weight:600;border-radius:6px;color:#fff;cursor:pointer;user-select:none;box-shadow:0 2px 4px rgba(0,0,0,.2);transition:transform .1s ease,opacity .1s ease;border:1px solid #4a4a52;background:#4a4a52;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}',
+    '.file-chip:hover{transform:translateX(2px);opacity:.95;box-shadow:0 3px 8px rgba(0,0,0,.3);}',
+    '.file-chip.inactive{opacity:.35;}',
+    '.file-chip.selected{outline:2px solid rgba(255,255,255,.9);box-shadow:0 0 0 2px rgba(255,255,255,.25);}',
     '.no-tags{font-size:11px;color:#6b7280;padding:12px;text-align:center;font-style:italic;}',
     '</style>',
     '<script nonce="'+nonce+'" src="'+momentJs+'"></script>',
@@ -446,6 +488,8 @@ function getCalendarWebviewContent({ webview, nonce }) {
     '<body>',
     '<div id="app-container">',
     '<aside id="sidebar">',
+    '<div id="sidebar-header">Files</div>',
+    '<div id="file-bubbles" aria-label="File filters"></div>',
     '<div id="sidebar-header">Tag Filters</div>',
     '<div id="tag-bubbles" aria-label="Tag filters"></div>',
     '</aside>',
