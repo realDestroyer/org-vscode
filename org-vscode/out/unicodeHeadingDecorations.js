@@ -3,6 +3,7 @@
 const vscode = require("vscode");
 
 const TASK_LINE_REGEX = /^(\s*)(\*+)\s+(TODO|IN_PROGRESS|CONTINUED|DONE|ABANDONED)\b/;
+const HEADING_LINE_REGEX = /^(\s*)(\*+)\s+\S/;
 const DAY_HEADING_REGEX = /^(\s*)(\*+)\s*\[(\d{2}-\d{2}-\d{4})(?:\s+([A-Za-z]{3}))?.*$/;
 const UNICODE_PREFIX_REGEX = /^(\s*)[⊙⊘⊜⊖⊗]\s/;
 
@@ -86,7 +87,8 @@ function getRevealLines(editor) {
     const lineText = editor.document.lineAt(lineNumber).text;
     const taskMatch = lineText.match(TASK_LINE_REGEX);
     const dayMatch = !taskMatch ? lineText.match(DAY_HEADING_REGEX) : null;
-    const match = taskMatch || dayMatch;
+    const headingMatch = !taskMatch && !dayMatch ? lineText.match(HEADING_LINE_REGEX) : null;
+    const match = taskMatch || dayMatch || headingMatch;
     if (!match) continue;
 
     const indent = match[1] || "";
@@ -202,6 +204,41 @@ function computeDecorationsForEditor(editor) {
             before: {
               contentText: visualIndent + "⊘ ",
               ...(foreground ? { color: foreground } : {})
+            }
+          }
+        });
+
+        let hideEnd = indent.length + stars.length;
+        if (lineText.length > hideEnd && lineText[hideEnd] === " ") {
+          hideEnd += 1;
+        }
+        const hideStart = new vscode.Position(lineNumber, indent.length);
+        const hideStop = new vscode.Position(lineNumber, Math.min(hideEnd, lineText.length));
+        if (hideStop.character > hideStart.character) {
+          hideRanges.push(new vscode.Range(hideStart, hideStop));
+        }
+
+        continue;
+      }
+
+      const headingMatch = lineText.match(HEADING_LINE_REGEX);
+      if (headingMatch) {
+        const indent = headingMatch[1] || "";
+        const stars = headingMatch[2] || "";
+
+        const indentCount = decorateHeadingIndentation
+          ? Math.max(0, stars.length - 1) * spacesPerLevel
+          : 0;
+        const visualIndent = indentCount > 0 ? INDENT_SPACE.repeat(indentCount) : "";
+
+        // Keep column alignment consistent with status headings (which add a 2-char marker like "⊖ ").
+        const insertAt = new vscode.Position(lineNumber, indent.length);
+        const markerRange = new vscode.Range(insertAt, insertAt);
+        markerDecorations.push({
+          range: markerRange,
+          renderOptions: {
+            before: {
+              contentText: visualIndent + INDENT_SPACE.repeat(2)
             }
           }
         });
