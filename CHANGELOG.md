@@ -3,6 +3,11 @@
 # [Unreleased]
 `Enhanced`
 
+- *(Nothing yet)*
+
+# [1.10.8] 12-17-25
+`Enhanced`
+
 - **Multi-line selection editing:**
   - Status cycling (`Ctrl+Left/Right`) now applies across multi-line selections / multi-cursor.
   - Scheduling (`Ctrl+Alt+S`), deadlines (`Ctrl+Alt+D`), and inline tags (`Ctrl+Shift+T`) now support applying to multiple selected tasks at once.
