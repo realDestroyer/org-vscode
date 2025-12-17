@@ -19,61 +19,85 @@ function smartDateAdjust(forward = true) {
     const acceptedDateFormats = [dateFormat, "MM-DD-YYYY", "DD-MM-YYYY"];
 
     const document = editor.document;
-    const cursorPosition = editor.selection.active;
-    const line = document.lineAt(cursorPosition.line);
-    let text = line.text;
+    const selections = (editor.selections && editor.selections.length)
+        ? editor.selections
+        : [editor.selection];
+    const targetLines = new Set();
+    for (const selection of selections) {
+        if (selection.isEmpty) {
+            targetLines.add(selection.active.line);
+            continue;
+        }
+        const startLine = Math.min(selection.start.line, selection.end.line);
+        let endLine = Math.max(selection.start.line, selection.end.line);
+        if (selection.end.character === 0 && endLine > startLine) {
+            endLine -= 1;
+        }
+        for (let line = startLine; line <= endLine; line++) {
+            targetLines.add(line);
+        }
+    }
+    const sortedLines = Array.from(targetLines).sort((a, b) => b - a);
 
-    // Pattern 1: Day heading - ⊘ [MM-DD-YYYY DDD] OR * [MM-DD-YYYY DDD]
     const dayHeadingRegex = /^(\s*)(⊘|\*+)\s*\[(\d{2}-\d{2}-\d{4}) (\w{3})\]/;
-    const dayMatch = text.match(dayHeadingRegex);
-
-    if (dayMatch) {
-        const indent = dayMatch[1] || "";
-        const marker = dayMatch[2];
-        const currentDate = dayMatch[3];
-        const parsed = moment(currentDate, acceptedDateFormats, true);
-        if (!parsed.isValid()) {
-            vscode.window.showWarningMessage(`Could not parse date using format ${dateFormat}.`);
-            return;
-        }
-        const newDate = parsed.add(forward ? 1 : -1, "days");
-        const newFormattedDate = `${indent}${marker} [${newDate.format(dateFormat)} ${newDate.format("ddd")}]`;
-        const updatedText = text.replace(dayHeadingRegex, newFormattedDate);
-
-        editor.edit(editBuilder => {
-            const lineRange = new vscode.Range(cursorPosition.line, 0, cursorPosition.line, text.length);
-            editBuilder.replace(lineRange, updatedText);
-        });
-
-        console.log(`📅 Day heading changed: ${dayMatch[0]} → ${newFormattedDate}`);
-        return;
-    }
-
-    // Pattern 2: SCHEDULED date - SCHEDULED: [MM-DD-YYYY]
     const scheduledRegex = /SCHEDULED:\s*\[(\d{2}-\d{2}-\d{4})\]/;
-    const scheduledMatch = text.match(scheduledRegex);
 
-    if (scheduledMatch) {
-        const currentDate = scheduledMatch[1];
-        const parsed = moment(currentDate, acceptedDateFormats, true);
-        if (!parsed.isValid()) {
-            vscode.window.showWarningMessage(`Could not parse scheduled date using format ${dateFormat}.`);
-            return;
+    const edit = new vscode.WorkspaceEdit();
+    let touched = false;
+    let warnedParse = false;
+
+    for (const lineNumber of sortedLines) {
+        const line = document.lineAt(lineNumber);
+        const text = line.text;
+
+        const dayMatch = text.match(dayHeadingRegex);
+        if (dayMatch) {
+            const indent = dayMatch[1] || "";
+            const marker = dayMatch[2];
+            const currentDate = dayMatch[3];
+            const parsed = moment(currentDate, acceptedDateFormats, true);
+            if (!parsed.isValid()) {
+                warnedParse = true;
+                continue;
+            }
+            const newDate = parsed.add(forward ? 1 : -1, "days");
+            const newFormattedDate = `${indent}${marker} [${newDate.format(dateFormat)} ${newDate.format("ddd")}]`;
+            const updatedText = text.replace(dayHeadingRegex, newFormattedDate);
+            if (updatedText !== text) {
+                edit.replace(document.uri, line.range, updatedText);
+                touched = true;
+            }
+            continue;
         }
-        const newDate = parsed.add(forward ? 1 : -1, "day").format(dateFormat);
-        const updatedText = text.replace(scheduledRegex, `SCHEDULED: [${newDate}]`);
 
-        editor.edit(editBuilder => {
-            const lineRange = new vscode.Range(cursorPosition.line, 0, cursorPosition.line, text.length);
-            editBuilder.replace(lineRange, updatedText);
-        });
+        const scheduledMatch = text.match(scheduledRegex);
+        if (scheduledMatch) {
+            const currentDate = scheduledMatch[1];
+            const parsed = moment(currentDate, acceptedDateFormats, true);
+            if (!parsed.isValid()) {
+                warnedParse = true;
+                continue;
+            }
+            const newDate = parsed.add(forward ? 1 : -1, "day").format(dateFormat);
+            const updatedText = text.replace(scheduledRegex, `SCHEDULED: [${newDate}]`);
+            if (updatedText !== text) {
+                edit.replace(document.uri, line.range, updatedText);
+                touched = true;
+            }
+        }
+    }
 
-        console.log(`📅 Scheduled date changed: ${scheduledMatch[1]} → ${newDate}`);
+    if (!touched) {
+        if (warnedParse) {
+            vscode.window.showWarningMessage(`Could not parse one or more dates using format ${dateFormat}.`);
+        }
+        else {
+            vscode.window.showWarningMessage("No day heading or SCHEDULED date found on selected line(s).");
+        }
         return;
     }
 
-    // No matching date found
-    vscode.window.showWarningMessage("No day heading or SCHEDULED date found on this line.");
+    vscode.workspace.applyEdit(edit);
 }
 
 function smartDateForward() {

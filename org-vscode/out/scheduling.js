@@ -9,59 +9,116 @@ module.exports = function () {
         return;
     }
     const { document } = activeTextEditor;
-    const position = activeTextEditor.selection.active.line;
-    const currentLine = document.lineAt(position);
+    const selections = (activeTextEditor.selections && activeTextEditor.selections.length)
+        ? activeTextEditor.selections
+        : [activeTextEditor.selection];
+    const targetLines = new Set();
+    let hasRangeSelection = false;
+    for (const selection of selections) {
+        if (selection.isEmpty) {
+            targetLines.add(selection.active.line);
+            continue;
+        }
+        hasRangeSelection = true;
+        const startLine = Math.min(selection.start.line, selection.end.line);
+        let endLine = Math.max(selection.start.line, selection.end.line);
+        if (selection.end.character === 0 && endLine > startLine) {
+            endLine -= 1;
+        }
+        for (let line = startLine; line <= endLine; line++) {
+            targetLines.add(line);
+        }
+    }
+    const sortedLines = Array.from(targetLines).sort((a, b) => b - a);
     let workspaceEdit = new vscode.WorkspaceEdit();
     const config = vscode.workspace.getConfiguration("Org-vscode");
     const dateFormat = config.get("dateFormat", "MM-DD-YYYY");
     // Messages
     const fullDateMessage = new showMessage_1.WindowMessage("warning", "Full date must be entered", false, false);
     const notADateMessage = new showMessage_1.WindowMessage("warning", "That's not a valid date.", false, false);
-    if (currentLine.text.includes("SCHEDULED:")) {
+
+    const dayHeadingRegex = /^\s*(⊘|\*+)\s*\[\d{2}-\d{2}-\d{4}\s+[A-Za-z]{3}\]/;
+    const taskPrefixRegex = /^\s*(?:[⊙⊘⊜⊖⊗]\s*)?(?:\*+\s+)?(?:TODO|IN_PROGRESS|CONTINUED|DONE|ABANDONED)\b/;
+
+    const linesToRemove = [];
+    const linesToAdd = [];
+
+    for (const lineNumber of sortedLines) {
+        const lineText = document.lineAt(lineNumber).text;
+        if (!lineText.trim()) {
+            continue;
+        }
+        if (dayHeadingRegex.test(lineText)) {
+            continue;
+        }
+        if (lineText.includes("SCHEDULED:")) {
+            linesToRemove.push(lineNumber);
+            continue;
+        }
+        if (hasRangeSelection && !taskPrefixRegex.test(lineText)) {
+            continue;
+        }
+        linesToAdd.push(lineNumber);
+    }
+
+    // Maintain existing single-cursor toggle behavior (remove SCHEDULED without prompting).
+    if (!hasRangeSelection && linesToRemove.length === 1 && linesToAdd.length === 0) {
+        const lineNumber = linesToRemove[0];
+        const currentLine = document.lineAt(lineNumber);
         const removeScheduled = currentLine.text
-            .replace(/\b(SCHEDULED)\b(.*)/, "")
+            .replace(/\s*SCHEDULED:\s*\[[^\]]*\]/, "")
             .trimRight();
-        workspaceEdit.delete(document.uri, currentLine.range);
-        workspaceEdit.insert(document.uri, currentLine.range.start, removeScheduled);
+        workspaceEdit.replace(document.uri, currentLine.range, removeScheduled);
         return vscode.workspace.applyEdit(workspaceEdit);
     }
     async function getInput(prompt, placeHolder) {
         return await vscode.window.showInputBox({ prompt, placeHolder });
     }
     (async function () {
-        const month = await getInput("Enter the month (MM) you want to schedule:", "Example: 08 for August");
-        if (!month || month.length > 2 || !isValidMonth(month)) {
-            return fullDateMessage.showMessage();
+        // 1) Remove any existing SCHEDULED tags in selection.
+        for (const lineNumber of linesToRemove) {
+            const currentLine = document.lineAt(lineNumber);
+            const removeScheduled = currentLine.text
+                .replace(/\s*SCHEDULED:\s*\[[^\]]*\]/, "")
+                .trimRight();
+            workspaceEdit.replace(document.uri, currentLine.range, removeScheduled);
         }
-        
-        const day = await getInput("Enter the day (DD) you want to schedule:", "Example: 08 for the eighth");
-        const year = await getInput("Enter the year (YYYY) you want to schedule:", "Example: 2025");
-        
-        if (!day || day.length > 2 || !year || year.length !== 4 || !isValidDay(day, month, year)) {
-            return notADateMessage.showMessage();
+
+        // 2) Add SCHEDULED tag to eligible lines (prompt once).
+        if (linesToAdd.length > 0) {
+            const month = await getInput("Enter the month (MM) you want to schedule:", "Example: 08 for August");
+            if (!month || month.length > 2 || !isValidMonth(month)) {
+                return fullDateMessage.showMessage();
+            }
+
+            const day = await getInput("Enter the day (DD) you want to schedule:", "Example: 08 for the eighth");
+            const year = await getInput("Enter the year (YYYY) you want to schedule:", "Example: 2025");
+
+            if (!day || day.length > 2 || !year || year.length !== 4 || !isValidDay(day, month, year)) {
+                return notADateMessage.showMessage();
+            }
+
+            const formattedDate = moment(`${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`, "YYYY-MM-DD", true).format(dateFormat);
+            const scheduledTag = `SCHEDULED: [${formattedDate}]`;
+
+            for (const lineNumber of linesToAdd) {
+                const currentLine = document.lineAt(lineNumber);
+                let newLineText;
+                if (currentLine.text.includes("DEADLINE:")) {
+                    newLineText = currentLine.text.replace(/(\s*)(DEADLINE:\s*\[[^\]]*\])/, `    ${scheduledTag}$1$2`);
+                }
+                else {
+                    newLineText = `${currentLine.text}    ${scheduledTag}`;
+                }
+                workspaceEdit.replace(document.uri, currentLine.range, newLineText);
+            }
         }
-        
-        const formattedDate = moment(
-            `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`,
-            "YYYY-MM-DD",
-            true
-        ).format(dateFormat);
-        const scheduledTag = `SCHEDULED: [${formattedDate}]`;
-        
-        let newLineText;
-        // If line has DEADLINE, insert SCHEDULED before it
-        if (currentLine.text.includes("DEADLINE:")) {
-            newLineText = currentLine.text.replace(
-                /(\s*)(DEADLINE:\s*\[[^\]]*\])/,
-                `    ${scheduledTag}$1$2`
-            );
-        } else {
-            // Otherwise append to end of line
-            newLineText = `${currentLine.text}    ${scheduledTag}`;
+
+        if (linesToRemove.length === 0 && linesToAdd.length === 0) {
+            vscode.window.showWarningMessage("No task lines found to schedule.");
+            return;
         }
-        
-        workspaceEdit.delete(document.uri, currentLine.range);
-        workspaceEdit.insert(document.uri, currentLine.range.start, newLineText);
+
         await vscode.workspace.applyEdit(workspaceEdit);
         vscode.commands.executeCommand("workbench.action.files.save");
     })();

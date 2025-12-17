@@ -20,34 +20,74 @@ module.exports = function addTag() {
         // Normalize the input to uppercase for consistency
         const inputTagUpper = inputTag.toUpperCase();
         const { document } = activeTextEditor;
-        const position = activeTextEditor.selection.active.line;
-        const currentLine = document.lineAt(position);
-        const lineText = currentLine.text;
         const filePath = document.uri;
+        const selections = (activeTextEditor.selections && activeTextEditor.selections.length)
+            ? activeTextEditor.selections
+            : [activeTextEditor.selection];
+        const targetLines = new Set();
+        let hasRangeSelection = false;
+        for (const selection of selections) {
+            if (selection.isEmpty) {
+                targetLines.add(selection.active.line);
+                continue;
+            }
+            hasRangeSelection = true;
+            const startLine = Math.min(selection.start.line, selection.end.line);
+            let endLine = Math.max(selection.start.line, selection.end.line);
+            if (selection.end.character === 0 && endLine > startLine) {
+                endLine -= 1;
+            }
+            for (let line = startLine; line <= endLine; line++) {
+                targetLines.add(line);
+            }
+        }
+        const sortedLines = Array.from(targetLines).sort((a, b) => b - a);
 
         const tagRegex = /\[\+TAG:(.*?)\]/;
-        const existingTagMatch = lineText.match(tagRegex);
-        let newLine;
-
-        // If line already has a tag block, append the new tag (if it's not a duplicate)
-        if (existingTagMatch) {
-            let currentTags = existingTagMatch[1].split(",").map(tag => tag.trim().toUpperCase());
-            if (!currentTags.includes(inputTagUpper)) {
-                currentTags.push(inputTagUpper);
-            }
-            const updatedTagBlock = `[+TAG:${currentTags.join(",")}]`;
-            newLine = lineText.replace(tagRegex, updatedTagBlock);
-        } else {
-            // Insert a new tag block after the task keyword if it doesn't exist yet
-            newLine = lineText.replace(
-                            /^(\s*(?:[⊙⊘⊜⊖⊗]\s*)?(?:\*+\s+)?(?:TODO|IN_PROGRESS|CONTINUED|DONE|ABANDONED)\b)/,
-                            `$1 : [+TAG:${inputTagUpper}] -`
-            );
-        }
-
-        // Prepare workspace edit to update this line
         const edit = new vscode.WorkspaceEdit();
-        edit.replace(filePath, currentLine.range, newLine);
+
+        const taskPrefixRegex = /^(\s*(?:[⊙⊘⊜⊖⊗]\s*)?(?:\*+\s+)?(?:TODO|IN_PROGRESS|CONTINUED|DONE|ABANDONED)\b)/;
+        const dayHeadingRegex = /^\s*(⊘|\*+)\s*\[\d{2}-\d{2}-\d{4}\s+[A-Za-z]{3}\]/;
+        let touchedAnyLine = false;
+
+        for (const lineNumber of sortedLines) {
+            const currentLine = document.lineAt(lineNumber);
+            const lineText = currentLine.text;
+
+            if (!lineText.trim()) {
+                continue;
+            }
+            if (dayHeadingRegex.test(lineText)) {
+                continue;
+            }
+
+            const existingTagMatch = lineText.match(tagRegex);
+            let newLine;
+
+            if (existingTagMatch) {
+                let currentTags = existingTagMatch[1].split(",").map(tag => tag.trim().toUpperCase());
+                if (!currentTags.includes(inputTagUpper)) {
+                    currentTags.push(inputTagUpper);
+                }
+                const updatedTagBlock = `[+TAG:${currentTags.join(",")}]`;
+                newLine = lineText.replace(tagRegex, updatedTagBlock);
+            }
+            else {
+                if (!taskPrefixRegex.test(lineText)) {
+                    if (hasRangeSelection) {
+                        continue;
+                    }
+                    // Single-line invocation: fall through (no-op) to preserve old behavior.
+                    continue;
+                }
+                newLine = lineText.replace(taskPrefixRegex, `$1 : [+TAG:${inputTagUpper}] -`);
+            }
+
+            if (newLine !== lineText) {
+                edit.replace(filePath, currentLine.range, newLine);
+                touchedAnyLine = true;
+            }
+        }
 
         // Look for the #+TAGS: line near the top of the file
         const fullText = document.getText();
@@ -68,6 +108,11 @@ module.exports = function addTag() {
                 );
                 edit.replace(filePath, headerRange, updatedHeader);
             }
+        }
+
+        if (!touchedAnyLine) {
+            vscode.window.showWarningMessage("No task lines found to tag.");
+            return;
         }
 
         // Apply all changes and auto-save
