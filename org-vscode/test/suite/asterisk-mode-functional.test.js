@@ -89,7 +89,7 @@ suite('Asterisk-mode functional behavior', function () {
     ].join('\n');
 
     const uri = await writeTempVsoFile(contents);
-    const { doc, editor } = await openFileInEditor(uri);
+    let { doc, editor } = await openFileInEditor(uri);
 
     // Task line is line 1.
     setCursor(editor, 1, 0);
@@ -114,7 +114,7 @@ suite('Asterisk-mode functional behavior', function () {
     ].join('\n');
 
     const uri = await writeTempVsoFile(contents);
-    const { doc, editor } = await openFileInEditor(uri);
+    let { doc, editor } = await openFileInEditor(uri);
 
     // Select from the day heading through the last task.
     const start = new vscode.Position(0, 0);
@@ -142,7 +142,7 @@ suite('Asterisk-mode functional behavior', function () {
     ].join('\n');
 
     const uri = await writeTempVsoFile(contents);
-    const { doc, editor } = await openFileInEditor(uri);
+    let { doc, editor } = await openFileInEditor(uri);
 
     // Select the two note headings only (no existing TODO keywords).
     const start = new vscode.Position(2, 0);
@@ -251,5 +251,64 @@ suite('Asterisk-mode functional behavior', function () {
     } finally {
       vscode.window.showInputBox = originalShowInputBox;
     }
+  });
+
+  test('Selection increments heading stars across multiple lines (non-vso language mode)', async () => {
+    const separator = ' -------------------------------------------------------------------------------------------------------------------------------';
+    const contents = [
+      `* [12-14-2025 Sun]${separator}`,
+      '  *** TODO Task A',
+      '  *** TODO Task B',
+      '  *** TODO Task C',
+      ''
+    ].join('\n');
+
+    const uri = await writeTempVsoFile(contents);
+    let { doc, editor } = await openFileInEditor(uri);
+
+    // Force language mode to a non-vso language to simulate environments where another extension owns .org.
+    // (The VS Code test host doesn't necessarily have an 'org' language installed.)
+    doc = await vscode.languages.setTextDocumentLanguage(doc, 'plaintext');
+    editor = await vscode.window.showTextDocument(doc);
+
+    const start = new vscode.Position(1, 0);
+    const end = new vscode.Position(3, doc.lineAt(3).text.length);
+    editor.selection = new vscode.Selection(start, end);
+
+    const before1 = doc.lineAt(1).text;
+    const before2 = doc.lineAt(2).text;
+    const before3 = doc.lineAt(3).text;
+
+    const starsBefore1 = (before1.match(/^\s*\*+/) || [''])[0].trim().length;
+    const starsBefore2 = (before2.match(/^\s*\*+/) || [''])[0].trim().length;
+    const starsBefore3 = (before3.match(/^\s*\*+/) || [''])[0].trim().length;
+
+    await vscode.commands.executeCommand('extension.increment');
+
+    await waitFor(() => {
+      const after1Now = doc.lineAt(1).text;
+      const after2Now = doc.lineAt(2).text;
+      const after3Now = doc.lineAt(3).text;
+      const starsAfter1Now = (after1Now.match(/^\s*\*+/) || [''])[0].trim().length;
+      const starsAfter2Now = (after2Now.match(/^\s*\*+/) || [''])[0].trim().length;
+      const starsAfter3Now = (after3Now.match(/^\s*\*+/) || [''])[0].trim().length;
+      return (
+        starsAfter1Now === starsBefore1 + 1 &&
+        starsAfter2Now === starsBefore2 + 1 &&
+        starsAfter3Now === starsBefore3 + 1
+      );
+    });
+
+    const after1 = doc.lineAt(1).text;
+    const after2 = doc.lineAt(2).text;
+    const after3 = doc.lineAt(3).text;
+
+    const starsAfter1 = (after1.match(/^\s*\*+/) || [''])[0].trim().length;
+    const starsAfter2 = (after2.match(/^\s*\*+/) || [''])[0].trim().length;
+    const starsAfter3 = (after3.match(/^\s*\*+/) || [''])[0].trim().length;
+
+    assert.strictEqual(starsAfter1, starsBefore1 + 1);
+    assert.strictEqual(starsAfter2, starsBefore2 + 1);
+    assert.strictEqual(starsAfter3, starsBefore3 + 1);
   });
 });

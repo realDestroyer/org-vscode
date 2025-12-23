@@ -12,7 +12,16 @@ module.exports = function incrementHeading() {
 
 function rotateSymbol(step) {
     const editor = vscode.window.activeTextEditor;
-    if (!editor || editor.document.languageId !== "vso") {
+    if (!editor) {
+        return;
+    }
+
+    const doc = editor.document;
+    const docLang = doc.languageId;
+    const docPath = (doc.uri && doc.uri.fsPath) ? doc.uri.fsPath : (doc.fileName || "");
+    const isOrgVscodeFile = /\.(org|vsorg|vso)$/i.test(docPath);
+    const isOrgVscodeLanguage = ["vso", "org", "vsorg", "org-vscode"].includes(docLang);
+    if (!isOrgVscodeFile && !isOrgVscodeLanguage) {
         return;
     }
 

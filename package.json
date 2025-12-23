@@ -2,7 +2,7 @@
 	"name": "org-vscode",
 	"displayName": "org-vscode",
 	"description": "Quickly create todo lists, take notes, plan projects and organize your thoughts.",
-	"version": "1.10.8",
+	"version": "1.10.9",
 	"repository": "https://www.github.com/realDestroyer/org-vscode",
 	"icon": "Logo.png",
 	"publisher": "realDestroyer",
@@ -446,12 +446,12 @@
 			{
 				"command": "extension.toggleStatusRight",
 				"key": "ctrl+right",
-				"when": "editorLangId == 'vso' && editorTextFocus"
+				"when": "(editorLangId == 'vso' || editorLangId == 'org' || editorLangId == 'vsorg' || editorLangId == 'org-vscode') && editorTextFocus"
 			},
 			{
 				"command": "extension.toggleStatusLeft",
 				"key": "ctrl+left",
-				"when": "editorLangId == 'vso' && editorTextFocus"
+				"when": "(editorLangId == 'vso' || editorLangId == 'org' || editorLangId == 'vsorg' || editorLangId == 'org-vscode') && editorTextFocus"
 			},
 			{
 				"command": "extension.openCalendarView",
@@ -461,52 +461,52 @@
 			{
 				"command": "extension.moveBlockUp",
 				"key": "shift+alt+up",
-				"when": "editorLangId == 'vso' && editorTextFocus"
+				"when": "(editorLangId == 'vso' || editorLangId == 'org' || editorLangId == 'vsorg' || editorLangId == 'org-vscode') && editorTextFocus"
 			},
 			{
 				"key": "alt+shift+right",
 				"command": "extension.smartDateForward",
-				"when": "editorLangId == 'vso' && editorTextFocus"
+				"when": "(editorLangId == 'vso' || editorLangId == 'org' || editorLangId == 'vsorg' || editorLangId == 'org-vscode') && editorTextFocus"
 			},
 			{
 				"key": "alt+shift+left",
 				"command": "extension.smartDateBackward",
-				"when": "editorLangId == 'vso' && editorTextFocus"
+				"when": "(editorLangId == 'vso' || editorLangId == 'org' || editorLangId == 'vsorg' || editorLangId == 'org-vscode') && editorTextFocus"
 			},
 			{
 				"command": "extension.moveBlockDown",
 				"key": "shift+alt+down",
-				"when": "editorLangId == 'vso' && editorTextFocus"
+				"when": "(editorLangId == 'vso' || editorLangId == 'org' || editorLangId == 'vsorg' || editorLangId == 'org-vscode') && editorTextFocus"
 			},
 			{
 				"command": "extension.increment",
 				"key": "alt+right",
-				"when": "editorLangId == 'vso' && editorTextFocus"
+				"when": "(editorLangId == 'vso' || editorLangId == 'org' || editorLangId == 'vsorg' || editorLangId == 'org-vscode') && editorTextFocus"
 			},
 			{
 				"command": "extension.decrement",
 				"key": "alt+left",
-				"when": "editorLangId == 'vso' && editorTextFocus"
+				"when": "(editorLangId == 'vso' || editorLangId == 'org' || editorLangId == 'vsorg' || editorLangId == 'org-vscode') && editorTextFocus"
 			},
 			{
 				"command": "editor.fold",
 				"key": "ctrl+shift+[",
-				"when": "editorLangId == 'vso' && editorTextFocus"
+				"when": "(editorLangId == 'vso' || editorLangId == 'org' || editorLangId == 'vsorg' || editorLangId == 'org-vscode') && editorTextFocus"
 			},
 			{
 				"command": "editor.unfold",
 				"key": "ctrl+shift+]",
-				"when": "editorLangId == 'vso' && editorTextFocus"
+				"when": "(editorLangId == 'vso' || editorLangId == 'org' || editorLangId == 'vsorg' || editorLangId == 'org-vscode') && editorTextFocus"
 			},
 			{
 				"command": "extension.scheduling",
 				"key": "ctrl+alt+s",
-				"when": "editorLangId == 'vso' && editorTextFocus"
+				"when": "(editorLangId == 'vso' || editorLangId == 'org' || editorLangId == 'vsorg' || editorLangId == 'org-vscode') && editorTextFocus"
 			},
 			{
 				"command": "extension.deadline",
 				"key": "ctrl+alt+d",
-				"when": "editorLangId == 'vso' && editorTextFocus"
+				"when": "(editorLangId == 'vso' || editorLangId == 'org' || editorLangId == 'vsorg' || editorLangId == 'org-vscode') && editorTextFocus"
 			},
 			{
 				"key": "alt+shift+a",
@@ -521,12 +521,12 @@
 			{
 				"key": "ctrl+shift+right",
 				"command": "extension.deadlineDateForward",
-				"when": "editorLangId == 'vso' && editorTextFocus"
+				"when": "(editorLangId == 'vso' || editorLangId == 'org' || editorLangId == 'vsorg' || editorLangId == 'org-vscode') && editorTextFocus"
 			},
 			{
 				"key": "ctrl+shift+left",
 				"command": "extension.deadlineDateBackward",
-				"when": "editorLangId == 'vso' && editorTextFocus"
+				"when": "(editorLangId == 'vso' || editorLangId == 'org' || editorLangId == 'vsorg' || editorLangId == 'org-vscode') && editorTextFocus"
 			},
 			{
 				"command": "extension.addTagToTask",
