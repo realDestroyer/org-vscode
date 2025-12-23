@@ -3,7 +3,9 @@
 # [Unreleased]
 `Enhanced`
 
-- *(Nothing yet)*
+- **Heading increment/decrement (Alt+Left/Right):**
+  - Now works when the editor language mode is `org`/`vsorg`/`org-vscode` (not only `vso`).
+  - Selection-aware for asterisk headings (bulk increment/decrement across selected lines).
 
 # [1.10.8] 12-17-25
 `Enhanced`
