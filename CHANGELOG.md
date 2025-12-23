@@ -3,7 +3,17 @@
 # [Unreleased]
 `Enhanced`
 
-- *(Nothing yet)*
+- (No unreleased changes)
+
+# [1.10.9] 12-23-25
+`Enhanced`
+
+- **Editor shortcuts no longer depend on `vso` language mode:**
+  - Keybindings now work when the editor language mode is `org`/`vsorg`/`org-vscode` (not only `vso`).
+
+- **Heading increment/decrement (Alt+Left/Right):**
+  - Runs reliably even when the current file language mode isn't `vso`.
+  - Selection-aware for asterisk headings (bulk increment/decrement across selected lines).
 
 # [1.10.8] 12-17-25
 `Enhanced`
