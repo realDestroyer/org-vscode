@@ -56,7 +56,7 @@ function sendTasksToCalendar(panel) {
 
   files.forEach(file => {
       // Ignore non-.org files and the special CurrentTasks.org export file
-      if (file.endsWith(".org") && file !== "CurrentTasks.org") {
+      if (file.endsWith(".org") && !file.startsWith(".") && file !== "CurrentTasks.org") {
         let filePath = path.join(dirPath, file);
         let content = fs.readFileSync(filePath, "utf-8").split(/\r?\n/);
 

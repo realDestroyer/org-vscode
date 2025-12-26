@@ -23,10 +23,16 @@ module.exports = function () {
             if (err) return vscode.window.showErrorMessage("Failed to read Org directory.");
 
             items
-              .filter(file => file.endsWith(".org") || file.endsWith(".vsorg"))
+              .filter(file => (file.endsWith(".org") || file.endsWith(".vsorg")) && !file.startsWith("."))
               .forEach(file => {
                 const filePath = path.join(setMainDir(), file);
-                const fileText = fs.readFileSync(filePath, "utf-8");
+                let fileText;
+                try {
+                    fileText = fs.readFileSync(filePath, "utf-8");
+                } catch (err) { // don't die because of one broken symlink
+                    console.error(err);
+                    return;
+                }
 
                 // Look for a header like: #+TAGS: TEST, LEARNING, ETC
                 const match = fileText.match(/^\#\+TAGS:(.*)$/m);
