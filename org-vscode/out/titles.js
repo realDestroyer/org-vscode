@@ -13,37 +13,34 @@ module.exports = function () {
     let splitTitle;
     readFiles();
     function readFiles() {
+        const dir = setMainDir();
         fs.readdir(setMainDir(), (err, items) => {
             for (let i = 0; i < items.length; i++) {
-                if (items[i].includes(".vsorg")) {
+                const fullPath = path.join(dir, items[i]);
+                if ((items[i].endsWith(".vsorg") || items[i].endsWith(".org")) && !items[i].startsWith(".")) {
                     let fileText;
-                    fileText = fs.readFileSync(path.join(setMainDir(), items[i]), "utf8");
-                    if (fileText.includes("#+TITLE:") && fileText.match(/\#\+TITLE.*/gi) !== null) {
-                        let fileName = items[i];
-                        let getTitle = fileText.match(/\#\+TITLE.*/gi);
-                        splitTitle = getTitle
-                            .join("")
-                            .split("#+TITLE:")
-                            .join("")
-                            .trim();
-                        titles.push(splitTitle);
-                        for (let j = 0; j < titles.length; j++) {
-                            if (listObject[titles[j]] === undefined) {
-                                listObject[titles[j]] = "";
-                            }
-                            if (listObject[titles[j]] === "") {
-                                listObject[titles[j]] = fileName;
-                            }
+                    try {
+                        fileText = fs.readFileSync(path.join(setMainDir(), items[i]), "utf8");
+                    } catch (err) { // don't die because of one broken symlink
+                        console.error(err);
+                        continue;
+                    }
+                    const match = fileText.match(/^\#\+TITLE:\s*(.*)$/mi);
+                    if (match) {
+                        const title = match[1].trim();
+                        if (title && !listObject[title]) {
+                            titles.push(title);
+                            listObject[title] = fullPath;
                         }
                     }
                 }
-                setQuickPick();
             }
+            setQuickPick();
         });
     }
     function setQuickPick() {
-        vscode.window.showQuickPick(titles).then((title) => {
-            if (title in listObject) {
+        vscode.window.showQuickPick(titles.sort()).then((title) => {
+            if (title && listObject[title]) {
                 let fullpath = path.join(setMainDir(), listObject[title]);
                 vscode.workspace.openTextDocument(vscode.Uri.file(fullpath)).then(doc => {
                     vscode.window.showTextDocument(doc, vscode.ViewColumn.Beside, true);
