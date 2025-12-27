@@ -569,7 +569,8 @@
 					".org",
 					".vsorg",
 					".vso"
-				]
+				],
+				"configuration": "./language-configuration.json"
 			}
 		],
 		"grammars": [
