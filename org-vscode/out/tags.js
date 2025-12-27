@@ -34,11 +34,13 @@ module.exports = function () {
                     return;
                 }
 
-                // Look for a header like: #+TAGS: TEST, LEARNING, ETC
-                const match = fileText.match(/^\#\+TAGS:(.*)$/m);
+                // Look for #+TAGS: or #+FILETAGS:
+                const match = fileText.match(/^\#\+(FILE)?TAGS:\s*(.*)$/mi);
                 if (match) {
-                    const rawTags = match[1]
-                      .split(",")
+                    const tagString = match[2];
+                    // Handle both comma-separated (#+TAGS: a, b) and colon-separated (#+FILETAGS: :a:b:)
+                    const rawTags = tagString
+                      .split(/[:,]/)
                       .map(tag => tag.trim().toUpperCase())
                       .filter(Boolean);
 
