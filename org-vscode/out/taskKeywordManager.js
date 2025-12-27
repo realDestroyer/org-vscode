@@ -49,7 +49,8 @@ function buildTaskLine(leadingSpaces, keyword, cleanedText, options = {}) {
 }
 
 function buildCompletedStamp(leadingSpaces, dateFormat) {
-  return `${leadingSpaces}  COMPLETED: [${moment().format(`${dateFormat} ddd HH:mm`)}]`;
+  const fmt = dateFormat || "MM-DD-YYYY";
+  return `${leadingSpaces}  COMPLETED:[${moment().format(`${fmt} ddd HH:mm`)}]`;
 }
 
 module.exports = {

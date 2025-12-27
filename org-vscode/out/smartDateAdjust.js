@@ -16,7 +16,7 @@ function smartDateAdjust(forward = true) {
 
     const config = vscode.workspace.getConfiguration("Org-vscode");
     const dateFormat = config.get("dateFormat", "MM-DD-YYYY");
-    const acceptedDateFormats = [dateFormat, "MM-DD-YYYY", "YYYY-MM-DD"];
+    const acceptedDateFormats = [dateFormat, "MM-DD-YYYY", "DD-MM-YYYY", "YYYY-MM-DD"];
 
     const document = editor.document;
     const selections = (editor.selections && editor.selections.length)

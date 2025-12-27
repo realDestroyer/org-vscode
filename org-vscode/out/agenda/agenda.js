@@ -13,7 +13,7 @@ module.exports = function () {
   let config = vscode.workspace.getConfiguration("Org-vscode");
     let folderPath = config.get("folderPath");
     let dateFormat = config.get("dateFormat", "MM-DD-YYYY");
-    let acceptedDateFormats = [dateFormat, "MM-DD-YYYY", "YYYY-MM-DD"];
+    let acceptedDateFormats = [dateFormat, "MM-DD-YYYY", "DD-MM-YYYY", "YYYY-MM-DD"];
     let folder;
     let taskText;
     let taskKeywordMatch = "";

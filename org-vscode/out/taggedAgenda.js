@@ -124,7 +124,7 @@ async function updateTaskStatusInFile(file, taskText, scheduledDate, newStatus, 
 function getOrgFolder() {
   const config = vscode.workspace.getConfiguration("Org-vscode");
   const folderPath = config.get("folderPath");
-  return folderPath && folderPath.trim() !== "" ? folderPath : path.join(os.homedir(), "OrgFiles");
+  return folderPath && folderPath.trim() !== "" ? folderPath : path.join(os.homedir(), "VSOrgFiles");
 }
 
 function showTaggedAgendaView(tag, items) {
@@ -172,7 +172,7 @@ function showTaggedAgendaView(tag, items) {
 function getTaggedWebviewContent(webview, nonce, localMomentJs, tag, items) {
   const config = vscode.workspace.getConfiguration("Org-vscode");
   const dateFormat = config.get("dateFormat", "MM-DD-YYYY");
-  const acceptedDateFormats = [dateFormat, "MM-DD-YYYY", "YYYY-MM-DD"];
+  const acceptedDateFormats = [dateFormat, "MM-DD-YYYY", "DD-MM-YYYY", "YYYY-MM-DD"];
   const grouped = {};
 
   for (const item of items) {
@@ -560,7 +560,7 @@ body{
               if (nextStatus === "DONE") {
                   let completedDate = moment();
                   let formattedDate = completedDate.format(dateFormat + " ddd HH:mm");
-                  messageText += ",COMPLETED: [" + formattedDate + "]";
+                  messageText += ",COMPLETED:[" + formattedDate + "]";
               }
 
               if (currentStatus === "DONE") {

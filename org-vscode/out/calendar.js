@@ -19,14 +19,14 @@ function getNonce() {
 
 /**
  * Retrieves the directory path where `.org` files are stored.
- * Falls back to ~/OrgFiles if no custom path is set in settings.
+ * Falls back to ~/VSOrgFiles if no custom path is set in settings.
  */
 function setMainDir() {
   const config = vscode.workspace.getConfiguration("Org-vscode");
   const folderPath = config.get("folderPath");
   return folderPath && folderPath.trim() !== "" 
     ? folderPath 
-    : path.join(require("os").homedir(), "OrgFiles");
+    : path.join(require("os").homedir(), "VSOrgFiles");
 }
 
 /**
@@ -115,7 +115,7 @@ function rescheduleTask(file, oldDate, newDate, taskText) {
   const dateFormat = config.get("dateFormat", "MM-DD-YYYY");
 
   // Try to parse the new date using known formats (ISO or configured format)
-  let parsedNewDate = moment(newDate, ["YYYY-MM-DD", dateFormat, "MM-DD-YYYY", "YYYY-MM-DD"], true);
+  let parsedNewDate = moment(newDate, ["YYYY-MM-DD", dateFormat, "MM-DD-YYYY", "DD-MM-YYYY"], true);
   if (!parsedNewDate.isValid()) {
     vscode.window.showErrorMessage(`Failed to reschedule task: Invalid date format.`);
     return;
@@ -186,7 +186,7 @@ function rescheduleTaskById(taskId, newDate) {
   const config = vscode.workspace.getConfiguration("Org-vscode");
   const dateFormat = config.get("dateFormat", "MM-DD-YYYY");
 
-  let parsedNewDate = moment(newDate, ["YYYY-MM-DD", dateFormat, "MM-DD-YYYY", "YYYY-MM-DD"], true);
+  let parsedNewDate = moment(newDate, ["YYYY-MM-DD", dateFormat, "MM-DD-YYYY", "DD-MM-YYYY"], true);
   if (!parsedNewDate.isValid()) {
     vscode.window.showErrorMessage('Invalid date format for reschedule.');
     return;

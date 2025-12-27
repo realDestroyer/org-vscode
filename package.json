@@ -310,10 +310,9 @@
 					"default": "MM-DD-YYYY",
 					"enum": [
 						"MM-DD-YYYY",
-						"DD-MM-YYYY",
-						"YYYY-MM-DD"
+						"DD-MM-YYYY"
 					],
-					"description": "org file date format (YYYY-MM-DD is the Emacs Org-mode standard)"
+					"description": "The scheduled date format."
 				}
 			}
 		},
@@ -570,7 +569,8 @@
 					".org",
 					".vsorg",
 					".vso"
-				]
+				],
+				"configuration": "./language-configuration.json"
 			}
 		],
 		"grammars": [

@@ -43,7 +43,7 @@ class WindowMessage {
                 });
             }
             else {
-                vscode.window.showErrorMessage(this.message);
+                vscode.window.showInformationMessage(this.message);
             }
         }
         else if (this.type === "warning") {
@@ -60,7 +60,7 @@ class WindowMessage {
                 });
             }
             else {
-                vscode.window.showErrorMessage(this.message);
+                vscode.window.showWarningMessage(this.message);
             }
         }
         else if (this.type === "error") {
