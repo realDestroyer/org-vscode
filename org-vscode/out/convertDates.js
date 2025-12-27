@@ -72,7 +72,7 @@ function convertDatesInText({ text, sourceMode, explicitSourceFormat, targetForm
   //  3 date
   //  4 weekday
   //  5 rest of line (optional)
-  text = text.replace(/^(\s*)(?:⊘|\*+)\s*\[(\d{2}-\d{2}-\d{4})\s+(\w{3})\](.*)$/gm, (full, indent, dateStr, _weekday, rest) => {
+  text = text.replace(/^(\s*)(?:⊘|\*+)\s*\[(\d{2,4}-\d{2}-\d{2,4})\s+(\w{3})\](.*)$/gm, (full, indent, dateStr, _weekday, rest) => {
     return replaceBracketedDate(dateStr, (parsed, formatted) => {
       if (!parsed || !formatted) {
         return full;

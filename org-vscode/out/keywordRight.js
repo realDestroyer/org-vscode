@@ -12,6 +12,7 @@ module.exports = async function () {
 
   const config = vscode.workspace.getConfiguration("Org-vscode");
   const headingMarkerStyle = config.get("headingMarkerStyle", "unicode");
+  const dateFormat = config.get("dateFormat", "MM-DD-YYYY");
 
   const { document } = activeTextEditor;
   const selections = (activeTextEditor.selections && activeTextEditor.selections.length)
@@ -74,7 +75,7 @@ module.exports = async function () {
 
     // Add or remove COMPLETED line
     if (nextKeyword === "DONE") {
-      newLine += `\n${taskKeywordManager.buildCompletedStamp(leadingSpaces)}`;
+      newLine += `\n${taskKeywordManager.buildCompletedStamp(leadingSpaces, dateFormat)}`;
     } else if (currentKeyword === "DONE" && nextLine && nextLine.text.includes("COMPLETED")) {
       workspaceEdit.delete(document.uri, nextLine.range);
     }
@@ -145,7 +146,7 @@ module.exports = async function () {
         });
 
         if (change.nextKeyword === "DONE" && !originalLines[i + 1]?.includes("COMPLETED")) {
-          originalLines.splice(i + 1, 0, taskKeywordManager.buildCompletedStamp(origIndent));
+          originalLines.splice(i + 1, 0, taskKeywordManager.buildCompletedStamp(origIndent, dateFormat));
         } else if (originalLines[i + 1]?.includes("COMPLETED")) {
           originalLines.splice(i + 1, 1);
         }

@@ -35,10 +35,10 @@ function deadlineDateAdjust(forward = true) {
 
     const config = vscode.workspace.getConfiguration("Org-vscode");
     const dateFormat = config.get("dateFormat", "MM-DD-YYYY");
-    const acceptedDateFormats = [dateFormat, "MM-DD-YYYY", "DD-MM-YYYY"];
+    const acceptedDateFormats = [dateFormat, "MM-DD-YYYY", "DD-MM-YYYY", "YYYY-MM-DD"];
 
-    // Match DEADLINE: [MM-DD-YYYY] with optional time
-    const deadlineRegex = /DEADLINE:\s*\[(\d{2}-\d{2}-\d{4})(?:\s+(\d{2}:\d{2}(?::\d{2})?))?\]/;
+    // Match DEADLINE: with optional time
+    const deadlineRegex = /DEADLINE:\s*\[(\d{2,4}-\d{2}-\d{2,4})(?:\s+(\d{2}:\d{2}(?::\d{2})?))?\]/;
 
     const edit = new vscode.WorkspaceEdit();
     let touched = false;

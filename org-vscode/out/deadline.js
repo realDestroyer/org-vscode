@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const vscode = require("vscode");
+const moment = require("moment");
 const showMessage_1 = require("./showMessage");
 
 module.exports = function () {
@@ -9,6 +10,10 @@ module.exports = function () {
         return;
     }
     const { document } = activeTextEditor;
+
+    const config = vscode.workspace.getConfiguration("Org-vscode");
+    const dateFormat = config.get("dateFormat", "MM-DD-YYYY");
+
     const selections = (activeTextEditor.selections && activeTextEditor.selections.length)
         ? activeTextEditor.selections
         : [activeTextEditor.selection];
@@ -36,7 +41,7 @@ module.exports = function () {
     const fullDateMessage = new showMessage_1.WindowMessage("warning", "Full date must be entered", false, false);
     const notADateMessage = new showMessage_1.WindowMessage("warning", "That's not a valid date.", false, false);
 
-    const dayHeadingRegex = /^\s*(⊘|\*+)\s*\[\d{2}-\d{2}-\d{4}\s+[A-Za-z]{3}\]/;
+    const dayHeadingRegex = /^\s*(⊘|\*+)\s*\[\d{2,4}-\d{2}-\d{2,4}\s+[A-Za-z]{3}\]/;
     const taskPrefixRegex = /^\s*(?:[⊙⊘⊜⊖⊗]\s*)?(?:\*+\s+)?(?:TODO|IN_PROGRESS|CONTINUED|DONE|ABANDONED)\b/;
 
     const linesToRemove = [];
@@ -98,7 +103,7 @@ module.exports = function () {
                 return notADateMessage.showMessage();
             }
 
-            const formattedDate = `${month.padStart(2, "0")}-${day.padStart(2, "0")}-${year}`;
+            const formattedDate = moment(`${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`, "YYYY-MM-DD", true).format(dateFormat);
             for (const lineNumber of linesToAdd) {
                 const currentLine = document.lineAt(lineNumber);
                 let newLineText = currentLine.text;
