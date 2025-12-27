@@ -44,10 +44,11 @@ module.exports = function () {
             const titleMatch = fileText.match(/^\#\+TITLE:\s*(.*)$/mi);
             const title = titleMatch ? titleMatch[1].trim() : file;
 
-            // Look for #+TAGS: or #+FILETAGS:
-            const match = fileText.match(/^\#\+(FILE)?TAGS:\s*(.*)$/mi);
+            // Look for file-level tags only. In Org-mode, #+FILETAGS are inherited by all entries in the file.
+            // Note: #+TAGS is primarily used to define/configure allowed tags (completion, keys, groups), not to tag the file.
+            const match = fileText.match(/^\#\+FILETAGS:\s*(.*)$/mi);
             if (match) {
-                const tagString = match[2];
+                const tagString = match[1];
                 const rawTags = tagString
                   .split(/[:,]/)
                   .map(tag => tag.trim().toUpperCase())
