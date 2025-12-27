@@ -5,7 +5,7 @@ const path = require("path");
 const fs = require("fs");
 const os = require("os");
 module.exports = function () {
-    let config = vscode.workspace.getConfiguration("vsorg");
+    let config = vscode.workspace.getConfiguration("Org-vscode");
     let folderPath = config.get("folderPath");
     let folder;
     let titles = [];
