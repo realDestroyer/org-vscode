@@ -50,16 +50,11 @@ module.exports = function () {
             });
         });
     }
-    //check to see if the folder path in settings was changed
     function setMainDir() {
-        if (folderPath === "") {
-            let homeDir = os.homedir();
-            folder = path.join(homeDir, "OrgFiles");
+        if (!folderPath || folderPath.trim() === "") {
+            return path.join(os.homedir(), "VSOrgFiles");
         }
-        else {
-            folder = folderPath;
-        }
-        return folder;
+        return folderPath;
     }
 };
 //# sourceMappingURL=newFile.js.map

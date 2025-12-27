@@ -123,7 +123,7 @@ async function updateTaskStatusInFile(file, taskText, scheduledDate, newStatus, 
 function getOrgFolder() {
   const config = vscode.workspace.getConfiguration("Org-vscode");
   const folderPath = config.get("folderPath");
-  return folderPath && folderPath.trim() !== "" ? folderPath : path.join(os.homedir(), "OrgFiles");
+  return folderPath && folderPath.trim() !== "" ? folderPath : path.join(os.homedir(), "VSOrgFiles");
 }
 
 function showTaggedAgendaView(tag, items) {

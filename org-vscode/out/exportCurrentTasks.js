@@ -5,7 +5,8 @@ const vscode = require("vscode");
 
 module.exports = function () {
     const config = vscode.workspace.getConfiguration("Org-vscode");
-    const folderPath = config.get("folderPath");
+    const configPath = config.get("folderPath");
+    const folderPath = configPath && configPath.trim() !== "" ? configPath : path.join(os.homedir(), "VSOrgFiles");
     const outputFilePath = path.join(folderPath, "CurrentTasks.org");
 
     const keywordsToMatch = ["TODO", "IN_PROGRESS", "CONTINUED", "ABANDONED"];
