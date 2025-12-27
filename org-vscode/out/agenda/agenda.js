@@ -159,7 +159,7 @@ module.exports = function () {
                     if (scheduledMoment.isBefore(moment().startOf("day"), "day")) {
                       convertedDateArray.push({
                         date: `<div class=\"heading${overdue} [${today}]\"><h4 class=\"[${today}]\">[${today}], ${overdue.toUpperCase()}</h4></div>`,
-                        text: `<div class=\"panel [${today}]\">${renderedTask}<span class=\"late\">LATE: ${moment(getDateFromTaskText[1], acceptedDateFormats, true).format("Do MMMM YYYY")}</span>${childrenBlock}</div>`
+                        text: `<div class=\"panel [${today}]\">${renderedTask}<span class=\"late\">LATE: ${moment(getDateFromTaskText[1], acceptedDateFormats, true).format(dateFormat)}</span>${childrenBlock}</div>`
                       });
                     }
                   }
@@ -286,7 +286,7 @@ module.exports = function () {
 
             // Add or remove COMPLETED line
             if (newStatus === "DONE") {
-              newLine += `\n${taskKeywordManager.buildCompletedStamp(indent)}`;
+              newLine += `\n${taskKeywordManager.buildCompletedStamp(indent, dateFormat)}`;
             } else if (currentStatus === "DONE" && additionalFlag === "REMOVE_COMPLETED" && nextLine && nextLine.text.includes("COMPLETED")) {
               workspaceEdit.delete(uri, nextLine.range);
             }
@@ -598,6 +598,7 @@ module.exports = function () {
         </div>      
         <script>
         const vscode = acquireVsCodeApi();
+        const dateFormat = "${dateFormat}";
 
         // Load moment via CDN for formatting
         const script = document.createElement('script');
@@ -645,8 +646,8 @@ module.exports = function () {
 
               if (nextStatus === "DONE") {
                 let completedDate = moment();
-                let formattedDate = completedDate.format("Do MMMM YYYY, h:mm:ss a"); // e.g., 23rd April 2025, 7:36:12 am
-                messageText += ",COMPLETED:[" + formattedDate + "]";
+                let formattedDate = completedDate.format(dateFormat + " ddd HH:mm");
+                messageText += ",COMPLETED: [" + formattedDate + "]";
               }
 
               if (currentStatus === "DONE") {

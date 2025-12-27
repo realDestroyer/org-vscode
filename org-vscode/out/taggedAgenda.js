@@ -86,6 +86,7 @@ async function updateTaskStatusInFile(file, taskText, scheduledDate, newStatus, 
 
   const config = vscode.workspace.getConfiguration("Org-vscode");
   const headingMarkerStyle = config.get("headingMarkerStyle", "unicode");
+  const dateFormat = config.get("dateFormat", "MM-DD-YYYY");
   const starPrefixMatch = currentLine.text.match(/^\s*(\*+)/);
   const starPrefix = starPrefixMatch ? starPrefixMatch[1] : "*";
 
@@ -95,7 +96,7 @@ async function updateTaskStatusInFile(file, taskText, scheduledDate, newStatus, 
 
   // Add or remove COMPLETED line
   if (newStatus === "DONE") {
-    newLine += `\n${taskKeywordManager.buildCompletedStamp(indent)}`;
+    newLine += `\n${taskKeywordManager.buildCompletedStamp(indent, dateFormat)}`;
   } else if (currentStatus === "DONE" && removeCompleted && nextLine && nextLine.text.includes("COMPLETED")) {
     workspaceEdit.delete(uri, nextLine.range);
   }
@@ -509,6 +510,7 @@ body{
   
   <script nonce="${nonce}">
       const vscode = acquireVsCodeApi();
+      const dateFormat = "${dateFormat}";
 
       // Toggle file groups on file-tab click
       document.addEventListener('click', function(event) {
@@ -557,8 +559,8 @@ body{
 
               if (nextStatus === "DONE") {
                   let completedDate = moment();
-                  let formattedDate = completedDate.format("Do MMMM YYYY, h:mm:ss a");
-                  messageText += ",COMPLETED:[" + formattedDate + "]";
+                  let formattedDate = completedDate.format(dateFormat + " ddd HH:mm");
+                  messageText += ",COMPLETED: [" + formattedDate + "]";
               }
 
               if (currentStatus === "DONE") {

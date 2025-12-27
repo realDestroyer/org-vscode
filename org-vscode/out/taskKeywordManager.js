@@ -48,8 +48,8 @@ function buildTaskLine(leadingSpaces, keyword, cleanedText, options = {}) {
   return `${leadingSpaces}${getSymbolForKeyword(keyword)}${keyword} ${cleanedText}`;
 }
 
-function buildCompletedStamp(leadingSpaces) {
-  return `${leadingSpaces}  COMPLETED:[${moment().format('Do MMMM YYYY, h:mm:ss a')}]`;
+function buildCompletedStamp(leadingSpaces, dateFormat) {
+  return `${leadingSpaces}  COMPLETED: [${moment().format(`${dateFormat} ddd HH:mm`)}]`;
 }
 
 module.exports = {
