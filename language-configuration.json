@@ -1,0 +1,27 @@
+{
+  "comments": {
+    "lineComment": "# "
+  },
+  "brackets": [
+    ["[", "]"],
+    ["(", ")"]
+  ],
+  "autoClosingPairs": [
+    { "open": "[", "close": "]" },
+    { "open": "(", "close": ")" },
+    { "open": "\"", "close": "\"" },
+    { "open": "'", "close": "'" }
+  ],
+  "surroundingPairs": [
+    ["[", "]"],
+    ["(", ")"],
+    ["\"", "\""],
+    ["'", "'"]
+  ],
+  "folding": {
+    "markers": {
+      "start": "^\\s*:(PROPERTIES|properties|LOGBOOK|logbook):\\s*$",
+      "end": "^\\s*:(END|end):\\s*$"
+    }
+  }
+}

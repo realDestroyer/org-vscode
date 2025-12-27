@@ -16,12 +16,44 @@
     {
       "name": "meta.block.property.vso",
       "comment": "Org property drawer",
-      "begin": "^\\s*:PROPERTIES:\\s*$",
-      "end": "^\\s*:END:\\s*$",
+      "begin": "^\\s*:(PROPERTIES|properties):\\s*$",
+      "end": "^\\s*:(END|end):\\s*$",
+      "beginCaptures": {
+        "0": { "name": "punctuation.definition.drawer.begin.vso" }
+      },
+      "endCaptures": {
+        "0": { "name": "punctuation.definition.drawer.end.vso" }
+      },
       "patterns": [
         {
           "name": "variable.other.property-key.vso",
-          "match": "^\\s*:[A-Z0-9_@#%+\\-]+:\\s+.*$"
+          "match": "^\\s*(:[A-Za-z0-9_@#%+\\-]+:)\\s+(.*)$",
+          "captures": {
+            "1": { "name": "entity.name.tag.property.vso" },
+            "2": { "name": "string.unquoted.property-value.vso" }
+          }
+        }
+      ]
+    },
+    {
+      "name": "meta.block.logbook.vso",
+      "comment": "Org logbook drawer",
+      "begin": "^\\s*:(LOGBOOK|logbook):\\s*$",
+      "end": "^\\s*:(END|end):\\s*$",
+      "beginCaptures": {
+        "0": { "name": "punctuation.definition.drawer.begin.vso" }
+      },
+      "endCaptures": {
+        "0": { "name": "punctuation.definition.drawer.end.vso" }
+      },
+      "patterns": [
+        {
+          "name": "constant.other.timestamp.vso",
+          "match": "\\[\\d{4}-\\d{2}-\\d{2}[^\\]]*\\]"
+        },
+        {
+          "name": "keyword.other.clock.vso",
+          "match": "CLOCK:"
         }
       ]
     },
