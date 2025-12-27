@@ -49,7 +49,7 @@ function alignSchedules() {
 
             // Full match that includes SCHEDULED timestamp and optional DEADLINE
             // Pattern: task text + SCHEDULED: [date] + optional DEADLINE: [date]
-            let match = lineText.match(/^(\s*)(.*?)(\s+SCHEDULED:\s*\[\d{2}-\d{2}-\d{4}\])(\s+DEADLINE:\s*\[\d{2}-\d{2}-\d{4}(?:\s+\d{2}:\d{2}(?::\d{2})?)?\])?/);
+            let match = lineText.match(/^(\s*)(.*?)(\s+SCHEDULED:\s*\[\d{2,4}-\d{2}-\d{2,4}\])(\s+DEADLINE:\s*\[\d{2,4}-\d{2}-\d{2,4}(?:\s+\d{2}:\d{2}(?::\d{2})?)?\])?/);
 
             if (match) {
                 const taskText = match[2].trim();            // Clean up task portion

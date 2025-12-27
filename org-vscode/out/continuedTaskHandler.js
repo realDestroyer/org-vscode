@@ -3,8 +3,8 @@ const vscode = require("vscode");
 const moment = require("moment");
 const taskKeywordManager = require("./taskKeywordManager");
 
-const DAY_HEADING_REGEX = /^(\s*)(⊘|\*+)\s*\[(\d{2}-\d{2}-\d{4})\s+([A-Za-z]{3})\](.*)$/;
-const SCHEDULED_REGEX = /SCHEDULED:\s*\[(\d{2}-\d{2}-\d{4})\]/;
+const DAY_HEADING_REGEX = /^(\s*)(⊘|\*+)\s*\[(\d{2,4}-\d{2}-\d{2,4})\s+([A-Za-z]{3})\](.*)$/;
+const SCHEDULED_REGEX = /SCHEDULED:\s*\[(\d{2,4}-\d{2}-\d{2,4})\]/;
 
 /**
  * Find the day heading that contains a given line number
@@ -71,7 +71,7 @@ function findLastTaskLineUnderHeading(lines, headingLineIndex) {
 function getNextDay(dateStr) {
   const config = vscode.workspace.getConfiguration("Org-vscode");
   const dateFormat = config.get("dateFormat", "MM-DD-YYYY");
-  const parsed = moment(dateStr, [dateFormat, "MM-DD-YYYY", "DD-MM-YYYY"], true);
+  const parsed = moment(dateStr, [dateFormat, "MM-DD-YYYY", "YYYY-MM-DD"], true);
   if (!parsed.isValid()) {
     return null;
   }
@@ -119,7 +119,7 @@ function getTaskIdentifier(lineText) {
     .replace(/^\s*\*+\s+/, "")
     .replace(/[⊙⊘⊖⊜⊗]/g, "")
     .replace(/\b(TODO|IN_PROGRESS|CONTINUED|DONE|ABANDONED)\b/g, "")
-    .replace(/SCHEDULED:\s*\[\d{2}-\d{2}-\d{4}\]/g, "")
+    .replace(/SCHEDULED:\s*\[\d{2,4}-\d{2}-\d{2,4}\]/g, "")
     .replace(/COMPLETED:\s*\[.*?\]/g, "")
     .replace(/\s+/g, " ")
     .trim();

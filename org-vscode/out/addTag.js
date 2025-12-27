@@ -47,7 +47,7 @@ module.exports = function addTag() {
         const edit = new vscode.WorkspaceEdit();
 
         const taskPrefixRegex = /^(\s*(?:[⊙⊘⊜⊖⊗]\s*)?(?:\*+\s+)?(?:TODO|IN_PROGRESS|CONTINUED|DONE|ABANDONED)\b)/;
-        const dayHeadingRegex = /^\s*(⊘|\*+)\s*\[\d{2}-\d{2}-\d{4}\s+[A-Za-z]{3}\]/;
+        const dayHeadingRegex = /^\s*(⊘|\*+)\s*\[\d{2,4}-\d{2}-\d{2,4}\s+[A-Za-z]{3}\]/;
         let touchedAnyLine = false;
 
         for (const lineNumber of sortedLines) {

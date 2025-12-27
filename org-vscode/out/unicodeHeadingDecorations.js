@@ -4,7 +4,7 @@ const vscode = require("vscode");
 
 const TASK_LINE_REGEX = /^(\s*)(\*+)\s+(TODO|IN_PROGRESS|CONTINUED|DONE|ABANDONED)\b/;
 const HEADING_LINE_REGEX = /^(\s*)(\*+)\s+\S/;
-const DAY_HEADING_REGEX = /^(\s*)(\*+)\s*\[(\d{2}-\d{2}-\d{4})(?:\s+([A-Za-z]{3}))?.*$/;
+const DAY_HEADING_REGEX = /^(\s*)(\*+)\s*\[(\d{2,4}-\d{2}-\d{2,4})(?:\s+([A-Za-z]{3}))?.*$/;
 const UNICODE_PREFIX_REGEX = /^(\s*)[⊙⊘⊜⊖⊗]\s/;
 
 const STATUS_TO_SCOPE = {

@@ -4,7 +4,7 @@ const vscode = require('vscode');
  * Finds all lines that contain a valid date heading like: ⊘ [05-16-2025 Thu]
  */
 function findDateLines(text) {
-    const dateRegex = /(?:⊘|\*+)\s*\[\d{2}-\d{2}-\d{4}\s+\w{3}\]/g;
+    const dateRegex = /(?:⊘|\*+)\s*\[\d{2,4}-\d{2}-\d{2,4}\s+\w{3}\]/g;
     let match;
     const lines = [];
 

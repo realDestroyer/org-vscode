@@ -62,7 +62,7 @@ function sendTasksToCalendar(panel) {
 
         content.forEach((line, lineIndex) => {
           // Must be a scheduled task with a proper status keyword and start with a task symbol
-          const scheduledMatch = line.match(/\bSCHEDULED:\s*\[(\d{2}-\d{2}-\d{4})\]/);
+          const scheduledMatch = line.match(/\bSCHEDULED:\s*\[(\d{2,4}-\d{2}-\d{2,4})\]/);
           const keywordMatch = line.match(/\b(TODO|IN_PROGRESS|DONE|CONTINUED|ABANDONED)\b/);
           const startsWithSymbol = /^([⊙⊖⊘⊜⊗]|\*+)/.test(line.trim()); 
 
@@ -86,7 +86,7 @@ function sendTasksToCalendar(panel) {
             tasks.push({
               text: cleanedText, // For display in calendar
               fullText: fullLine, // For backend matching (reschedule logic)
-              date: moment(scheduledMatch[1], [dateFormat, "MM-DD-YYYY", "DD-MM-YYYY"], true).format("YYYY-MM-DD"),
+              date: moment(scheduledMatch[1], [dateFormat, "MM-DD-YYYY", "YYYY-MM-DD"], true).format("YYYY-MM-DD"),
               file: file,
               tags: tags,
               id: file + '#' + lineIndex // stable id for rescheduling
@@ -194,7 +194,7 @@ function rescheduleTaskById(taskId, newDate) {
   const formattedNewDate = parsedNewDate.format(dateFormat);
 
   // Replace or insert SCHEDULED: [MM-DD-YYYY] on that line
-  const scheduledRegex = /(SCHEDULED:\s*\[)(\d{2}-\d{2}-\d{4})(\])/;
+  const scheduledRegex = /(SCHEDULED:\s*\[)(\d{2,4}-\d{2}-\d{2,4})(\])/;
   if (scheduledRegex.test(lines[lineIndex])) {
     lines[lineIndex] = lines[lineIndex].replace(scheduledRegex, `$1${formattedNewDate}$3`);
   } else {
