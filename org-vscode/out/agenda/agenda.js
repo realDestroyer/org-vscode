@@ -13,7 +13,7 @@ module.exports = function () {
   let config = vscode.workspace.getConfiguration("Org-vscode");
     let folderPath = config.get("folderPath");
     let dateFormat = config.get("dateFormat", "MM-DD-YYYY");
-    let acceptedDateFormats = [dateFormat, "MM-DD-YYYY", "DD-MM-YYYY"];
+    let acceptedDateFormats = [dateFormat, "MM-DD-YYYY", "YYYY-MM-DD"];
     let folder;
     let taskText;
     let taskKeywordMatch = "";
@@ -29,7 +29,7 @@ module.exports = function () {
     function readFiles() {
       fs.readdir(setMainDir(), (err, items) => {
         function getSortTimestampFromAgendaKey(key) {
-          const dateMatch = key.match(/\[(\d{2}-\d{2}-\d{4})\]/);
+          const dateMatch = key.match(/\[(\d{2,4}-\d{2}-\d{2,4})\]/);
           if (!dateMatch) {
             return null;
           }

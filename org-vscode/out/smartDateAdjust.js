@@ -16,7 +16,7 @@ function smartDateAdjust(forward = true) {
 
     const config = vscode.workspace.getConfiguration("Org-vscode");
     const dateFormat = config.get("dateFormat", "MM-DD-YYYY");
-    const acceptedDateFormats = [dateFormat, "MM-DD-YYYY", "DD-MM-YYYY"];
+    const acceptedDateFormats = [dateFormat, "MM-DD-YYYY", "YYYY-MM-DD"];
 
     const document = editor.document;
     const selections = (editor.selections && editor.selections.length)
@@ -39,8 +39,8 @@ function smartDateAdjust(forward = true) {
     }
     const sortedLines = Array.from(targetLines).sort((a, b) => b - a);
 
-    const dayHeadingRegex = /^(\s*)(⊘|\*+)\s*\[(\d{2}-\d{2}-\d{4}) (\w{3})\]/;
-    const scheduledRegex = /SCHEDULED:\s*\[(\d{2}-\d{2}-\d{4})\]/;
+    const dayHeadingRegex = /^(\s*)(⊘|\*+)\s*\[(\d{2,4}-\d{2}-\d{2,4}) (\w{3})\]/;
+    const scheduledRegex = /SCHEDULED:\s*\[(\d{2,4}-\d{2}-\d{2,4})\]/;
 
     const edit = new vscode.WorkspaceEdit();
     let touched = false;

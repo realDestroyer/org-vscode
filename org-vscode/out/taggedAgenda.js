@@ -171,7 +171,7 @@ function showTaggedAgendaView(tag, items) {
 function getTaggedWebviewContent(webview, nonce, localMomentJs, tag, items) {
   const config = vscode.workspace.getConfiguration("Org-vscode");
   const dateFormat = config.get("dateFormat", "MM-DD-YYYY");
-  const acceptedDateFormats = [dateFormat, "MM-DD-YYYY", "DD-MM-YYYY"];
+  const acceptedDateFormats = [dateFormat, "MM-DD-YYYY", "YYYY-MM-DD"];
   const grouped = {};
 
   for (const item of items) {
@@ -191,7 +191,7 @@ function getTaggedWebviewContent(webview, nonce, localMomentJs, tag, items) {
       const keyword = keywordMatch ? keywordMatch[0] : "TODO";
       const keywordClass = keyword.toLowerCase();
 
-      const scheduledMatch = item.line.match(/\[([0-9]{2}-[0-9]{2}-[0-9]{4})\]/);
+      const scheduledMatch = item.line.match(/\[(\d{2,4}-\d{2}-\d{2,4})\]/);
       const scheduledDate = scheduledMatch ? scheduledMatch[1] : "";
 
       const tagsMatch = item.line.match(/\[\+TAG:([^\]]+)\]/);
