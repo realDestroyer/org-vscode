@@ -9,7 +9,7 @@ module.exports = function () {
     const outputFilePath = path.join(folderPath, "CurrentTasks.org");
 
     const keywordsToMatch = ["TODO", "IN_PROGRESS", "CONTINUED", "ABANDONED"];
-    const orgFiles = fs.readdirSync(folderPath).filter(f => f.endsWith(".org") && f !== "CurrentTasks.org");
+    const orgFiles = fs.readdirSync(folderPath).filter(f => f.endsWith(".org") && !f.startsWith(".") && f !== "CurrentTasks.org");
 
     let exportLines = [];
 

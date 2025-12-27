@@ -22,7 +22,7 @@ module.exports = async function taggedAgenda() {
 
   const agendaItems = [];
   const orgDir = getOrgFolder();
-  const files = fs.readdirSync(orgDir).filter(file => file.endsWith(".org"));
+  const files = fs.readdirSync(orgDir).filter(file => file.endsWith(".org") && !file.startsWith("."));
 
   for (const file of files) {
     const filePath = path.join(orgDir, file);
