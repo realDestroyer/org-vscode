@@ -106,17 +106,12 @@ const DEFAULT_COLORS = {
     foreground: "#6c757d",
     fontStyle: "italic"
   },
-  "COMPLETED Stamp": {
-    scope: "comment.vso",
-    foreground: "#9d9d9d",
-    fontStyle: "italic"
-  },
   "Timestamp": {
     scope: "constant.other.timestamp.vso",
     foreground: "#9d9d9d",
     fontStyle: ""
   },
-  "Inline Tags": {
+  "Tags": {
     scope: "entity.other.attribute-name.tag.vso",
     foreground: "#C984F7",
     fontStyle: "bold"
@@ -170,11 +165,10 @@ const SCOPE_GROUPS = {
     "SCHEDULED Stamp",
     "DEADLINE Stamp",
     "CLOSED Stamp",
-    "COMPLETED Stamp",
     "Timestamp",
     "Agenda Date",
     "Day Header Date",
-    "Inline Tags"
+    "Tags"
   ],
   "Structure": [
     "Heading Level 1",
@@ -994,9 +988,8 @@ function getPreviewText(scopeName) {
     "SCHEDULED Stamp": "SCHEDULED: [12-11-2025]",
     "DEADLINE Stamp": "DEADLINE: [12-15-2025]",
     "CLOSED Stamp": "CLOSED: [12-11-2025 09:00]",
-    "COMPLETED Stamp": "COMPLETED: [12-11-2025 09:00]",
     "Timestamp": "<2025-12-11 Thu 09:00>",
-    "Inline Tags": "[+TAG:WORK,PROJECT]",
+    "Tags": ":WORK:PROJECT:",
     "Agenda Date": "[12-11-2025]",
     "Day Header Date": "[12-11-2025 Thu]",
     "Org Directive": "#+TITLE: Work",

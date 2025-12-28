@@ -4,6 +4,7 @@ const vscode = require("vscode");   // VSCode API access
 const fs = require("fs");           // File system module to read/write org files
 const path = require("path");       // For cross-platform path handling
 const moment = require("moment");   // Date formatting library
+const { getAllTagsFromLine, stripAllTagSyntax, parseFileTagsFromText, createInheritanceTracker, getPlanningForHeading, isPlanningLine, normalizeTagsAfterPlanning } = require("./orgTagUtils");
 
 let calendarPanel = null; // Keeps reference to the Webview panel (singleton instance)
 
@@ -58,26 +59,30 @@ function sendTasksToCalendar(panel) {
       // Ignore non-.org files and the special CurrentTasks.org export file
       if (file.endsWith(".org") && !file.startsWith(".") && file !== "CurrentTasks.org") {
         let filePath = path.join(dirPath, file);
-        let content = fs.readFileSync(filePath, "utf-8").split(/\r?\n/);
+        let fileText = fs.readFileSync(filePath, "utf-8");
+        let content = fileText.split(/\r?\n/);
+        const tracker = createInheritanceTracker(parseFileTagsFromText(fileText));
 
         content.forEach((line, lineIndex) => {
+          const tagState = tracker.handleLine(line);
+          const planning = getPlanningForHeading(content, lineIndex);
+          const scheduledDate = planning && planning.scheduled ? planning.scheduled : null;
+
           // Must be a scheduled task with a proper status keyword and start with a task symbol
-          const scheduledMatch = line.match(/\bSCHEDULED:\s*\[(\d{2,4}-\d{2}-\d{2,4})\]/);
           const keywordMatch = line.match(/\b(TODO|IN_PROGRESS|DONE|CONTINUED|ABANDONED)\b/);
           const startsWithSymbol = /^([⊙⊖⊘⊜⊗]|\*+)/.test(line.trim()); 
 
-          if (scheduledMatch && startsWithSymbol && keywordMatch) {
-            // Extract inline tags if they exist: [+TAG:foo,bar]
-            const tagMatch = line.match(/\[\+TAG:([^\]]+)\]/);
-            const tags = tagMatch
-              ? tagMatch[1].split(",").map(t => t.trim().toUpperCase())
-              : [];
+          if (scheduledDate && startsWithSymbol && keywordMatch) {
+            // Effective tags include inherited tags from parent headings and file-level #+FILETAGS.
+            // For non-asterisk headings (unicode-only), fall back to per-line tag extraction.
+            const tags = (tagState && tagState.isHeading)
+              ? tagState.inheritedTags
+              : getAllTagsFromLine(line);
 
             const fullLine = line.trim();
 
-            const cleanedText = fullLine
+            const cleanedText = stripAllTagSyntax(fullLine)
               .replace(/\b(TODO|IN_PROGRESS|DONE|CONTINUED|ABANDONED)\b/, '') // Remove keyword
-              .replace(/:?\s*\[\+TAG:[^\]]+\]\s*-?/, '')                  // Remove inline tag structure
               .replace(/SCHEDULED:.*/, '')                                     // Strip scheduled portion
               .replace(/[⊙⊖⊘⊜⊗]/g, '')                                         // Remove the leading Unicode symbol
               .replace(/^\*+\s+/, '')                                         // Remove the leading org '*' heading marker(s)
@@ -86,7 +91,7 @@ function sendTasksToCalendar(panel) {
             tasks.push({
               text: cleanedText, // For display in calendar
               fullText: fullLine, // For backend matching (reschedule logic)
-              date: moment(scheduledMatch[1], [dateFormat, "MM-DD-YYYY", "YYYY-MM-DD"], true).format("YYYY-MM-DD"),
+              date: moment(scheduledDate, [dateFormat, "MM-DD-YYYY", "YYYY-MM-DD"], true).format("YYYY-MM-DD"),
               file: file,
               tags: tags,
               id: file + '#' + lineIndex // stable id for rescheduling
@@ -194,12 +199,32 @@ function rescheduleTaskById(taskId, newDate) {
   const formattedNewDate = parsedNewDate.format(dateFormat);
 
   // Replace or insert SCHEDULED: [MM-DD-YYYY] on that line
-  const scheduledRegex = /(SCHEDULED:\s*\[)(\d{2,4}-\d{2}-\d{2,4})(\])/;
-  if (scheduledRegex.test(lines[lineIndex])) {
-    lines[lineIndex] = lines[lineIndex].replace(scheduledRegex, `$1${formattedNewDate}$3`);
+  const headlineText = normalizeTagsAfterPlanning(lines[lineIndex])
+    .replace(/\s*SCHEDULED:\s*\[[^\]]*\]/, "")
+    .trimRight();
+  lines[lineIndex] = headlineText;
+
+  const headlineIndent = headlineText.match(/^\s*/)?.[0] || "";
+  const planningIndent = `${headlineIndent}  `;
+  const scheduledTag = `SCHEDULED: [${formattedNewDate}]`;
+
+  const nextLine = (lineIndex + 1 < lines.length) ? lines[lineIndex + 1] : "";
+  if (isPlanningLine(nextLine)) {
+    const indent = nextLine.match(/^\s*/)?.[0] || planningIndent;
+    let body = String(nextLine).trim()
+      .replace(/\s*SCHEDULED:\s*\[[^\]]*\]/, "")
+      .replace(/\s{2,}/g, " ")
+      .trim();
+
+    if (/\bDEADLINE:\s*\[/.test(body)) {
+      body = body.replace(/DEADLINE:\s*\[[^\]]*\]/, `${scheduledTag}  $&`);
+    } else {
+      body = body ? `${body}  ${scheduledTag}` : scheduledTag;
+    }
+
+    lines[lineIndex + 1] = `${indent}${body}`;
   } else {
-    // Append SCHEDULED at end with a spacing dash if not present
-    lines[lineIndex] = lines[lineIndex].replace(/\s*$/, '') + `  SCHEDULED: [${formattedNewDate}]`;
+    lines.splice(lineIndex + 1, 0, `${planningIndent}${scheduledTag}`);
   }
 
   fs.writeFileSync(filePath, lines.join('\n'), 'utf-8');

@@ -169,7 +169,7 @@
 						}
 					},
 					{
-						"name": "Inline Tags [+TAG:]",
+						"name": "Tags (:TAG1:TAG2:)",
 						"scope": "entity.other.attribute-name.tag.vso",
 						"settings": {
 							"foreground": "#C984F7",
@@ -205,14 +205,6 @@
 						"scope": "keyword.closed.vso",
 						"settings": {
 							"foreground": "#6c757d",
-							"fontStyle": "italic"
-						}
-					},
-					{
-						"name": "COMPLETED Stamp",
-						"scope": "comment.vso",
-						"settings": {
-							"foreground": "#9d9d9d",
 							"fontStyle": "italic"
 						}
 					},
@@ -397,6 +389,10 @@
 			{
 				"command": "extension.addTagToTask",
 				"title": "Add Tag to Task"
+			},
+			{
+				"command": "extension.addFileTag",
+				"title": "Add File Tag"
 			},
 			{
 				"command": "extension.viewTaggedAgenda",

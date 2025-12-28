@@ -2,9 +2,35 @@
 const vscode = require("vscode");
 const moment = require("moment");
 const taskKeywordManager = require("./taskKeywordManager");
+const { isPlanningLine, parsePlanningFromText, normalizeTagsAfterPlanning } = require("./orgTagUtils");
 
 const DAY_HEADING_REGEX = /^(\s*)(⊘|\*+)\s*\[(\d{2,4}-\d{2}-\d{2,4})\s+([A-Za-z]{3})\](.*)$/;
 const SCHEDULED_REGEX = /SCHEDULED:\s*\[(\d{2,4}-\d{2}-\d{2,4})\]/;
+const DEADLINE_REGEX = /DEADLINE:\s*\[(\d{2,4}-\d{2}-\d{2,4})\]/;
+
+function getImmediatePlanningLine(lines, headingIndex) {
+  const idx = headingIndex + 1;
+  if (idx >= 0 && idx < lines.length && isPlanningLine(lines[idx])) {
+    return { index: idx, text: lines[idx] };
+  }
+  return { index: -1, text: "" };
+}
+
+function stripInlinePlanning(text) {
+  return String(text || "")
+    .replace(/\s*(?:SCHEDULED|DEADLINE|CLOSED|COMPLETED):\s*\[[^\]]*\]/g, "")
+    .replace(/\s*(?:SCHEDULED|DEADLINE|CLOSED|COMPLETED):\[[^\]]*\]/g, "")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+}
+
+function buildPlanningBody(planning) {
+  const parts = [];
+  if (planning?.scheduled) parts.push(`SCHEDULED: [${planning.scheduled}]`);
+  if (planning?.deadline) parts.push(`DEADLINE: [${planning.deadline}]`);
+  if (planning?.closed) parts.push(`CLOSED: [${planning.closed}]`);
+  return parts.join("  ");
+}
 
 /**
  * Find the day heading that contains a given line number
@@ -116,20 +142,32 @@ function buildDayHeading(date, weekday, suffix = "", indent = "", marker = "⊘"
  */
 function buildForwardedTask(originalLine, newDate, indent = "  ") {
   // Clean the task and rebuild as TODO
-  const cleanedText = taskKeywordManager.cleanTaskText(originalLine);
+  const originalCleaned = taskKeywordManager.cleanTaskText(normalizeTagsAfterPlanning(originalLine));
 
   const config = vscode.workspace.getConfiguration("Org-vscode");
   const headingMarkerStyle = config.get("headingMarkerStyle", "unicode");
   const starPrefixMatch = originalLine.match(/^\s*(\*+)/);
   const starPrefix = starPrefixMatch ? starPrefixMatch[1] : "*";
-  
-  // Update the SCHEDULED date if present
-  let updatedText = cleanedText;
-  if (SCHEDULED_REGEX.test(cleanedText)) {
-    updatedText = cleanedText.replace(SCHEDULED_REGEX, `SCHEDULED: [${newDate}]`);
+
+  // Prefer writing planning as a child line. Preserve DEADLINE/CLOSED if present.
+  const planningFromHeadline = parsePlanningFromText(originalLine);
+  const hasInlinePlanning = Boolean(planningFromHeadline.scheduled || planningFromHeadline.deadline || planningFromHeadline.closed);
+
+  const cleanedHeadlineText = stripInlinePlanning(originalCleaned);
+  const headline = taskKeywordManager.buildTaskLine(indent, "TODO", cleanedHeadlineText, { headingMarkerStyle, starPrefix });
+
+  // Only update scheduling when the original task had a scheduled stamp.
+  if (!hasInlinePlanning || !planningFromHeadline.scheduled) {
+    return headline;
   }
-  
-  return taskKeywordManager.buildTaskLine(indent, "TODO", updatedText, { headingMarkerStyle, starPrefix });
+
+  const updatedPlanning = {
+    ...planningFromHeadline,
+    scheduled: newDate
+  };
+  const planningIndent = `${indent}  `;
+  const body = buildPlanningBody(updatedPlanning);
+  return body ? `${headline}\n${planningIndent}${body}` : headline;
 }
 
 /**
@@ -141,7 +179,7 @@ function getTaskIdentifier(lineText) {
     .replace(/[⊙⊘⊖⊜⊗]/g, "")
     .replace(/\b(TODO|IN_PROGRESS|CONTINUED|DONE|ABANDONED)\b/g, "")
     .replace(/SCHEDULED:\s*\[\d{2,4}-\d{2}-\d{2,4}\]/g, "")
-    .replace(/COMPLETED:\s*\[.*?\]/g, "")
+    .replace(/(?:CLOSED|COMPLETED):\s*\[.*?\]/g, "")
     .replace(/\s+/g, " ")
     .trim();
 }
@@ -155,6 +193,9 @@ function findForwardedTask(lines, nextDayHeadingIndex, taskIdentifier) {
     // Stop if we hit another day heading
     if (DAY_HEADING_REGEX.test(line)) {
       break;
+    }
+    if (isPlanningLine(line)) {
+      continue;
     }
     // Check if this line matches our task
     if (getTaskIdentifier(line) === taskIdentifier) {
@@ -171,6 +212,7 @@ function findForwardedTask(lines, nextDayHeadingIndex, taskIdentifier) {
 function handleContinuedTransition(document, taskLineNumber) {
   const lines = document.getText().split(/\r?\n/);
   const taskLine = lines[taskLineNumber];
+  const planningLine = getImmediatePlanningLine(lines, taskLineNumber);
   
   // Find which day this task belongs to
   const currentDay = findContainingDayHeading(lines, taskLineNumber);
@@ -196,7 +238,9 @@ function handleContinuedTransition(document, taskLineNumber) {
   const originalIndent = taskLine.match(/^(\s*)/)?.[1] || "  ";
   
   // Build the forwarded task
-  const forwardedTask = buildForwardedTask(taskLine, nextDayInfo.date, originalIndent);
+  // If we have a planning line, include its stamps during forwarding.
+  const combinedForForwarding = planningLine.index !== -1 ? `${taskLine}\n${planningLine.text}` : taskLine;
+  const forwardedTask = buildForwardedTask(combinedForForwarding, nextDayInfo.date, originalIndent);
   
   if (nextDayHeading && datesMatch(nextDayHeading.date, nextDayInfo.date)) {
     // Next day exists - check if task is already forwarded
@@ -207,7 +251,7 @@ function handleContinuedTransition(document, taskLineNumber) {
     }
     
     // Use the existing heading's date string to keep file formatting consistent.
-    const forwardedTaskForExistingHeading = buildForwardedTask(taskLine, nextDayHeading.date, originalIndent);
+    const forwardedTaskForExistingHeading = buildForwardedTask(combinedForForwarding, nextDayHeading.date, originalIndent);
 
     // Insert after the day heading
     return {
@@ -274,11 +318,15 @@ function handleContinuedRemoval(document, taskLineNumber) {
   
   // Return deletion edit
   const lineToDelete = document.lineAt(forwardedLineIndex);
+  const nextLineToDelete = (forwardedLineIndex + 1 < document.lineCount) ? document.lineAt(forwardedLineIndex + 1) : null;
+  const deleteEnd = (nextLineToDelete && isPlanningLine(nextLineToDelete.text))
+    ? new vscode.Position(forwardedLineIndex + 2, 0)
+    : new vscode.Position(forwardedLineIndex + 1, 0);
   return {
     type: "delete",
     range: new vscode.Range(
       lineToDelete.range.start,
-      new vscode.Position(forwardedLineIndex + 1, 0)
+      deleteEnd
     )
   };
 }

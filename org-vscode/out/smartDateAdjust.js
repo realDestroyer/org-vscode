@@ -1,5 +1,6 @@
 const vscode = require("vscode");
 const moment = require("moment");
+const { isPlanningLine } = require("./orgTagUtils");
 
 /**
  * Smart date adjustment - detects what type of date is on the current line
@@ -49,6 +50,9 @@ function smartDateAdjust(forward = true) {
     for (const lineNumber of sortedLines) {
         const line = document.lineAt(lineNumber);
         const text = line.text;
+        const nextLineText = (lineNumber + 1 < document.lineCount)
+            ? document.lineAt(lineNumber + 1).text
+            : "";
 
         const dayMatch = text.match(dayHeadingRegex);
         if (dayMatch) {
@@ -82,6 +86,28 @@ function smartDateAdjust(forward = true) {
             const updatedText = text.replace(scheduledRegex, `SCHEDULED: [${newDate}]`);
             if (updatedText !== text) {
                 edit.replace(document.uri, line.range, updatedText);
+                touched = true;
+            }
+            continue;
+        }
+
+        // Emacs-style: scheduled stamp on the immediate planning line.
+        if (!scheduledMatch && isPlanningLine(nextLineText) && nextLineText.match(scheduledRegex)) {
+            const planningLine = document.lineAt(lineNumber + 1);
+            const pm = planningLine.text.match(scheduledRegex);
+            if (!pm) {
+                continue;
+            }
+            const currentDate = pm[1];
+            const parsed = moment(currentDate, acceptedDateFormats, true);
+            if (!parsed.isValid()) {
+                warnedParse = true;
+                continue;
+            }
+            const newDate = parsed.add(forward ? 1 : -1, "day").format(dateFormat);
+            const updatedPlanning = planningLine.text.replace(scheduledRegex, `SCHEDULED: [${newDate}]`);
+            if (updatedPlanning !== planningLine.text) {
+                edit.replace(document.uri, planningLine.range, updatedPlanning);
                 touched = true;
             }
         }

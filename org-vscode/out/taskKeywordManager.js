@@ -50,7 +50,12 @@ function buildTaskLine(leadingSpaces, keyword, cleanedText, options = {}) {
 
 function buildCompletedStamp(leadingSpaces, dateFormat) {
   const fmt = dateFormat || "MM-DD-YYYY";
-  return `${leadingSpaces}  COMPLETED:[${moment().format(`${fmt} ddd HH:mm`)}]`;
+  return `${leadingSpaces}  CLOSED:[${moment().format(`${fmt} ddd HH:mm`)}]`;
+}
+
+// Back-compat alias: prefer CLOSED, but keep the existing exported name.
+function buildClosedStamp(leadingSpaces, dateFormat) {
+  return buildCompletedStamp(leadingSpaces, dateFormat);
 }
 
 module.exports = {
@@ -61,5 +66,6 @@ module.exports = {
   rotateKeyword,
   cleanTaskText,
   buildTaskLine,
-  buildCompletedStamp
+  buildCompletedStamp,
+  buildClosedStamp
 };
