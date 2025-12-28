@@ -3,6 +3,24 @@ const fs = require("fs");
 const path = require("path");
 const taskKeywordManager = require("./taskKeywordManager");
 const continuedTaskHandler = require("./continuedTaskHandler");
+const moment = require("moment");
+const { isPlanningLine, parsePlanningFromText, normalizeTagsAfterPlanning } = require("./orgTagUtils");
+
+function stripInlinePlanning(text) {
+  return String(text || "")
+    .replace(/\s*(?:SCHEDULED|DEADLINE|CLOSED|COMPLETED):\s*\[[^\]]*\]/g, "")
+    .replace(/\s*(?:SCHEDULED|DEADLINE|CLOSED|COMPLETED):\[[^\]]*\]/g, "")
+    .replace(/\s{2,}/g, " ")
+    .trimRight();
+}
+
+function buildPlanningBody(planning) {
+  const parts = [];
+  if (planning?.scheduled) parts.push(`SCHEDULED: [${planning.scheduled}]`);
+  if (planning?.deadline) parts.push(`DEADLINE: [${planning.deadline}]`);
+  if (planning?.closed) parts.push(`CLOSED: [${planning.closed}]`);
+  return parts.join("  ");
+}
 
 module.exports = async function () {
   await vscode.commands.executeCommand("workbench.action.files.save");
@@ -46,6 +64,7 @@ module.exports = async function () {
   for (const lineNumber of sortedLines) {
     const currentLine = document.lineAt(lineNumber);
     const nextLine = lineNumber + 1 < document.lineCount ? document.lineAt(lineNumber + 1) : null;
+    const nextNextLine = lineNumber + 2 < document.lineCount ? document.lineAt(lineNumber + 2) : null;
 
     const keywordMatch = currentLine.text.match(/\b(TODO|IN_PROGRESS|CONTINUED|DONE|ABANDONED)\b/);
     if (hasRangeSelection && !keywordMatch) {
@@ -66,19 +85,34 @@ module.exports = async function () {
     const leadingSpaces = currentLine.text.slice(0, currentLine.firstNonWhitespaceCharacterIndex);
     const starPrefixMatch = currentLine.text.match(/^\s*(\*+)/);
     const starPrefix = starPrefixMatch ? starPrefixMatch[1] : "*";
-    const cleanedText = taskKeywordManager.cleanTaskText(currentLine.text);
+    const planningFromHeadline = parsePlanningFromText(currentLine.text);
+    const planningFromNext = (nextLine && isPlanningLine(nextLine.text)) ? parsePlanningFromText(nextLine.text) : {};
+    const planningFromNextNext = (nextNextLine && isPlanningLine(nextNextLine.text)) ? parsePlanningFromText(nextNextLine.text) : {};
+
+    const mergedPlanning = {
+      scheduled: planningFromNext.scheduled || planningFromHeadline.scheduled || null,
+      deadline: planningFromNext.deadline || planningFromHeadline.deadline || null,
+      // Prefer CLOSED; accept legacy COMPLETED from any parsed source.
+      closed: planningFromNext.closed || planningFromHeadline.closed || planningFromNextNext.closed || null
+    };
+
+    const headlineNoPlanning = stripInlinePlanning(normalizeTagsAfterPlanning(currentLine.text));
+    const cleanedText = taskKeywordManager.cleanTaskText(headlineNoPlanning);
     const currentKeyword = keywordMatch ? keywordMatch[1] : null;
     const { keyword: nextKeyword } = taskKeywordManager.rotateKeyword(currentKeyword, "right");
 
     let newLine = taskKeywordManager.buildTaskLine(leadingSpaces, nextKeyword, cleanedText, { headingMarkerStyle, starPrefix });
     const workspaceEdit = new vscode.WorkspaceEdit();
 
-    // Add or remove COMPLETED line
+    // Upsert/remove CLOSED in the planning line (preferred: single planning line under the headline).
     if (nextKeyword === "DONE") {
-      newLine += `\n${taskKeywordManager.buildCompletedStamp(leadingSpaces, dateFormat)}`;
-    } else if (currentKeyword === "DONE" && nextLine && nextLine.text.includes("COMPLETED")) {
-      workspaceEdit.delete(document.uri, nextLine.range);
+      mergedPlanning.closed = moment().format(`${dateFormat} ddd HH:mm`);
+    } else if (currentKeyword === "DONE") {
+      mergedPlanning.closed = null;
     }
+
+    const planningIndent = `${leadingSpaces}  `;
+    const planningBody = buildPlanningBody(mergedPlanning);
 
     // Handle CONTINUED transitions
     if (nextKeyword === "CONTINUED" && currentKeyword !== "CONTINUED") {
@@ -94,6 +128,27 @@ module.exports = async function () {
     }
 
     workspaceEdit.replace(document.uri, currentLine.range, newLine);
+
+    // Normalize planning line placement immediately after the headline.
+    if (planningBody) {
+      if (nextLine && isPlanningLine(nextLine.text)) {
+        workspaceEdit.replace(document.uri, nextLine.range, `${planningIndent}${planningBody}`);
+        if (nextNextLine && isPlanningLine(nextNextLine.text)) {
+          workspaceEdit.delete(document.uri, nextNextLine.rangeIncludingLineBreak);
+        }
+      } else {
+        if (nextNextLine && isPlanningLine(nextNextLine.text)) {
+          workspaceEdit.delete(document.uri, nextNextLine.rangeIncludingLineBreak);
+        }
+        workspaceEdit.insert(document.uri, currentLine.range.end, `\n${planningIndent}${planningBody}`);
+      }
+    } else {
+      if (nextLine && isPlanningLine(nextLine.text)) {
+        workspaceEdit.delete(document.uri, nextLine.rangeIncludingLineBreak);
+      } else if (nextNextLine && isPlanningLine(nextNextLine.text) && (nextNextLine.text.includes("CLOSED") || nextNextLine.text.includes("COMPLETED"))) {
+        workspaceEdit.delete(document.uri, nextNextLine.rangeIncludingLineBreak);
+      }
+    }
 
     // If inside CurrentTasks.org, capture source mapping BEFORE edits apply
     if (document.fileName.includes("CurrentTasks.org")) {
@@ -145,9 +200,9 @@ module.exports = async function () {
           starPrefix: origStarPrefix
         });
 
-        if (change.nextKeyword === "DONE" && !originalLines[i + 1]?.includes("COMPLETED")) {
+        if (change.nextKeyword === "DONE" && !(originalLines[i + 1]?.includes("CLOSED") || originalLines[i + 1]?.includes("COMPLETED"))) {
           originalLines.splice(i + 1, 0, taskKeywordManager.buildCompletedStamp(origIndent, dateFormat));
-        } else if (originalLines[i + 1]?.includes("COMPLETED")) {
+        } else if (originalLines[i + 1]?.includes("CLOSED") || originalLines[i + 1]?.includes("COMPLETED")) {
           originalLines.splice(i + 1, 1);
         }
 

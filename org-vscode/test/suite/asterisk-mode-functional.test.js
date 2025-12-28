@@ -55,7 +55,7 @@ suite('Asterisk-mode functional behavior', function () {
     await cfg.update('headingMarkerStyle', oldHeadingMarkerStyle, vscode.ConfigurationTarget.Global);
   });
 
-  test('Toggling status preserves asterisks and adds/removes COMPLETED', async () => {
+  test('Toggling status preserves asterisks and adds/removes CLOSED', async () => {
     const uri = await writeTempVsoFile('**** TODO I like chicken\n');
     const { doc, editor } = await openFileInEditor(uri);
 
@@ -69,14 +69,14 @@ suite('Asterisk-mode functional behavior', function () {
 
     await vscode.commands.executeCommand('extension.toggleStatusRight');
     await waitFor(() => doc.getText().includes('**** DONE I like chicken'));
-    await waitFor(() => doc.getText().includes('COMPLETED:['));
+    await waitFor(() => doc.getText().includes('CLOSED: ['));
 
     const afterDone = doc.getText();
     assert.ok(!/[⊙⊘⊖⊜⊗]/.test(afterDone), 'Should not insert unicode in asterisk mode');
 
     await vscode.commands.executeCommand('extension.toggleStatusRight');
     await waitFor(() => doc.getText().includes('**** ABANDONED I like chicken'));
-    await waitFor(() => !doc.getText().includes('COMPLETED:['));
+    await waitFor(() => !doc.getText().includes('CLOSED: ['));
   });
 
   test('CONTINUED forwards to next day and removal cleans it up', async () => {
@@ -95,12 +95,15 @@ suite('Asterisk-mode functional behavior', function () {
     setCursor(editor, 1, 0);
 
     await vscode.commands.executeCommand('extension.toggleStatusRight');
-    await waitFor(() => doc.getText().includes('*** CONTINUED I like chicken SCHEDULED: [12-14-2025]'));
-    await waitFor(() => doc.getText().includes('*** TODO I like chicken SCHEDULED: [12-15-2025]'));
+    await waitFor(() => doc.getText().includes('*** CONTINUED I like chicken'));
+    await waitFor(() => doc.getText().includes('    SCHEDULED: [12-14-2025]'));
+    await waitFor(() => doc.getText().includes('*** TODO I like chicken'));
+    await waitFor(() => doc.getText().includes('    SCHEDULED: [12-15-2025]'));
 
     await vscode.commands.executeCommand('extension.toggleStatusRight');
-    await waitFor(() => doc.getText().includes('*** DONE I like chicken SCHEDULED: [12-14-2025]'));
-    await waitFor(() => !doc.getText().includes('*** TODO I like chicken SCHEDULED: [12-15-2025]'));
+    await waitFor(() => doc.getText().includes('*** DONE I like chicken'));
+    await waitFor(() => doc.getText().includes('    SCHEDULED: [12-14-2025]'));
+    await waitFor(() => !doc.getText().includes('    SCHEDULED: [12-15-2025]'));
   });
 
   test('Selection toggles status for multiple task lines', async () => {
@@ -182,9 +185,9 @@ suite('Asterisk-mode functional behavior', function () {
 
       await vscode.commands.executeCommand('extension.scheduling');
 
-      await waitFor(() => doc.getText().includes('*** TODO Task A    SCHEDULED: [2025-12-31]'));
-      await waitFor(() => doc.getText().includes('*** TODO Task B    SCHEDULED: [2025-12-31]'));
-      await waitFor(() => doc.getText().includes('*** TODO Task C    SCHEDULED: [2025-12-31]'));
+      await waitFor(() => doc.getText().includes('  *** TODO Task A\n    SCHEDULED: [2025-12-31]'));
+      await waitFor(() => doc.getText().includes('  *** TODO Task B\n    SCHEDULED: [2025-12-31]'));
+      await waitFor(() => doc.getText().includes('  *** TODO Task C\n    SCHEDULED: [2025-12-31]'));
       assert.ok(doc.getText().includes(`* [12-14-2025 Sun]${separator}`));
     } finally {
       vscode.window.showInputBox = originalShowInputBox;
@@ -215,16 +218,16 @@ suite('Asterisk-mode functional behavior', function () {
 
       await vscode.commands.executeCommand('extension.deadline');
 
-      await waitFor(() => doc.getText().includes('*** TODO Task A    DEADLINE: [2025-12-31]'));
-      await waitFor(() => doc.getText().includes('*** TODO Task B    DEADLINE: [2025-12-31]'));
-      await waitFor(() => doc.getText().includes('*** TODO Task C    DEADLINE: [2025-12-31]'));
+      await waitFor(() => doc.getText().includes('  *** TODO Task A\n    DEADLINE: [2025-12-31]'));
+      await waitFor(() => doc.getText().includes('  *** TODO Task B\n    DEADLINE: [2025-12-31]'));
+      await waitFor(() => doc.getText().includes('  *** TODO Task C\n    DEADLINE: [2025-12-31]'));
       assert.ok(doc.getText().includes(`* [12-14-2025 Sun]${separator}`));
     } finally {
       vscode.window.showInputBox = originalShowInputBox;
     }
   });
 
-  test('Selection adds TAG to multiple tasks and updates header', async () => {
+  test('Selection adds end-of-line tag to multiple tasks (Emacs style)', async () => {
     const contents = [
       '#+TAGS: FOO',
       '  *** TODO Task A',
@@ -245,9 +248,39 @@ suite('Asterisk-mode functional behavior', function () {
 
       await vscode.commands.executeCommand('extension.addTagToTask');
 
-      await waitFor(() => doc.getText().includes('*** TODO : [+TAG:TEST] - Task A'));
-      await waitFor(() => doc.getText().includes('*** TODO : [+TAG:TEST] - Task B'));
-      await waitFor(() => doc.getText().includes('#+TAGS: FOO, TEST'));
+      await waitFor(() => doc.getText().includes('*** TODO Task A :TEST:'));
+      await waitFor(() => doc.getText().includes('*** TODO Task B :TEST:'));
+
+      // In Emacs Org-mode, #+TAGS configures allowed tags/groups/keys; it is not automatically mutated.
+      await waitFor(() => doc.getText().includes('#+TAGS: FOO'));
+      assert.ok(!doc.getText().includes('#+TAGS: FOO, TEST'));
+    } finally {
+      vscode.window.showInputBox = originalShowInputBox;
+    }
+  });
+
+  test('Add File Tag inserts/updates #+FILETAGS in Emacs style', async () => {
+    const contents = [
+      '#+TITLE: Example',
+      '',
+      '*** TODO Task A',
+      ''
+    ].join('\n');
+
+    const uri = await writeTempVsoFile(contents);
+    const { doc } = await openFileInEditor(uri);
+
+    const originalShowInputBox = vscode.window.showInputBox;
+    vscode.window.showInputBox = async () => 'foo';
+
+    try {
+      await vscode.commands.executeCommand('extension.addFileTag');
+      await waitFor(() => doc.getText().includes('#+FILETAGS: :FOO:'));
+
+      // Running again should append (and normalize) without duplicating existing tags.
+      vscode.window.showInputBox = async () => 'bar';
+      await vscode.commands.executeCommand('extension.addFileTag');
+      await waitFor(() => doc.getText().includes('#+FILETAGS: :FOO:BAR:'));
     } finally {
       vscode.window.showInputBox = originalShowInputBox;
     }

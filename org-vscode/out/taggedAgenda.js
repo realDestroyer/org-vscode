@@ -5,20 +5,20 @@ const os = require("os");
 const moment = require("moment");
 const taskKeywordManager = require("./taskKeywordManager");
 const continuedTaskHandler = require("./continuedTaskHandler");
+const { stripAllTagSyntax, parseFileTagsFromText, parseTagGroupsFromText, createInheritanceTracker, matchesTagMatchString, normalizeTagMatchInput, getPlanningForHeading, isPlanningLine, parsePlanningFromText, normalizeTagsAfterPlanning } = require("./orgTagUtils");
 
 module.exports = async function taggedAgenda() {
   const tagInput = await vscode.window.showInputBox({
-    prompt: "Enter tags (comma-separated). Use 'any:' for OR logic. Ex: any:client,urgent",
-    validateInput: input => input.includes(" ") ? "Tags cannot contain spaces." : null
+    prompt: "Enter tag match string (Emacs style). Examples: +WORK+URGENT, WORK|HOME, +A-B. (Compat: any:a,b / all:a,b / a,b)",
+    validateInput: input => {
+      const s = String(input || "").trim();
+      return s.length ? null : "Enter at least one tag.";
+    }
   });
 
   if (!tagInput) return;
 
-  const isOrSearch = tagInput.toLowerCase().startsWith("any:");
-  const isAndSearch = tagInput.toLowerCase().startsWith("all:");
-
-  const tagString = tagInput.replace(/^any:|^all:/i, "").trim();
-  const inputTags = tagString.split(",").map(t => t.trim().toUpperCase());
+  const matchExpr = normalizeTagMatchInput(tagInput);
 
   const agendaItems = [];
   const orgDir = getOrgFolder();
@@ -26,29 +26,39 @@ module.exports = async function taggedAgenda() {
 
   for (const file of files) {
     const filePath = path.join(orgDir, file);
-    const lines = fs.readFileSync(filePath, "utf8").split(/\r?\n/);
+    const fileText = fs.readFileSync(filePath, "utf8");
+    const lines = fileText.split(/\r?\n/);
+    const tracker = createInheritanceTracker(parseFileTagsFromText(fileText));
+    const groups = parseTagGroupsFromText(fileText);
 
     lines.forEach((line, index) => {
-      const tagMatch = line.match(/\[\+TAG:(.*?)\]/);
-      if (tagMatch) {
-        const taskTags = tagMatch[1].split(",").map(t => t.trim().toUpperCase());
+      const tagState = tracker.handleLine(line);
+      const keywordMatch = line.match(/\b(TODO|IN_PROGRESS|DONE|CONTINUED|ABANDONED)\b/);
+      const startsWithSymbol = /^\s*([⊙⊖⊘⊜⊗]|\*+)/.test(line);
+      if (!tagState.isHeading || !keywordMatch || !startsWithSymbol) {
+        return;
+      }
 
-        const match = isOrSearch
-          ? inputTags.some(tag => taskTags.includes(tag))
-          : inputTags.every(tag => taskTags.includes(tag));
+      const taskTags = tagState.inheritedTags;
+      if (taskTags.length > 0) {
+
+        const match = matchesTagMatchString(matchExpr, taskTags, { groups });
 
         if (match) {
+          const planning = getPlanningForHeading(lines, index);
           agendaItems.push({
             file,
             line,
-            lineNumber: index + 1
+            lineNumber: index + 1,
+            tags: taskTags,
+            scheduledDate: planning && planning.scheduled ? planning.scheduled : ""
           });
         }
       }
     });
   }
 
-  showTaggedAgendaView(tagString, agendaItems);
+  showTaggedAgendaView(matchExpr, agendaItems);
 };
 
 async function updateTaskStatusInFile(file, taskText, scheduledDate, newStatus, removeCompleted) {
@@ -62,15 +72,40 @@ async function updateTaskStatusInFile(file, taskText, scheduledDate, newStatus, 
   console.log("🔍 Looking for task text:", taskText);
   if (dateTag) console.log("🔍 With scheduled date tag:", dateTag);
 
+  function normalizeTaskTextFromHeadline(headline) {
+    return stripAllTagSyntax(headline)
+      .replace(/.*?\] -/, "")
+      .replace(/\s+SCHEDULED:.*/, "")
+      .replace(/[⊙⊖⊘⊜⊗]/g, "")
+      .replace(/^\s*\*+\s+/, "")
+      .trim();
+  }
+
   let taskLineNumber = -1;
   for (let i = 0; i < document.lineCount; i++) {
     const lineText = document.lineAt(i).text;
-    const matchesTask = lineText.includes(taskText);
-    const matchesDate = dateTag ? lineText.includes(dateTag) : true;
-    if (matchesTask && matchesDate) {
-      taskLineNumber = i;
-      break;
+    const keywordMatch = lineText.match(/\b(TODO|IN_PROGRESS|DONE|CONTINUED|ABANDONED)\b/);
+    const startsWithSymbol = /^\s*([⊙⊖⊘⊜⊗]|\*+)/.test(lineText);
+    if (!keywordMatch || !startsWithSymbol) {
+      continue;
     }
+
+    const normalizedHeadlineText = normalizeTaskTextFromHeadline(lineText);
+    const matchesTask = normalizedHeadlineText === String(taskText || "").trim();
+    if (!matchesTask) {
+      continue;
+    }
+
+    if (dateTag) {
+      const planning = getPlanningForHeading(document.getText().split(/\r?\n/), i);
+      const matchesDate = planning && planning.scheduled ? (`SCHEDULED: [${planning.scheduled}]` === dateTag) : false;
+      if (!matchesDate) {
+        continue;
+      }
+    }
+
+    taskLineNumber = i;
+    break;
   }
 
   if (taskLineNumber === -1) {
@@ -81,6 +116,7 @@ async function updateTaskStatusInFile(file, taskText, scheduledDate, newStatus, 
   const workspaceEdit = new vscode.WorkspaceEdit();
   const currentLine = document.lineAt(taskLineNumber);
   const nextLine = taskLineNumber + 1 < document.lineCount ? document.lineAt(taskLineNumber + 1) : null;
+  const nextNextLine = taskLineNumber + 2 < document.lineCount ? document.lineAt(taskLineNumber + 2) : null;
   const currentStatusMatch = currentLine.text.match(/\b(TODO|DONE|IN_PROGRESS|CONTINUED|ABANDONED)\b/);
   const currentStatus = currentStatusMatch ? currentStatusMatch[1] : null;
 
@@ -91,15 +127,48 @@ async function updateTaskStatusInFile(file, taskText, scheduledDate, newStatus, 
   const starPrefix = starPrefixMatch ? starPrefixMatch[1] : "*";
 
   const indent = currentLine.text.match(/^\s*/)?.[0] || "";
-  const cleaned = taskKeywordManager.cleanTaskText(currentLine.text);
-  let newLine = taskKeywordManager.buildTaskLine(indent, newStatus, cleaned, { headingMarkerStyle, starPrefix });
+  const cleanedHeadline = taskKeywordManager.cleanTaskText(
+    normalizeTagsAfterPlanning(currentLine.text)
+      .replace(/\s*(?:SCHEDULED|DEADLINE|CLOSED|COMPLETED):\s*\[[^\]]*\]/g, "")
+      .replace(/\s*(?:SCHEDULED|DEADLINE|CLOSED|COMPLETED):\[[^\]]*\]/g, "")
+      .replace(/\s{2,}/g, " ")
+      .trim()
+  );
+  let newLine = taskKeywordManager.buildTaskLine(indent, newStatus, cleanedHeadline, { headingMarkerStyle, starPrefix });
 
-  // Add or remove COMPLETED line
+  const planningIndent = `${indent}  `;
+  const planningLines = document.getText().split(/\r?\n/);
+  const planningFromHead = parsePlanningFromText(currentLine.text);
+  const planningFromNext = (nextLine && isPlanningLine(nextLine.text)) ? parsePlanningFromText(nextLine.text) : {};
+  const planningFromNextNext = (nextNextLine && isPlanningLine(nextNextLine.text)) ? parsePlanningFromText(nextNextLine.text) : {};
+
+  // Merge any adjacent planning lines into a single planning state.
+  const mergedPlanning = {
+    scheduled: planningFromNext.scheduled || planningFromHead.scheduled || null,
+    deadline: planningFromNext.deadline || planningFromHead.deadline || null,
+    // Prefer CLOSED; legacy COMPLETED is mapped to closed by the parser.
+    closed: planningFromNext.closed || planningFromHead.closed || planningFromNextNext.closed || null
+  };
+
+  // Add/remove CLOSED in the planning line (preferred: single planning line directly under heading).
   if (newStatus === "DONE") {
-    newLine += `\n${taskKeywordManager.buildCompletedStamp(indent, dateFormat)}`;
-  } else if (currentStatus === "DONE" && removeCompleted && nextLine && nextLine.text.includes("COMPLETED")) {
-    workspaceEdit.delete(uri, nextLine.range);
+    mergedPlanning.closed = moment().format(`${dateFormat} ddd HH:mm`);
+  } else if (currentStatus === "DONE" && removeCompleted) {
+    mergedPlanning.closed = null;
   }
+
+  function buildPlanningBody(p) {
+    const parts = [];
+    if (p.scheduled) parts.push(`SCHEDULED: [${p.scheduled}]`);
+    if (p.deadline) parts.push(`DEADLINE: [${p.deadline}]`);
+    if (p.closed) parts.push(`CLOSED: [${p.closed}]`);
+    return parts.join("  ");
+  }
+
+  const planningBody = buildPlanningBody(mergedPlanning);
+
+  // Remove any inline planning that might still exist on the headline.
+  const newHeadlineOnly = newLine;
 
   // Handle CONTINUED transitions
   if (newStatus === "CONTINUED" && currentStatus !== "CONTINUED") {
@@ -114,7 +183,31 @@ async function updateTaskStatusInFile(file, taskText, scheduledDate, newStatus, 
     }
   }
 
-  workspaceEdit.replace(uri, currentLine.range, newLine);
+  workspaceEdit.replace(uri, currentLine.range, newHeadlineOnly);
+
+  // Ensure planning line is immediate next line (merge and normalize), and remove any extra adjacent planning line.
+  if (planningBody) {
+    if (nextLine && isPlanningLine(nextLine.text)) {
+      workspaceEdit.replace(uri, nextLine.range, `${planningIndent}${planningBody}`);
+      if (nextNextLine && isPlanningLine(nextNextLine.text)) {
+        workspaceEdit.delete(uri, nextNextLine.rangeIncludingLineBreak);
+      }
+    } else {
+      // If the second line was a planning line (rare), delete it and insert the merged one as immediate next line.
+      if (nextNextLine && isPlanningLine(nextNextLine.text)) {
+        workspaceEdit.delete(uri, nextNextLine.rangeIncludingLineBreak);
+      }
+      workspaceEdit.insert(uri, currentLine.range.end, `\n${planningIndent}${planningBody}`);
+    }
+  } else {
+    // No planning left: delete immediate planning line, or a stray second planning line.
+    if (nextLine && isPlanningLine(nextLine.text)) {
+      workspaceEdit.delete(uri, nextLine.rangeIncludingLineBreak);
+    } else if (nextNextLine && isPlanningLine(nextNextLine.text) && (nextNextLine.text.includes("CLOSED") || nextNextLine.text.includes("COMPLETED"))) {
+      workspaceEdit.delete(uri, nextNextLine.rangeIncludingLineBreak);
+    }
+  }
+
   const applied = await vscode.workspace.applyEdit(workspaceEdit);
   if (applied) {
     await document.save();
@@ -161,7 +254,7 @@ function showTaggedAgendaView(tag, items) {
       const file = parts[1];
       const taskText = parts[2].trim();
       const scheduledDate = parts[3];
-      const removeCompleted = message.text.includes("REMOVE_COMPLETED");
+      const removeCompleted = message.text.includes("REMOVE_CLOSED") || message.text.includes("REMOVE_COMPLETED");
       console.log("🔄 Changing status:", newStatus, "in file:", file, "for task:", taskText, "with scheduled date:", scheduledDate);
 
       updateTaskStatusInFile(file, taskText, scheduledDate, newStatus, removeCompleted);
@@ -192,20 +285,16 @@ function getTaggedWebviewContent(webview, nonce, localMomentJs, tag, items) {
       const keyword = keywordMatch ? keywordMatch[0] : "TODO";
       const keywordClass = keyword.toLowerCase();
 
-      const scheduledMatch = item.line.match(/\[(\d{2,4}-\d{2}-\d{2,4})\]/);
-      const scheduledDate = scheduledMatch ? scheduledMatch[1] : "";
+      const scheduledDate = item.scheduledDate || "";
 
-      const tagsMatch = item.line.match(/\[\+TAG:([^\]]+)\]/);
-      const tagBubbles = tagsMatch
-        ? tagsMatch[1].split(",").map(t =>
-            `<span class="tag-badge">${t.trim()}</span>`
-          ).join("")
+      const taskTags = (item.tags && item.tags.length) ? item.tags : getAllTagsFromLine(item.line);
+      const tagBubbles = taskTags.length
+        ? taskTags.map(t => `<span class="tag-badge">${t}</span>`).join("")
         : "";
 
-      const taskText = item.line
+      const taskText = stripAllTagSyntax(item.line)
         .replace(/.*?\] -/, "")
         .replace(/\s+SCHEDULED:.*/, "")
-        .replace(/\[\+TAG:.*?\]/, "")
         .replace(/[⊙⊖⊘⊜⊗]/g, "")  // Unicode cleanup
         .replace(/^\s*\*+\s+/, "") // Org headline cleanup
         .trim();
@@ -499,7 +588,7 @@ body{
   </style>
 </head>
 <body>
-  <h1>Tagged Agenda: [+TAG:${tag}]</h1>
+  <h1>Tagged Agenda: ${tag}</h1>
   <div style="margin-bottom: 10px;">
   <button class="expand-collapse" id="expand-all">Expand All</button>
   <button class="expand-collapse" id="collapse-all">Collapse All</button>
@@ -557,15 +646,15 @@ body{
               let safeDate = event.target.dataset.date.replaceAll(",", "&#44;");
               let messageText = nextStatus + "," + event.target.dataset.filename + "," + safeText + "," + safeDate;
 
-              if (nextStatus === "DONE") {
+                if (nextStatus === "DONE") {
                   let completedDate = moment();
                   let formattedDate = completedDate.format(dateFormat + " ddd HH:mm");
-                  messageText += ",COMPLETED:[" + formattedDate + "]";
-              }
+                  messageText += ",CLOSED:[" + formattedDate + "]";
+                }
 
-              if (currentStatus === "DONE") {
-                  messageText += ",REMOVE_COMPLETED";
-              }
+                if (currentStatus === "DONE") {
+                  messageText += ",REMOVE_CLOSED";
+                }
 
               vscode.postMessage({
                   command: 'changeStatus',

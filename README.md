@@ -83,7 +83,7 @@ See all scheduled TODO and IN\_PROGRESS tasks from all `.org` files in one clean
 Drag & drop tasks to reschedule. Filter by tag. Auto-syncs to file.
 
 **Inline Tagging**  
-Use `[+TAG:urgent,project]` to categorize tasks. Supports AND/OR logic filtering.
+Use end-of-headline tags (Emacs style) to categorize tasks, e.g. `:URGENT:PROJECT:`. Tagged Agenda supports Emacs match strings like `+URGENT+PROJECT`, `WORK|HOME`, `+A-B`.
 
 **Tagged Agenda View**  
 Filter tasks by one or multiple tags, grouped by file. Click-to-edit support.

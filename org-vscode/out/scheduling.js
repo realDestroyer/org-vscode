@@ -3,6 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const vscode = require("vscode");
 const showMessage_1 = require("./showMessage");
 const moment = require("moment");
+const { isPlanningLine, normalizeTagsAfterPlanning } = require("./orgTagUtils");
 module.exports = function () {
     const { activeTextEditor } = vscode.window;
     if (!activeTextEditor || activeTextEditor.document.languageId !== "vso") {
@@ -45,13 +46,17 @@ module.exports = function () {
 
     for (const lineNumber of sortedLines) {
         const lineText = document.lineAt(lineNumber).text;
+        const nextLineText = (lineNumber + 1 < document.lineCount)
+            ? document.lineAt(lineNumber + 1).text
+            : "";
         if (!lineText.trim()) {
             continue;
         }
         if (dayHeadingRegex.test(lineText)) {
             continue;
         }
-        if (lineText.includes("SCHEDULED:")) {
+        const hasScheduled = lineText.includes("SCHEDULED:") || (isPlanningLine(nextLineText) && nextLineText.includes("SCHEDULED:"));
+        if (hasScheduled) {
             linesToRemove.push(lineNumber);
             continue;
         }
@@ -65,10 +70,27 @@ module.exports = function () {
     if (!hasRangeSelection && linesToRemove.length === 1 && linesToAdd.length === 0) {
         const lineNumber = linesToRemove[0];
         const currentLine = document.lineAt(lineNumber);
-        const removeScheduled = currentLine.text
+        const removeScheduled = normalizeTagsAfterPlanning(currentLine.text)
             .replace(/\s*SCHEDULED:\s*\[[^\]]*\]/, "")
             .trimRight();
         workspaceEdit.replace(document.uri, currentLine.range, removeScheduled);
+
+        // Also remove planning-line SCHEDULED if it exists on the next line.
+        if (lineNumber + 1 < document.lineCount) {
+            const nextLine = document.lineAt(lineNumber + 1);
+            if (isPlanningLine(nextLine.text) && nextLine.text.includes("SCHEDULED:")) {
+                const updatedPlanning = nextLine.text
+                    .replace(/\s*SCHEDULED:\s*\[[^\]]*\]/, "")
+                    .replace(/\s{2,}/g, " ")
+                    .trimRight();
+                if (!updatedPlanning.trim()) {
+                    workspaceEdit.delete(document.uri, nextLine.rangeIncludingLineBreak);
+                }
+                else {
+                    workspaceEdit.replace(document.uri, nextLine.range, updatedPlanning);
+                }
+            }
+        }
         return vscode.workspace.applyEdit(workspaceEdit);
     }
     async function getInput(prompt, placeHolder) {
@@ -78,10 +100,26 @@ module.exports = function () {
         // 1) Remove any existing SCHEDULED tags in selection.
         for (const lineNumber of linesToRemove) {
             const currentLine = document.lineAt(lineNumber);
-            const removeScheduled = currentLine.text
+            const cleanedHeadline = normalizeTagsAfterPlanning(currentLine.text)
                 .replace(/\s*SCHEDULED:\s*\[[^\]]*\]/, "")
                 .trimRight();
-            workspaceEdit.replace(document.uri, currentLine.range, removeScheduled);
+            workspaceEdit.replace(document.uri, currentLine.range, cleanedHeadline);
+
+            if (lineNumber + 1 < document.lineCount) {
+                const nextLine = document.lineAt(lineNumber + 1);
+                if (isPlanningLine(nextLine.text) && nextLine.text.includes("SCHEDULED:")) {
+                    const updatedPlanning = nextLine.text
+                        .replace(/\s*SCHEDULED:\s*\[[^\]]*\]/, "")
+                        .replace(/\s{2,}/g, " ")
+                        .trimRight();
+                    if (!updatedPlanning.trim()) {
+                        workspaceEdit.delete(document.uri, nextLine.rangeIncludingLineBreak);
+                    }
+                    else {
+                        workspaceEdit.replace(document.uri, nextLine.range, updatedPlanning);
+                    }
+                }
+            }
         }
 
         // 2) Add SCHEDULED tag to eligible lines (prompt once).
@@ -103,14 +141,38 @@ module.exports = function () {
 
             for (const lineNumber of linesToAdd) {
                 const currentLine = document.lineAt(lineNumber);
-                let newLineText;
-                if (currentLine.text.includes("DEADLINE:")) {
-                    newLineText = currentLine.text.replace(/(\s*)(DEADLINE:\s*\[[^\]]*\])/, `    ${scheduledTag}$1$2`);
+                const headlineText = normalizeTagsAfterPlanning(currentLine.text)
+                    .replace(/\s*SCHEDULED:\s*\[[^\]]*\]/, "")
+                    .trimRight();
+                workspaceEdit.replace(document.uri, currentLine.range, headlineText);
+
+                const headlineIndent = headlineText.match(/^\s*/)?.[0] || "";
+                const planningIndent = `${headlineIndent}  `;
+
+                const hasNext = (lineNumber + 1 < document.lineCount);
+                const nextLine = hasNext ? document.lineAt(lineNumber + 1) : null;
+
+                if (nextLine && isPlanningLine(nextLine.text)) {
+                    // Upsert SCHEDULED into existing planning line, keeping it before DEADLINE when present.
+                    const indent = nextLine.text.match(/^\s*/)?.[0] || planningIndent;
+                    let body = nextLine.text.trim()
+                        .replace(/\s*SCHEDULED:\s*\[[^\]]*\]/, "")
+                        .replace(/\s{2,}/g, " ")
+                        .trim();
+
+                    if (/\bDEADLINE:\s*\[/.test(body)) {
+                        body = body.replace(/DEADLINE:\s*\[[^\]]*\]/, `${scheduledTag}  $&`);
+                    }
+                    else {
+                        body = body ? `${body}  ${scheduledTag}` : scheduledTag;
+                    }
+
+                    workspaceEdit.replace(document.uri, nextLine.range, `${indent}${body}`);
                 }
                 else {
-                    newLineText = `${currentLine.text}    ${scheduledTag}`;
+                    // Insert a new planning line immediately below the headline.
+                    workspaceEdit.insert(document.uri, currentLine.range.end, `\n${planningIndent}${scheduledTag}`);
                 }
-                workspaceEdit.replace(document.uri, currentLine.range, newLineText);
             }
         }
 
