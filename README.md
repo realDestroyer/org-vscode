@@ -1,6 +1,6 @@
 # Org-vscode
 
-![Version](https://img.shields.io/badge/version-v1.10.9-blue.svg)
+![Version](https://img.shields.io/badge/version-v2.0.0-blue.svg)
 
 > A fast, keyboard-driven Org Mode–style task manager built for Visual Studio Code.
 > Inspired by Emacs Org Mode
@@ -29,6 +29,35 @@ Whether you're an Emacs power user or just want a highly structured task system,
 ---
 
 ## 🧩 Core Features
+
+## 🧭 v2 Format + Migration
+
+Org-vscode v2 follows Emacs Org-mode conventions more closely:
+
+- **Tags** are end-of-headline (Emacs style): `* TODO Title :PROJECT:URGENT:`
+- **Planning metadata** lives on the indented line directly under the heading:
+
+```org
+* TODO Example task :PROJECT:
+	SCHEDULED: [12-29-2025]  DEADLINE: [01-31-2026]
+```
+
+- **DONE timestamps** use `CLOSED:` (legacy `COMPLETED:` is still accepted).
+
+### Migrate a file (explicit, one-time)
+
+Run **Org-vscode: Migrate File to v2 Format**. This converts:
+
+- legacy inline tags like `[+TAG:FOO,BAR]` → `:FOO:BAR:`
+- inline planning stamps on headlines → the planning line below the headline
+- `COMPLETED:` → `CLOSED:`
+
+### Tag naming note (hyphens)
+
+To keep tag match strings unambiguous (where `-TAG` means “NOT TAG”), **tag names normalize hyphens to underscores**:
+
+- typing `test-tag` becomes `TEST_TAG`
+- existing `TEST-TAG` will migrate to `TEST_TAG`
 
 **Task States**  
 `TODO`, `IN_PROGRESS`, `CONTINUED`, `DONE`, `ABANDONED`.

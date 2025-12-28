@@ -32,6 +32,16 @@ suite('Tag match-string parsing (Emacs style)', function () {
     assert.strictEqual(matchesTagMatchString('a,b', ['A', 'B']), true);
   });
 
+  test('Hyphenated tag names are normalized to underscores', () => {
+    const { normalizeTag, uniqueUpper, matchesTagMatchString } = require('../../out/orgTagUtils');
+
+    assert.strictEqual(normalizeTag('test-tag'), 'TEST_TAG');
+    assert.deepStrictEqual(uniqueUpper(['test-tag']), ['TEST_TAG']);
+
+    // Tag match strings should use the normalized form.
+    assert.strictEqual(matchesTagMatchString('TEST_TAG', ['TEST-TAG']), true);
+  });
+
   test('Group tags expand to members (#+TAGS: [ GTD : ... ])', () => {
     const { parseTagGroupsFromText, matchesTagMatchString } = require('../../out/orgTagUtils');
 
