@@ -7,6 +7,7 @@ const moment = require("moment");
 const taskKeywordManager = require("../taskKeywordManager");
 const continuedTaskHandler = require("../continuedTaskHandler");
 const path = require("path");
+const { stripAllTagSyntax, getPlanningForHeading } = require("../orgTagUtils");
 
 module.exports = function () {
   vscode.commands.executeCommand("workbench.action.files.save").then(() => {
@@ -49,7 +50,8 @@ module.exports = function () {
             for (let j = 0; j < fileText.length; j++) {
               const element = fileText[j];
               // Only show TODO and IN_PROGRESS tasks - exclude DONE, CONTINUED, and ABANDONED
-              const hasScheduled = element.includes("SCHEDULED");
+              const planning = getPlanningForHeading(fileText, j);
+              const hasScheduled = Boolean(planning && planning.scheduled);
               const isTodoOrInProgress = /\b(TODO|IN_PROGRESS)\b/.test(element);
               
               if (hasScheduled && isTodoOrInProgress) {
@@ -78,19 +80,18 @@ module.exports = function () {
                 const deadlineStr = inlineDeadlineMatch ? inlineDeadlineMatch[1] : deadlineFromChildren;
 
                 // Extract core task text and scheduled date
-                const taskTextMatch = element.trim().match(/.*(?=.*SCHEDULED)/g);
-                getDateFromTaskText = element.match(/SCHEDULED:\s*\[(.*?)\]/);
+                const taskTextMatch = element;
+                getDateFromTaskText = planning && planning.scheduled ? [null, planning.scheduled] : null;
 
                 if (taskTextMatch && getDateFromTaskText) {
                   // Match the task keyword (TODO, IN_PROGRESS, etc.)
                   taskKeywordMatch = element.match(/\b(TODO|IN_PROGRESS|CONTINUED|DONE|ABANDONED)\b/);
 
                   // Clean up task line: remove symbols, keyword, tags
-                  taskText = taskTextMatch[0]
+                  taskText = stripAllTagSyntax(taskTextMatch)
                     .replace(/[⊙⊖⊘⊜⊗]/g, "")
                     .replace(/^\*+\s+/, "")
                     .replace(/\b(TODO|DONE|IN_PROGRESS|CONTINUED|ABANDONED)\b/, "")
-                    .replace(/: \[\+TAG:.*?\] -/, "")
                     .trim();
 
                   // Format the task's scheduled date for grouping and display
@@ -284,10 +285,10 @@ module.exports = function () {
             const cleaned = taskKeywordManager.cleanTaskText(currentLine.text);
             let newLine = taskKeywordManager.buildTaskLine(indent, newStatus, cleaned, { headingMarkerStyle, starPrefix });
 
-            // Add or remove COMPLETED line
+            // Add or remove CLOSED line
             if (newStatus === "DONE") {
               newLine += `\n${taskKeywordManager.buildCompletedStamp(indent, dateFormat)}`;
-            } else if (currentStatus === "DONE" && additionalFlag === "REMOVE_COMPLETED" && nextLine && nextLine.text.includes("COMPLETED")) {
+            } else if (currentStatus === "DONE" && additionalFlag === "REMOVE_CLOSED" && nextLine && (nextLine.text.includes("CLOSED") || nextLine.text.includes("COMPLETED"))) {
               workspaceEdit.delete(uri, nextLine.range);
             }
 
@@ -647,11 +648,11 @@ module.exports = function () {
               if (nextStatus === "DONE") {
                 let completedDate = moment();
                 let formattedDate = completedDate.format(dateFormat + " ddd HH:mm");
-                messageText += ",COMPLETED: [" + formattedDate + "]";
+                messageText += ",CLOSED: [" + formattedDate + "]";
               }
 
               if (currentStatus === "DONE") {
-                messageText += ",REMOVE_COMPLETED";
+                messageText += ",REMOVE_CLOSED";
               }
 
               vscode.postMessage({

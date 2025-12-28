@@ -38,7 +38,7 @@
   "tagged_task": {
     "prefix": "/tagged",
     "body": [
-      "* TODO $1 : [+TAG:project,urgent] -",
+      "* TODO $1 :PROJECT:URGENT:",
       "   SCHEDULED: [${CURRENT_DATE}]"
     ],
     "description": "Tagged task template"
@@ -76,10 +76,10 @@
     "body": [
       "* TODO Task Name",
       "   SCHEDULED: [${CURRENT_DATE}]",
-      "   COMPLETED: []",
+      "   CLOSED: []",
       "",
       "- Description:",
-      "- Tags: [+TAG:]",
+      "- Tags: :TAG:",
       "",
       "------------------------"
     ],

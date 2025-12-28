@@ -3,7 +3,22 @@
 # [Unreleased]
 `Enhanced`
 
-- (No unreleased changes)
+- **Emacs-style tags + match strings:**
+  - Canonical tags are end-of-headline `:TAG1:TAG2:` with outline + `#+FILETAGS` inheritance.
+  - Tag filtering supports Emacs match strings like `+A+B`, `A|B`, and `+A-B`.
+  - Tag groups via `#+TAGS:` blocks are supported and expanded.
+
+- **Emacs-style planning lines (SCHEDULED/DEADLINE):**
+  - Canonical planning metadata lives on the indented line directly under the heading.
+  - Backward-compatible: legacy inline stamps are still recognized.
+
+- **DONE timestamps use `CLOSED` (Issue #18):**
+  - DONE transitions now write `CLOSED: [...]` instead of `COMPLETED: [...]`.
+  - Backward-compatible: legacy `COMPLETED` timestamps are still parsed/removed.
+
+- **Syntax highlighting + snippets/docs:**
+  - Grammar highlights `CLOSED` (and legacy `COMPLETED`) consistently.
+  - Snippets and docs now prefer `CLOSED` in examples.
 
 # [1.10.9] 12-23-25
 `Enhanced`
@@ -116,7 +131,6 @@
 # [1.9.1] 12-11-25
 `Fixed`
 
-- **SCHEDULED Tag Ordering:**
   - Fixed issue where adding a SCHEDULED date to a line that already had a DEADLINE would place SCHEDULED after DEADLINE, breaking syntax highlighting.
   - The `Ctrl+Alt+S` command now correctly inserts SCHEDULED before any existing DEADLINE tag.
   - Also added zero-padding for single-digit months/days (e.g., `1` → `01`).
@@ -125,13 +139,11 @@
 `Enhanced`
 
 - **CONTINUED Task Auto-Forwarding:**
-  - When toggling a task to `CONTINUED` status, the task is automatically copied to the next day as a `TODO` with an updated `SCHEDULED:` date.
   - When toggling away from `CONTINUED`, the forwarded copy is automatically removed from the next day.
   - Creates the next day's heading if it doesn't already exist.
 
 - **DEADLINE Support:**
-  - New `DEADLINE: [MM-DD-YYYY]` metadata for tasks with due dates.
-  - New snippet `/deadline` creates a task with both SCHEDULED and DEADLINE dates.
+  Added tag support using Emacs-style end-of-headline tags `:foo:bar:` (legacy `: [+TAG:foo,bar] -` is still recognized for backward compatibility).
   - New snippet `/dl` adds a DEADLINE line to an existing task.
   - Agenda View now displays deadline badges with color-coded warnings:
     - 🔴 **OVERDUE** (pulsing red) - Past deadline
@@ -364,7 +376,7 @@ vsce
   - Dragging updates the source file with the new scheduled date
   - Click-to-toggle TODO/DONE directly from the Calendar View
 - Tagged Task Support
-  - You can now add inline tags using the format `: [+TAG:tag1,tag2] -`
+  - You can now add tags using Emacs-style end-of-headline tags `:tag1:tag2:` (legacy `: [+TAG:tag1,tag2] -` is still recognized for backward compatibility)
   - Tags are attached to TODO lines and can be used to filter tasks
 - Tagged Agenda View
   - New agenda view that filters tasks by tag(s)

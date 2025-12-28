@@ -45,14 +45,14 @@ These are the features that I have either already implemented, or plan to in the
 | Comma-safe Message Parsing  | Escapes commas in message.text so complex task strings update correctly                    | DONE | v1.6.6   | realDestroyer |
 | Bug Fixes                   | See CHANGELOG.md for full details                                                          | DONE | v1.6.5   | realDestroyer |
 | Bug Fixes                   | See CHANGELOG.md for full details                                                          | DONE | v1.6.4   | realDestroyer |
-| Agenda View Timestamp Format | Agenda View now adds long-form COMPLETED timestamps when toggling DONE                     | DONE | v1.6.3   | realDestroyer |
+| Agenda View Timestamp Format | Agenda View now adds long-form CLOSED timestamps when toggling DONE                        | DONE | v1.6.3   | realDestroyer |
 | Bug Fixes                   | See CHANGELOG.md for full details                                                          | DONE | v1.6.2   | realDestroyer |
 | Export Active Tasks         | Export all active (non-DONE) tasks to CurrentTasks.org with Ctrl + Shift + E               | DONE | v1.6.1   | realDestroyer |
 | Expandable Agenda Children| Collapsible child lines for indented task content in Agenda View                          | DONE | v1.5.2 | realDestroyer |
 | Export Current Tasks      | Export all non-DONE tasks to CurrentTasks.org, including child lines, and enable syncing with source files via keyword toggles | DONE | v1.5.1 | realDestroyer |
 | Tables                    | Insert Tables into doc                                                                     | DONE        | v1.5.0   |               |
 | Tagged Agenda View        | View a filtered list of tasks by tag (AND/OR modes supported)                             | DONE        | v1.4.0   | realDestroyer |
-| Tagged Task Support       | Add inline tag support using `: [+TAG:tag1,tag2] -` syntax                                 | DONE        | v1.4.0   | realDestroyer |
+| Tagged Task Support       | Support Emacs-style end-of-headline tags using `:tag1:tag2:`                               | DONE        | v1.4.0   | realDestroyer |
 | Expand/Collapse Agenda    | Agenda view now supports toggling sections, and [Expand All]/[Collapse All] functionality | DONE        | v1.3.0   | realDestroyer |
 | Click to Modify Tasks     | Agenda and calendar views allow click-based toggling of TODO/DONE                         | DONE        | v1.3.0   | realDestroyer |
 | Read entire workspace/dir | Read workspace or home directory for all .org files for calendar/agenda                   | DONE        | v1.2.0   | realDestroyer |

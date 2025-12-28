@@ -16,44 +16,12 @@
     {
       "name": "meta.block.property.vso",
       "comment": "Org property drawer",
-      "begin": "^\\s*:(PROPERTIES|properties):\\s*$",
-      "end": "^\\s*:(END|end):\\s*$",
-      "beginCaptures": {
-        "0": { "name": "punctuation.definition.drawer.begin.vso" }
-      },
-      "endCaptures": {
-        "0": { "name": "punctuation.definition.drawer.end.vso" }
-      },
+      "begin": "^\\s*:PROPERTIES:\\s*$",
+      "end": "^\\s*:END:\\s*$",
       "patterns": [
         {
           "name": "variable.other.property-key.vso",
-          "match": "^\\s*(:[A-Za-z0-9_@#%+\\-]+:)\\s+(.*)$",
-          "captures": {
-            "1": { "name": "entity.name.tag.property.vso" },
-            "2": { "name": "string.unquoted.property-value.vso" }
-          }
-        }
-      ]
-    },
-    {
-      "name": "meta.block.logbook.vso",
-      "comment": "Org logbook drawer",
-      "begin": "^\\s*:(LOGBOOK|logbook):\\s*$",
-      "end": "^\\s*:(END|end):\\s*$",
-      "beginCaptures": {
-        "0": { "name": "punctuation.definition.drawer.begin.vso" }
-      },
-      "endCaptures": {
-        "0": { "name": "punctuation.definition.drawer.end.vso" }
-      },
-      "patterns": [
-        {
-          "name": "constant.other.timestamp.vso",
-          "match": "\\[\\d{4}-\\d{2}-\\d{2}[^\\]]*\\]"
-        },
-        {
-          "name": "keyword.other.clock.vso",
-          "match": "CLOCK:"
+          "match": "^\\s*:[A-Z0-9_@#%+\\-]+:\\s+.*$"
         }
       ]
     },
@@ -233,8 +201,8 @@
       "end": "$"
     },
     {
-      "name": "comment.vso",
-      "match": "\\bCOMPLETED\\b"
+      "name": "keyword.closed.vso",
+      "match": "\\b(?:CLOSED|COMPLETED)\\b"
     },
     { "include": "#scheduled" },
     { "include": "#deadline" },
@@ -253,7 +221,7 @@
     "deadline": {
       "patterns": [
         {
-          "name": "keyword.deadline.vso",
+          "name": "markup.deleted.deadline.vso",
           "match": "DEADLINE:\\s*\\[(?:\\d{4}-\\d{2}-\\d{2}|\\d{2}-\\d{2}-\\d{4})(?:\\s+\\d{2}:\\d{2}(?::\\d{2})?)?\\]"
         }
       ]
@@ -262,7 +230,7 @@
       "patterns": [
         {
           "name": "keyword.closed.vso",
-          "match": "^\\s*CLOSED:\\s*\\[(?:\\d{4}-\\d{2}-\\d{2}|\\d{2}-\\d{2}-\\d{4})(?:\\s+\\d{2}:\\d{2}(?::\\d{2})?)?\\]"
+          "match": "^\\s*(?:CLOSED|COMPLETED):\\s*\\[(?:\\d{4}-\\d{2}-\\d{2}|\\d{2}-\\d{2}-\\d{4})(?:\\s+\\w{3})?(?:\\s+\\d{2}:\\d{2}(?::\\d{2})?)?\\]"
         }
       ]
     },
@@ -283,7 +251,7 @@
       "patterns": [
         {
           "name": "string.task.todo.vso",
-          "match": "(?<=TODO\\s+:\\s+\\[\\+TAG:[^\\]]*\\]\\s+-\\s+).*?(?=\\s+SCHEDULED:)"
+          "match": "(?<=TODO\\s+).*?(?=(?:\\s+(?:SCHEDULED:|DEADLINE:|CLOSED:|COMPLETED:))|(?:\\s+:(?:[A-Za-z0-9_@#%]+:)+\\s*$)|$)"
         }
       ]
     },
@@ -291,7 +259,7 @@
       "patterns": [
         {
           "name": "string.task.in_progress.vso",
-          "match": "(?<=IN_PROGRESS\\s+:\\s+\\[\\+TAG:[^\\]]*\\]\\s+-\\s+).*?(?=\\s+SCHEDULED:)"
+          "match": "(?<=IN_PROGRESS\\s+).*?(?=(?:\\s+(?:SCHEDULED:|DEADLINE:|CLOSED:|COMPLETED:))|(?:\\s+:(?:[A-Za-z0-9_@#%]+:)+\\s*$)|$)"
         }
       ]
     },
@@ -299,7 +267,7 @@
       "patterns": [
         {
           "name": "string.task.done.vso",
-          "match": "(?<=DONE\\s+:\\s+\\[\\+TAG:[^\\]]*\\]\\s+-\\s+).*?(?=\\s+SCHEDULED:)"
+          "match": "(?<=DONE\\s+).*?(?=(?:\\s+(?:SCHEDULED:|DEADLINE:|CLOSED:|COMPLETED:))|(?:\\s+:(?:[A-Za-z0-9_@#%]+:)+\\s*$)|$)"
         }
       ]
     },
@@ -307,7 +275,7 @@
       "patterns": [
         {
           "name": "string.task.abandoned.vso",
-          "match": "(?<=ABANDONED\\s+:\\s+\\[\\+TAG:[^\\]]*\\]\\s+-\\s+).*?(?=\\s+SCHEDULED:)"
+          "match": "(?<=ABANDONED\\s+).*?(?=(?:\\s+(?:SCHEDULED:|DEADLINE:|CLOSED:|COMPLETED:))|(?:\\s+:(?:[A-Za-z0-9_@#%]+:)+\\s*$)|$)"
         }
       ]
     },
@@ -315,7 +283,7 @@
       "patterns": [
         {
           "name": "string.task.continued.vso",
-          "match": "(?<=CONTINUED\\s+:\\s+\\[\\+TAG:[^\\]]*\\]\\s+-\\s+).*?(?=\\s+SCHEDULED:)"
+          "match": "(?<=CONTINUED\\s+).*?(?=(?:\\s+(?:SCHEDULED:|DEADLINE:|CLOSED:|COMPLETED:))|(?:\\s+:(?:[A-Za-z0-9_@#%]+:)+\\s*$)|$)"
         }
       ]
     },
@@ -326,7 +294,7 @@
     },
     "sched": {
       "patterns": [
-        { "name": "comment.vso", "match": "^\\s*COMPLETED:\\s*\\[.*?\\]" }
+        { "name": "keyword.closed.vso", "match": "^\\s*(?:CLOSED|COMPLETED):\\s*\\[.*?\\]" }
       ]
     },
     "abandoned": {
@@ -346,7 +314,7 @@
     },
     "tag": {
       "patterns": [
-        { "name": "entity.other.attribute-name.tag.vso", "match": "\\[\\+TAG:[^\\]]*\\]" }
+        { "name": "entity.other.attribute-name.tag.vso", "match": "(?:\\[\\+TAG:[^\\]]*\\])|(?:\\s+:(?:[A-Za-z0-9_@#%]+:)+\\s*$)" }
       ]
     }
   }

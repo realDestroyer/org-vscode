@@ -3,6 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const vscode = require("vscode");
 const moment = require("moment");
 const showMessage_1 = require("./showMessage");
+const { isPlanningLine, normalizeTagsAfterPlanning } = require("./orgTagUtils");
 
 module.exports = function () {
     const { activeTextEditor } = vscode.window;
@@ -48,13 +49,17 @@ module.exports = function () {
     const linesToAdd = [];
     for (const lineNumber of sortedLines) {
         const lineText = document.lineAt(lineNumber).text;
+        const nextLineText = (lineNumber + 1 < document.lineCount)
+            ? document.lineAt(lineNumber + 1).text
+            : "";
         if (!lineText.trim()) {
             continue;
         }
         if (dayHeadingRegex.test(lineText)) {
             continue;
         }
-        if (lineText.includes("DEADLINE:")) {
+        const hasDeadline = lineText.includes("DEADLINE:") || (isPlanningLine(nextLineText) && nextLineText.includes("DEADLINE:"));
+        if (hasDeadline) {
             linesToRemove.push(lineNumber);
             continue;
         }
@@ -68,10 +73,27 @@ module.exports = function () {
     if (!hasRangeSelection && linesToRemove.length === 1 && linesToAdd.length === 0) {
         const lineNumber = linesToRemove[0];
         const currentLine = document.lineAt(lineNumber);
-        const removeDeadline = currentLine.text
+        const removeDeadline = normalizeTagsAfterPlanning(currentLine.text)
             .replace(/\s*DEADLINE:\s*\[[^\]]*\]/, "")
             .trimRight();
         workspaceEdit.replace(document.uri, currentLine.range, removeDeadline);
+
+        // Also remove planning-line DEADLINE if it exists on the next line.
+        if (lineNumber + 1 < document.lineCount) {
+            const nextLine = document.lineAt(lineNumber + 1);
+            if (isPlanningLine(nextLine.text) && nextLine.text.includes("DEADLINE:")) {
+                const updatedPlanning = nextLine.text
+                    .replace(/\s*DEADLINE:\s*\[[^\]]*\]/, "")
+                    .replace(/\s{2,}/g, " ")
+                    .trimRight();
+                if (!updatedPlanning.trim()) {
+                    workspaceEdit.delete(document.uri, nextLine.rangeIncludingLineBreak);
+                }
+                else {
+                    workspaceEdit.replace(document.uri, nextLine.range, updatedPlanning);
+                }
+            }
+        }
         return vscode.workspace.applyEdit(workspaceEdit);
     }
 
@@ -83,10 +105,26 @@ module.exports = function () {
         // 1) Remove any existing DEADLINE tags in selection.
         for (const lineNumber of linesToRemove) {
             const currentLine = document.lineAt(lineNumber);
-            const removeDeadline = currentLine.text
+            const cleanedHeadline = normalizeTagsAfterPlanning(currentLine.text)
                 .replace(/\s*DEADLINE:\s*\[[^\]]*\]/, "")
                 .trimRight();
-            workspaceEdit.replace(document.uri, currentLine.range, removeDeadline);
+            workspaceEdit.replace(document.uri, currentLine.range, cleanedHeadline);
+
+            if (lineNumber + 1 < document.lineCount) {
+                const nextLine = document.lineAt(lineNumber + 1);
+                if (isPlanningLine(nextLine.text) && nextLine.text.includes("DEADLINE:")) {
+                    const updatedPlanning = nextLine.text
+                        .replace(/\s*DEADLINE:\s*\[[^\]]*\]/, "")
+                        .replace(/\s{2,}/g, " ")
+                        .trimRight();
+                    if (!updatedPlanning.trim()) {
+                        workspaceEdit.delete(document.uri, nextLine.rangeIncludingLineBreak);
+                    }
+                    else {
+                        workspaceEdit.replace(document.uri, nextLine.range, updatedPlanning);
+                    }
+                }
+            }
         }
 
         // 2) Add DEADLINE tag to eligible lines (prompt once).
@@ -106,14 +144,38 @@ module.exports = function () {
             const formattedDate = moment(`${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`, "YYYY-MM-DD", true).format(dateFormat);
             for (const lineNumber of linesToAdd) {
                 const currentLine = document.lineAt(lineNumber);
-                let newLineText = currentLine.text;
-                if (currentLine.text.includes("SCHEDULED:")) {
-                    newLineText = currentLine.text.replace(/(SCHEDULED:\s*\[[^\]]*\])/, `$1    DEADLINE: [${formattedDate}]`);
+                const headlineText = normalizeTagsAfterPlanning(currentLine.text)
+                    .replace(/\s*DEADLINE:\s*\[[^\]]*\]/, "")
+                    .trimRight();
+                workspaceEdit.replace(document.uri, currentLine.range, headlineText);
+
+                const headlineIndent = headlineText.match(/^\s*/)?.[0] || "";
+                const planningIndent = `${headlineIndent}  `;
+                const deadlineTag = `DEADLINE: [${formattedDate}]`;
+
+                const hasNext = (lineNumber + 1 < document.lineCount);
+                const nextLine = hasNext ? document.lineAt(lineNumber + 1) : null;
+
+                if (nextLine && isPlanningLine(nextLine.text)) {
+                    const indent = nextLine.text.match(/^\s*/)?.[0] || planningIndent;
+                    let body = nextLine.text.trim()
+                        .replace(/\s*DEADLINE:\s*\[[^\]]*\]/, "")
+                        .replace(/\s{2,}/g, " ")
+                        .trim();
+
+                    // Keep DEADLINE after SCHEDULED when both exist.
+                    if (/\bSCHEDULED:\s*\[/.test(body)) {
+                        body = body.replace(/SCHEDULED:\s*\[[^\]]*\]/, `$&  ${deadlineTag}`);
+                    }
+                    else {
+                        body = body ? `${body}  ${deadlineTag}` : deadlineTag;
+                    }
+
+                    workspaceEdit.replace(document.uri, nextLine.range, `${indent}${body}`);
                 }
                 else {
-                    newLineText = `${currentLine.text}    DEADLINE: [${formattedDate}]`;
+                    workspaceEdit.insert(document.uri, currentLine.range.end, `\n${planningIndent}${deadlineTag}`);
                 }
-                workspaceEdit.replace(document.uri, currentLine.range, newLineText);
             }
         }
 
