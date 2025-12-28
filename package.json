@@ -36,7 +36,7 @@
 		"orgMode",
 		"scheduler"
 	],
-	"main": "./out/extension",
+	"main": "./dist/extension.js",
 	"contributes": {
 		"configurationDefaults": {
 			"[vso]": {
@@ -588,15 +588,20 @@
 		]
 	},
 	"scripts": {
-		"postinstall": "node ./node_modules/vscode/bin/install && node ./scripts/fetch-media.js",
-		"fetch-media": "node ./scripts/fetch-media.js",
-		"test": "npm run compile && node ./node_modules/vscode/bin/test"
+		"postinstall": "node ./org-vscode/scripts/fetch-media.js",
+		"fetch-media": "node ./org-vscode/scripts/fetch-media.js",
+		"test": "node ./org-vscode/test/runTest.js",
+		"bundle": "esbuild ./org-vscode/out/extension.js --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node --minify",
+		"package": "npm run bundle && node node_modules/.bin/vsce package"
 	},
 	"devDependencies": {
 		"@types/mocha": "^2.2.42",
-		"@types/node": "^8.10.66",
+		"@types/node": "^18.0.0",
+		"@types/vscode": "^1.70.0",
+		"@vscode/test-electron": "^2.3.8",
 		"typescript": "^5.5.4",
-		"vscode": "^1.1.21"
+		"@vscode/vsce": "^2.22.0",
+		"esbuild": "^0.27.1"
 	},
 	"dependencies": {
 		"fs-extra": "^7.0.0",
