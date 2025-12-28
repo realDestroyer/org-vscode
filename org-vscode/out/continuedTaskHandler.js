@@ -65,19 +65,40 @@ function findLastTaskLineUnderHeading(lines, headingLineIndex) {
   return lastTaskLine;
 }
 
+function parseOrgDate(dateStr) {
+  const config = vscode.workspace.getConfiguration("Org-vscode");
+  const configuredFormat = config.get("dateFormat", "YYYY-MM-DD");
+  const formatsToTry = [configuredFormat, "MM-DD-YYYY", "DD-MM-YYYY", "YYYY-MM-DD"];
+  for (const fmt of formatsToTry) {
+    const parsed = moment(dateStr, fmt, true);
+    if (parsed.isValid()) {
+      return { parsed, format: fmt };
+    }
+  }
+  return null;
+}
+
+function datesMatch(a, b) {
+  const parsedA = parseOrgDate(a)?.parsed;
+  const parsedB = parseOrgDate(b)?.parsed;
+  if (!parsedA || !parsedB) {
+    return false;
+  }
+  return parsedA.isSame(parsedB, "day");
+}
+
 /**
- * Calculate the next calendar day from a date string
+ * Calculate the next calendar day from a date string.
+ * Preserves the detected date format from the source string.
  */
 function getNextDay(dateStr) {
-  const config = vscode.workspace.getConfiguration("Org-vscode");
-  const dateFormat = config.get("dateFormat", "MM-DD-YYYY");
-  const parsed = moment(dateStr, [dateFormat, "MM-DD-YYYY", "YYYY-MM-DD"], true);
-  if (!parsed.isValid()) {
+  const parsedInfo = parseOrgDate(dateStr);
+  if (!parsedInfo) {
     return null;
   }
-  const next = parsed.add(1, "day");
+  const next = parsedInfo.parsed.clone().add(1, "day");
   return {
-    date: next.format(dateFormat),
+    date: next.format(parsedInfo.format),
     weekday: next.format("ddd")
   };
 }
@@ -177,7 +198,7 @@ function handleContinuedTransition(document, taskLineNumber) {
   // Build the forwarded task
   const forwardedTask = buildForwardedTask(taskLine, nextDayInfo.date, originalIndent);
   
-  if (nextDayHeading && nextDayHeading.date === nextDayInfo.date) {
+  if (nextDayHeading && datesMatch(nextDayHeading.date, nextDayInfo.date)) {
     // Next day exists - check if task is already forwarded
     const existingForward = findForwardedTask(lines, nextDayHeading.lineIndex, taskIdentifier);
     if (existingForward !== -1) {
@@ -185,11 +206,14 @@ function handleContinuedTransition(document, taskLineNumber) {
       return null;
     }
     
+    // Use the existing heading's date string to keep file formatting consistent.
+    const forwardedTaskForExistingHeading = buildForwardedTask(taskLine, nextDayHeading.date, originalIndent);
+
     // Insert after the day heading
     return {
       type: "insert",
       position: new vscode.Position(nextDayHeading.lineIndex + 1, 0),
-      text: forwardedTask + "\n"
+      text: forwardedTaskForExistingHeading + "\n"
     };
   } else {
     // Need to create the next day heading

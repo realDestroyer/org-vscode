@@ -12,7 +12,7 @@ module.exports = async function () {
 
   const config = vscode.workspace.getConfiguration("Org-vscode");
   const headingMarkerStyle = config.get("headingMarkerStyle", "unicode");
-  const dateFormat = config.get("dateFormat", "MM-DD-YYYY");
+  const dateFormat = config.get("dateFormat", "YYYY-MM-DD");
 
   const { document } = activeTextEditor;
   const selections = (activeTextEditor.selections && activeTextEditor.selections.length)

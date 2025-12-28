@@ -86,7 +86,7 @@ async function updateTaskStatusInFile(file, taskText, scheduledDate, newStatus, 
 
   const config = vscode.workspace.getConfiguration("Org-vscode");
   const headingMarkerStyle = config.get("headingMarkerStyle", "unicode");
-  const dateFormat = config.get("dateFormat", "MM-DD-YYYY");
+  const dateFormat = config.get("dateFormat", "YYYY-MM-DD");
   const starPrefixMatch = currentLine.text.match(/^\s*(\*+)/);
   const starPrefix = starPrefixMatch ? starPrefixMatch[1] : "*";
 
@@ -171,7 +171,7 @@ function showTaggedAgendaView(tag, items) {
 
 function getTaggedWebviewContent(webview, nonce, localMomentJs, tag, items) {
   const config = vscode.workspace.getConfiguration("Org-vscode");
-  const dateFormat = config.get("dateFormat", "MM-DD-YYYY");
+  const dateFormat = config.get("dateFormat", "YYYY-MM-DD");
   const acceptedDateFormats = [dateFormat, "MM-DD-YYYY", "DD-MM-YYYY", "YYYY-MM-DD"];
   const grouped = {};
 

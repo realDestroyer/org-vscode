@@ -32,7 +32,7 @@ module.exports = function () {
     const sortedLines = Array.from(targetLines).sort((a, b) => b - a);
     let workspaceEdit = new vscode.WorkspaceEdit();
     const config = vscode.workspace.getConfiguration("Org-vscode");
-    const dateFormat = config.get("dateFormat", "MM-DD-YYYY");
+    const dateFormat = config.get("dateFormat", "YYYY-MM-DD");
     // Messages
     const fullDateMessage = new showMessage_1.WindowMessage("warning", "Full date must be entered", false, false);
     const notADateMessage = new showMessage_1.WindowMessage("warning", "That's not a valid date.", false, false);
