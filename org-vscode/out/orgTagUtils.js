@@ -3,6 +3,8 @@
 // Utilities for parsing and formatting Org-mode style tags.
 // Supports both legacy org-vscode inline tags ([+TAG:FOO,BAR]) and Emacs-style end-of-headline tags (:FOO:BAR:).
 
+// Keep tag identifiers compatible with Org-style tag match strings.
+// We normalize '-' to '_' in tag names to avoid ambiguity with the '-' NOT operator in match strings.
 const VALID_TAG = /^[A-Za-z0-9_@#%]+$/;
 
 const PLANNING_KEYWORDS = ["SCHEDULED", "DEADLINE", "CLOSED", "COMPLETED"];
@@ -51,7 +53,7 @@ function getPlanningForHeading(lines, headingIndex) {
 }
 
 function normalizeTag(tag) {
-  return String(tag || "").trim().toUpperCase();
+  return String(tag || "").trim().toUpperCase().replace(/-/g, "_");
 }
 
 function uniqueUpper(tags) {
@@ -78,7 +80,7 @@ function parseEndOfLineTags(line) {
   const text = String(line || "");
   // Tags must be at end-of-line, preceded by whitespace, and surrounded by single colons.
   // Example: "* TODO Title :WORK:URGENT:"
-  const match = text.match(/\s+(:([A-Za-z0-9_@#%]+:)+)\s*$/);
+  const match = text.match(/\s+(:([A-Za-z0-9_@#%\-]+:)+)\s*$/);
   if (!match) return [];
 
   return uniqueUpper(match[1].split(":"));
@@ -96,7 +98,7 @@ function stripLegacyInlineTagBlock(line) {
 }
 
 function stripEndOfLineTags(line) {
-  return String(line || "").replace(/\s+(:([A-Za-z0-9_@#%]+:)+)\s*$/g, "");
+  return String(line || "").replace(/\s+(:([A-Za-z0-9_@#%\-]+:)+)\s*$/g, "");
 }
 
 function stripAllTagSyntax(line) {
@@ -110,7 +112,7 @@ function normalizeTagsAfterPlanning(line) {
   let text = String(line || "");
   const movedTags = [];
 
-  const misplacedTagBlockRe = /\s+:(?:[A-Za-z0-9_@#%]+:)+(?=\s+(?:SCHEDULED:|DEADLINE:|CLOSED:|COMPLETED:))/g;
+  const misplacedTagBlockRe = /\s+:(?:[A-Za-z0-9_@#%\-]+:)+(?=\s+(?:SCHEDULED:|DEADLINE:|CLOSED:|COMPLETED:))/g;
   text = text.replace(misplacedTagBlockRe, (m) => {
     const parts = String(m || "")
       .trim()
@@ -132,7 +134,7 @@ function insertBeforeEndOfLineTags(line, insertion) {
   if (!ins) return base;
   const insWithSpace = ins.startsWith(" ") ? ins : ` ${ins}`;
 
-  const match = base.match(/\s+(:([A-Za-z0-9_@#%]+:)+)\s*$/);
+  const match = base.match(/\s+(:([A-Za-z0-9_@#%\-]+:)+)\s*$/);
   if (!match || match.index === undefined) {
     return `${base}${insWithSpace}`;
   }

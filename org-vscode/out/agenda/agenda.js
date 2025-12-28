@@ -7,7 +7,7 @@ const moment = require("moment");
 const taskKeywordManager = require("../taskKeywordManager");
 const continuedTaskHandler = require("../continuedTaskHandler");
 const path = require("path");
-const { stripAllTagSyntax, getPlanningForHeading } = require("../orgTagUtils");
+const { stripAllTagSyntax, getPlanningForHeading, isPlanningLine, parsePlanningFromText, normalizeTagsAfterPlanning } = require("../orgTagUtils");
 
 module.exports = function () {
   vscode.commands.executeCommand("workbench.action.files.save").then(() => {
@@ -90,7 +90,7 @@ module.exports = function () {
                   // Clean up task line: remove symbols, keyword, tags
                   taskText = stripAllTagSyntax(taskTextMatch)
                     .replace(/[⊙⊖⊘⊜⊗]/g, "")
-                    .replace(/^\*+\s+/, "")
+                    .replace(/^\s*\*+\s+/, "")
                     .replace(/\b(TODO|DONE|IN_PROGRESS|CONTINUED|ABANDONED)\b/, "")
                     .trim();
 
@@ -251,18 +251,59 @@ module.exports = function () {
             vscode.window.showTextDocument(doc, vscode.ViewColumn.One, false);
           });
         } else if (message.command === "changeStatus") {
-          let [newStatus, fileName, taskText, date, additionalFlag] = message.text.split(",");
+          const parts = String(message.text || "").split(",");
+          const newStatus = parts[0];
+          const fileName = parts[1];
+          const taskText = (parts[2] || "").replaceAll("&#44;", ",");
+          const date = (parts[3] || "").replaceAll("&#44;", ",");
+          const flags = parts.slice(4);
+          const removeClosed = flags.includes("REMOVE_CLOSED") || flags.includes("REMOVE_COMPLETED");
           let filePath = path.join(setMainDir(), fileName);
           const uri = vscode.Uri.file(filePath);
 
           vscode.workspace.openTextDocument(uri).then(document => {
+            const lines = document.getText().split(/\r?\n/);
+
+            function normalizeHeadlineToTitle(headline) {
+              return stripAllTagSyntax(normalizeTagsAfterPlanning(headline))
+                .replace(/[⊙⊖⊘⊜⊗]/g, "")
+                .replace(/^\s*\*+\s+/, "")
+                .replace(/\b(TODO|DONE|IN_PROGRESS|CONTINUED|ABANDONED)\b/, "")
+                .trim();
+            }
+
+            const dateOnly = String(date || "").replace(/^\[|\]$/g, "");
             let taskLineNumber = -1;
             for (let i = 0; i < document.lineCount; i++) {
               const lineText = document.lineAt(i).text;
-              if (lineText.includes(taskText) && lineText.includes(date)) {
-                taskLineNumber = i;
-                break;
+              const keywordMatch = lineText.match(/\b(TODO|IN_PROGRESS|DONE|CONTINUED|ABANDONED)\b/);
+              const isHeading = /^\s*\*+\s+/.test(lineText);
+              if (!keywordMatch || !isHeading) {
+                continue;
               }
+
+              const normalized = normalizeHeadlineToTitle(lineText);
+              if (normalized !== String(taskText || "").trim()) {
+                continue;
+              }
+
+              if (dateOnly) {
+                const planning = getPlanningForHeading(lines, i);
+                const scheduled = planning && planning.scheduled ? planning.scheduled : null;
+                if (!scheduled) {
+                  continue;
+                }
+                const scheduledMoment = moment(scheduled, acceptedDateFormats, true);
+                if (!scheduledMoment.isValid()) {
+                  continue;
+                }
+                if (scheduledMoment.format(dateFormat) !== dateOnly) {
+                  continue;
+                }
+              }
+
+              taskLineNumber = i;
+              break;
             }
 
             if (taskLineNumber === -1) {
@@ -273,6 +314,7 @@ module.exports = function () {
             const workspaceEdit = new vscode.WorkspaceEdit();
             const currentLine = document.lineAt(taskLineNumber);
             const nextLine = taskLineNumber + 1 < document.lineCount ? document.lineAt(taskLineNumber + 1) : null;
+            const nextNextLine = taskLineNumber + 2 < document.lineCount ? document.lineAt(taskLineNumber + 2) : null;
 
             const currentStatusMatch = currentLine.text.match(/\b(TODO|DONE|IN_PROGRESS|CONTINUED|ABANDONED)\b/);
             const currentStatus = currentStatusMatch ? currentStatusMatch[1] : null;
@@ -282,15 +324,42 @@ module.exports = function () {
             const starPrefix = starPrefixMatch ? starPrefixMatch[1] : "*";
 
             const indent = currentLine.text.match(/^\s*/)?.[0] || "";
-            const cleaned = taskKeywordManager.cleanTaskText(currentLine.text);
-            let newLine = taskKeywordManager.buildTaskLine(indent, newStatus, cleaned, { headingMarkerStyle, starPrefix });
 
-            // Add or remove CLOSED line
+            const cleanedHeadline = taskKeywordManager.cleanTaskText(
+              normalizeTagsAfterPlanning(currentLine.text)
+                .replace(/\s*(?:SCHEDULED|DEADLINE|CLOSED|COMPLETED):\s*\[[^\]]*\]/g, "")
+                .replace(/\s*(?:SCHEDULED|DEADLINE|CLOSED|COMPLETED):\[[^\]]*\]/g, "")
+                .replace(/\s{2,}/g, " ")
+                .trim()
+            );
+            const newHeadlineOnly = taskKeywordManager.buildTaskLine(indent, newStatus, cleanedHeadline, { headingMarkerStyle, starPrefix });
+
+            const planningIndent = `${indent}  `;
+            const planningFromHead = parsePlanningFromText(currentLine.text);
+            const planningFromNext = (nextLine && isPlanningLine(nextLine.text)) ? parsePlanningFromText(nextLine.text) : {};
+            const planningFromNextNext = (nextNextLine && isPlanningLine(nextNextLine.text)) ? parsePlanningFromText(nextNextLine.text) : {};
+
+            const mergedPlanning = {
+              scheduled: planningFromNext.scheduled || planningFromHead.scheduled || null,
+              deadline: planningFromNext.deadline || planningFromHead.deadline || null,
+              closed: planningFromNext.closed || planningFromHead.closed || planningFromNextNext.closed || null
+            };
+
             if (newStatus === "DONE") {
-              newLine += `\n${taskKeywordManager.buildCompletedStamp(indent, dateFormat)}`;
-            } else if (currentStatus === "DONE" && additionalFlag === "REMOVE_CLOSED" && nextLine && (nextLine.text.includes("CLOSED") || nextLine.text.includes("COMPLETED"))) {
-              workspaceEdit.delete(uri, nextLine.range);
+              mergedPlanning.closed = moment().format(`${dateFormat} ddd HH:mm`);
+            } else if (currentStatus === "DONE" && removeClosed) {
+              mergedPlanning.closed = null;
             }
+
+            function buildPlanningBody(p) {
+              const segs = [];
+              if (p.scheduled) segs.push(`SCHEDULED: [${p.scheduled}]`);
+              if (p.deadline) segs.push(`DEADLINE: [${p.deadline}]`);
+              if (p.closed) segs.push(`CLOSED: [${p.closed}]`);
+              return segs.join("  ");
+            }
+
+            const planningBody = buildPlanningBody(mergedPlanning);
 
             // Handle CONTINUED transitions (same logic as Ctrl+Left/Right)
             if (newStatus === "CONTINUED" && currentStatus !== "CONTINUED") {
@@ -305,7 +374,28 @@ module.exports = function () {
               }
             }
 
-            workspaceEdit.replace(uri, currentLine.range, newLine);
+            workspaceEdit.replace(uri, currentLine.range, newHeadlineOnly);
+
+            // Ensure planning line is immediate next line (merge and normalize), and remove any extra adjacent planning line.
+            if (planningBody) {
+              if (nextLine && isPlanningLine(nextLine.text)) {
+                workspaceEdit.replace(uri, nextLine.range, `${planningIndent}${planningBody}`);
+                if (nextNextLine && isPlanningLine(nextNextLine.text)) {
+                  workspaceEdit.delete(uri, nextNextLine.rangeIncludingLineBreak);
+                }
+              } else {
+                if (nextNextLine && isPlanningLine(nextNextLine.text)) {
+                  workspaceEdit.delete(uri, nextNextLine.rangeIncludingLineBreak);
+                }
+                workspaceEdit.insert(uri, currentLine.range.end, `\n${planningIndent}${planningBody}`);
+              }
+            } else {
+              if (nextLine && isPlanningLine(nextLine.text)) {
+                workspaceEdit.delete(uri, nextLine.rangeIncludingLineBreak);
+              } else if (nextNextLine && isPlanningLine(nextNextLine.text) && (nextNextLine.text.includes("CLOSED") || nextNextLine.text.includes("COMPLETED"))) {
+                workspaceEdit.delete(uri, nextNextLine.rangeIncludingLineBreak);
+              }
+            }
 
             vscode.workspace.applyEdit(workspaceEdit).then(applied => {
               if (!applied) {
@@ -643,7 +733,9 @@ module.exports = function () {
               event.srcElement.classList.remove("todo", "in_progress", "continued", "done", "abandoned");
               event.srcElement.classList.add(nextStatus.toLowerCase());
 
-              let messageText = nextStatus + "," + event.target.dataset.filename + "," + event.target.dataset.text + "," + event.target.dataset.date;
+              let safeText = (event.target.dataset.text || "").replaceAll(",", "&#44;");
+              let safeDate = (event.target.dataset.date || "").replaceAll(",", "&#44;");
+              let messageText = nextStatus + "," + event.target.dataset.filename + "," + safeText + "," + safeDate;
 
               if (nextStatus === "DONE") {
                 let completedDate = moment();
