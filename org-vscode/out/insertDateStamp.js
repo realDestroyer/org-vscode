@@ -13,7 +13,7 @@ function insertDateStamp() {
     const cursorPosition = selection.active;
 
     const config = vscode.workspace.getConfiguration("Org-vscode");
-    const dateFormat = config.get("dateFormat", "MM-DD-YYYY");
+    const dateFormat = config.get("dateFormat", "YYYY-MM-DD");
 
     // **Generate the formatted date**
     const formattedDate = `[${moment().format(`${dateFormat} ddd`)}]`;

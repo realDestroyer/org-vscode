@@ -12,7 +12,7 @@ module.exports = function () {
   vscode.commands.executeCommand("workbench.action.files.save").then(() => {
   let config = vscode.workspace.getConfiguration("Org-vscode");
     let folderPath = config.get("folderPath");
-    let dateFormat = config.get("dateFormat", "MM-DD-YYYY");
+    let dateFormat = config.get("dateFormat", "YYYY-MM-DD");
     let acceptedDateFormats = [dateFormat, "MM-DD-YYYY", "DD-MM-YYYY", "YYYY-MM-DD"];
     let folder;
     let taskText;

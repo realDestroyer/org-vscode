@@ -12,7 +12,7 @@ module.exports = function () {
     const { document } = activeTextEditor;
 
     const config = vscode.workspace.getConfiguration("Org-vscode");
-    const dateFormat = config.get("dateFormat", "MM-DD-YYYY");
+    const dateFormat = config.get("dateFormat", "YYYY-MM-DD");
 
     const selections = (activeTextEditor.selections && activeTextEditor.selections.length)
         ? activeTextEditor.selections
