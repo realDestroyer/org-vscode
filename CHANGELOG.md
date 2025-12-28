@@ -3,7 +3,22 @@
 # [Unreleased]
 `Enhanced`
 
-- (No unreleased changes)
+- **Emacs-style tags + match strings:**
+  - Canonical tags are end-of-headline `:TAG1:TAG2:` with outline + `#+FILETAGS` inheritance.
+  - Tag filtering supports Emacs match strings like `+A+B`, `A|B`, and `+A-B`.
+  - Tag groups via `#+TAGS:` blocks are supported and expanded.
+
+- **Emacs-style planning lines (SCHEDULED/DEADLINE):**
+  - Canonical planning metadata lives on the indented line directly under the heading.
+  - Backward-compatible: legacy inline stamps are still recognized.
+
+- **DONE timestamps use `CLOSED` (Issue #18):**
+  - DONE transitions now write `CLOSED: [...]` instead of `COMPLETED: [...]`.
+  - Backward-compatible: legacy `COMPLETED` timestamps are still parsed/removed.
+
+- **Syntax highlighting + snippets/docs:**
+  - Grammar highlights `CLOSED` (and legacy `COMPLETED`) consistently.
+  - Snippets and docs now prefer `CLOSED` in examples.
 
 # [1.10.9] 12-23-25
 `Enhanced`
