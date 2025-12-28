@@ -1,6 +1,7 @@
 const vscode = require("vscode");
 const fs = require("fs");
 const moment = require("moment");
+const { isPlanningLine } = require("./orgTagUtils");
 
 function rescheduleTask(forward = true) {
     const editor = vscode.window.activeTextEditor;
@@ -44,20 +45,38 @@ function rescheduleTask(forward = true) {
     for (const lineNumber of sortedLines) {
         const line = document.lineAt(lineNumber);
         const text = line.text;
+        const nextLineText = (lineNumber + 1 < document.lineCount)
+            ? document.lineAt(lineNumber + 1).text
+            : "";
+
+        // Back-compat: inline scheduled.
         const match = text.match(dateRegex);
-        if (!match) {
+        const target = match
+            ? { lineNumber, lineText: text }
+            : (isPlanningLine(nextLineText) && nextLineText.match(dateRegex))
+                ? { lineNumber: lineNumber + 1, lineText: nextLineText }
+                : null;
+
+        if (!target) {
             continue;
         }
-        const currentDate = match[1];
+
+        const targetMatch = target.lineText.match(dateRegex);
+        if (!targetMatch) {
+            continue;
+        }
+
+        const currentDate = targetMatch[1];
         const parsed = moment(currentDate, acceptedDateFormats, true);
         if (!parsed.isValid()) {
             warnedParse = true;
             continue;
         }
         const newDate = parsed.add(forward ? 1 : -1, "day").format(dateFormat);
-        const updatedText = text.replace(dateRegex, `SCHEDULED: [${newDate}]`);
-        if (updatedText !== text) {
-            edit.replace(document.uri, line.range, updatedText);
+        const updatedText = target.lineText.replace(dateRegex, `SCHEDULED: [${newDate}]`);
+        if (updatedText !== target.lineText) {
+            const targetLine = document.lineAt(target.lineNumber);
+            edit.replace(document.uri, targetLine.range, updatedText);
             touched = true;
         }
     }

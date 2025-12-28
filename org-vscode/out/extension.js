@@ -33,6 +33,7 @@ const { insertDateStamp } = require("./insertDateStamp");
 const { incrementDateForward } = require("./incrementDate");
 const { decrementDateBackward } = require("./decrementDate");
 const addTagToTask = require("./addTag");
+const addFileTag = require("./addFileTag");
 const taggedAgenda = require("./taggedAgenda");
 const addSeparator = require("./addSeparator");
 const insertTable = require("./insertTable");
@@ -174,6 +175,7 @@ function activate(ctx) {
   // Keep legacy keybinding command, but also register the contributed command id.
   ctx.subscriptions.push(vscode.commands.registerCommand("org-vscode.exportCurrentTasks", exportCurrentTasks));
   ctx.subscriptions.push(vscode.commands.registerCommand("extension.addTagToTask", addTagToTask));
+  ctx.subscriptions.push(vscode.commands.registerCommand("extension.addFileTag", addFileTag));
   ctx.subscriptions.push(vscode.commands.registerCommand("extension.setFolderPath", changeDirectory));
   ctx.subscriptions.push(vscode.commands.registerCommand("extension.createVsoFile", newFile));
   ctx.subscriptions.push(vscode.commands.registerCommand("extension.getTags", getTags));

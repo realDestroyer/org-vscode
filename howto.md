@@ -162,10 +162,10 @@ Just type the prefix and hit `Tab` to expand the snippet inside a `.org` file.
 ```org
 * TODO Task Name
   SCHEDULED: [04-21-2025]
-  COMPLETED: []
+  CLOSED: []
 
 - Description:
-- Tags: [+TAG:]
+- Tags: :TAG:
 
 ------------------------
 ```
@@ -214,7 +214,7 @@ Add deadline dates to tasks to track when they're due. Deadlines appear in the A
 ### Deadline Format
 
 ```org
-* TODO : [+TAG:PROJECT] - Complete documentation    SCHEDULED: [12-10-2025]    DEADLINE: [12-15-2025]
+* TODO Complete documentation :PROJECT:    SCHEDULED: [12-10-2025]    DEADLINE: [12-15-2025]
 ```
 
 Date formatting is controlled by `Org-vscode.dateFormat` (default: `MM-DD-YYYY`).
@@ -328,15 +328,15 @@ Org-vscode supports five task states. In `unicode` marker style, each state is r
 
 * Click on the current status (e.g. `TODO`) to cycle through the options.
 * The task line is automatically updated in the source file.
-* If switching **to `DONE`**, a `COMPLETED:` timestamp is inserted on the next line.
-* If switching **from `DONE` to any other state**, the `COMPLETED:` line is removed.
+* If switching **to `DONE`**, a `CLOSED:` timestamp is inserted on the next line.
+* If switching **from `DONE` to any other state**, the `CLOSED:` line is removed.
 
 #### ✏️ In the `.org` file directly <a id="in-the-org-file-directly"></a>
 
 You can manually change task keywords:
 
 ```org
-* TODO : [+TAG:PROJECT] - Finish feature documentation
+* TODO Finish feature documentation :PROJECT:
 ```
 
 Or remove/change the keyword symbol, and the extension will update it accordingly on save.
@@ -349,10 +349,10 @@ Org-vscode supports **inline tagging** to categorize tasks and enable advanced f
 
 ### 📝 Add Tags to a Task <a id="add-tags-to-a-task"></a>
 
-To tag a task, use the special `[+TAG:...]` syntax directly after the task keyword:
+To tag a task, use Emacs-style end-of-headline tags:
 
 ```org
-* TODO : [+TAG:WORK,URGENT] - Prepare project proposal
+* TODO Prepare project proposal :WORK:URGENT:
 ```
 
 * Tags are comma-separated
@@ -515,7 +515,7 @@ Use the command:
 
 #### 🏷 Tag Bubbles for Filtering <a id="tag-bubbles-for-filtering"></a>
 
-* If a task contains a `[+TAG:...]` inline tag, those tags appear as clickable colored bubbles.
+* If a task contains end-of-headline tags like `:WORK:URGENT:`, those tags appear as clickable colored bubbles.
 * Click a tag to filter tasks shown on the calendar.
 * Use `Ctrl + Click` to multi-select tags.
 

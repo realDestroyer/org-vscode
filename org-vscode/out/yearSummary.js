@@ -2,10 +2,11 @@ const vscode = require("vscode");
 const fs = require("fs");
 const path = require("path");
 const moment = require("moment");
+const { getAllTagsFromLine, stripAllTagSyntax, isPlanningLine } = require("./orgTagUtils");
 
 const ORG_SYMBOL_REGEX = /\s*[⊙⊖⊘⊜⊗]\s*/g;
 const FORMULA_PREFIX_REGEX = /^[=+\-@]/;
-const COMPLETED_LINE_REGEX = /^COMPLETED:\s*\[(.*?)\](.*)$/i;
+const CLOSED_LINE_REGEX = /^(?:CLOSED|COMPLETED):\s*\[(.*?)\](.*)$/i;
 
 async function exportYearSummary() {
   try {
@@ -92,7 +93,9 @@ function parseOrgContent(raw) {
 
     const taskMatch = line.match(taskRegex);
     if (taskMatch && currentDay) {
-      const metadata = extractMetadata(line);
+      const nextLine = (index + 1 < lines.length) ? lines[index + 1] : "";
+      const combined = isPlanningLine(nextLine) ? `${line}\n${nextLine}` : line;
+      const metadata = extractMetadata(combined);
       currentTask = {
         line: line.trim(),
         status: taskMatch[2],
@@ -110,7 +113,7 @@ function parseOrgContent(raw) {
 
     const trimmed = line.trim();
     if (currentTask && trimmed) {
-      const completedLineMatch = trimmed.match(COMPLETED_LINE_REGEX);
+      const completedLineMatch = trimmed.match(CLOSED_LINE_REGEX);
       if (completedLineMatch) {
         if (!currentTask.completed) {
           currentTask.completed = completedLineMatch[1].trim();
@@ -138,16 +141,14 @@ function extractMetadata(line) {
     .replace(/\b(TODO|IN_PROGRESS|CONTINUED|DONE|ABANDONED)\b\s*:*/, "")
     .trim();
 
-  const tagMatch = cleaned.match(/\[\+TAG:([^\]]+)\]/);
-  const tags = tagMatch ? tagMatch[1].split(",").map(tag => tag.trim()) : [];
+  const tags = getAllTagsFromLine(cleaned);
   const scheduledMatch = cleaned.match(/SCHEDULED:\s*\[(.*?)\]/);
-  const completedMatch = cleaned.match(/COMPLETED:\s*\[(.*?)\]/);
+  const closedMatch = cleaned.match(/(?:CLOSED|COMPLETED):\s*\[(.*?)\]/);
   const deadlineMatch = cleaned.match(/DEADLINE:\s*\[(.*?)\]/);
 
-  const title = cleaned
-    .replace(/\[\+TAG:[^\]]+\]/, "")
+  const title = stripAllTagSyntax(cleaned)
     .replace(/SCHEDULED:.*/, "")
-    .replace(/COMPLETED:.*/, "")
+    .replace(/(?:CLOSED|COMPLETED):.*/, "")
     .replace(/DEADLINE:.*/, "")
     .replace(/:+\s*$/, "")
     .trim();
@@ -156,7 +157,7 @@ function extractMetadata(line) {
     title,
     tags,
     scheduled: scheduledMatch ? scheduledMatch[1] : null,
-    completed: completedMatch ? completedMatch[1] : null,
+    completed: closedMatch ? closedMatch[1] : null,
     deadline: deadlineMatch ? deadlineMatch[1] : null
   };
 }
