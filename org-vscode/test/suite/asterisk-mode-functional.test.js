@@ -182,9 +182,9 @@ suite('Asterisk-mode functional behavior', function () {
 
       await vscode.commands.executeCommand('extension.scheduling');
 
-      await waitFor(() => doc.getText().includes('*** TODO Task A    SCHEDULED: [12-31-2025]'));
-      await waitFor(() => doc.getText().includes('*** TODO Task B    SCHEDULED: [12-31-2025]'));
-      await waitFor(() => doc.getText().includes('*** TODO Task C    SCHEDULED: [12-31-2025]'));
+      await waitFor(() => doc.getText().includes('*** TODO Task A    SCHEDULED: [2025-12-31]'));
+      await waitFor(() => doc.getText().includes('*** TODO Task B    SCHEDULED: [2025-12-31]'));
+      await waitFor(() => doc.getText().includes('*** TODO Task C    SCHEDULED: [2025-12-31]'));
       assert.ok(doc.getText().includes(`* [12-14-2025 Sun]${separator}`));
     } finally {
       vscode.window.showInputBox = originalShowInputBox;
@@ -215,9 +215,9 @@ suite('Asterisk-mode functional behavior', function () {
 
       await vscode.commands.executeCommand('extension.deadline');
 
-      await waitFor(() => doc.getText().includes('*** TODO Task A    DEADLINE: [12-31-2025]'));
-      await waitFor(() => doc.getText().includes('*** TODO Task B    DEADLINE: [12-31-2025]'));
-      await waitFor(() => doc.getText().includes('*** TODO Task C    DEADLINE: [12-31-2025]'));
+      await waitFor(() => doc.getText().includes('*** TODO Task A    DEADLINE: [2025-12-31]'));
+      await waitFor(() => doc.getText().includes('*** TODO Task B    DEADLINE: [2025-12-31]'));
+      await waitFor(() => doc.getText().includes('*** TODO Task C    DEADLINE: [2025-12-31]'));
       assert.ok(doc.getText().includes(`* [12-14-2025 Sun]${separator}`));
     } finally {
       vscode.window.showInputBox = originalShowInputBox;

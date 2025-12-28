@@ -46,7 +46,7 @@ function sendTasksToCalendar(panel) {
   let tasks = [];
   let dirPath = setMainDir();
   const config = vscode.workspace.getConfiguration("Org-vscode");
-  const dateFormat = config.get("dateFormat", "MM-DD-YYYY");
+  const dateFormat = config.get("dateFormat", "YYYY-MM-DD");
 
   fs.readdir(dirPath, (err, files) => {
     if (err) {
@@ -112,7 +112,7 @@ function rescheduleTask(file, oldDate, newDate, taskText) {
   let fileLines = fileContents.split(/\r?\n/);
 
   const config = vscode.workspace.getConfiguration("Org-vscode");
-  const dateFormat = config.get("dateFormat", "MM-DD-YYYY");
+  const dateFormat = config.get("dateFormat", "YYYY-MM-DD");
 
   // Try to parse the new date using known formats (ISO or configured format)
   let parsedNewDate = moment(newDate, ["YYYY-MM-DD", dateFormat, "MM-DD-YYYY", "DD-MM-YYYY"], true);
@@ -184,7 +184,7 @@ function rescheduleTaskById(taskId, newDate) {
   }
 
   const config = vscode.workspace.getConfiguration("Org-vscode");
-  const dateFormat = config.get("dateFormat", "MM-DD-YYYY");
+  const dateFormat = config.get("dateFormat", "YYYY-MM-DD");
 
   let parsedNewDate = moment(newDate, ["YYYY-MM-DD", dateFormat, "MM-DD-YYYY", "DD-MM-YYYY"], true);
   if (!parsedNewDate.isValid()) {
@@ -270,7 +270,7 @@ function openCalendarView() {
  */
 function getCalendarWebviewContent({ webview, nonce }) {
   const config = vscode.workspace.getConfiguration("Org-vscode");
-  const dateFormat = config.get("dateFormat", "MM-DD-YYYY");
+  const dateFormat = config.get("dateFormat", "YYYY-MM-DD");
   const csp = `default-src 'none'; img-src ${webview.cspSource} https: data:; style-src ${webview.cspSource} 'nonce-${nonce}' https:; script-src ${webview.cspSource} 'nonce-${nonce}' https:; font-src ${webview.cspSource} https: data:`;
   const fullCalendarCss = 'https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css';
   const fullCalendarJs = 'https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js';

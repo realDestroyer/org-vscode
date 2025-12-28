@@ -116,7 +116,7 @@ async function convertDatesInActiveFile() {
 
   const doc = editor.document;
   const config = vscode.workspace.getConfiguration("Org-vscode");
-  const targetFormat = config.get("dateFormat", "MM-DD-YYYY");
+  const targetFormat = config.get("dateFormat", "YYYY-MM-DD");
 
   const sourcePickDefault = targetFormat === "MM-DD-YYYY" ? "DD-MM-YYYY" : "MM-DD-YYYY";
 

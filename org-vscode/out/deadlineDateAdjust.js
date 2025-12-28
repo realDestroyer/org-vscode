@@ -34,7 +34,7 @@ function deadlineDateAdjust(forward = true) {
     const sortedLines = Array.from(targetLines).sort((a, b) => b - a);
 
     const config = vscode.workspace.getConfiguration("Org-vscode");
-    const dateFormat = config.get("dateFormat", "MM-DD-YYYY");
+    const dateFormat = config.get("dateFormat", "YYYY-MM-DD");
     const acceptedDateFormats = [dateFormat, "MM-DD-YYYY", "DD-MM-YYYY", "YYYY-MM-DD"];
 
     // Match DEADLINE: with optional time
