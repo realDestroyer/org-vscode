@@ -1,5 +1,6 @@
 .vscode/**
 .vscode-test/**
+.git/**
 out/test/**
 out/**/*.map
 src/**
@@ -7,3 +8,16 @@ src/**
 tsconfig.json
 vsc-extension-quickstart.md
 tslint.json
+Images/**
+node_modules/**
+org-vscode/out/**
+org-vscode/test/**
+org-vscode/scripts/**
+*.orig
+*.rej
+*.patch
+howto.md
+roadmap.md
+TYPESCRIPT
+CONTRIBUTING.md
+manifest.scm
