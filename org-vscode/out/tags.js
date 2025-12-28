@@ -50,7 +50,7 @@ module.exports = function () {
             if (match) {
                 const tagString = match[1];
                 const rawTags = tagString
-                  .split(/[:,]/)
+                  .split(/[:]/)
                   .map(tag => tag.trim().toUpperCase())
                   .filter(Boolean);
 
