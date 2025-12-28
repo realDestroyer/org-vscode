@@ -1,6 +1,6 @@
 ﻿# Roadmap
 
-Live version: 1.10.9
+Live version: 2.0.0
 
 These are the features that I have either already implemented, or plan to in the near future.
 
@@ -8,6 +8,7 @@ These are the features that I have either already implemented, or plan to in the
 
 | Feature Name              | Description                                                                                | Progress    | Version  | Author        |
 | ------------------------- | ------------------------------------------------------------------------------------------ | ----------- | -------- | ------------- |
+| v2 Org-mode Alignment     | Emacs-style end-of-headline tags, FILETAGS inheritance, planning lines under headings, CLOSED stamp, and explicit migration command | DONE | v2.0.0 | realDestroyer |
 | Multi-line Selection Editing | Most editor shortcuts (status, schedule, deadline, tags, headings, date adjusters) apply to all selected task lines | DONE | v1.10.8 | realDestroyer |
 | Keybinding Language-Mode Resilience | Core shortcuts keep working even when `.org` files are not in `vso` language mode | DONE | v1.10.9 | realDestroyer |
 | TODO Notifications        | Notify users of status outside VSCode (email, sms, etc.)                                   | Not Started |          | realDestroyer |

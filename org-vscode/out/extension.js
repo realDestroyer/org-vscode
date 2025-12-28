@@ -46,6 +46,7 @@ const { generateExecutiveReport } = require("./yearExecutiveReport");
 const { openYearInReview } = require("./yearDashboard");
 const { openSyntaxColorCustomizer } = require("./syntaxColorCustomizer");
 const { registerUnicodeHeadingDecorations } = require("./unicodeHeadingDecorations");
+const { migrateFileToV2 } = require("./migrateFileToV2");
 
 // Startup log for debugging
 console.log("📌 agenda.js has been loaded in extension.js");
@@ -157,6 +158,7 @@ function activate(ctx) {
 
   ctx.subscriptions.push(showMessageCommand);
   ctx.subscriptions.push(vscode.commands.registerCommand("extension.viewAgenda", agenda));
+  ctx.subscriptions.push(vscode.commands.registerCommand("extension.migrateFileToV2", migrateFileToV2));
   // Back-compat: keep existing command id, but steer users to the explicit converter.
   ctx.subscriptions.push(vscode.commands.registerCommand("extension.updateDates", convertDatesInActiveFile));
   ctx.subscriptions.push(vscode.commands.registerCommand("extension.convertDatesInActiveFile", convertDatesInActiveFile));

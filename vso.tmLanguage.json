@@ -91,6 +91,7 @@
       "end": "$",
       "patterns": [
         { "include": "#done" },
+        { "include": "#tag" },
         { "include": "#task_text_done" },
         { "include": "#sched" },
         { "include": "#scheduled" },
@@ -160,6 +161,7 @@
       "begin": "^\\s*[\u2296]",
       "end": "$",
       "patterns": [
+        { "include": "#tag" },
         { "include": "#done" },
         { "include": "#task_text_done" },
         { "include": "#sched" },
@@ -251,7 +253,7 @@
       "patterns": [
         {
           "name": "string.task.todo.vso",
-          "match": "(?<=TODO\\s+).*?(?=(?:\\s+(?:SCHEDULED:|DEADLINE:|CLOSED:|COMPLETED:))|(?:\\s+:(?:[A-Za-z0-9_@#%]+:)+\\s*$)|$)"
+          "match": "(?<=TODO\\s+).*?(?=(?:\\s+(?:SCHEDULED:|DEADLINE:|CLOSED:|COMPLETED:))|(?:\\s+:(?:[A-Za-z0-9_@#%\\-]+:)+(?=\\s+(?:SCHEDULED:|DEADLINE:|CLOSED:|COMPLETED:)))|(?:\\s+:(?:[A-Za-z0-9_@#%\\-]+:)+\\s*$)|$)"
         }
       ]
     },
@@ -259,7 +261,7 @@
       "patterns": [
         {
           "name": "string.task.in_progress.vso",
-          "match": "(?<=IN_PROGRESS\\s+).*?(?=(?:\\s+(?:SCHEDULED:|DEADLINE:|CLOSED:|COMPLETED:))|(?:\\s+:(?:[A-Za-z0-9_@#%]+:)+\\s*$)|$)"
+          "match": "(?<=IN_PROGRESS\\s+).*?(?=(?:\\s+(?:SCHEDULED:|DEADLINE:|CLOSED:|COMPLETED:))|(?:\\s+:(?:[A-Za-z0-9_@#%\\-]+:)+(?=\\s+(?:SCHEDULED:|DEADLINE:|CLOSED:|COMPLETED:)))|(?:\\s+:(?:[A-Za-z0-9_@#%\\-]+:)+\\s*$)|$)"
         }
       ]
     },
@@ -267,7 +269,7 @@
       "patterns": [
         {
           "name": "string.task.done.vso",
-          "match": "(?<=DONE\\s+).*?(?=(?:\\s+(?:SCHEDULED:|DEADLINE:|CLOSED:|COMPLETED:))|(?:\\s+:(?:[A-Za-z0-9_@#%]+:)+\\s*$)|$)"
+          "match": "(?<=DONE\\s+).*?(?=(?:\\s+(?:SCHEDULED:|DEADLINE:|CLOSED:|COMPLETED:))|(?:\\s+:(?:[A-Za-z0-9_@#%\\-]+:)+(?=\\s+(?:SCHEDULED:|DEADLINE:|CLOSED:|COMPLETED:)))|(?:\\s+:(?:[A-Za-z0-9_@#%\\-]+:)+\\s*$)|$)"
         }
       ]
     },
@@ -275,7 +277,7 @@
       "patterns": [
         {
           "name": "string.task.abandoned.vso",
-          "match": "(?<=ABANDONED\\s+).*?(?=(?:\\s+(?:SCHEDULED:|DEADLINE:|CLOSED:|COMPLETED:))|(?:\\s+:(?:[A-Za-z0-9_@#%]+:)+\\s*$)|$)"
+          "match": "(?<=ABANDONED\\s+).*?(?=(?:\\s+(?:SCHEDULED:|DEADLINE:|CLOSED:|COMPLETED:))|(?:\\s+:(?:[A-Za-z0-9_@#%\\-]+:)+(?=\\s+(?:SCHEDULED:|DEADLINE:|CLOSED:|COMPLETED:)))|(?:\\s+:(?:[A-Za-z0-9_@#%\\-]+:)+\\s*$)|$)"
         }
       ]
     },
@@ -283,7 +285,7 @@
       "patterns": [
         {
           "name": "string.task.continued.vso",
-          "match": "(?<=CONTINUED\\s+).*?(?=(?:\\s+(?:SCHEDULED:|DEADLINE:|CLOSED:|COMPLETED:))|(?:\\s+:(?:[A-Za-z0-9_@#%]+:)+\\s*$)|$)"
+          "match": "(?<=CONTINUED\\s+).*?(?=(?:\\s+(?:SCHEDULED:|DEADLINE:|CLOSED:|COMPLETED:))|(?:\\s+:(?:[A-Za-z0-9_@#%\\-]+:)+(?=\\s+(?:SCHEDULED:|DEADLINE:|CLOSED:|COMPLETED:)))|(?:\\s+:(?:[A-Za-z0-9_@#%\\-]+:)+\\s*$)|$)"
         }
       ]
     },
@@ -314,7 +316,7 @@
     },
     "tag": {
       "patterns": [
-        { "name": "entity.other.attribute-name.tag.vso", "match": "(?:\\[\\+TAG:[^\\]]*\\])|(?:\\s+:(?:[A-Za-z0-9_@#%]+:)+\\s*$)" }
+        { "name": "entity.other.attribute-name.tag.vso", "match": "(?:\\[\\+TAG:[^\\]]*\\])|(?:\\s+:(?:[A-Za-z0-9_@#%\\-]+:)+(?=\\s+(?:SCHEDULED:|DEADLINE:|CLOSED:|COMPLETED:)|\\s*$))" }
       ]
     }
   }

@@ -1,16 +1,23 @@
 # Change Log
 
 # [Unreleased]
-`Enhanced`
+
+# [2.0.0] 12-28-25
+`Enhanced / Breaking`
 
 - **Emacs-style tags + match strings:**
   - Canonical tags are end-of-headline `:TAG1:TAG2:` with outline + `#+FILETAGS` inheritance.
   - Tag filtering supports Emacs match strings like `+A+B`, `A|B`, and `+A-B`.
   - Tag groups via `#+TAGS:` blocks are supported and expanded.
+  - Tag names normalize hyphens to underscores (e.g. `TEST-TAG` → `TEST_TAG`) to keep match strings unambiguous.
 
 - **Emacs-style planning lines (SCHEDULED/DEADLINE):**
   - Canonical planning metadata lives on the indented line directly under the heading.
   - Backward-compatible: legacy inline stamps are still recognized.
+
+- **Explicit v2 migration command:**
+  - Adds **Org-vscode: Migrate File to v2 Format** (no automatic rewrites).
+  - Migrates legacy `[+TAG:...]` blocks, inline planning stamps, and `COMPLETED:` → `CLOSED:`.
 
 - **DONE timestamps use `CLOSED` (Issue #18):**
   - DONE transitions now write `CLOSED: [...]` instead of `COMPLETED: [...]`.

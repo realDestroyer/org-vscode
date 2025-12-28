@@ -78,6 +78,7 @@ async function updateTaskStatusInFile(file, taskText, scheduledDate, newStatus, 
       .replace(/\s+SCHEDULED:.*/, "")
       .replace(/[⊙⊖⊘⊜⊗]/g, "")
       .replace(/^\s*\*+\s+/, "")
+      .replace(/\b(TODO|DONE|IN_PROGRESS|CONTINUED|ABANDONED)\b\s*/g, "")
       .trim();
   }
 
@@ -252,7 +253,7 @@ function showTaggedAgendaView(tag, items) {
       const parts = message.text.split(",");
       const newStatus = parts[0];
       const file = parts[1];
-      const taskText = parts[2].trim();
+      const taskText = (parts[2] || "").replaceAll("&#44;", ",").trim();
       const scheduledDate = parts[3];
       const removeCompleted = message.text.includes("REMOVE_CLOSED") || message.text.includes("REMOVE_COMPLETED");
       console.log("🔄 Changing status:", newStatus, "in file:", file, "for task:", taskText, "with scheduled date:", scheduledDate);
@@ -297,6 +298,7 @@ function getTaggedWebviewContent(webview, nonce, localMomentJs, tag, items) {
         .replace(/\s+SCHEDULED:.*/, "")
         .replace(/[⊙⊖⊘⊜⊗]/g, "")  // Unicode cleanup
         .replace(/^\s*\*+\s+/, "") // Org headline cleanup
+        .replace(/\b(TODO|DONE|IN_PROGRESS|CONTINUED|ABANDONED)\b\s*/g, "") // Keyword cleanup (stable matching)
         .trim();
 
       const lateLabel = scheduledDate && moment(scheduledDate, acceptedDateFormats, true).isBefore(moment(), "day")

@@ -46,6 +46,7 @@ VS Code Settings editor (search for `Org-vscode:`):
 ## 📘 Table of Contents <a id="table-of-contents"></a>
 
 * [✅ Multi-line selection editing](#-multi-line-selection-editing)
+* [🧭 v2 Format + Migration](#v2-format--migration)
 * [📁 Change the Main Directory](#change-the-main-directory)
 * [📝 Create a New .org File](#create-a-new-org-file)
 * [🔖 Create a Header](#create-a-header)
@@ -66,6 +67,31 @@ VS Code Settings editor (search for `Org-vscode:`):
 * [📊 Year-In-Review Dashboard](#year-in-review-dashboard)
 
 ---
+
+## 🧭 v2 Format + Migration <a id="v2-format--migration"></a>
+
+Org-vscode v2 aligns more closely with Emacs Org-mode:
+
+- **Tags**: end-of-headline `:TAG1:TAG2:`
+- **Planning** (`SCHEDULED`, `DEADLINE`, `CLOSED`) lives on the indented line directly under the heading
+- **Completion stamp**: `CLOSED:` is canonical (legacy `COMPLETED:` is still accepted)
+
+### Migrate a file to v2 (explicit)
+
+Run **Org-vscode: Migrate File to v2 Format** on a file that still contains legacy constructs like:
+
+- `[+TAG:FOO,BAR]`
+- `SCHEDULED:` / `DEADLINE:` / `CLOSED:` stamps on the headline line
+- `COMPLETED:` timestamps
+
+The migration is designed to be a single-file, explicit, one-time rewrite (no automatic background changes).
+
+### Tag naming note (hyphens)
+
+To keep Emacs-style tag match strings unambiguous (where `-TAG` means “NOT TAG”), tag names normalize hyphens to underscores:
+
+- `test-tag` becomes `TEST_TAG`
+- existing `TEST-TAG` migrates to `TEST_TAG`
 
 ## ✅ Multi-line selection editing
 
@@ -214,7 +240,8 @@ Add deadline dates to tasks to track when they're due. Deadlines appear in the A
 ### Deadline Format
 
 ```org
-* TODO Complete documentation :PROJECT:    SCHEDULED: [12-10-2025]    DEADLINE: [12-15-2025]
+* TODO Complete documentation :PROJECT:
+  SCHEDULED: [12-10-2025]  DEADLINE: [12-15-2025]
 ```
 
 Date formatting is controlled by `Org-vscode.dateFormat` (default: `MM-DD-YYYY`).
