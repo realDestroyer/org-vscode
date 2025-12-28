@@ -310,9 +310,10 @@
 					"default": "MM-DD-YYYY",
 					"enum": [
 						"MM-DD-YYYY",
-						"DD-MM-YYYY"
+						"DD-MM-YYYY",
+						"YYYY-MM-DD"
 					],
-					"description": "The scheduled date format."
+					"description": "org file date format (YYYY-MM-DD is the Emacs Org-mode standard)"
 				}
 			}
 		},
