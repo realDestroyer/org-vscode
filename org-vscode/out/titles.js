@@ -41,7 +41,7 @@ module.exports = function () {
     function setQuickPick() {
         vscode.window.showQuickPick(titles.sort()).then((title) => {
             if (title && listObject[title]) {
-                let fullpath = path.join(setMainDir(), listObject[title]);
+                let fullpath = listObject[title];
                 vscode.workspace.openTextDocument(vscode.Uri.file(fullpath)).then(doc => {
                     vscode.window.showTextDocument(doc, vscode.ViewColumn.Beside, true);
                 });
