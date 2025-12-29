@@ -16,6 +16,9 @@ examples/**
 Images/**
 org-vscode/**
 
+# Build helpers
+scripts/**
+
 # Tooling / docs not needed at runtime
 .gitignore
 tsconfig.json
