@@ -2,6 +2,12 @@
 
 # [Unreleased]
 
+# [2.0.2] 12-29-25
+`Enhanced`
+
+- **Tagged Agenda:** CONTINUED tasks are omitted by default to avoid duplicates when a task was continued into a future TODO. Set `Org-vscode.includeContinuedInTaggedAgenda` to include them.
+- **Indent decoration:** Heading indentation decorations can be enabled/disabled independently of unicode marker decorations.
+
 # [2.0.1] 12-28-25
 `Fixed`
 
