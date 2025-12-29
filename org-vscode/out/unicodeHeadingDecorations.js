@@ -173,7 +173,7 @@ function computeDecorationsForEditor(editor) {
             before: {
               contentText: decorateUnicodeHeadings
                 ? (visualIndent + symbol + " ")
-                : (visualIndent + INDENT_SPACE.repeat(2)),
+                : (visualIndent + "* "),
               ...(foreground ? { color: foreground } : {})
             }
           }
@@ -212,7 +212,7 @@ function computeDecorationsForEditor(editor) {
             before: {
               contentText: decorateUnicodeHeadings
                 ? (visualIndent + "⊘ ")
-                : (visualIndent + INDENT_SPACE.repeat(2)),
+                : (visualIndent + "* "),
               ...(foreground ? { color: foreground } : {})
             }
           }
@@ -248,7 +248,9 @@ function computeDecorationsForEditor(editor) {
           range: markerRange,
           renderOptions: {
             before: {
-              contentText: visualIndent + INDENT_SPACE.repeat(2)
+              contentText: decorateUnicodeHeadings
+                ? (visualIndent + INDENT_SPACE.repeat(2))
+                : (visualIndent + "* ")
             }
           }
         });

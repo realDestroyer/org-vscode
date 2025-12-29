@@ -7,6 +7,9 @@
 
 - **Tagged Agenda:** CONTINUED tasks are omitted by default to avoid duplicates when a task was continued into a future TODO. Set `Org-vscode.includeContinuedInTaggedAgenda` to include them.
 - **Indent decoration:** Heading indentation decorations can be enabled/disabled independently of unicode marker decorations.
+  - When `decorateUnicodeHeadings` is OFF but indentation is ON, headings render Org-Indent-style with the trailing `*` visible.
+- **Insert Org Table:** The table generator now emits canonical Org-mode pipe tables (Emacs compatible), and the webview UI buttons/marquee work correctly under strict CSP.
+- **Snippets packaging:** Ensures `snippets/vso.json` ships in the VSIX so snippet completions work after install.
 
 # [2.0.1] 12-28-25
 `Fixed`
