@@ -19,17 +19,27 @@ function copyDirRecursive(sourceDir, destDir) {
 
 function main() {
   const repoRoot = path.join(__dirname, "..");
-  const sourceDir = path.join(repoRoot, "org-vscode", "media");
-  const destDir = path.join(repoRoot, "media");
+  const mediaSourceDir = path.join(repoRoot, "org-vscode", "media");
+  const mediaDestDir = path.join(repoRoot, "media");
 
-  if (!fs.existsSync(sourceDir)) {
-    console.warn(`[copy-media] Source media folder not found: ${sourceDir}`);
-    console.warn("[copy-media] Skipping copy.");
-    return;
+  if (!fs.existsSync(mediaSourceDir)) {
+    console.warn(`[copy-media] Source media folder not found: ${mediaSourceDir}`);
+    console.warn("[copy-media] Skipping media copy.");
+  } else {
+    copyDirRecursive(mediaSourceDir, mediaDestDir);
+    console.log(`[copy-media] Copied media assets to: ${mediaDestDir}`);
   }
 
-  copyDirRecursive(sourceDir, destDir);
-  console.log(`[copy-media] Copied media assets to: ${destDir}`);
+  const snippetsSourceDir = path.join(repoRoot, "org-vscode", "snippets");
+  const snippetsDestDir = path.join(repoRoot, "snippets");
+
+  if (!fs.existsSync(snippetsSourceDir)) {
+    console.warn(`[copy-media] Source snippets folder not found: ${snippetsSourceDir}`);
+    console.warn("[copy-media] Skipping snippets copy.");
+  } else {
+    copyDirRecursive(snippetsSourceDir, snippetsDestDir);
+    console.log(`[copy-media] Copied snippets to: ${snippetsDestDir}`);
+  }
 }
 
 main();

@@ -109,11 +109,14 @@ function shouldDecorate(editor) {
   if (editor.document.languageId !== "vso") return false;
 
   const config = vscode.workspace.getConfiguration("Org-vscode");
-  const enabled = config.get("decorateUnicodeHeadings", false);
-  if (!enabled) return false;
-
   const headingMarkerStyle = config.get("headingMarkerStyle", "unicode");
-  return headingMarkerStyle === "asterisks";
+  if (headingMarkerStyle !== "asterisks") return false;
+
+  const decorateUnicodeHeadings = config.get("decorateUnicodeHeadings", false);
+  const decorateHeadingIndentation = config.get("decorateHeadingIndentation", true);
+
+  // Either unicode-marker decorations OR indentation-only decorations can be enabled.
+  return Boolean(decorateUnicodeHeadings || decorateHeadingIndentation);
 }
 
 function computeDecorationsForEditor(editor) {
@@ -123,6 +126,7 @@ function computeDecorationsForEditor(editor) {
   const revealLines = getRevealLines(editor);
   const getForegroundForScope = createTokenColorResolver();
   const config = vscode.workspace.getConfiguration("Org-vscode");
+  const decorateUnicodeHeadings = config.get("decorateUnicodeHeadings", false);
   const decorateHeadingIndentation = config.get("decorateHeadingIndentation", true);
   const INDENT_SPACE = "\u00A0";
   const spacesPerLevelRaw = config.get("adjustHeadingIndentation", 2);
@@ -149,8 +153,8 @@ function computeDecorationsForEditor(editor) {
       if (taskMatch) {
         const indent = taskMatch[1] || "";
         const status = taskMatch[3];
-        const symbol = statusToSymbol(status);
-        if (!symbol) continue;
+        const symbol = decorateUnicodeHeadings ? statusToSymbol(status) : "";
+        if (decorateUnicodeHeadings && !symbol) continue;
 
         const stars = taskMatch[2] || "";
         const indentCount = decorateHeadingIndentation
@@ -161,13 +165,15 @@ function computeDecorationsForEditor(editor) {
         // Insert unicode symbol at the start of the asterisk prefix.
         const insertAt = new vscode.Position(lineNumber, indent.length);
         const markerRange = new vscode.Range(insertAt, insertAt);
-        const scope = STATUS_TO_SCOPE[status];
+        const scope = decorateUnicodeHeadings ? STATUS_TO_SCOPE[status] : undefined;
         const foreground = scope ? getForegroundForScope(scope) : undefined;
         markerDecorations.push({
           range: markerRange,
           renderOptions: {
             before: {
-              contentText: visualIndent + symbol + " ",
+              contentText: decorateUnicodeHeadings
+                ? (visualIndent + symbol + " ")
+                : (visualIndent + "* "),
               ...(foreground ? { color: foreground } : {})
             }
           }
@@ -197,12 +203,16 @@ function computeDecorationsForEditor(editor) {
         const visualIndent = indentCount > 0 ? INDENT_SPACE.repeat(indentCount) : "";
         const insertAt = new vscode.Position(lineNumber, indent.length);
         const markerRange = new vscode.Range(insertAt, insertAt);
-        const foreground = getForegroundForScope(STATUS_TO_SCOPE.IN_PROGRESS);
+        const foreground = decorateUnicodeHeadings
+          ? getForegroundForScope(STATUS_TO_SCOPE.IN_PROGRESS)
+          : undefined;
         markerDecorations.push({
           range: markerRange,
           renderOptions: {
             before: {
-              contentText: visualIndent + "⊘ ",
+              contentText: decorateUnicodeHeadings
+                ? (visualIndent + "⊘ ")
+                : (visualIndent + "* "),
               ...(foreground ? { color: foreground } : {})
             }
           }
@@ -238,7 +248,9 @@ function computeDecorationsForEditor(editor) {
           range: markerRange,
           renderOptions: {
             before: {
-              contentText: visualIndent + INDENT_SPACE.repeat(2)
+              contentText: decorateUnicodeHeadings
+                ? (visualIndent + INDENT_SPACE.repeat(2))
+                : (visualIndent + "* ")
             }
           }
         });
@@ -325,6 +337,8 @@ function registerUnicodeHeadingDecorations(ctx) {
     vscode.workspace.onDidChangeConfiguration((event) => {
       if (
         event.affectsConfiguration("Org-vscode.decorateUnicodeHeadings") ||
+        event.affectsConfiguration("Org-vscode.decorateHeadingIndentation") ||
+        event.affectsConfiguration("Org-vscode.adjustHeadingIndentation") ||
         event.affectsConfiguration("Org-vscode.headingMarkerStyle")
       ) {
         scheduleApply(vscode.window.activeTextEditor);
