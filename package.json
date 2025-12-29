@@ -281,7 +281,7 @@
 					"type": "boolean",
 					"order": 3,
 					"default": true,
-					"description": "When decorateUnicodeHeadings is enabled, visually indent decorated headings based on asterisk depth (Emacs org-indent-style) without changing file content."
+					"description": "Visually indent asterisk-mode headings based on asterisk depth (Emacs org-indent-style) using editor decorations without changing file content. This can be enabled independently of unicode marker decorations."
 				},
 				"Org-vscode.adjustHeadingIndentation": {
 					"type": "number",
@@ -307,6 +307,12 @@
 						"YYYY-MM-DD"
 					],
 					"description": "org file date format (YYYY-MM-DD is the Emacs Org-mode standard)"
+				},
+				"Org-vscode.includeContinuedInTaggedAgenda": {
+					"type": "boolean",
+					"order": 7,
+					"default": false,
+					"description": "When enabled, Tagged Agenda results will include CONTINUED tasks. By default they are omitted since CONTINUED is intended as a historical breadcrumb when a task moved forward."
 				}
 			}
 		},
