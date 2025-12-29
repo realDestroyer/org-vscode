@@ -16,6 +16,9 @@ examples/**
 Images/**
 org-vscode/**
 
+# Build helpers
+scripts/**
+
 # Tooling / docs not needed at runtime
 .gitignore
 tsconfig.json
@@ -30,6 +33,9 @@ TYPESCRIPT
 CONTRIBUTING.md
 manifest.scm
 JIRA integration.txt
+
+# Local release-note scratch files
+release-notes-*.md
 
 # Local patch artifacts / packages
 *.orig
