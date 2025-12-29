@@ -590,11 +590,11 @@
 		]
 	},
 	"scripts": {
-			"postinstall": "npm run bundle && node ./org-vscode/scripts/fetch-media.js",
+		"postinstall": "npm run bundle",
 		"fetch-media": "node ./org-vscode/scripts/fetch-media.js",
-			"test": "npm run bundle && node ./org-vscode/test/runTest.js",
-			"bundle": "node -e \"require('fs').mkdirSync('dist', { recursive: true })\" && esbuild ./org-vscode/out/extension.js --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node --minify",
-			"vscode:prepublish": "npm run bundle",
+		"test": "npm run bundle && node ./org-vscode/test/runTest.js",
+		"bundle": "node -e \"require('fs').mkdirSync('dist', { recursive: true })\" && node ./org-vscode/scripts/fetch-media.js && esbuild ./org-vscode/out/extension.js --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node --minify && node ./scripts/copy-media.js",
+		"vscode:prepublish": "npm run bundle",
 		"package": "npm run bundle && npx vsce package"
 	},
 	"devDependencies": {
