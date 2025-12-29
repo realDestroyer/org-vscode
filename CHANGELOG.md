@@ -2,6 +2,11 @@
 
 # [Unreleased]
 
+# [2.0.1] 12-28-25
+`Fixed`
+
+- **Year-in-Review packaging:** ensures `media/yearDashboardView.js` ships in the VSIX so the dashboard webview loads correctly.
+
 # [2.0.0] 12-28-25
 `Enhanced / Breaking`
 

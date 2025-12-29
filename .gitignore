@@ -1,0 +1,18 @@
+.gitignore
+# Ignore node_modules directory
+node_modules
+.vscode-test/
+*.vsix
+/media/
+/Archived
+*integration.txt
+org-vscode/package.json
+org-vscode/roadmap.md
+org-vscode/changelog.md
+org-vscode/README.md
+/Test Org Files
+Roadmap/11-yearly-summary-report.md
+org-vscode/tsconfig.json
+org-vscode/package-lock.json
+org-vscode/Logo.png
+org-vscode/.vscodeignore
