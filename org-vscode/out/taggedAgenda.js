@@ -8,6 +8,9 @@ const continuedTaskHandler = require("./continuedTaskHandler");
 const { stripAllTagSyntax, parseFileTagsFromText, parseTagGroupsFromText, createInheritanceTracker, matchesTagMatchString, normalizeTagMatchInput, getPlanningForHeading, isPlanningLine, parsePlanningFromText, normalizeTagsAfterPlanning } = require("./orgTagUtils");
 
 module.exports = async function taggedAgenda() {
+  const config = vscode.workspace.getConfiguration("Org-vscode");
+  const includeContinuedInTaggedAgenda = config.get("includeContinuedInTaggedAgenda", false);
+
   const tagInput = await vscode.window.showInputBox({
     prompt: "Enter tag match string (Emacs style). Examples: +WORK+URGENT, WORK|HOME, +A-B. (Compat: any:a,b / all:a,b / a,b)",
     validateInput: input => {
@@ -34,8 +37,14 @@ module.exports = async function taggedAgenda() {
     lines.forEach((line, index) => {
       const tagState = tracker.handleLine(line);
       const keywordMatch = line.match(/\b(TODO|IN_PROGRESS|DONE|CONTINUED|ABANDONED)\b/);
+      const status = keywordMatch ? keywordMatch[1] : null;
       const startsWithSymbol = /^\s*([⊙⊖⊘⊜⊗]|\*+)/.test(line);
       if (!tagState.isHeading || !keywordMatch || !startsWithSymbol) {
+        return;
+      }
+
+      // CONTINUED is primarily a historical breadcrumb; by default Tagged Agenda omits it.
+      if (status === "CONTINUED" && !includeContinuedInTaggedAgenda) {
         return;
       }
 
