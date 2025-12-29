@@ -1,6 +1,6 @@
 # Org-vscode
 
-![Version](https://img.shields.io/badge/version-v2.0.0-blue.svg)
+![Version](https://img.shields.io/badge/version-v2.0.2-blue.svg)
 
 > A fast, keyboard-driven Org Mode–style task manager built for Visual Studio Code.
 > Inspired by Emacs Org Mode
@@ -89,6 +89,14 @@ Optional indentation controls (decorations + Alt+Left/Right indentation):
 "Org-vscode.adjustHeadingIndentation": 2
 ```
 
+Indent-only mode (Org-Indent style, keeps a trailing `*` visible even when unicode markers are off):
+
+```json
+"Org-vscode.headingMarkerStyle": "asterisks",
+"Org-vscode.decorateUnicodeHeadings": false,
+"Org-vscode.decorateHeadingIndentation": true
+```
+
 **Extension Settings (Screenshots)**
 
 Extensions → org-vscode → Settings:
@@ -118,7 +126,7 @@ Use end-of-headline tags (Emacs style) to categorize tasks, e.g. `:URGENT:PROJEC
 Filter tasks by one or multiple tags, grouped by file. Click-to-edit support.
 
 **Table Builder**  
-Visually generate Org-style tables with alignment, row headers, and optional labels.
+Visually generate Org-style tables with alignment, row headers, and optional labels. Output is a canonical Org pipe table (`| ... |`) so Emacs/org-mode can edit/align it.
 
 **Align Timestamps**  
 Neatly formats all `SCHEDULED:` timestamps to the same column width.

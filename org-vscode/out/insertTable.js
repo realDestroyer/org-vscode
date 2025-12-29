@@ -53,9 +53,9 @@ function getWebviewContent(webview, nonce) {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src ${webview.cspSource} data:; style-src ${webview.cspSource}; script-src 'nonce-${nonce}';">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src ${webview.cspSource} data:; style-src ${webview.cspSource} 'nonce-${nonce}'; script-src 'nonce-${nonce}';">
   <title>Insert Org Table</title>
-  <style>
+  <style nonce="${nonce}">
     body {
       font-family: monospace;
       background-color: #1e1e1e;
@@ -133,12 +133,20 @@ function getWebviewContent(webview, nonce) {
       <option value="r">Right</option>
     </select>
   </div>
-  <button onclick="generateTable()">Generate Table</button>
-  <button onclick="submitTable()">Insert Table</button>
+  <button id="generateBtn" type="button">Generate Table</button>
+  <button id="insertBtn" type="button">Insert Table</button>
   <div id="tableContainer"></div>
 
   <script nonce="${nonce}">
     const vscode = acquireVsCodeApi();
+
+    document.getElementById('generateBtn').addEventListener('click', () => {
+      generateTable();
+    });
+
+    document.getElementById('insertBtn').addEventListener('click', () => {
+      submitTable();
+    });
 
     function generateTable() {
       const rows = parseInt(document.getElementById('rows').value);
@@ -189,57 +197,99 @@ function getWebviewContent(webview, nonce) {
 }
 
 function formatOrgTable(rows, hasHeader, hasColHeaders, hasRowNumbers, align) {
-  if (rows.length === 0) return '';
+  if (!Array.isArray(rows) || rows.length === 0) return '';
   const colCount = rows[0].length;
 
-  const colWidths = Array(colCount).fill(0);
-  rows.forEach(row => row.forEach((cell, i) => {
-    colWidths[i] = Math.max(colWidths[i], cell.length);
-  }));
+  // Build a canonical org-table (pipe) representation so Emacs/org-mode can edit/align it.
+  // Example:
+  // | A | B |
+  // |---+---|
+  // |   |   |
 
-  const rowLabelWidth = hasRowNumbers ? Math.max(3, String(rows.length).length) : 0;
-
-  const formatCell = (cell, i) => {
-    if (align === 'r') return cell.padStart(colWidths[i], ' ');
-    if (align === 'c') {
-      const pad = colWidths[i] - cell.length;
-      const padStart = Math.floor(pad / 2);
-      const padEnd = pad - padStart;
-      return ' '.repeat(padStart) + cell + ' '.repeat(padEnd);
-    }
-    return cell.padEnd(colWidths[i], ' ');
-  };
-
-  const formatRow = row => row.map((cell, i) => formatCell(cell || '', i)).join(' │ ');
-
-  const borderTop    = '┌' + (hasRowNumbers ? '────┬' : '') + colWidths.map(w => '─'.repeat(w + 2)).join('┬') + '┐\n';
-  const borderHeader = '├' + (hasRowNumbers ? '────┼' : '') + colWidths.map(w => '─'.repeat(w + 2)).join('┼') + '┤\n';
-  const borderRow    = '├' + (hasRowNumbers ? '────┼' : '') + colWidths.map(w => '─'.repeat(w + 2)).join('┼') + '┤\n';
-  const borderBottom = '└' + (hasRowNumbers ? '────┴' : '') + colWidths.map(w => '─'.repeat(w + 2)).join('┴') + '┘\n';
-
-  let output = '(╯°□°)╯︵ ┻━┻\n';
-  output += borderTop;
+  const headerRows = [];
+  let bodyRows = rows.slice();
 
   if (hasColHeaders) {
     const labels = Array.from({ length: colCount }, (_, i) => String.fromCharCode(65 + i));
-    output += (hasRowNumbers ? '│    │ ' : '│ ') + formatRow(labels) + ' │\n';
-    output += borderHeader;
+    headerRows.push(labels);
   }
 
-  if (hasHeader) {
-    output += (hasRowNumbers ? '│    │ ' : '│ ') + formatRow(rows[0]) + ' │\n';
-    output += borderHeader;
-    rows = rows.slice(1);
+  if (hasHeader && bodyRows.length) {
+    headerRows.push(bodyRows[0]);
+    bodyRows = bodyRows.slice(1);
   }
 
-  rows.forEach((row, i) => {
-    const rowNum = hasRowNumbers ? '│ ' + String(i + 1).padStart(2, ' ') + ' │ ' : '│ ';
-    output += rowNum + formatRow(row) + ' │\n';
-    if (i < rows.length - 1) output += borderRow;
+  const combinedRows = [];
+  const rowNumberWidth = hasRowNumbers ? Math.max(1, String(bodyRows.length || 1).length) : 0;
+
+  headerRows.forEach((r) => {
+    combinedRows.push(hasRowNumbers ? [""] : []);
+    combinedRows[combinedRows.length - 1].push(...r);
   });
 
-  output += borderBottom;
-  return output;
+  bodyRows.forEach((r, idx) => {
+    if (hasRowNumbers) {
+      combinedRows.push([String(idx + 1).padStart(rowNumberWidth, " "), ...r]);
+    } else {
+      combinedRows.push(r);
+    }
+  });
+
+  const effectiveColCount = hasRowNumbers ? colCount + 1 : colCount;
+  const widths = Array(effectiveColCount).fill(1);
+  combinedRows.forEach((r) => {
+    for (let i = 0; i < effectiveColCount; i++) {
+      const cell = (r[i] ?? "").toString();
+      widths[i] = Math.max(widths[i], cell.length);
+    }
+  });
+
+  function formatCell(cell, colIndex) {
+    const value = (cell ?? "").toString();
+    if (align === "r") return value.padStart(widths[colIndex], " ");
+    if (align === "c") {
+      const pad = widths[colIndex] - value.length;
+      const left = Math.floor(pad / 2);
+      const right = pad - left;
+      return " ".repeat(left) + value + " ".repeat(right);
+    }
+    return value.padEnd(widths[colIndex], " ");
+  }
+
+  function formatRow(row) {
+    const cells = [];
+    for (let i = 0; i < effectiveColCount; i++) {
+      cells.push(` ${formatCell(row[i], i)} `);
+    }
+    return `|${cells.join("|")}|`;
+  }
+
+  function formatHLine() {
+    const parts = widths.map((w) => "-".repeat(w + 2));
+    return `|${parts.join("+")}|`;
+  }
+
+  const lines = [];
+  let headerCount = headerRows.length;
+
+  // Emit header rows (if any), then a separator.
+  for (let i = 0; i < headerCount; i++) {
+    lines.push(formatRow(combinedRows[i]));
+  }
+  if (headerCount > 0) {
+    lines.push(formatHLine());
+  }
+
+  // Emit body rows. If no headers at all, still emit a minimal table body.
+  if (combinedRows.length === 0) {
+    lines.push(formatRow(Array(effectiveColCount).fill("")));
+  } else {
+    for (let i = headerCount; i < combinedRows.length; i++) {
+      lines.push(formatRow(combinedRows[i]));
+    }
+  }
+
+  return lines.join("\n") + "\n";
 }
 
 module.exports = {

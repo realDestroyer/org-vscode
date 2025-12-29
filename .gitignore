@@ -4,6 +4,7 @@ node_modules
 dist/
 *.vsix
 /media/
+/snippets/
 /Archived
 *integration.txt
 org-vscode/package.json

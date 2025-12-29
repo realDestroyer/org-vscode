@@ -1,6 +1,6 @@
 ﻿# Roadmap
 
-Live version: 2.0.0
+Live version: 2.0.2
 
 These are the features that I have either already implemented, or plan to in the near future.
 
@@ -9,6 +9,10 @@ These are the features that I have either already implemented, or plan to in the
 | Feature Name              | Description                                                                                | Progress    | Version  | Author        |
 | ------------------------- | ------------------------------------------------------------------------------------------ | ----------- | -------- | ------------- |
 | v2 Org-mode Alignment     | Emacs-style end-of-headline tags, FILETAGS inheritance, planning lines under headings, CLOSED stamp, and explicit migration command | DONE | v2.0.0 | realDestroyer |
+| Tagged Agenda CONTINUED default | Tagged Agenda omits CONTINUED tasks by default (opt-in setting to include) to avoid duplicates when auto-forwarding | DONE | v2.0.2 | realDestroyer |
+| Org-Indent-style indent decoration | When unicode decorations are off, indentation decorations still render with a trailing `*` (Emacs Org-Indent behavior) | DONE | v2.0.2 | realDestroyer |
+| Insert Table (Org pipe output) | Insert Table webview generates canonical Org pipe tables and functions correctly under strict CSP | DONE | v2.0.2 | realDestroyer |
+| Snippets ship in VSIX | Ensure `snippets/vso.json` is included in packaged VSIX so snippet completions work after install | DONE | v2.0.2 | realDestroyer |
 | Multi-line Selection Editing | Most editor shortcuts (status, schedule, deadline, tags, headings, date adjusters) apply to all selected task lines | DONE | v1.10.8 | realDestroyer |
 | Keybinding Language-Mode Resilience | Core shortcuts keep working even when `.org` files are not in `vso` language mode | DONE | v1.10.9 | realDestroyer |
 | TODO Notifications        | Notify users of status outside VSCode (email, sms, etc.)                                   | Not Started |          | realDestroyer |

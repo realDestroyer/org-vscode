@@ -31,6 +31,16 @@ Optional indentation controls (decorations + Alt+Left/Right indentation):
 "Org-vscode.adjustHeadingIndentation": 2
 ```
 
+Indent-only mode (Org-Indent style)
+
+If you prefer plain `*` headings but still want visual indentation, turn unicode markers off and leave indentation on. Headings will keep a trailing `*` visible (like Emacs Org-Indent):
+
+```json
+"Org-vscode.headingMarkerStyle": "asterisks",
+"Org-vscode.decorateUnicodeHeadings": false,
+"Org-vscode.decorateHeadingIndentation": true
+```
+
 ### Settings screenshots
 
 Extensions → org-vscode → Settings:
