@@ -34,6 +34,9 @@ CONTRIBUTING.md
 manifest.scm
 JIRA integration.txt
 
+# Local release-note scratch files
+release-notes-*.md
+
 # Local patch artifacts / packages
 *.orig
 *.rej
