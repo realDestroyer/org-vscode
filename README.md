@@ -1,6 +1,6 @@
 # Org-vscode
 
-![Version](https://img.shields.io/badge/version-v2.0.2-blue.svg)
+![Version](https://img.shields.io/badge/version-v2.1.0-blue.svg)
 
 > A fast, keyboard-driven Org Mode–style task manager built for Visual Studio Code.
 > Inspired by Emacs Org Mode
@@ -24,6 +24,9 @@ Whether you're an Emacs power user or just want a highly structured task system,
 * Export current active tasks for quick review
 * Quickly build tables, checklists, and templates
 * **Customize syntax colors with a visual UI**
+* Whole-line TODO state highlighting (configurable backgrounds)
+* Emacs-style emphasis rendering (bold/italic/underline/strike) with hidden markers while not editing
+* Quick toggle commands to wrap selections with emphasis markers
 * Work entirely from the keyboard
 
 ---
