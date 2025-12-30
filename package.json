@@ -2,7 +2,7 @@
 	"name": "org-vscode",
 	"displayName": "org-vscode",
 	"description": "Quickly create todo lists, take notes, plan projects and organize your thoughts.",
-	"version": "2.0.2",
+	"version": "2.1.0",
 	"repository": "https://www.github.com/realDestroyer/org-vscode",
 	"icon": "Logo.png",
 	"publisher": "realDestroyer",
@@ -313,6 +313,24 @@
 					"order": 7,
 					"default": false,
 					"description": "When enabled, Tagged Agenda results will include CONTINUED tasks. By default they are omitted since CONTINUED is intended as a historical breadcrumb when a task moved forward."
+				},
+				"Org-vscode.decorateTodoStateLines": {
+					"type": "boolean",
+					"order": 8,
+					"default": true,
+					"description": "Decorate entire task heading lines with a background color based on TODO keyword (uses your editor.tokenColorCustomizations TextMate rule background for the keyword scopes)."
+				},
+				"Org-vscode.autoDoneWhenAllCheckboxesChecked": {
+					"type": "boolean",
+					"order": 9,
+					"default": false,
+					"description": "Automatically change a task heading to DONE when all checkboxes under it are checked. Works for editor edits and edits written by the agenda view."
+				},
+				"Org-vscode.decorateEmphasis": {
+					"type": "boolean",
+					"order": 10,
+					"default": true,
+					"description": "Render Org emphasis markers (*bold*, /italic/, _underline_) using editor decorations and hide the marker characters unless the cursor is on them."
 				}
 			}
 		},
@@ -360,6 +378,18 @@
 			{
 				"command": "extension.openSyntaxColorCustomizer",
 				"title": "org-vscode Customize Syntax Colors"
+			},
+			{
+				"command": "extension.toggleBoldMarkup",
+				"title": "Org-vscode: Toggle Bold Markup"
+			},
+			{
+				"command": "extension.toggleItalicMarkup",
+				"title": "Org-vscode: Toggle Italic Markup"
+			},
+			{
+				"command": "extension.toggleUnderlineMarkup",
+				"title": "Org-vscode: Toggle Underline Markup"
 			},
 			{
 				"command": "extension.createVsoFile",

@@ -46,6 +46,10 @@ const { generateExecutiveReport } = require("./yearExecutiveReport");
 const { openYearInReview } = require("./yearDashboard");
 const { openSyntaxColorCustomizer } = require("./syntaxColorCustomizer");
 const { registerUnicodeHeadingDecorations } = require("./unicodeHeadingDecorations");
+const { registerTodoLineDecorations } = require("./todoLineDecorations");
+const { registerCheckboxAutoDone } = require("./checkboxAutoDone");
+const { registerMarkupCommands } = require("./markupCommands");
+const { registerOrgEmphasisDecorations } = require("./orgEmphasisDecorations");
 const { migrateFileToV2 } = require("./migrateFileToV2");
 
 // Startup log for debugging
@@ -132,6 +136,18 @@ function numOfSpaces(asterisk) {
 function activate(ctx) {
   // Visual-only unicode headings for org-style '*' files (no file rewrites)
   registerUnicodeHeadingDecorations(ctx);
+
+  // Whole-line task state highlighting (uses the user's token color customizations for background colors)
+  registerTodoLineDecorations(ctx);
+
+  // Automatically mark tasks DONE when all checkboxes are checked
+  registerCheckboxAutoDone(ctx);
+
+  // Simple org emphasis helpers: wrap/toggle * / _ around selections
+  registerMarkupCommands(ctx);
+
+  // Emacs-style emphasis rendering (bold/italic/underline) + hide markers when not editing them
+  registerOrgEmphasisDecorations(ctx);
 
   // Date format changes are not auto-applied to existing files because swapping
   // MM-DD and DD-MM can be ambiguous (e.g. 04-05-2026). Provide an explicit command instead.

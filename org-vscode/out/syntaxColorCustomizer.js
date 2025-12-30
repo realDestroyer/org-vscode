@@ -14,141 +14,169 @@ const DEFAULT_COLORS = {
   "Body / Notes Text": {
     scope: "source.vso",
     foreground: "#cccccc",
+    background: "",
     fontStyle: ""
   },
   "TODO Symbol": {
     scope: "constant.character.todo.vso",
     foreground: "#5CFF5C",
+    background: "",
     fontStyle: "bold"
   },
   "TODO Keyword": {
     scope: "keyword.control.todo.vso",
     foreground: "#24FF02",
+    background: "",
     fontStyle: "bold"
   },
   "TODO Task Text": {
     scope: "string.task.todo.vso",
     foreground: "#C0FCCC",
+    background: "",
     fontStyle: ""
   },
   "IN_PROGRESS Symbol": {
     scope: "constant.character.in_progress.vso",
     foreground: "#0062ff",
+    background: "",
     fontStyle: "bold"
   },
   "IN_PROGRESS Keyword": {
     scope: ["keyword.control.in_progress.vso", "support.constant.in_progress.vso"],
     foreground: "#33BFFF",
+    background: "",
     fontStyle: "italic"
   },
   "IN_PROGRESS Task Text": {
     scope: "string.task.in_progress.vso",
     foreground: "#C0E9FF",
+    background: "",
     fontStyle: ""
   },
   "CONTINUED Symbol": {
     scope: "constant.character.continued.vso",
     foreground: "#AAAAAA",
+    background: "",
     fontStyle: "bold"
   },
   "CONTINUED Keyword": {
     scope: ["keyword.control.continued.vso", "markup.quote.continued.vso"],
     foreground: "#888888",
+    background: "",
     fontStyle: "italic"
   },
   "CONTINUED Task Text": {
     scope: "string.task.continued.vso",
     foreground: "#CCCCCC",
+    background: "",
     fontStyle: ""
   },
   "DONE Symbol": {
     scope: "constant.character.done.vso",
     foreground: "#9AFF8A",
+    background: "",
     fontStyle: "bold"
   },
   "DONE Keyword": {
     scope: ["keyword.control.done.vso", "entity.name.function.vso"],
     foreground: "#3AF605",
+    background: "",
     fontStyle: "bold"
   },
   "DONE Task Text": {
     scope: "string.task.done.vso",
     foreground: "#B3FFB3",
+    background: "",
     fontStyle: ""
   },
   "ABANDONED Symbol": {
     scope: "constant.character.abandoned.vso",
     foreground: "#FF5A5A",
+    background: "",
     fontStyle: "bold"
   },
   "ABANDONED Keyword": {
     scope: "keyword.control.abandoned.vso",
     foreground: "#FF3B3B",
+    background: "",
     fontStyle: "bold"
   },
   "ABANDONED Task Text": {
     scope: "string.task.abandoned.vso",
     foreground: "#FFC0C0",
+    background: "",
     fontStyle: ""
   },
   "SCHEDULED Stamp": {
     scope: "keyword.scheduled.vso",
     foreground: "#d1e800",
+    background: "",
     fontStyle: "bold"
   },
   "DEADLINE Stamp": {
     scope: ["keyword.deadline.vso", "markup.deleted.deadline.vso"],
     foreground: "#ff6b35",
+    background: "",
     fontStyle: "bold"
   },
   "CLOSED Stamp": {
     scope: "keyword.closed.vso",
     foreground: "#6c757d",
+    background: "",
     fontStyle: "italic"
   },
   "Timestamp": {
     scope: "constant.other.timestamp.vso",
     foreground: "#9d9d9d",
+    background: "",
     fontStyle: ""
   },
   "Tags": {
     scope: "entity.other.attribute-name.tag.vso",
     foreground: "#C984F7",
+    background: "",
     fontStyle: "bold"
   },
   "Agenda Date": {
     scope: "constant.numeric.date.vso",
     foreground: "#F7CA18",
+    background: "",
     fontStyle: "italic"
   },
   "Day Header Date": {
     scope: "constant.numeric.date.header.vso",
     foreground: "#F7CA18",
+    background: "",
     fontStyle: "bold"
   },
   "Org Directive": {
     scope: "meta.directive.vso",
     foreground: "#569cd6",
+    background: "",
     fontStyle: ""
   },
   "Property Key": {
     scope: "variable.other.property-key.vso",
     foreground: "#b5cea8",
+    background: "",
     fontStyle: ""
   },
   "Heading Level 1": {
     scope: "markup.heading.vso",
     foreground: "#dcdcaa",
+    background: "",
     fontStyle: "bold"
   },
   "Heading Level 2": {
     scope: "keyword.other.vso",
     foreground: "#dcdcaa",
+    background: "",
     fontStyle: "bold"
   },
   "Heading Level 3": {
     scope: "keyword.operator.vso",
     foreground: "#dcdcaa",
+    background: "",
     fontStyle: "bold"
   }
 };
@@ -269,6 +297,9 @@ function getCurrentColors() {
           if (rule.settings.foreground) {
             colors[name].foreground = rule.settings.foreground;
           }
+          if (rule.settings.background !== undefined) {
+            colors[name].background = rule.settings.background;
+          }
           if (rule.settings.fontStyle !== undefined) {
             colors[name].fontStyle = rule.settings.fontStyle;
           }
@@ -299,6 +330,7 @@ async function saveColors(colors) {
       scope: settings.scope,
       settings: {
         foreground: settings.foreground,
+        ...(settings.background ? { background: settings.background } : {}),
         ...(settings.fontStyle ? { fontStyle: settings.fontStyle } : {})
       }
     }));
@@ -378,7 +410,8 @@ function getWebviewContent(nonce, currentColors) {
     const scopesHtml = scopeNames.map(name => {
       const settings = currentColors[name];
       const technicalScope = Array.isArray(settings.scope) ? settings.scope.join(", ") : settings.scope;
-      const previewStyle = `color: ${settings.foreground}; ${settings.fontStyle ? `font-style: ${settings.fontStyle.includes('italic') ? 'italic' : 'normal'}; font-weight: ${settings.fontStyle.includes('bold') ? 'bold' : 'normal'};` : ''}`;
+      const supportsBackground = /\bKeyword\b/.test(name);
+      const previewStyle = `color: ${settings.foreground}; ${supportsBackground && settings.background ? `background-color: ${settings.background};` : ''} ${settings.fontStyle ? `font-style: ${settings.fontStyle.includes('italic') ? 'italic' : 'normal'}; font-weight: ${settings.fontStyle.includes('bold') ? 'bold' : 'normal'};` : ''}`;
       
       return `
         <div class="scope-row" data-scope="${name}">
@@ -388,6 +421,7 @@ function getWebviewContent(nonce, currentColors) {
           </div>
           <div class="scope-controls">
             <div class="color-picker-wrapper">
+            <span class="control-heading">Foreground</span>
               <input type="color" 
                      class="color-picker" 
                      data-scope="${name}" 
@@ -400,6 +434,23 @@ function getWebviewContent(nonce, currentColors) {
                      pattern="^#[0-9A-Fa-f]{6}$"
                      title="Hex color code">
             </div>
+            ${supportsBackground ? `
+            <div class="color-picker-wrapper" title="Keyword background">
+            <span class="control-heading">Background</span>
+              <input type="color" 
+              class="color-picker bg-color-picker" 
+                     data-scope="${name}" 
+                     value="${settings.background || '#000000'}"
+                     title="Pick background">
+              <input type="text" 
+              class="color-text bg-color-text" 
+                     data-scope="${name}" 
+                     value="${settings.background || ''}"
+                     placeholder="(none)"
+              pattern="^(#[0-9A-Fa-f]{6})?$"
+                     title="Hex background color (leave blank for none)">
+            </div>
+            ` : ''}
             <div class="font-style-wrapper">
               <label class="checkbox-label">
                 <input type="checkbox" 
@@ -593,6 +644,14 @@ function getWebviewContent(nonce, currentColors) {
       gap: 8px;
     }
 
+    .control-heading {
+      width: 78px;
+      text-align: right;
+      font-size: 12px;
+      color: var(--text-secondary);
+      user-select: none;
+    }
+
     .color-picker {
       width: 36px;
       height: 36px;
@@ -766,8 +825,8 @@ function getWebviewContent(nonce, currentColors) {
         if (!colors[BODY_NOTES_KEY]) return;
         colors[BODY_NOTES_KEY].foreground = foreground;
 
-        const picker = document.querySelector('.color-picker[data-scope="' + BODY_NOTES_KEY + '"]');
-        const textInput = document.querySelector('.color-text[data-scope="' + BODY_NOTES_KEY + '"]');
+        const picker = document.querySelector('.color-picker:not(.bg-color-picker)[data-scope="' + BODY_NOTES_KEY + '"]');
+        const textInput = document.querySelector('.color-text:not(.bg-color-text)[data-scope="' + BODY_NOTES_KEY + '"]');
         if (picker) picker.value = foreground;
         if (textInput) textInput.value = foreground;
 
@@ -796,6 +855,9 @@ function getWebviewContent(nonce, currentColors) {
         const preview = document.querySelector('.preview[data-scope="' + scopeName + '"]');
         if (preview) {
           let style = 'color: ' + settings.foreground + ';';
+          if (/\\bKeyword\\b/.test(scopeName) && settings.background) {
+            style += ' background-color: ' + settings.background + ';';
+          }
           if (settings.fontStyle) {
             if (settings.fontStyle.includes('italic')) style += ' font-style: italic;';
             if (settings.fontStyle.includes('bold')) style += ' font-weight: bold;';
@@ -806,15 +868,60 @@ function getWebviewContent(nonce, currentColors) {
         }
       }
 
+      // Background picker handlers (keyword entries only)
+      document.querySelectorAll('.bg-color-picker').forEach(picker => {
+        picker.addEventListener('input', function() {
+          const scope = this.dataset.scope;
+          const color = this.value;
+          if (!colors[scope]) return;
+          colors[scope].background = color;
+
+          const textInput = document.querySelector('.bg-color-text[data-scope="' + scope + '"]');
+          if (textInput) textInput.value = color;
+
+          updatePreview(scope);
+          markUnsaved();
+        });
+      });
+
+      document.querySelectorAll('.bg-color-text').forEach(input => {
+        input.addEventListener('input', function() {
+          const scope = this.dataset.scope;
+          if (!colors[scope]) return;
+          let color = this.value.trim();
+
+          if (!color) {
+            colors[scope].background = '';
+            updatePreview(scope);
+            markUnsaved();
+            return;
+          }
+
+          if (color && !color.startsWith('#')) {
+            color = '#' + color;
+          }
+
+          if (/^#[0-9A-Fa-f]{6}$/.test(color)) {
+            colors[scope].background = color;
+
+            const picker = document.querySelector('.bg-color-picker[data-scope="' + scope + '"]');
+            if (picker) picker.value = color;
+
+            updatePreview(scope);
+            markUnsaved();
+          }
+        });
+      });
+
       // Color picker change handler
-      document.querySelectorAll('.color-picker').forEach(picker => {
+      document.querySelectorAll('.color-picker:not(.bg-color-picker)').forEach(picker => {
         picker.addEventListener('input', function() {
           const scope = this.dataset.scope;
           const color = this.value;
           colors[scope].foreground = color;
           
           // Sync text input
-          const textInput = document.querySelector('.color-text[data-scope="' + scope + '"]');
+          const textInput = document.querySelector('.color-text:not(.bg-color-text)[data-scope="' + scope + '"]');
           if (textInput) textInput.value = color;
           
           updatePreview(scope);
@@ -823,7 +930,7 @@ function getWebviewContent(nonce, currentColors) {
       });
 
       // Color text input change handler
-      document.querySelectorAll('.color-text').forEach(input => {
+      document.querySelectorAll('.color-text:not(.bg-color-text)').forEach(input => {
         input.addEventListener('input', function() {
           const scope = this.dataset.scope;
           let color = this.value.trim();
@@ -838,7 +945,7 @@ function getWebviewContent(nonce, currentColors) {
             colors[scope].foreground = color;
             
             // Sync color picker
-            const picker = document.querySelector('.color-picker[data-scope="' + scope + '"]');
+            const picker = document.querySelector('.color-picker:not(.bg-color-picker)[data-scope="' + scope + '"]');
             if (picker) picker.value = color;
             
             updatePreview(scope);
@@ -937,13 +1044,17 @@ function getWebviewContent(nonce, currentColors) {
           Object.entries(message.colors).forEach(([name, settings]) => {
             colors[name] = settings;
             
-            const picker = document.querySelector('.color-picker[data-scope="' + name + '"]');
-            const textInput = document.querySelector('.color-text[data-scope="' + name + '"]');
+            const picker = document.querySelector('.color-picker:not(.bg-color-picker)[data-scope="' + name + '"]');
+            const textInput = document.querySelector('.color-text:not(.bg-color-text)[data-scope="' + name + '"]');
+            const bgPicker = document.querySelector('.bg-color-picker[data-scope="' + name + '"]');
+            const bgTextInput = document.querySelector('.bg-color-text[data-scope="' + name + '"]');
             const boldBox = document.querySelector('.font-bold[data-scope="' + name + '"]');
             const italicBox = document.querySelector('.font-italic[data-scope="' + name + '"]');
             
             if (picker) picker.value = settings.foreground;
             if (textInput) textInput.value = settings.foreground;
+            if (bgPicker) bgPicker.value = settings.background || '#000000';
+            if (bgTextInput) bgTextInput.value = settings.background || '';
             if (boldBox) boldBox.checked = settings.fontStyle && settings.fontStyle.includes('bold');
             if (italicBox) italicBox.checked = settings.fontStyle && settings.fontStyle.includes('italic');
             
