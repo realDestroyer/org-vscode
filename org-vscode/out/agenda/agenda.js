@@ -662,28 +662,72 @@ module.exports = function () {
           0%, 100% { opacity: 1; }
           50% { opacity: 0.6; }
         }
-       .children-block {
-            margin-top: 6px;
-            font-family: monospace;
-            background-color: #f9f9f9;
-            padding: 8px;
-            border-radius: 6px;
-            white-space: pre-wrap;
+         .children-block {
+          margin-top: 8px;
+          font-family: monospace;
+          background-color: #f9f9f9;
+          padding: 8px;
+          border-radius: 6px;
+          display: block;
+          width: 100%;
+          box-sizing: border-box;
+          clear: both;
         }
         .children-block summary {
-            cursor: pointer;
-            font-weight: bold;
-            color: #444;
+          cursor: pointer;
+          font-weight: bold;
+          color: #444;
+          text-align: left;
         }
         .children-block pre {
-            margin: 6px 0 0 0;
-            font-size: 13px;
-            color: #000;
+          margin: 6px 0 0 0;
+          font-size: 13px;
+          color: #000;
+          white-space: pre-wrap;
+          overflow-wrap: anywhere;
+          word-break: break-word;
+          max-width: 100%;
+          box-sizing: border-box;
+          overflow-x: auto;
+        }
+
+        #file-bubbles {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 8px;
+          padding: 8px 0 12px 0;
+          border-bottom: 1px solid rgba(0,0,0,0.1);
+          margin-bottom: 8px;
+        }
+
+        .file-chip {
+          display: inline-flex;
+          align-items: center;
+          padding: 6px 12px;
+          border-radius: 999px;
+          font-size: 12px;
+          font-weight: 700;
+          cursor: pointer;
+          user-select: none;
+          border: 1px solid rgba(0,0,0,0.15);
+          background: #f3f3f3;
+          color: #111;
+        }
+
+        .file-chip.selected {
+          background: #2f6999;
+          color: #fff;
+          border-color: #2f6999;
+        }
+
+        .filtered-out {
+          display: none !important;
         }
         </style>
         <body>
 
         <h1>Agenda View</h1>
+        <div id="file-bubbles" aria-label="File filter"></div>
         <div id="display-agenda">
         ${itemInSortedObject}
         </div>      
@@ -691,10 +735,82 @@ module.exports = function () {
         const vscode = acquireVsCodeApi();
         const dateFormat = "${dateFormat}";
 
+        function getAllFilesFromDom() {
+          const els = Array.from(document.querySelectorAll('.filename[data-file]'));
+          const files = Array.from(new Set(els.map(e => e.dataset.file).filter(Boolean)));
+          files.sort((a, b) => a.localeCompare(b));
+          return files;
+        }
+
+        function buildFileChips(files) {
+          const container = document.getElementById('file-bubbles');
+          if (!container) return;
+
+          container.innerHTML = '';
+
+          const state = vscode.getState && vscode.getState();
+          const initial = state && typeof state.selectedFile === 'string' ? state.selectedFile : '';
+
+          const makeChip = (label, value) => {
+            const chip = document.createElement('div');
+            chip.className = 'file-chip';
+            chip.textContent = label;
+            chip.dataset.file = value;
+            chip.addEventListener('click', () => {
+              const selected = chip.dataset.file || '';
+              applyFileFilter(selected);
+              if (vscode.setState) {
+                vscode.setState({ selectedFile: selected });
+              }
+            });
+            return chip;
+          };
+
+          container.appendChild(makeChip('All files', ''));
+          for (const f of files) {
+            container.appendChild(makeChip(f, f));
+          }
+
+          applyFileFilter(initial);
+        }
+
+        function applyFileFilter(selectedFile) {
+          const chips = Array.from(document.querySelectorAll('.file-chip'));
+          chips.forEach(c => {
+            const v = c.dataset.file || '';
+            if (v === (selectedFile || '')) c.classList.add('selected');
+            else c.classList.remove('selected');
+          });
+
+          const panels = Array.from(document.querySelectorAll('.panel'));
+          panels.forEach(p => {
+            const fileEl = p.querySelector('.filename[data-file]');
+            const file = fileEl ? fileEl.dataset.file : '';
+            const match = !selectedFile || file === selectedFile;
+            if (match) p.classList.remove('filtered-out');
+            else p.classList.add('filtered-out');
+          });
+
+          // Hide day headings when no visible panels remain for that date.
+          const headingDivs = Array.from(document.querySelectorAll('div'))
+            .filter(d => Array.from(d.classList).some(c => c && c.startsWith('heading')));
+
+          headingDivs.forEach(h => {
+            const classes = Array.from(h.classList);
+            const dateClass = classes.find(c => c && c.startsWith('[') && c.endsWith(']'));
+            if (!dateClass) return;
+            const relatedPanels = panels.filter(p => p.classList.contains(dateClass));
+            const anyVisible = relatedPanels.some(p => !p.classList.contains('filtered-out'));
+            if (anyVisible) h.classList.remove('filtered-out');
+            else h.classList.add('filtered-out');
+          });
+        }
+
         // Load moment via CDN for formatting
         const script = document.createElement('script');
         script.src = "https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js";
         script.onload = () => {
+          buildFileChips(getAllFilesFromDom());
           document.addEventListener('click', function(event) {
             let class0 = event.srcElement.classList[0];
             let class1 = event.srcElement.classList[1];
@@ -704,7 +820,10 @@ module.exports = function () {
             if (!event.srcElement.classList.contains('panel')) {
               for (let i = 0; i < panels.length; i++) {
                 if (panels[i].classList.contains(class0) || panels[i].classList.contains(class1)) {
-                  panels[i].style.display = panels[i].style.display === 'block' ? 'none' : 'block';
+                  // Respect file filtering
+                  if (!panels[i].classList.contains('filtered-out')) {
+                    panels[i].style.display = panels[i].style.display === 'block' ? 'none' : 'block';
+                  }
                 }
               }
             }

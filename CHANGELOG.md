@@ -2,6 +2,16 @@
 
 # [Unreleased]
 
+# [2.1.0] 12-29-25
+`Enhanced`
+
+- **Agenda View:** Added file filter chips (quickly view one .org file or all).
+- **Agenda View:** Improved “Show Details” readability so expanded task details wrap and stay within the panel.
+- **TODO line decoration:** Optional whole-line background highlighting per task state (uses your tokenColorCustomizations backgrounds).
+- **Checkbox automation:** Optional auto-DONE when all child checkboxes under a heading are checked.
+- **Emphasis rendering:** Optional runtime styling for `*bold*`, `/italic/`, `_underline_`, `+strike+` with markers hidden unless you’re editing them.
+- **Editing commands:** Added emphasis wrap/toggle commands for bold/italic/underline.
+
 # [2.0.2] 12-29-25
 `Enhanced`
 
