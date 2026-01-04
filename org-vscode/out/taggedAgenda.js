@@ -6,6 +6,8 @@ const moment = require("moment");
 const taskKeywordManager = require("./taskKeywordManager");
 const continuedTaskHandler = require("./continuedTaskHandler");
 const { stripAllTagSyntax, parseFileTagsFromText, parseTagGroupsFromText, createInheritanceTracker, matchesTagMatchString, normalizeTagMatchInput, getPlanningForHeading, isPlanningLine, parsePlanningFromText, normalizeTagsAfterPlanning } = require("./orgTagUtils");
+const { computeCheckboxStatsByHeadingLine, formatCheckboxStats, findCheckboxCookie } = require("./checkboxStats");
+const { computeCheckboxToggleEdits } = require("./checkboxToggle");
 
 module.exports = async function taggedAgenda() {
   const config = vscode.workspace.getConfiguration("Org-vscode");
@@ -31,6 +33,7 @@ module.exports = async function taggedAgenda() {
     const filePath = path.join(orgDir, file);
     const fileText = fs.readFileSync(filePath, "utf8");
     const lines = fileText.split(/\r?\n/);
+    const checkboxStatsByLine = computeCheckboxStatsByHeadingLine(lines);
     const tracker = createInheritanceTracker(parseFileTagsFromText(fileText));
     const groups = parseTagGroupsFromText(fileText);
 
@@ -55,12 +58,30 @@ module.exports = async function taggedAgenda() {
 
         if (match) {
           const planning = getPlanningForHeading(lines, index);
+          const cb = checkboxStatsByLine.get(index) || { checked: 0, total: 0 };
+
+          // Capture indented child lines for details rendering.
+          const baseIndent = line.match(/^\s*/)?.[0] || "";
+          const children = [];
+          for (let k = index + 1; k < lines.length; k++) {
+            const nextLine = lines[k];
+            const nextIndent = nextLine.match(/^\s*/)?.[0] || "";
+            if (nextIndent.length > baseIndent.length) {
+              children.push({ text: nextLine, lineNumber: k + 1 });
+            } else {
+              break;
+            }
+          }
+
           agendaItems.push({
             file,
             line,
             lineNumber: index + 1,
             tags: taskTags,
-            scheduledDate: planning && planning.scheduled ? planning.scheduled : ""
+            scheduledDate: planning && planning.scheduled ? planning.scheduled : "",
+            checkboxChecked: cb.checked,
+            checkboxTotal: cb.total,
+            children
           });
         }
       }
@@ -268,6 +289,39 @@ function showTaggedAgendaView(tag, items) {
       console.log("🔄 Changing status:", newStatus, "in file:", file, "for task:", taskText, "with scheduled date:", scheduledDate);
 
       updateTaskStatusInFile(file, taskText, scheduledDate, newStatus, removeCompleted);
+    } else if (message.command === "toggleCheckbox") {
+      const file = String(message.file || "");
+      const lineNumber = Number(message.lineNumber);
+      if (!file || !Number.isFinite(lineNumber)) {
+        return;
+      }
+
+      const orgDir = getOrgFolder();
+      const filePath = path.join(orgDir, file);
+      const uri = vscode.Uri.file(filePath);
+
+      vscode.workspace.openTextDocument(uri).then(document => {
+        const lines = document.getText().split(/\r?\n/);
+        const edits = computeCheckboxToggleEdits(lines, lineNumber - 1);
+        if (!edits.length) {
+          return;
+        }
+
+        const workspaceEdit = new vscode.WorkspaceEdit();
+        for (const e of edits) {
+          if (e.lineIndex < 0 || e.lineIndex >= document.lineCount) continue;
+          const line = document.lineAt(e.lineIndex);
+          workspaceEdit.replace(uri, line.range, e.newText);
+        }
+
+        vscode.workspace.applyEdit(workspaceEdit).then(applied => {
+          if (!applied) {
+            vscode.window.showErrorMessage("Unable to toggle checkbox.");
+            return;
+          }
+          document.save();
+        });
+      });
     }
   });
 }
@@ -310,6 +364,60 @@ function getTaggedWebviewContent(webview, nonce, localMomentJs, tag, items) {
         .replace(/\b(TODO|DONE|IN_PROGRESS|CONTINUED|ABANDONED)\b\s*/g, "") // Keyword cleanup (stable matching)
         .trim();
 
+      const cookie = findCheckboxCookie(item.line);
+      const checkboxLabel = cookie
+        ? `<span class="checkbox-stats">${formatCheckboxStats({ checked: item.checkboxChecked, total: item.checkboxTotal }, cookie.mode)}</span>`
+        : "";
+
+      function escapeHtml(s) {
+        return String(s || "")
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/\"/g, "&quot;")
+          .replace(/'/g, "&#39;");
+      }
+
+      function escapeLeadingSpaces(s) {
+        const str = String(s || "");
+        const m = str.match(/^(\s*)/);
+        const lead = m ? m[1] : "";
+        const rest = str.slice(lead.length);
+        const leadEsc = lead.replace(/ /g, "&nbsp;").replace(/\t/g, "&nbsp;&nbsp;");
+        return leadEsc + escapeHtml(rest);
+      }
+
+      function renderChildrenBlock(children, fileName) {
+        const arr = Array.isArray(children) ? children : [];
+        if (!arr.length) return "";
+        const linesHtml = arr.map((c) => {
+          const text = c && typeof c === 'object' ? String(c.text || '') : String(c || '');
+          const lineNumber = c && typeof c === 'object' ? Number(c.lineNumber) : NaN;
+          const m = text.match(/^(\s*)([-+*]|\d+[.)])\s+\[( |x|X|-)\]\s+(.*)$/);
+          if (!m) {
+            return `<div class=\"detail-line\">${escapeLeadingSpaces(text)}</div>`;
+          }
+          const indentLen = (m[1] || "").length;
+          const bullet = escapeLeadingSpaces((m[1] || "") + (m[2] || "-"));
+          const state = String(m[3] || " ");
+          const rest = escapeHtml(m[4] || "");
+          const isChecked = state.toLowerCase() === "x";
+          const isPartial = state === "-";
+          const checkedAttr = isChecked ? "checked" : "";
+          const partialAttr = isPartial ? "data-state=\\\"partial\\\"" : "";
+          const safeFile = escapeHtml(fileName);
+          const safeLine = Number.isFinite(lineNumber) ? String(lineNumber) : "";
+          return (
+            `<div class=\"detail-line checkbox-line\">${bullet} ` +
+            `<input class=\"org-checkbox\" type=\"checkbox\" data-file=\"${safeFile}\" data-line=\"${safeLine}\" data-indent=\"${indentLen}\" ${partialAttr} ${checkedAttr}/> ` +
+            `<span class=\"checkbox-text\">${rest}</span></div>`
+          );
+        }).join("");
+        return `<details class=\"children-block\"><summary>Show Details</summary><div class=\"children-lines\">${linesHtml}</div></details>`;
+      }
+
+      const childrenBlock = renderChildrenBlock(item.children, file);
+
       const lateLabel = scheduledDate && moment(scheduledDate, acceptedDateFormats, true).isBefore(moment(), "day")
         ? `<span class="late">LATE: ${scheduledDate}</span>` : "";
 
@@ -319,10 +427,12 @@ function getTaggedWebviewContent(webview, nonce, localMomentJs, tag, items) {
             <span class="filename" data-file="${file}">${file}:</span>
             <span class="${keywordClass}" data-filename="${file}" data-text="${taskText}" data-date="${scheduledDate}">${keyword}</span>
             <span class="taskText">${taskText}</span>
+            ${checkboxLabel}
             ${lateLabel}
             <span class="scheduled">SCHEDULED</span>
             ${tagBubbles}
           </div>
+          ${childrenBlock}
         </div>`;
     }).join("");
 
@@ -567,6 +677,12 @@ body{
           font-family: 'Roboto Mono', sans-serif;
           font-weight: 400;
         }
+        .checkbox-stats {
+          float: left;
+          margin-left: 10px;
+          margin-top: 10px;
+          font-weight: 700;
+        }
         .expand-collapse {
           background-color: #555;
           color: white;
@@ -596,6 +712,41 @@ body{
           margin-top: 10px;
           box-shadow: 0 3px 6px rgba(0,0,0,0.16), 0 3px 6px rgba(0,0,0,0.23);
         }
+
+        .children-block {
+          margin-top: 8px;
+          font-family: monospace;
+          background-color: #f9f9f9;
+          padding: 8px;
+          border-radius: 6px;
+          display: block;
+          width: 100%;
+          box-sizing: border-box;
+          clear: both;
+        }
+        .children-block summary {
+          cursor: pointer;
+          font-weight: bold;
+          color: #444;
+          text-align: left;
+        }
+        .children-lines {
+          margin: 6px 0 0 0;
+          font-size: 13px;
+          color: #000;
+          white-space: pre-wrap;
+          overflow-wrap: anywhere;
+          word-break: break-word;
+          max-width: 100%;
+          box-sizing: border-box;
+        }
+        .detail-line {
+          font-family: monospace;
+          white-space: pre-wrap;
+        }
+        .org-checkbox {
+          vertical-align: middle;
+        }
   </style>
 </head>
 <body>
@@ -612,8 +763,117 @@ body{
       const vscode = acquireVsCodeApi();
       const dateFormat = "${dateFormat}";
 
+    // Initialize indeterminate display for partial checkboxes.
+    Array.from(document.querySelectorAll('input.org-checkbox[data-state="partial"]'))
+      .forEach(i => { try { i.indeterminate = true; } catch (e) {} });
+
       // Toggle file groups on file-tab click
       document.addEventListener('click', function(event) {
+          if (event.target && event.target.classList && event.target.classList.contains('org-checkbox')) {
+              event.stopPropagation();
+              const input = event.target;
+              const panel = input.closest('.panel');
+              if (!panel) return;
+
+              const inputs = Array.from(panel.querySelectorAll('input.org-checkbox'));
+              const idx = inputs.indexOf(input);
+              if (idx === -1) return;
+
+              function getIndent(el) {
+                return Number(el.dataset.indent || 0) || 0;
+              }
+
+              function subtreeEndIndex(startIndex) {
+                const baseIndent = getIndent(inputs[startIndex]);
+                for (let i = startIndex + 1; i < inputs.length; i++) {
+                  if (getIndent(inputs[i]) <= baseIndent) return i;
+                }
+                return inputs.length;
+              }
+
+              const baseIndent = getIndent(input);
+              const end = subtreeEndIndex(idx);
+              let hasDesc = false;
+              for (let i = idx + 1; i < end; i++) {
+                if (getIndent(inputs[i]) > baseIndent) { hasDesc = true; break; }
+              }
+
+              const currentlyChecked = !!input.checked;
+              const desiredChecked = currentlyChecked ? false : true;
+
+              const applyState = (el, checked, partial) => {
+                el.checked = !!checked;
+                el.indeterminate = !!partial;
+                if (partial) el.dataset.state = 'partial';
+                else delete el.dataset.state;
+              };
+
+              if (hasDesc) {
+                for (let i = idx; i < end; i++) {
+                  if (i !== idx && getIndent(inputs[i]) <= baseIndent) continue;
+                  applyState(inputs[i], desiredChecked, false);
+                }
+              } else {
+                applyState(input, desiredChecked, false);
+              }
+
+              for (let i = inputs.length - 1; i >= 0; i--) {
+                const indent = getIndent(inputs[i]);
+                const endI = subtreeEndIndex(i);
+                let hasChild = false;
+                let allChecked = true;
+                let anyChecked = false;
+                for (let j = i + 1; j < endI; j++) {
+                  if (getIndent(inputs[j]) <= indent) break;
+                  hasChild = true;
+                  if (inputs[j].checked) anyChecked = true;
+                  else allChecked = false;
+                }
+                if (!hasChild) continue;
+                if (!anyChecked) applyState(inputs[i], false, false);
+                else if (allChecked) applyState(inputs[i], true, false);
+                else applyState(inputs[i], false, true);
+              }
+
+              const badge = panel.querySelector('.checkbox-stats');
+              if (badge) {
+                const mode = (badge.textContent || '').includes('%') ? 'percent' : 'fraction';
+                const indents = inputs.map(getIndent);
+                const minIndent = indents.length ? Math.min(...indents) : 0;
+                const top = inputs
+                  .map((el, i) => ({ el, i }))
+                  .filter(x => getIndent(x.el) === minIndent);
+                let checkedCount = 0;
+                for (let t = 0; t < top.length; t++) {
+                  const i0 = top[t].i;
+                  const endT = (t + 1 < top.length) ? top[t + 1].i : inputs.length;
+                  if (inputs[i0].checked) { checkedCount++; continue; }
+                  let hasDesc2 = false;
+                  let allDesc = true;
+                  for (let j = i0 + 1; j < endT; j++) {
+                    if (getIndent(inputs[j]) <= minIndent) break;
+                    hasDesc2 = true;
+                    if (!inputs[j].checked) { allDesc = false; break; }
+                  }
+                  if (hasDesc2 && allDesc) checkedCount++;
+                }
+                const total = top.length;
+                if (mode === 'percent') {
+                  const pct = total > 0 ? Math.floor((checkedCount / total) * 100) : 0;
+                  badge.textContent = '[' + pct + '%]';
+                } else {
+                  badge.textContent = '[' + checkedCount + '/' + total + ']';
+                }
+              }
+
+              vscode.postMessage({
+                  command: 'toggleCheckbox',
+                  file: input.dataset.file,
+                  lineNumber: Number(input.dataset.line)
+              });
+              return;
+          }
+
           if (event.target.classList.contains("file-tab")) {
               let targetId = event.target.dataset.target;
               let groups = document.getElementsByClassName("file-group");
