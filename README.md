@@ -119,6 +119,13 @@ Add `DEADLINE: [<date>]` to tasks. Date formatting is controlled by `Org-vscode.
 **Agenda View**  
 See all scheduled TODO and IN\_PROGRESS tasks from all `.org` files in one clean, date-grouped panel. Fully clickable + status toggleable.
 
+**Checkboxes + Stats (Emacs-style)**  
+Add a checkbox statistics cookie (`[n/m]` or `[p%]`) to a heading or list item to show completion stats. In Agenda View and Tagged Agenda, expand **Show Details** to click checkboxes directly.
+
+<img src="https://github.com/realdestroyer/org-vscode/blob/master/Images/checkbox-example.png?raw=true" width="900" />
+
+<img src="https://github.com/realdestroyer/org-vscode/blob/master/Images/checkbox-agendaView-example.png?raw=true" width="900" />
+
 **Calendar View**  
 Drag & drop tasks to reschedule. Filter by tag. Auto-syncs to file.
 
@@ -127,6 +134,8 @@ Use end-of-headline tags (Emacs style) to categorize tasks, e.g. `:URGENT:PROJEC
 
 **Tagged Agenda View**  
 Filter tasks by one or multiple tags, grouped by file. Click-to-edit support.
+
+<img src="https://github.com/realdestroyer/org-vscode/blob/master/Images/checkbox-taggedAgenda-example.png?raw=true" width="900" />
 
 **Table Builder**  
 Visually generate Org-style tables with alignment, row headers, and optional labels. Output is a canonical Org pipe table (`| ... |`) so Emacs/org-mode can edit/align it.
@@ -189,6 +198,7 @@ Most editing shortcuts support multi-line selection: highlight multiple task lin
 | `Ctrl + Shift + ]`   | Unfold section                                         |
 | `Ctrl + Alt + S`     | Schedule a task (selection-aware)                      |
 | `Ctrl + Alt + D`     | Add deadline to task (selection-aware)                 |
+| `Ctrl + Alt + X`     | Toggle checkbox item on current line                   |
 | `Alt + Shift + →`    | Smart date forward (selection-aware)                   |
 | `Alt + Shift + ←`    | Smart date backward (selection-aware)                  |
 | `Ctrl + Shift + →`   | Deadline date forward (selection-aware)                |
