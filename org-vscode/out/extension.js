@@ -48,9 +48,13 @@ const { openSyntaxColorCustomizer } = require("./syntaxColorCustomizer");
 const { registerUnicodeHeadingDecorations } = require("./unicodeHeadingDecorations");
 const { registerTodoLineDecorations } = require("./todoLineDecorations");
 const { registerCheckboxAutoDone } = require("./checkboxAutoDone");
+const { registerCheckboxStatsDecorations } = require("./checkboxStatsDecorations");
 const { registerMarkupCommands } = require("./markupCommands");
 const { registerOrgEmphasisDecorations } = require("./orgEmphasisDecorations");
 const { migrateFileToV2 } = require("./migrateFileToV2");
+const { insertCheckboxItem } = require("./insertCheckboxItem");
+const { toggleCheckboxCookie } = require("./toggleCheckboxCookie");
+const { toggleCheckboxItemAtCursor } = require("./toggleCheckboxItem");
 
 // Startup log for debugging
 console.log("📌 agenda.js has been loaded in extension.js");
@@ -143,6 +147,9 @@ function activate(ctx) {
   // Automatically mark tasks DONE when all checkboxes are checked
   registerCheckboxAutoDone(ctx);
 
+  // Visual checkbox stats like [2/3] without rewriting file content
+  registerCheckboxStatsDecorations(ctx);
+
   // Simple org emphasis helpers: wrap/toggle * / _ around selections
   registerMarkupCommands(ctx);
 
@@ -212,6 +219,9 @@ function activate(ctx) {
   ctx.subscriptions.push(vscode.commands.registerCommand("extension.viewTaggedAgenda", taggedAgenda));
   ctx.subscriptions.push(vscode.commands.registerCommand("extension.openCalendarView", openCalendarView));
   ctx.subscriptions.push(vscode.commands.registerCommand("extension.openSyntaxColorCustomizer", openSyntaxColorCustomizer));
+  ctx.subscriptions.push(vscode.commands.registerCommand("extension.insertCheckboxItem", insertCheckboxItem));
+  ctx.subscriptions.push(vscode.commands.registerCommand("extension.toggleCheckboxCookie", toggleCheckboxCookie));
+  ctx.subscriptions.push(vscode.commands.registerCommand("extension.toggleCheckboxItem", toggleCheckboxItemAtCursor));
 
   // org-vscode.insertTable is registered inside insertTable.activate()
   insertTable.activate(ctx);
