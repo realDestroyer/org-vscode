@@ -2,6 +2,14 @@
 
 # [Unreleased]
 
+# [2.1.1] 01-04-26
+`Enhanced`
+
+- **Checkbox statistics (Emacs parity):** Supports `[n/m]` and `[p%]` cookies on headings and list items, with hierarchical counting (top-level items only; children determine parent completion).
+- **Checkbox toggling:** Toggle checkbox at cursor with `Ctrl+Alt+X` (command: Org-vscode: Toggle Checkbox Item).
+- **Agenda View / Tagged Agenda:** “Show Details” supports clicking checkboxes to toggle completion (writes back to source files).
+- **Docs:** Added checkbox usage screenshots and updated guides.
+
 # [2.1.0] 12-29-25
 `Enhanced`
 
