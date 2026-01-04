@@ -29,7 +29,8 @@ function createVscodeMock() {
     },
 
     languages: {
-      registerOnTypeFormattingEditProvider: () => disposable()
+      registerOnTypeFormattingEditProvider: () => disposable(),
+      registerCompletionItemProvider: () => disposable()
     },
 
     window: {

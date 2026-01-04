@@ -8,14 +8,6 @@
     ],
     "description": "Section Header"
   },
-  "todo_task": {
-    "prefix": "/todo",
-    "body": [
-      "* TODO $1",
-      "   SCHEDULED: [${CURRENT_DATE}]"
-    ],
-    "description": "New TODO task with scheduled date"
-  },
   "checklist_block": {
     "prefix": "/checklist",
     "body": [
@@ -24,24 +16,6 @@
       "- [ ] "
     ],
     "description": "Checklist block for subtasks"
-  },
-  "meeting_notes": {
-    "prefix": "/meeting",
-    "body": [
-      "* ${CURRENT_DATE} :: $1",
-      "- Attendees: ",
-      "- Notes:",
-      "- Action Items:"
-    ],
-    "description": "Meeting notes or daily log entry"
-  },
-  "tagged_task": {
-    "prefix": "/tagged",
-    "body": [
-      "* TODO $1 :PROJECT:URGENT:",
-      "   SCHEDULED: [${CURRENT_DATE}]"
-    ],
-    "description": "Tagged task template"
   },
   "basic_table_2x2": {
     "prefix": "/table2",
@@ -70,37 +44,6 @@
       "------------------------"
     ],
     "description": "Labeled section block"
-  },
-  "template_block": {
-    "prefix": "/template",
-    "body": [
-      "* TODO Task Name",
-      "   SCHEDULED: [${CURRENT_DATE}]",
-      "   CLOSED: []",
-      "",
-      "- Description:",
-      "- Tags: :TAG:",
-      "",
-      "------------------------"
-    ],
-    "description": "Full task template block"
-  },
-  "day_heading": {
-    "prefix": "/day",
-    "body": [
-      "* [${CURRENT_MONTH}-${CURRENT_DATE}-${CURRENT_YEAR} ${1|Mon,Tue,Wed,Thu,Fri,Sat,Sun|}] -------------------------------------------------------------------------------------------------------------------------------",
-      "    $0"
-    ],
-    "description": "New day heading with today's date and separator"
-  },
-  "deadline_task": {
-    "prefix": "/deadline",
-    "body": [
-      "* TODO $1",
-      "   SCHEDULED: [${CURRENT_MONTH}-${CURRENT_DATE}-${CURRENT_YEAR}]",
-      "   DEADLINE: [$2]"
-    ],
-    "description": "Task with scheduled date and deadline"
   },
   "add_deadline": {
     "prefix": "/dl",

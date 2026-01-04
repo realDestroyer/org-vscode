@@ -3,6 +3,7 @@ const fs = require("fs");
 const path = require("path");
 const moment = require("moment");
 const { getAllTagsFromLine, stripAllTagSyntax, isPlanningLine } = require("./orgTagUtils");
+const { getAcceptedDateFormats, parseDateStrict } = require("./dateUtils");
 
 const ORG_SYMBOL_REGEX = /\s*[⊙⊖⊘⊜⊗]\s*/g;
 const FORMULA_PREFIX_REGEX = /^[=+\-@]/;
@@ -167,11 +168,14 @@ function deriveYear(days) {
   if (!first) {
     return new Date().getFullYear();
   }
-  const parsed = moment(first.date, ["MM-DD-YYYY", "YYYY-MM-DD"], true);
+  const config = vscode.workspace.getConfiguration("Org-vscode");
+  const parsed = parseDateStrict(first.date, config);
   return parsed.isValid() ? parsed.year() : new Date().getFullYear();
 }
 
 function buildAggregates(days) {
+  const config = vscode.workspace.getConfiguration("Org-vscode");
+  const acceptedFormats = getAcceptedDateFormats(config);
   const aggregates = {
     totalTasks: 0,
     perStatus: {},
@@ -186,7 +190,7 @@ function buildAggregates(days) {
       task.tags.forEach(tag => {
         aggregates.perTag[tag] = (aggregates.perTag[tag] || 0) + 1;
       });
-      const monthKey = moment(task.scheduled || day.date, ["MM-DD-YYYY", "YYYY-MM-DD"], true);
+      const monthKey = moment(task.scheduled || day.date, acceptedFormats, true);
       const bucket = monthKey.isValid() ? monthKey.format("YYYY-MM") : "unscheduled";
       aggregates.perMonth[bucket] = (aggregates.perMonth[bucket] || 0) + 1;
     });

@@ -51,6 +51,7 @@ const { registerCheckboxAutoDone } = require("./checkboxAutoDone");
 const { registerMarkupCommands } = require("./markupCommands");
 const { registerOrgEmphasisDecorations } = require("./orgEmphasisDecorations");
 const { migrateFileToV2 } = require("./migrateFileToV2");
+const { registerDateSnippets } = require("./dateSnippets");
 
 // Startup log for debugging
 console.log("📌 agenda.js has been loaded in extension.js");
@@ -148,6 +149,10 @@ function activate(ctx) {
 
   // Emacs-style emphasis rendering (bold/italic/underline) + hide markers when not editing them
   registerOrgEmphasisDecorations(ctx);
+
+  // Date-aware snippet expansions that respect Org-vscode.dateFormat.
+  // (VS Code snippet JSON can't read extension settings.)
+  registerDateSnippets(ctx);
 
   // Date format changes are not auto-applied to existing files because swapping
   // MM-DD and DD-MM can be ambiguous (e.g. 04-05-2026). Provide an explicit command instead.
