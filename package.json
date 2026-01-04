@@ -324,7 +324,7 @@
 					"type": "boolean",
 					"order": 9,
 					"default": false,
-					"description": "Automatically change a task heading to DONE when all checkboxes under it are checked. Works for editor edits and edits written by the agenda view."
+					"description": "When enabled: automatically change a task heading to DONE when all checkboxes under it are checked, and change it back to IN_PROGRESS if any checkbox becomes unchecked. Works for editor edits and edits written by the agenda view."
 				},
 				"Org-vscode.decorateEmphasis": {
 					"type": "boolean",

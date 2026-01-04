@@ -798,8 +798,7 @@ body{
                 if (getIndent(inputs[i]) > baseIndent) { hasDesc = true; break; }
               }
 
-              const currentlyChecked = !!input.checked;
-              const desiredChecked = currentlyChecked ? false : true;
+              const desiredChecked = !!input.checked;
 
               const applyState = (el, checked, partial) => {
                 el.checked = !!checked;

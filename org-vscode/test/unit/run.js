@@ -9,6 +9,7 @@ const tests = [
   require(path.join(__dirname, 'command-registration.test.js')),
   require(path.join(__dirname, 'checkbox-stats.test.js')),
   require(path.join(__dirname, 'checkbox-cookie-toggle.test.js')),
+  require(path.join(__dirname, 'checkbox-auto-done.test.js')),
   require(path.join(__dirname, 'checkbox-toggle.test.js'))
 ];
 
