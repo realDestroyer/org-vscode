@@ -63,6 +63,7 @@ VS Code Settings editor (search for `Org-vscode:`):
 * [🧩 Org-vscode Snippets](#org-vscode-snippets)
 * [📂 Open a File by Tags or Titles](#open-a-file-by-tags-or-titles)
 * [📅 Agenda View & Scheduling](#agenda-view--scheduling)
+* [☑️ Checkboxes](#checkboxes)
 * [⏰ Deadlines](#deadlines)
 * [🔄 CONTINUED Auto-Forwarding](#continued-auto-forwarding)
 * [📼 Partial Demo](#partial-demo)
@@ -229,6 +230,33 @@ You can open a file using either:
 The Agenda View shows only **TODO** and **IN_PROGRESS** tasks. Tasks marked as CONTINUED, DONE, or ABANDONED are excluded for a cleaner view of what still needs attention.
 
 <img src="https://github.com/realdestroyer/org-vscode/blob/master/Images/openAgenda.gif?raw=true" width="700" height="400" />
+
+---
+
+## ☑️ Checkboxes <a id="checkboxes"></a>
+
+Checkbox completion stats are cookie-driven (Emacs-style): add `[n/m]` or `[p%]` to the end of a heading or list item to show stats.
+
+<img src="https://github.com/realdestroyer/org-vscode/blob/master/Images/checkbox-example.png?raw=true" width="900" />
+
+### Toggle a checkbox from the keyboard
+
+Place the cursor anywhere on a checkbox line (you do not need to put the cursor inside the `[ ]` brackets), then press:
+
+* `Ctrl + Alt + X` → **Org-vscode: Toggle Checkbox Item**
+
+This toggles the current checkbox and updates parent/child `[-]` / `[X]` / `[ ]` states.
+
+### Toggle checkboxes from Agenda / Tagged Agenda
+
+In both Agenda View and Tagged Agenda View:
+
+1. Expand **Show Details**
+2. Click any checkbox to toggle it
+
+<img src="https://github.com/realdestroyer/org-vscode/blob/master/Images/checkbox-agendaView-example.png?raw=true" width="900" />
+
+<img src="https://github.com/realdestroyer/org-vscode/blob/master/Images/checkbox-taggedAgenda-example.png?raw=true" width="900" />
 
 ---
 
