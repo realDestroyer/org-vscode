@@ -2,6 +2,12 @@
 
 # [Unreleased]
 
+# [2.1.2] 01-04-26
+`Fixed / Enhanced`
+
+- **Agenda View / Tagged Agenda:** Clicking a checkbox in “Show Details” now immediately updates the checkmark in the webview (no full refresh needed, so filters/expansions stay open).
+- **Checkbox auto-DONE:** When `Org-vscode.autoDoneWhenAllCheckboxesChecked` is enabled, tasks now revert from `DONE` back to `IN_PROGRESS` if any checkbox becomes unchecked (and `CLOSED` is removed).
+
 # [2.1.1] 01-04-26
 `Enhanced`
 
