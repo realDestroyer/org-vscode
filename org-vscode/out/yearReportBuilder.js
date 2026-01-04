@@ -1,5 +1,7 @@
 const path = require("path");
 const moment = require("moment");
+const vscode = require("vscode");
+const { getAcceptedDateFormats } = require("./dateUtils");
 
 const ORG_SYMBOL_REGEX = /\s*[⊙⊖⊘⊜⊗]\s*/g;
 
@@ -33,7 +35,9 @@ function buildReportModel(sourcePath, parsed) {
 
 function buildDashboardModel(sourcePath, parsed, options = {}) {
   const base = buildReportModel(sourcePath, parsed);
-  const tasks = flattenTasks(parsed.days);
+  const config = vscode.workspace.getConfiguration("Org-vscode");
+  const acceptedFormats = getAcceptedDateFormats(config);
+  const tasks = flattenTasks(parsed.days, acceptedFormats);
   const monthOrder = buildMonthOrder(parsed.year, tasks);
   const monthlyStatus = buildMonthlyStatusSeries(tasks, monthOrder);
   const tagMatrix = buildTagMatrix(tasks, monthOrder, options.tagLimit || 6);
@@ -260,13 +264,14 @@ function sanitizeText(value) {
     .trim();
 }
 
-function flattenTasks(days = []) {
+function flattenTasks(days = [], acceptedFormats) {
   const tasks = [];
   let id = 1;
   days.forEach(day => {
     (day.tasks || []).forEach(task => {
-      const scheduledMoment = moment(task.scheduled || day.date, ["MM-DD-YYYY", "YYYY-MM-DD"], true);
-      const dayMoment = moment(day.date, ["MM-DD-YYYY", "YYYY-MM-DD"], true);
+      const formats = acceptedFormats || ["MM-DD-YYYY", "YYYY-MM-DD"];
+      const scheduledMoment = moment(task.scheduled || day.date, formats, true);
+      const dayMoment = moment(day.date, formats, true);
       tasks.push({
         id: id++,
         date: day.date,
@@ -374,7 +379,8 @@ function buildTaskFeed(tasks, limit) {
 }
 
 function formatDisplayDate(date, weekday) {
-  const parsed = moment(date, ["MM-DD-YYYY", "YYYY-MM-DD"], true);
+  const config = vscode.workspace.getConfiguration("Org-vscode");
+  const parsed = moment(date, getAcceptedDateFormats(config), true);
   if (!parsed.isValid()) {
     return date || "";
   }

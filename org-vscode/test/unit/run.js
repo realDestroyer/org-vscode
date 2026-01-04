@@ -6,7 +6,8 @@
 const path = require('path');
 
 const tests = [
-  require(path.join(__dirname, 'command-registration.test.js'))
+  require(path.join(__dirname, 'command-registration.test.js')),
+  require(path.join(__dirname, 'date-format.test.js'))
 ];
 
 async function main() {
