@@ -10,12 +10,12 @@ function testUpsertCookiePlacementBeforeTags() {
   const line = '* Heading :WORK:HOME:';
   assert.strictEqual(
     upsertCheckboxCookieInHeadline(line, 'fraction'),
-    '* Heading [0/0] :WORK:HOME:'
+    '* Heading [/] :WORK:HOME:'
   );
 
   assert.strictEqual(
     upsertCheckboxCookieInHeadline(line, 'percent'),
-    '* Heading [0%] :WORK:HOME:'
+    '* Heading [%] :WORK:HOME:'
   );
 }
 
@@ -23,7 +23,7 @@ function testReplaceCookieInPlace() {
   const line = '* Heading [2/3] :TAG:';
   assert.strictEqual(
     upsertCheckboxCookieInHeadline(line, 'percent'),
-    '* Heading [0%] :TAG:'
+    '* Heading [%] :TAG:'
   );
 }
 
@@ -39,7 +39,7 @@ function testListItemCookieInsertion() {
   const line = '    - [-] Deliver country loving';
   assert.strictEqual(
     upsertCheckboxCookieInHeadline(line, 'fraction'),
-    '    - [-] Deliver country loving [0/0]'
+    '    - [-] Deliver country loving [/]'
   );
 }
 

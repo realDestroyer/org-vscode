@@ -26,7 +26,7 @@ function findNearestHeadingLine(document, fromLine) {
 function upsertCheckboxCookieInHeadline(lineText, mode) {
   const s = String(lineText || "");
   const cookie = findCheckboxCookie(s);
-  const placeholder = String(mode || "fraction").toLowerCase() === "percent" ? "[0%]" : "[0/0]";
+  const placeholder = String(mode || "fraction").toLowerCase() === "percent" ? "[%]" : "[/]";
 
   // Respect trailing :TAGS: by inserting before them.
   const tagsMatch = s.match(TRAILING_TAGS_REGEX);
@@ -90,14 +90,14 @@ async function toggleCheckboxCookie() {
 
   if (!cookie) {
     items = [
-      { label: "Insert checkbox cookie: [n/m]", description: "Shows fraction stats on this heading", action: "insert", mode: "fraction" },
-      { label: "Insert checkbox cookie: [p%]", description: "Shows percent stats on this heading", action: "insert", mode: "percent" }
+      { label: "Insert statistics cookie: [/]", description: "Shows fraction stats on this heading", action: "insert", mode: "fraction" },
+      { label: "Insert statistics cookie: [%]", description: "Shows percent stats on this heading", action: "insert", mode: "percent" }
     ];
   } else {
     items = [
       { label: "Remove checkbox cookie", description: "Stops showing checkbox stats on this heading", action: "remove" },
-      { label: "Switch cookie to [n/m]", description: "Fraction style", action: "switch", mode: "fraction" },
-      { label: "Switch cookie to [p%]", description: "Percent style", action: "switch", mode: "percent" }
+      { label: "Switch cookie to [/]", description: "Fraction style", action: "switch", mode: "fraction" },
+      { label: "Switch cookie to [%]", description: "Percent style", action: "switch", mode: "percent" }
     ];
   }
 

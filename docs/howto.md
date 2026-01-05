@@ -237,7 +237,7 @@ The Agenda View shows only **TODO** and **IN_PROGRESS** tasks. Tasks marked as C
 
 ## ☑️ Checkboxes <a id="checkboxes"></a>
 
-Checkbox completion stats are cookie-driven (Emacs-style): add `[n/m]` or `[p%]` to the end of a heading or list item to show stats.
+Checkbox completion stats are cookie-driven (Emacs-style): add `[/]` (fraction) or `[%]` (percent) to the end of a heading or list item to show stats (Org-vscode renders them as `[n/m]` or `[p%]`).
 
 <img src="https://github.com/realdestroyer/org-vscode/blob/master/Images/checkbox-example.png?raw=true" width="900" />
 
