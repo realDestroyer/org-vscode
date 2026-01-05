@@ -1,6 +1,6 @@
 ﻿# Roadmap
 
-Live version: 2.1.2
+Live version: 2.1.3
 
 These are the features that I have either already implemented, or plan to in the near future.
 
@@ -13,7 +13,7 @@ These are the features that I have either already implemented, or plan to in the
 | Org-Indent-style indent decoration | When unicode decorations are off, indentation decorations still render with a trailing `*` (Emacs Org-Indent behavior) | DONE | v2.0.2 | realDestroyer |
 | Insert Table (Org pipe output) | Insert Table webview generates canonical Org pipe tables and functions correctly under strict CSP | DONE | v2.0.2 | realDestroyer |
 | Snippets ship in VSIX | Ensure `snippets/vso.json` is included in packaged VSIX so snippet completions work after install | DONE | v2.0.2 | realDestroyer |
-| Checkbox stats + toggling | Emacs-style checkbox cookies (`[n/m]` and `[p%]`), hierarchical counting, clickable agenda details, and editor toggle shortcut | DONE | v2.1.1 | realDestroyer |
+| Checkbox + subtree stats | Org-mode statistics cookies (`[/]` and `[%]`), hierarchical counting, TODO-subtree completion included on heading cookies (DONE/ABANDONED count as complete), clickable agenda details, and editor toggle shortcut | DONE | v2.1.3 | realDestroyer |
 | Multi-line Selection Editing | Most editor shortcuts (status, schedule, deadline, tags, headings, date adjusters) apply to all selected task lines | DONE | v1.10.8 | realDestroyer |
 | Keybinding Language-Mode Resilience | Core shortcuts keep working even when `.org` files are not in `vso` language mode | DONE | v1.10.9 | realDestroyer |
 | TODO Notifications        | Notify users of status outside VSCode (email, sms, etc.)                                   | Not Started |          | realDestroyer |

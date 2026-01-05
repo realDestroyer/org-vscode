@@ -1,7 +1,7 @@
 "use strict";
 
 const vscode = require("vscode");
-const { computeHierarchicalCheckboxStatsInRange, findCheckboxCookie, formatCheckboxStats } = require("./checkboxStats");
+const { computeHierarchicalCheckboxStatsInRange, computeSubtreeCompletionStatsInRange, findCheckboxCookie, formatCheckboxStats } = require("./checkboxStats");
 
 const HEADING_LINE_REGEX = /^(\s*)(\*+|[⊙⊘⊜⊖⊗])\s+\S/;
 const LIST_ITEM_REGEX = /^\s*[-+*]\s+/;
@@ -105,7 +105,9 @@ function registerCheckboxStatsDecorations(ctx) {
         }
       }
 
-      const stats = computeHierarchicalCheckboxStatsInRange(lines, startLine, endLine, baseIndent);
+      const stats = isHeading
+        ? computeSubtreeCompletionStatsInRange(lines, startLine, endLine)
+        : computeHierarchicalCheckboxStatsInRange(lines, startLine, endLine, baseIndent);
       const formatted = formatCheckboxStats(stats, cookie.mode);
 
       const start = new vscode.Position(i, cookie.start);
