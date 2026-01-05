@@ -1,3 +1,7 @@
+<p align="center">
+	<img src="https://github.com/realDestroyer/org-vscode/blob/master/Images/org-vscode-logo.png?raw=true" alt="org-vscode" width="256" />
+</p>
+
 # Org-vscode
 
 ![Version](https://img.shields.io/badge/version-v2.1.2-blue.svg)
@@ -7,7 +11,7 @@
 
 ---
 
-## 🚀 What is Org-vscode?
+## What is Org-vscode?
 
 Organize your thoughts, tasks, projects, and notes — all inside VSCode — using a minimal Org file format with Org-compatible `*` headings (recommended) and optional decorative Unicode rendering.
 
@@ -31,9 +35,9 @@ Whether you're an Emacs power user or just want a highly structured task system,
 
 ---
 
-## 🧩 Core Features
+## Core Features
 
-## 🧭 v2 Format + Migration
+## v2 Format + Migration
 
 Org-vscode v2 follows Emacs Org-mode conventions more closely:
 
@@ -49,11 +53,9 @@ Org-vscode v2 follows Emacs Org-mode conventions more closely:
 
 ### Migrate a file (explicit, one-time)
 
-Run **Org-vscode: Migrate File to v2 Format**. This converts:
+Run **Org-vscode: Migrate File to v2 Format**.
 
-- legacy inline tags like `[+TAG:FOO,BAR]` → `:FOO:BAR:`
-- inline planning stamps on headlines → the planning line below the headline
-- `COMPLETED:` → `CLOSED:`
+- [Migration: v1 → v2 (why + what changes)](docs/migrate-v1-to-v2.md)
 
 ### Tag naming note (hyphens)
 
@@ -174,11 +176,12 @@ The dashboard reuses the same parser as the exporter, so updates stay in sync an
 
 ## Learn More
 
-Full How-To Guide (with examples, images, and keyboard shortcuts):
-[View the Org-vscode How-To →](https://github.com/realdestroyer/org-vscode/blob/master/howto.md)
-
-See recent changes in the [CHANGELOG](https://github.com/realdestroyer/org-vscode/blob/master/CHANGELOG.md)
-See what’s coming next on the [ROADMAP](https://github.com/realdestroyer/org-vscode/blob/master/roadmap.md)
+Full How-To Guide (examples, images, and keyboard shortcuts):
+- [How-To](https://github.com/realdestroyer/org-vscode/blob/master/docs/howto.md)
+- [Migration: v1 → v2](https://github.com/realdestroyer/org-vscode/blob/master/docs/migrate-v1-to-v2.md)
+- [Changelog](https://github.com/realdestroyer/org-vscode/blob/master/docs/CHANGELOG.md)
+- [Roadmap](https://github.com/realdestroyer/org-vscode/blob/master/docs/roadmap.md)
+- [All docs](https://github.com/realdestroyer/org-vscode/blob/master/docs/README.md)
 
 ---
 

@@ -28,6 +28,7 @@ build.ps1
 merge-to-master.ps1
 last_weeks_meals.txt
 howto.md
+CHANGELOG.md
 roadmap.md
 TYPESCRIPT
 CONTRIBUTING.md
