@@ -631,7 +631,8 @@
 		"test": "npm run bundle && node ./org-vscode/test/runTest.js",
 		"bundle": "node -e \"require('fs').mkdirSync('dist', { recursive: true })\" && node ./org-vscode/scripts/fetch-media.js && esbuild ./org-vscode/out/extension.js --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node --minify && node ./scripts/copy-media.js",
 		"vscode:prepublish": "npm run bundle",
-		"package": "npm run bundle && npx vsce package"
+		"package": "npm run bundle && npx vsce package --readme-path README.md --changelog-path docs/CHANGELOG.md",
+		"publish": "npm run bundle && npx vsce publish --readme-path README.md --changelog-path docs/CHANGELOG.md"
 	},
 	"devDependencies": {
 		"@types/mocha": "^2.2.42",
