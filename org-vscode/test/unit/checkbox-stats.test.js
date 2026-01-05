@@ -1,7 +1,7 @@
 const assert = require('assert');
 const path = require('path');
 
-const { computeCheckboxStatsByHeadingLine, computeHierarchicalCheckboxStatsInRange, hasCheckboxCookie, findCheckboxCookie, formatCheckboxStats } = require(path.join(__dirname, '..', '..', 'out', 'checkboxStats.js'));
+const { computeCheckboxStatsByHeadingLine, computeHierarchicalCheckboxStatsInRange, computeTodoStatsInRange, computeSubtreeCompletionStatsInRange, hasCheckboxCookie, findCheckboxCookie, formatCheckboxStats } = require(path.join(__dirname, '..', '..', 'out', 'checkboxStats.js'));
 
 function testCheckboxStatsHierarchicalByHeading() {
   const lines = [
@@ -44,6 +44,8 @@ function testCheckboxStatsHierarchicalNestedList() {
 function testCheckboxCookieDetection() {
   assert.strictEqual(hasCheckboxCookie('* Heading [2/3]'), true);
   assert.strictEqual(hasCheckboxCookie('* Heading [66%]'), true);
+  assert.strictEqual(hasCheckboxCookie('* Heading [/]'), true);
+  assert.strictEqual(hasCheckboxCookie('* Heading [%]'), true);
   assert.strictEqual(hasCheckboxCookie('* Heading'), false);
 
   assert.deepStrictEqual(findCheckboxCookie('* Heading [2/3]'), {
@@ -52,6 +54,49 @@ function testCheckboxCookieDetection() {
     raw: '[2/3]',
     mode: 'fraction'
   });
+
+  assert.deepStrictEqual(findCheckboxCookie('* Heading [/]'), {
+    start: 10,
+    end: 13,
+    raw: '[/]',
+    mode: 'fraction'
+  });
+
+  assert.deepStrictEqual(findCheckboxCookie('* Heading [%]'), {
+    start: 10,
+    end: 13,
+    raw: '[%]',
+    mode: 'percent'
+  });
+}
+
+function testTodoSubtreeStats() {
+  const lines = [
+    '* Parent',
+    '** TODO Child 1',
+    '** DONE Child 2',
+    '** ABANDONED Child 3',
+    '** Child 4 (no keyword)',
+    '** IN_PROGRESS Child 5'
+  ];
+
+  const stats = computeTodoStatsInRange(lines, 1, lines.length);
+  // TODO keywords only: TODO, DONE, ABANDONED, IN_PROGRESS => total 4; DONE/ABANDONED => checked 2.
+  assert.deepStrictEqual(stats, { checked: 2, total: 4 });
+}
+
+function testCombinedSubtreeStats() {
+  const lines = [
+    '* Parent [/] ',
+    '  - [ ] a',
+    '  - [X] b',
+    '** TODO Child',
+    '** DONE Child'
+  ];
+
+  const stats = computeSubtreeCompletionStatsInRange(lines, 1, lines.length);
+  // Checkbox top-level: a/b => 1/2. TODO subtree: TODO + DONE => 1/2. Combined => 2/4.
+  assert.deepStrictEqual(stats, { checked: 2, total: 4 });
 }
 
 function testCheckboxFormatting() {
@@ -68,5 +113,7 @@ module.exports = {
     testCheckboxStatsHierarchicalNestedList();
     testCheckboxCookieDetection();
     testCheckboxFormatting();
+    testTodoSubtreeStats();
+    testCombinedSubtreeStats();
   }
 };

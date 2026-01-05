@@ -2,7 +2,10 @@
 
 const HEADING_LINE_REGEX = /^(\s*)(\*+|[⊙⊘⊜⊖⊗])\s+\S/;
 const CHECKBOX_REGEX = /^\s*[-+*]\s+\[( |x|X|-)\]\s+/;
-const CHECKBOX_COOKIE_REGEX = /\[(\d+\/\d+|\d+%)\]/;
+const CHECKBOX_COOKIE_REGEX = /\[(\d+\/\d+|\d+%|\/|%)\]/;
+const HEADING_WITH_STATUS_REGEX = /^(\s*)(\*+|[⊙⊘⊜⊖⊗])\s+(TODO|IN_PROGRESS|CONTINUED|DONE|ABANDONED)\b/;
+
+const DONE_KEYWORDS = new Set(["DONE", "ABANDONED"]);
 
 function getIndentLength(line) {
   const m = String(line || "").match(/^\s*/);
@@ -80,6 +83,37 @@ function computeHierarchicalCheckboxStatsInRange(lines, startInclusive, endExclu
   return { checked: checkedCount, total: topLevel.length };
 }
 
+function computeTodoStatsInRange(lines, startInclusive, endExclusive) {
+  const safeLines = Array.isArray(lines) ? lines : [];
+  const start = Math.max(0, Number(startInclusive) || 0);
+  const end = Math.min(safeLines.length, (endExclusive == null ? safeLines.length : Number(endExclusive)));
+
+  let total = 0;
+  let checked = 0;
+
+  for (let i = start; i < end; i++) {
+    const line = String(safeLines[i] || "");
+    const m = line.match(HEADING_WITH_STATUS_REGEX);
+    if (!m) continue;
+    const status = String(m[3] || "");
+    total += 1;
+    if (DONE_KEYWORDS.has(status)) {
+      checked += 1;
+    }
+  }
+
+  return { checked, total };
+}
+
+function computeSubtreeCompletionStatsInRange(lines, startInclusive, endExclusive) {
+  const checkbox = computeHierarchicalCheckboxStatsInRange(lines, startInclusive, endExclusive, -1);
+  const todo = computeTodoStatsInRange(lines, startInclusive, endExclusive);
+  return {
+    checked: (Number(checkbox.checked) || 0) + (Number(todo.checked) || 0),
+    total: (Number(checkbox.total) || 0) + (Number(todo.total) || 0)
+  };
+}
+
 function getHeadingLevel(match) {
   const starsOrSymbol = match[2] || "";
   if (starsOrSymbol.startsWith("*")) {
@@ -155,6 +189,8 @@ function formatCheckboxStats(stats, format) {
 module.exports = {
   computeCheckboxStatsByHeadingLine,
   computeHierarchicalCheckboxStatsInRange,
+  computeTodoStatsInRange,
+  computeSubtreeCompletionStatsInRange,
   hasCheckboxCookie,
   findCheckboxCookie,
   formatCheckboxStats

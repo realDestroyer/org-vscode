@@ -2,6 +2,12 @@
 
 # [Unreleased]
 
+# [2.1.3] 01-05-26
+`Enhanced`
+
+- **Statistics cookies (Org-mode placeholders):** Cookies now use `[/]` (fraction) and `[%]` (percent) placeholders, which Org-vscode renders as `[n/m]` and `[p%]`.
+- **Subtree completion stats:** Heading cookies include TODO subtree completion in addition to checkbox completion (DONE/ABANDONED count as complete).
+
 # [2.1.2] 01-04-26
 `Fixed / Enhanced`
 
