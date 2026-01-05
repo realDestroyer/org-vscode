@@ -1,9 +1,6 @@
 <p align="center">
 	<img src="https://github.com/realDestroyer/org-vscode/blob/master/Images/org-vscode-logo.png?raw=true" alt="org-vscode" width="512" />
 </p>
-
-# Org-vscode
-
 ![Version](https://img.shields.io/badge/version-v2.1.2-blue.svg)
 
 > A fast, keyboard-driven Org Mode–style task manager built for Visual Studio Code.
@@ -11,179 +8,13 @@
 
 ---
 
-## What is Org-vscode?
+## Summary
 
-Organize your thoughts, tasks, projects, and notes — all inside VSCode — using a minimal Org file format with Org-compatible `*` headings (recommended) and optional decorative Unicode rendering.
+Org-vscode helps you manage tasks, notes, and projects in plain text `.org` files — with a keyboard-first workflow, clickable Agenda/Calendar views, tags, checklists, and multi-line selection editing.
 
-Whether you're an Emacs power user or just want a highly structured task system, Org-vscode is built to help you:
+For the full guide (examples + screenshots), see:
 
-* Stay focused
-* Schedule your work
-* Set deadlines with visual warnings
-* Track task progress
-* Auto-forward CONTINUED tasks to the next day
-* Visually plan via calendar and agenda views
-* Tag tasks/projects
-* Search/open files based on tag or title
-* Export current active tasks for quick review
-* Quickly build tables, checklists, and templates
-* **Customize syntax colors with a visual UI**
-* Whole-line TODO state highlighting (configurable backgrounds)
-* Emacs-style emphasis rendering (bold/italic/underline/strike) with hidden markers while not editing
-* Quick toggle commands to wrap selections with emphasis markers
-* Work entirely from the keyboard
-
----
-
-## Core Features
-
-## v2 Format + Migration
-
-Org-vscode v2 follows Emacs Org-mode conventions more closely:
-
-- **Tags** are end-of-headline (Emacs style): `* TODO Title :PROJECT:URGENT:`
-- **Planning metadata** lives on the indented line directly under the heading:
-
-```org
-* TODO Example task :PROJECT:
-	SCHEDULED: [12-29-2025]  DEADLINE: [01-31-2026]
-```
-
-- **DONE timestamps** use `CLOSED:` (legacy `COMPLETED:` is still accepted).
-
-### Migrate a file (explicit, one-time)
-
-Run **Org-vscode: Migrate File to v2 Format**.
-
-- [Migration: v1 → v2 (why + what changes)](docs/migrate-v1-to-v2.md)
-
-### Tag naming note (hyphens)
-
-To keep tag match strings unambiguous (where `-TAG` means “NOT TAG”), **tag names normalize hyphens to underscores**:
-
-- typing `test-tag` becomes `TEST_TAG`
-- existing `TEST-TAG` will migrate to `TEST_TAG`
-
-**Task States**  
-`TODO`, `IN_PROGRESS`, `CONTINUED`, `DONE`, `ABANDONED`.
-
-If you use `Org-vscode.headingMarkerStyle: "unicode"`, those task states are rendered as symbols:
-`⊙` TODO, `⊘` IN\_PROGRESS, `⊜` CONTINUED, `⊖` DONE, `⊗` ABANDONED.
-
-**Org-mode Compatibility (Preserve `*` Headings)**
-
-If you edit your files in Emacs/org-mode (or want plain Org interoperability), set:
-
-```json
-"Org-vscode.headingMarkerStyle": "asterisks"
-```
-
-This keeps `* TODO ...` headings in the file (no Unicode replacement) while still allowing Org-vscode commands/views to work.
-
-**Recommended setup (Org-compatible source + pretty UI)**
-
-```json
-"Org-vscode.headingMarkerStyle": "asterisks",
-"Org-vscode.decorateUnicodeHeadings": true
-```
-
-Optional indentation controls (decorations + Alt+Left/Right indentation):
-
-```json
-"Org-vscode.decorateHeadingIndentation": true,
-"Org-vscode.adjustHeadingIndentation": 2
-```
-
-Indent-only mode (Org-Indent style, keeps a trailing `*` visible even when unicode markers are off):
-
-```json
-"Org-vscode.headingMarkerStyle": "asterisks",
-"Org-vscode.decorateUnicodeHeadings": false,
-"Org-vscode.decorateHeadingIndentation": true
-```
-
-**Extension Settings (Screenshots)**
-
-Extensions → org-vscode → Settings:
-
-<img src="https://github.com/realDestroyer/org-vscode/blob/master/Images/extension-settings.png?raw=true" width="900" />
-
-VS Code Settings editor (search for `Org-vscode:`):
-
-<img src="https://github.com/realDestroyer/org-vscode/blob/master/Images/extension-settingsJson.png?raw=true" width="900" />
-
-**CONTINUED Auto-Forwarding**  
-When you mark a task as CONTINUED, it automatically copies to the next day as TODO. Toggle away from CONTINUED and the copy is removed.
-
-**Deadline Support**  
-Add `DEADLINE: [<date>]` to tasks. Date formatting is controlled by `Org-vscode.dateFormat` (default: `MM-DD-YYYY`). Agenda View shows color-coded warnings (overdue, due today, due soon).
-
-**Agenda View**  
-See all scheduled TODO and IN\_PROGRESS tasks from all `.org` files in one clean, date-grouped panel. Fully clickable + status toggleable.
-
-**Checkboxes + Stats (Emacs-style)**  
-Add a checkbox statistics cookie (`[n/m]` or `[p%]`) to a heading or list item to show completion stats. In Agenda View and Tagged Agenda, expand **Show Details** to click checkboxes directly.
-
-<img src="https://github.com/realdestroyer/org-vscode/blob/master/Images/checkbox-example.png?raw=true" width="900" />
-
-<img src="https://github.com/realdestroyer/org-vscode/blob/master/Images/checkbox-agendaView-example.png?raw=true" width="900" />
-
-**Calendar View**  
-Drag & drop tasks to reschedule. Filter by tag. Auto-syncs to file.
-
-**Inline Tagging**  
-Use end-of-headline tags (Emacs style) to categorize tasks, e.g. `:URGENT:PROJECT:`. Tagged Agenda supports Emacs match strings like `+URGENT+PROJECT`, `WORK|HOME`, `+A-B`.
-
-**Tagged Agenda View**  
-Filter tasks by one or multiple tags, grouped by file. Click-to-edit support.
-
-<img src="https://github.com/realdestroyer/org-vscode/blob/master/Images/checkbox-taggedAgenda-example.png?raw=true" width="900" />
-
-**Table Builder**  
-Visually generate Org-style tables with alignment, row headers, and optional labels. Output is a canonical Org pipe table (`| ... |`) so Emacs/org-mode can edit/align it.
-
-**Align Timestamps**  
-Neatly formats all `SCHEDULED:` timestamps to the same column width.
-
-**Convert Date Formats**
-If you change `Org-vscode.dateFormat`, run **Org-vscode: Convert Dates in Current File** to rewrite day headings, `SCHEDULED:`, and `DEADLINE:` stamps in the active file.
-
-**Export Active Tasks**  
-Copy all non-DONE tasks to `CurrentTasks.org` for quick review or reporting.
-
-**Year-in-Review Dashboard**  
-Select a full-year Org file, export CSV/JSON summaries, render executive Markdown/HTML, and explore an interactive dashboard with timelines, tag heatmaps, and download buttons directly inside VS Code.
-
-**Syntax Color Customizer**  
-Customize your syntax highlighting colors with a beautiful webview UI. Pick colors for each task state, toggle bold/italic styles, see live previews, and save directly to your settings. No manual JSON editing required!
-
-<img src="https://github.com/realDestroyer/org-vscode/blob/master/Images/Syntax-Highlight-WebUI.png?raw=true" width="700" />
-
-**Built-In Snippets**  
-Use `/todo`, `/template`, `/meeting`, `/checklist`, and more to insert pre-styled blocks.
-
----
-
-## 📊 Yearly Review Workflow
-
-1. Run **Org Mode: Export Year Summary** to emit `year-summary.csv` + `year-summary.json` inside `.vscode-orgmode/reports/<year>`.
-2. Run **Org Mode: Generate Executive Report** to produce polished Markdown/HTML briefs for leadership updates.
-3. Open **Org Mode: Open Year-in-Review Dashboard** to browse timelines, tag heatmaps, and filterable task lists with quick-open links back to the source file and download buttons for each artifact.
-
-The dashboard reuses the same parser as the exporter, so updates stay in sync and can be regenerated at any time.
-
----
-
-## Learn More
-
-Full How-To Guide (examples, images, and keyboard shortcuts):
-- [How-To](https://github.com/realdestroyer/org-vscode/blob/master/docs/howto.md)
-- [Migration: v1 → v2](https://github.com/realdestroyer/org-vscode/blob/master/docs/migrate-v1-to-v2.md)
-- [Changelog](https://github.com/realdestroyer/org-vscode/blob/master/docs/CHANGELOG.md)
-- [Roadmap](https://github.com/realdestroyer/org-vscode/blob/master/docs/roadmap.md)
-- [All docs](https://github.com/realdestroyer/org-vscode/blob/master/docs/README.md)
-
----
+- https://github.com/realDestroyer/org-vscode/blob/master/docs/howto.md
 
 ## 🔑 Keyboard Shortcuts
 
@@ -215,18 +46,24 @@ Most editing shortcuts support multi-line selection: highlight multiple task lin
 | `Ctrl + Shift + E`   | Export all active (non-DONE) tasks to CurrentTasks.org |
 | `Ctrl + Alt + M`     | Show popup message (GitHub link)                       |
 
-## 📦 Install
+---
 
-### Option 1: Marketplace Install
+## 🧩 Snippets
 
-Search for `org-vscode` in the Extensions Marketplace inside VSCode.
-
-### Option 2: Manual Install
-
-Download the latest `.vsix` from [Releases](https://github.com/realDestroyer/org-vscode/releases)
-Then: Extensions Panel → More Actions (⋯) → *Install from VSIX...*
-
-<img src="https://github.com/realdestroyer/org-vscode/blob/master/Images/install-vsix.png?raw=true" width="700" height="400" />
+| Prefix       | Description                     |
+| ------------ | ------------------------------- |
+| `/header`    | Create a section header block   |
+| `/todo`      | New TODO task (scheduled today) |
+| `/checklist` | Checklist block with boxes      |
+| `/meeting`   | Daily log or meeting notes      |
+| `/tagged`    | Tagged task template            |
+| `/deadline`  | Task with SCHEDULED + DEADLINE  |
+| `/dl`        | Add DEADLINE to existing task   |
+| `/table2`    | Quick 2x2 org-style table       |
+| `/table3`    | Quick 3x3 org-style table       |
+| `/section`   | Labeled section block           |
+| `/template`  | Full task template with tags    |
+| `/day`       | Day heading with date & separator |
 
 ---
 
@@ -234,27 +71,32 @@ Then: Extensions Panel → More Actions (⋯) → *Install from VSIX...*
 
 <img src="https://github.com/realdestroyer/org-vscode/blob/master/Images/fullDemo.gif?raw=true" width="700" height="400" />
 
-### Multi-line selection editing
+## ✅ Multi-line selection editing
 
 <img src="https://github.com/realdestroyer/org-vscode/blob/master/Images/multiline-support-example.gif?raw=true" width="700" height="400" />
 
 ---
 
-## Snippets Cheat Sheet
+## More Details
 
-| Snippet      | Description                        |
-| ------------ | ---------------------------------- |
-| `/header`    | Insert header block                |
-| `/todo`      | New scheduled TODO                 |
-| `/tagged`    | TODO with tags                     |
-| `/deadline`  | TODO with SCHEDULED and DEADLINE   |
-| `/dl`        | Add DEADLINE line to existing task |
-| `/day`       | Day heading with date & separator  |
-| `/meeting`   | Meeting notes structure            |
-| `/checklist` | Create checklist block             |
-| `/template`  | Full task block w/ fields          |
-| `/table2`    | 2x2 Org table                      |
-| `/table3`    | 3x3 Org table                      |
+Everything else lives in the How-To. Jump straight to the section you need:
+
+- Migration (v1 → v2): https://github.com/realDestroyer/org-vscode/blob/master/docs/howto.md#v2-format--migration
+- Agenda View: https://github.com/realDestroyer/org-vscode/blob/master/docs/howto.md#agenda-view--scheduling
+- Checkboxes: https://github.com/realDestroyer/org-vscode/blob/master/docs/howto.md#checkboxes
+- Deadlines: https://github.com/realDestroyer/org-vscode/blob/master/docs/howto.md#deadlines
+- CONTINUED auto-forwarding: https://github.com/realDestroyer/org-vscode/blob/master/docs/howto.md#continued-auto-forwarding
+- Inline tags: https://github.com/realDestroyer/org-vscode/blob/master/docs/howto.md#inline-tags--tag-filtering
+- Align scheduled tasks: https://github.com/realDestroyer/org-vscode/blob/master/docs/howto.md#align-scheduled-tasks
+- Tagged Agenda: https://github.com/realDestroyer/org-vscode/blob/master/docs/howto.md#tagged-agenda-view
+- Calendar View: https://github.com/realDestroyer/org-vscode/blob/master/docs/howto.md#calendar-view
+- Syntax Color Customizer: https://github.com/realDestroyer/org-vscode/blob/master/docs/howto.md#syntax-color-customizer
+- Year-In-Review Dashboard: https://github.com/realDestroyer/org-vscode/blob/master/docs/howto.md#year-in-review-dashboard
+
+Other docs:
+
+- Changelog: https://github.com/realDestroyer/org-vscode/blob/master/docs/CHANGELOG.md
+- Roadmap: https://github.com/realDestroyer/org-vscode/blob/master/docs/roadmap.md
 
 ---
 
