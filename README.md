@@ -2,7 +2,8 @@
 	<img src="https://github.com/realDestroyer/org-vscode/blob/master/Images/org-vscode-logo.png?raw=true" alt="org-vscode" width="512" />
 </p>  
 
-![Version](https://img.shields.io/badge/version-v2.1.3-blue.svg)
+![VS Marketplace Version](https://img.shields.io/visual-studio-marketplace/v/realDestroyer.org-vscode?label=VS%20Marketplace)
+![Open VSX Version](https://img.shields.io/open-vsx/v/realDestroyer/org-vscode?label=Open%20VSX)
 
 > A fast, keyboard-driven Org Mode–style task manager built for Visual Studio Code.
 > Inspired by Emacs Org Mode
