@@ -381,6 +381,11 @@ Org-vscode supports two heading marker styles:
 
 Org-vscode supports five task states. In `unicode` marker style, each state is represented with a symbol:
 
+In the editor, the fastest way to cycle task keywords is:
+
+* `Ctrl + →` — cycle forward (selection-aware)
+* `Ctrl + ←` — cycle backward (selection-aware)
+
 | Status Keyword | Symbol | Description               |
 | -------------- | ------ | ------------------------- |
 | `TODO`         | ⊙      | New task to be done       |
@@ -439,8 +444,18 @@ This command prompts you to enter one or more tags (comma-separated), and automa
 ---
 ## 📏 Align Scheduled Tasks <a id="align-scheduled-tasks"></a>
 
-Use this command to visually align all `SCHEDULED:` timestamps in your current `.org` file.
+Use this command to visually align `SCHEDULED:` timestamps (and end-of-line tags, when present) in your current `.org` file.
 This improves readability by ensuring every scheduled date starts in the same column — even across differently sized task descriptions.
+
+### v2 format demo
+
+In v2 format, planning metadata lives on the indented line directly under the heading.
+
+<img src="https://github.com/realDestroyer/org-vscode/blob/master/Images/v2-align-schedules.gif?raw=true" width="700" height="400" />
+
+---
+
+### Legacy (v1 inline) demo
 
 <img src="https://github.com/realDestroyer/org-vscode/blob/master/Images/align-schedules.gif?raw=true" width="700" height="400" />
 
@@ -448,14 +463,46 @@ This improves readability by ensuring every scheduled date starts in the same co
 
 ### 🛠 What It Does <a id="what-it-does"></a>
 
-* Scans the file for any line containing `SCHEDULED: [<date>]` (format controlled by `Org-vscode.dateFormat`)
+* Scans the file for `SCHEDULED: [<date>]` (format controlled by `Org-vscode.dateFormat`)
 * Determines the longest task description in the file
-* Pads shorter task lines so that all timestamps align to the same column
+* Pads shorter lines so timestamps and/or end-of-line tags line up cleanly
 * Preserves original indentation
 
 ---
 
 ### 📌 Example <a id="example"></a>
+
+#### v2 format (planning line)
+
+**Before:**
+
+```org
+* TODO Review meeting notes :TEST_TAG:
+  SCHEDULED: [06-21-2025] DEADLINE: [06-25-2025]
+
+* DONE Email client :TEST_TAG:
+  SCHEDULED: [06-20-2025]  DEADLINE: [06-22-2025]
+
+* IN_PROGRESS Fix bug :TEST_TAG:
+  SCHEDULED: [06-22-2025] DEADLINE: [06-30-2025]
+```
+
+**After Running Align:**
+
+```org
+* TODO Review meeting notes        :TEST_TAG:
+  SCHEDULED: [06-21-2025]  DEADLINE: [06-25-2025]
+
+* DONE Email client                :TEST_TAG:
+  SCHEDULED: [06-20-2025]  DEADLINE: [06-22-2025]
+
+* IN_PROGRESS Fix bug              :TEST_TAG:
+  SCHEDULED: [06-22-2025]  DEADLINE: [06-30-2025]
+```
+
+---
+
+#### Legacy (v1 inline schedules)
 
 **Before:**
 
