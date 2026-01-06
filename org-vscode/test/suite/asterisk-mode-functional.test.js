@@ -34,6 +34,14 @@ function setCursor(editor, line, character = 0) {
   editor.selection = new vscode.Selection(pos, pos);
 }
 
+function findLine(doc, predicate) {
+  for (let i = 0; i < doc.lineCount; i++) {
+    const t = doc.lineAt(i).text;
+    if (predicate(t, i)) return i;
+  }
+  return -1;
+}
+
 suite('Asterisk-mode functional behavior', function () {
   this.timeout(60_000);
 
@@ -194,6 +202,48 @@ suite('Asterisk-mode functional behavior', function () {
     }
   });
 
+  test('Selection toggles SCHEDULED off for all tasks (idempotent)', async () => {
+    const separator = ' -------------------------------------------------------------------------------------------------------------------------------';
+    const contents = [
+      `* [12-14-2025 Sun]${separator}`,
+      '  *** TODO Task A',
+      '  *** TODO Task B',
+      '  *** TODO Task C',
+      ''
+    ].join('\n');
+
+    const uri = await writeTempVsoFile(contents);
+    const { doc, editor } = await openFileInEditor(uri);
+
+    const originalShowInputBox = vscode.window.showInputBox;
+    const answers = ['12', '31', '2025'];
+    vscode.window.showInputBox = async () => answers.shift();
+
+    try {
+      // First run: add planning lines.
+      editor.selection = new vscode.Selection(new vscode.Position(0, 0), new vscode.Position(3, doc.lineAt(3).text.length));
+      await vscode.commands.executeCommand('extension.scheduling');
+
+      await waitFor(() => doc.getText().includes('  *** TODO Task A\n    SCHEDULED: [2025-12-31]'));
+      await waitFor(() => doc.getText().includes('  *** TODO Task B\n    SCHEDULED: [2025-12-31]'));
+      await waitFor(() => doc.getText().includes('  *** TODO Task C\n    SCHEDULED: [2025-12-31]'));
+
+      // Second run: select the same *headline* lines again (this range now includes planning lines).
+      const taskCLine = findLine(doc, (t) => t.includes('*** TODO Task C'));
+      assert.ok(taskCLine >= 0, 'Expected to find Task C headline');
+      editor.selection = new vscode.Selection(new vscode.Position(0, 0), new vscode.Position(taskCLine, doc.lineAt(taskCLine).text.length));
+
+      await vscode.commands.executeCommand('extension.scheduling');
+      await waitFor(() => !doc.getText().includes('SCHEDULED: ['));
+      assert.ok(doc.getText().includes(`* [12-14-2025 Sun]${separator}`));
+      assert.ok(doc.getText().includes('*** TODO Task A'));
+      assert.ok(doc.getText().includes('*** TODO Task B'));
+      assert.ok(doc.getText().includes('*** TODO Task C'));
+    } finally {
+      vscode.window.showInputBox = originalShowInputBox;
+    }
+  });
+
   test('Selection adds DEADLINE to multiple tasks', async () => {
     const separator = ' -------------------------------------------------------------------------------------------------------------------------------';
     const contents = [
@@ -222,6 +272,48 @@ suite('Asterisk-mode functional behavior', function () {
       await waitFor(() => doc.getText().includes('  *** TODO Task B\n    DEADLINE: [2025-12-31]'));
       await waitFor(() => doc.getText().includes('  *** TODO Task C\n    DEADLINE: [2025-12-31]'));
       assert.ok(doc.getText().includes(`* [12-14-2025 Sun]${separator}`));
+    } finally {
+      vscode.window.showInputBox = originalShowInputBox;
+    }
+  });
+
+  test('Selection toggles DEADLINE off for all tasks (idempotent)', async () => {
+    const separator = ' -------------------------------------------------------------------------------------------------------------------------------';
+    const contents = [
+      `* [12-14-2025 Sun]${separator}`,
+      '  *** TODO Task A',
+      '  *** TODO Task B',
+      '  *** TODO Task C',
+      ''
+    ].join('\n');
+
+    const uri = await writeTempVsoFile(contents);
+    const { doc, editor } = await openFileInEditor(uri);
+
+    const originalShowInputBox = vscode.window.showInputBox;
+    const answers = ['12', '31', '2025'];
+    vscode.window.showInputBox = async () => answers.shift();
+
+    try {
+      // First run: add planning lines.
+      editor.selection = new vscode.Selection(new vscode.Position(0, 0), new vscode.Position(3, doc.lineAt(3).text.length));
+      await vscode.commands.executeCommand('extension.deadline');
+
+      await waitFor(() => doc.getText().includes('  *** TODO Task A\n    DEADLINE: [2025-12-31]'));
+      await waitFor(() => doc.getText().includes('  *** TODO Task B\n    DEADLINE: [2025-12-31]'));
+      await waitFor(() => doc.getText().includes('  *** TODO Task C\n    DEADLINE: [2025-12-31]'));
+
+      // Second run: select the same *headline* lines again (this range now includes planning lines).
+      const taskCLine = findLine(doc, (t) => t.includes('*** TODO Task C'));
+      assert.ok(taskCLine >= 0, 'Expected to find Task C headline');
+      editor.selection = new vscode.Selection(new vscode.Position(0, 0), new vscode.Position(taskCLine, doc.lineAt(taskCLine).text.length));
+
+      await vscode.commands.executeCommand('extension.deadline');
+      await waitFor(() => !doc.getText().includes('DEADLINE: ['));
+      assert.ok(doc.getText().includes(`* [12-14-2025 Sun]${separator}`));
+      assert.ok(doc.getText().includes('*** TODO Task A'));
+      assert.ok(doc.getText().includes('*** TODO Task B'));
+      assert.ok(doc.getText().includes('*** TODO Task C'));
     } finally {
       vscode.window.showInputBox = originalShowInputBox;
     }
