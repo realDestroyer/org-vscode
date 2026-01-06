@@ -114,6 +114,41 @@ suite('Asterisk-mode functional behavior', function () {
     await waitFor(() => !doc.getText().includes('    SCHEDULED: [12-15-2025]'));
   });
 
+  test('CONTINUED→DONE does not remove sibling planning lines', async () => {
+    const separator = ' -------------------------------------------------------------------------------------------------------------------------------';
+    const contents = [
+      `* [12-14-2025 Sun]${separator}`,
+      '  *** TODO Parent',
+      '  **** IN_PROGRESS Child task',
+      '  *** TODO Sibling task',
+      '    SCHEDULED: [12-14-2025]  DEADLINE: [12-15-2025]',
+      `* [12-15-2025 Mon]${separator}`,
+      ''
+    ].join('\n');
+
+    const uri = await writeTempVsoFile(contents);
+    const { doc, editor } = await openFileInEditor(uri);
+
+    // Cursor on the child task.
+    setCursor(editor, 2, 0);
+
+    // 1) IN_PROGRESS -> CONTINUED (should forward a TODO copy to the next day)
+    await vscode.commands.executeCommand('extension.toggleStatusRight');
+    await waitFor(() => doc.getText().includes('**** CONTINUED Child task'));
+    await waitFor(() => doc.getText().includes('**** TODO Child task'));
+
+    // 2) CONTINUED -> DONE (should remove forwarded copy)
+    await vscode.commands.executeCommand('extension.toggleStatusRight');
+    await waitFor(() => doc.getText().includes('**** DONE Child task'));
+    await waitFor(() => !doc.getText().includes('**** TODO Child task'));
+
+    // Sibling task planning must remain intact.
+    const text = doc.getText();
+    assert.ok(text.includes('*** TODO Sibling task'), text);
+    assert.ok(text.includes('SCHEDULED: [12-14-2025]'), text);
+    assert.ok(text.includes('DEADLINE: [12-15-2025]'), text);
+  });
+
   test('Selection toggles status for multiple task lines', async () => {
     const separator = ' -------------------------------------------------------------------------------------------------------------------------------';
     const contents = [
