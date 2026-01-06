@@ -36,3 +36,35 @@ Thanks for helping improve org-vscode.
 ## Notes for this repo
 
 - Avoid committing directly to `master` unless you intentionally choose to bypass review (e.g., quick solo maintenance). The default expectation is the PR workflow above.
+
+## Release checklist (maintainers)
+
+This repo bundles the extension into `dist/extension.js`. For a release, ensure the version bump and bundle are done on `master`.
+
+1. **Merge to `master`**
+    - Ensure CI/tests are green.
+
+2. **Bump version**
+    - Update the version in:
+       - `org-vscode/package.json`
+       - `org-vscode/org-vscode/package.json` (dev/test copy)
+
+3. **Bundle + test**
+    - From `org-vscode/`:
+       - `npm run bundle`
+    - From `org-vscode/org-vscode/`:
+       - `npm test`
+
+4. **Package VSIX**
+    - From `org-vscode/`:
+       - `npx vsce package`
+
+5. **Publish to VS Code Marketplace**
+    - Requires a VSCE publisher token configured for `realDestroyer`.
+    - From `org-vscode/`:
+       - `npx vsce publish`
+
+6. **Publish to OpenVSX**
+    - Requires an OpenVSX token (commonly via `OVSX_PAT`).
+    - From `org-vscode/`:
+       - `npx ovsx publish -p $env:OVSX_PAT`

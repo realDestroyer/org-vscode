@@ -29,7 +29,10 @@ function createVscodeMock() {
     },
 
     languages: {
-      registerOnTypeFormattingEditProvider: () => disposable()
+      registerOnTypeFormattingEditProvider: () => disposable(),
+      registerDocumentLinkProvider: () => disposable(),
+      registerDocumentSymbolProvider: () => disposable(),
+      registerCompletionItemProvider: () => disposable()
     },
 
     window: {

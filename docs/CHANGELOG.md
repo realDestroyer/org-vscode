@@ -2,6 +2,14 @@
 
 # [Unreleased]
 
+# [2.1.4] 01-06-26
+`Enhanced`
+
+- **Expanded Org syntax highlighting:** Better highlighting coverage for common Org constructs (blocks, lists, links, priorities, drawers/properties, directives, and basic math fragments).
+- **Navigation:** Document Outline for Org headings + improved Org link handling (including `[[*heading]]`, `[[id:...]]`, and `[[#target]]`).
+- **Link completion:** Auto-complete link targets inside `[[...]]`, including workspace-wide `id:` suggestions.
+- **Docs/examples:** Updated documentation and the shipped example Org file to showcase the new syntax and navigation helpers.
+
 # [2.1.3] 01-05-26
 `Enhanced`
 

@@ -51,6 +51,9 @@ const { registerCheckboxAutoDone } = require("./checkboxAutoDone");
 const { registerCheckboxStatsDecorations } = require("./checkboxStatsDecorations");
 const { registerMarkupCommands } = require("./markupCommands");
 const { registerOrgEmphasisDecorations } = require("./orgEmphasisDecorations");
+const { registerOrgLinkProvider } = require("./orgLinkProvider");
+const { registerOrgSymbolProvider } = require("./orgSymbolProvider");
+const { registerOrgCompletionProvider } = require("./orgCompletionProvider");
 const { migrateFileToV2 } = require("./migrateFileToV2");
 const { insertCheckboxItem } = require("./insertCheckboxItem");
 const { toggleCheckboxCookie } = require("./toggleCheckboxCookie");
@@ -138,6 +141,11 @@ function numOfSpaces(asterisk) {
 // Extension Activation
 // ─────────────────────────────────────────────────────────────
 function activate(ctx) {
+  // Org-like navigation primitives
+  registerOrgLinkProvider(ctx);
+  registerOrgSymbolProvider(ctx);
+  registerOrgCompletionProvider(ctx);
+
   // Visual-only unicode headings for org-style '*' files (no file rewrites)
   registerUnicodeHeadingDecorations(ctx);
 
