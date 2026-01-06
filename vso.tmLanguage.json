@@ -352,7 +352,20 @@
       "patterns": [
         {
           "name": "meta.list.unordered.vso",
-          "begin": "^\\s*([-+*])\\s+",
+          "begin": "^\\s*([-+])\\s+",
+          "beginCaptures": {
+            "1": { "name": "punctuation.definition.list.vso" }
+          },
+          "end": "$",
+          "patterns": [
+            { "include": "#org_list_checkbox" },
+            { "include": "#org_emphasis" },
+            { "include": "#org_links" }
+          ]
+        },
+        {
+          "name": "meta.list.unordered.vso",
+          "begin": "^\\s+(\\*)\\s+",
           "beginCaptures": {
             "1": { "name": "punctuation.definition.list.vso" }
           },
