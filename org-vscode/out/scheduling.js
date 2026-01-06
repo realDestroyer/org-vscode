@@ -82,15 +82,16 @@ module.exports = function () {
         if (lineNumber + 1 < document.lineCount) {
             const nextLine = document.lineAt(lineNumber + 1);
             if (isPlanningLine(nextLine.text) && nextLine.text.includes("SCHEDULED:")) {
-                const updatedPlanning = nextLine.text
+                const indent = nextLine.text.match(/^\s*/)?.[0] || "";
+                const body = nextLine.text.trim()
                     .replace(/\s*SCHEDULED:\s*\[[^\]]*\]/, "")
                     .replace(/\s{2,}/g, " ")
-                    .trimRight();
-                if (!updatedPlanning.trim()) {
+                    .trim();
+                if (!body) {
                     workspaceEdit.delete(document.uri, nextLine.rangeIncludingLineBreak);
                 }
                 else {
-                    workspaceEdit.replace(document.uri, nextLine.range, updatedPlanning);
+                    workspaceEdit.replace(document.uri, nextLine.range, `${indent}${body}`);
                 }
             }
         }
@@ -111,15 +112,16 @@ module.exports = function () {
             if (lineNumber + 1 < document.lineCount) {
                 const nextLine = document.lineAt(lineNumber + 1);
                 if (isPlanningLine(nextLine.text) && nextLine.text.includes("SCHEDULED:")) {
-                    const updatedPlanning = nextLine.text
+                    const indent = nextLine.text.match(/^\s*/)?.[0] || "";
+                    const body = nextLine.text.trim()
                         .replace(/\s*SCHEDULED:\s*\[[^\]]*\]/, "")
                         .replace(/\s{2,}/g, " ")
-                        .trimRight();
-                    if (!updatedPlanning.trim()) {
+                        .trim();
+                    if (!body) {
                         workspaceEdit.delete(document.uri, nextLine.rangeIncludingLineBreak);
                     }
                     else {
-                        workspaceEdit.replace(document.uri, nextLine.range, updatedPlanning);
+                        workspaceEdit.replace(document.uri, nextLine.range, `${indent}${body}`);
                     }
                 }
             }
