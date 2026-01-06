@@ -137,7 +137,9 @@ module.exports = async function () {
           workspaceEdit.delete(document.uri, nextNextLine.rangeIncludingLineBreak);
         }
       } else {
-        if (nextNextLine && isPlanningLine(nextNextLine.text)) {
+        // Only collapse a next-next planning line if it's separated by a blank line.
+        // Otherwise, it may belong to the next sibling headline (multi-line selections).
+        if (nextLine && !nextLine.text.trim() && nextNextLine && isPlanningLine(nextNextLine.text)) {
           workspaceEdit.delete(document.uri, nextNextLine.rangeIncludingLineBreak);
         }
         workspaceEdit.insert(document.uri, currentLine.range.end, `\n${planningIndent}${planningBody}`);
@@ -145,7 +147,7 @@ module.exports = async function () {
     } else {
       if (nextLine && isPlanningLine(nextLine.text)) {
         workspaceEdit.delete(document.uri, nextLine.rangeIncludingLineBreak);
-      } else if (nextNextLine && isPlanningLine(nextNextLine.text) && (nextNextLine.text.includes("CLOSED") || nextNextLine.text.includes("COMPLETED"))) {
+      } else if (nextLine && !nextLine.text.trim() && nextNextLine && isPlanningLine(nextNextLine.text) && (nextNextLine.text.includes("CLOSED") || nextNextLine.text.includes("COMPLETED"))) {
         workspaceEdit.delete(document.uri, nextNextLine.rangeIncludingLineBreak);
       }
     }
