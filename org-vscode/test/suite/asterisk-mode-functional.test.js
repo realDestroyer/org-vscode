@@ -319,6 +319,69 @@ suite('Asterisk-mode functional behavior', function () {
     }
   });
 
+  test('Removing SCHEDULED does not break DEADLINE toggle detection', async () => {
+    const separator = ' -------------------------------------------------------------------------------------------------------------------------------';
+    const contents = [
+      `* [12-14-2025 Sun]${separator}`,
+      '  *** TODO Task A',
+      '  *** TODO Task B',
+      ''
+    ].join('\n');
+
+    const uri = await writeTempVsoFile(contents);
+    const { doc, editor } = await openFileInEditor(uri);
+
+    const originalShowInputBox = vscode.window.showInputBox;
+
+    try {
+      const selectThroughTaskB = () => {
+        const taskBLine = findLine(doc, (t) => t.includes('*** TODO Task B'));
+        assert.ok(taskBLine >= 0, 'Expected to find Task B headline');
+        editor.selection = new vscode.Selection(
+          new vscode.Position(0, 0),
+          new vscode.Position(taskBLine, doc.lineAt(taskBLine).text.length)
+        );
+      };
+
+      // 1) Add SCHEDULED (answers consumed here)
+      let answers = ['12', '31', '2025'];
+      vscode.window.showInputBox = async () => answers.shift();
+      selectThroughTaskB();
+      await vscode.commands.executeCommand('extension.scheduling');
+      await waitFor(() => doc.getText().includes('SCHEDULED: [2025-12-31]'));
+
+      // 2) Add DEADLINE (answers consumed here)
+      answers = ['12', '31', '2025'];
+      vscode.window.showInputBox = async () => answers.shift();
+      selectThroughTaskB();
+      await vscode.commands.executeCommand('extension.deadline');
+      await waitFor(() => doc.getText().includes('DEADLINE: [2025-12-31]'));
+
+      // Sanity: both stamps should live on a planning line with indentation.
+      const planningLine = findLine(doc, (t) => t.includes('SCHEDULED: [2025-12-31]') && t.includes('DEADLINE: [2025-12-31]'));
+      assert.ok(planningLine >= 0, 'Expected SCHEDULED and DEADLINE on the same planning line');
+
+      // 3) Remove SCHEDULED (should leave DEADLINE as a valid planning line)
+      vscode.window.showInputBox = async () => {
+        throw new Error('Should not prompt when removing SCHEDULED');
+      };
+      selectThroughTaskB();
+      await vscode.commands.executeCommand('extension.scheduling');
+      await waitFor(() => !doc.getText().includes('SCHEDULED: ['));
+      await waitFor(() => doc.getText().includes('DEADLINE: [2025-12-31]'));
+
+      // 4) Remove DEADLINE (should not prompt; previously it did because indentation got broken)
+      vscode.window.showInputBox = async () => {
+        throw new Error('Should not prompt when removing DEADLINE');
+      };
+      selectThroughTaskB();
+      await vscode.commands.executeCommand('extension.deadline');
+      await waitFor(() => !doc.getText().includes('DEADLINE: ['));
+    } finally {
+      vscode.window.showInputBox = originalShowInputBox;
+    }
+  });
+
   test('Selection adds end-of-line tag to multiple tasks (Emacs style)', async () => {
     const contents = [
       '#+TAGS: FOO',
