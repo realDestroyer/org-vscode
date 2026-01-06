@@ -142,6 +142,42 @@ suite('Asterisk-mode functional behavior', function () {
     assert.ok(doc.getText().includes(`* [12-14-2025 Sun]${separator}`));
   });
 
+  test('Multi-line DONE transition adds CLOSED to every headline', async () => {
+    const separator = ' -------------------------------------------------------------------------------------------------------------------------------';
+    const contents = [
+      `* [12-14-2025 Sun]${separator}`,
+      '  *** TODO Task A',
+      '  *** TODO Task B',
+      '  *** TODO Task C',
+      ''
+    ].join('\n');
+
+    const uri = await writeTempVsoFile(contents);
+    const { doc, editor } = await openFileInEditor(uri);
+
+    // Select all three tasks.
+    const start = new vscode.Position(1, 0);
+    const end = new vscode.Position(3, doc.lineAt(3).text.length);
+    editor.selection = new vscode.Selection(start, end);
+
+    // Cycle LEFT twice: TODO -> ABANDONED -> DONE (avoids CONTINUED auto-forwarding).
+    await vscode.commands.executeCommand('extension.toggleStatusLeft');
+    const afterLeft1 = doc.getText();
+    assert.ok(afterLeft1.includes('*** ABANDONED Task A'), afterLeft1);
+    assert.ok(afterLeft1.includes('*** ABANDONED Task B'), afterLeft1);
+    assert.ok(afterLeft1.includes('*** ABANDONED Task C'), afterLeft1);
+
+    await vscode.commands.executeCommand('extension.toggleStatusLeft');
+    const afterLeft2 = doc.getText();
+    assert.ok(afterLeft2.includes('*** DONE Task A'), afterLeft2);
+    assert.ok(afterLeft2.includes('*** DONE Task B'), afterLeft2);
+    assert.ok(afterLeft2.includes('*** DONE Task C'), afterLeft2);
+
+    // Each DONE task should have a CLOSED stamp in its planning line.
+    const closedCount = (doc.getText().match(/\bCLOSED:\s*\[/g) || []).length;
+    assert.strictEqual(closedCount, 3, doc.getText());
+  });
+
   test('Selection can add TODO keyword to headings (but not day headings)', async () => {
     const separator = ' -------------------------------------------------------------------------------------------------------------------------------';
     const contents = [
