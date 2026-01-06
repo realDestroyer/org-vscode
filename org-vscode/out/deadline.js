@@ -12,6 +12,9 @@ module.exports = function () {
     }
     const { document } = activeTextEditor;
 
+    const dayHeadingRegex = /^\s*(⊘|\*+)\s*\[\d{2,4}-\d{2}-\d{2,4}\s+[A-Za-z]{3}\]/;
+    const taskPrefixRegex = /^\s*(?:[⊙⊘⊜⊖⊗]\s*)?(?:\*+\s+)?(?:TODO|IN_PROGRESS|CONTINUED|DONE|ABANDONED)\b/;
+
     const config = vscode.workspace.getConfiguration("Org-vscode");
     const dateFormat = config.get("dateFormat", "YYYY-MM-DD");
 
@@ -32,7 +35,10 @@ module.exports = function () {
             endLine -= 1;
         }
         for (let line = startLine; line <= endLine; line++) {
-            targetLines.add(line);
+            const lineText = document.lineAt(line).text;
+            if (taskPrefixRegex.test(lineText) && !dayHeadingRegex.test(lineText)) {
+                targetLines.add(line);
+            }
         }
     }
     const sortedLines = Array.from(targetLines).sort((a, b) => b - a);
@@ -41,10 +47,6 @@ module.exports = function () {
     // Messages
     const fullDateMessage = new showMessage_1.WindowMessage("warning", "Full date must be entered", false, false);
     const notADateMessage = new showMessage_1.WindowMessage("warning", "That's not a valid date.", false, false);
-
-    const dayHeadingRegex = /^\s*(⊘|\*+)\s*\[\d{2,4}-\d{2}-\d{2,4}\s+[A-Za-z]{3}\]/;
-    const taskPrefixRegex = /^\s*(?:[⊙⊘⊜⊖⊗]\s*)?(?:\*+\s+)?(?:TODO|IN_PROGRESS|CONTINUED|DONE|ABANDONED)\b/;
-
     const linesToRemove = [];
     const linesToAdd = [];
     for (const lineNumber of sortedLines) {
