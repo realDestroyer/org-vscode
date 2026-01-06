@@ -50,7 +50,7 @@
       ]
     },
     {
-      "name": "constant.character.in_progress.vso",
+      "name": "meta.task.in_progress.vso",
       "comment": "In Progress Task (asterisk heading)",
       "begin": "^\\s*\\*+\\s+(?=IN_PROGRESS\\b)",
       "end": "$",
@@ -65,7 +65,7 @@
       ]
     },
     {
-      "name": "constant.character.abandoned.vso",
+      "name": "meta.task.abandoned.vso",
       "comment": "Abandoned Task (asterisk heading)",
       "begin": "^\\s*\\*+\\s+(?=ABANDONED\\b)",
       "end": "$",
@@ -79,7 +79,7 @@
       ]
     },
     {
-      "name": "constant.character.continued.vso",
+      "name": "meta.task.continued.vso",
       "comment": "Continued Task (asterisk heading)",
       "begin": "^\\s*\\*+\\s+(?=CONTINUED\\b)",
       "end": "$",
@@ -94,7 +94,7 @@
       ]
     },
     {
-      "name": "constant.character.todo.vso",
+      "name": "meta.task.todo.vso",
       "comment": "TODO Task (asterisk heading)",
       "begin": "^\\s*\\*+\\s+(?=TODO\\b)",
       "end": "$",
@@ -109,7 +109,7 @@
       ]
     },
     {
-      "name": "constant.character.done.vso",
+      "name": "meta.task.done.vso",
       "comment": "DONE Task (asterisk heading)",
       "begin": "^\\s*\\*+\\s+(?=DONE\\b)",
       "end": "$",
@@ -124,9 +124,12 @@
       ]
     },
     {
-      "name": "constant.character.in_progress.vso",
+      "name": "meta.task.in_progress.vso",
       "comment": "In Progress Task Symbol",
-      "begin": "^\\s*[\u2298]",
+      "begin": "^(\\s*[\u2298])",
+      "beginCaptures": {
+        "1": { "name": "constant.character.in_progress.vso" }
+      },
       "end": "$",
       "patterns": [
         { "include": "#in_progress" },
@@ -139,9 +142,12 @@
       ]
     },
     {
-      "name": "constant.character.abandoned.vso",
+      "name": "meta.task.abandoned.vso",
       "comment": "Abandoned Task Symbol",
-      "begin": "^\\s*[\u2297]",
+      "begin": "^(\\s*[\u2297])",
+      "beginCaptures": {
+        "1": { "name": "constant.character.abandoned.vso" }
+      },
       "end": "$",
       "patterns": [
         { "include": "#abandoned" },
@@ -153,8 +159,11 @@
       ]
     },
     {
-      "name": "constant.character.continued.vso",
-      "begin": "^\\s*[⊜]",
+      "name": "meta.task.continued.vso",
+      "begin": "^(\\s*[⊜])",
+      "beginCaptures": {
+        "1": { "name": "constant.character.continued.vso" }
+      },
       "end": "$",
       "patterns": [
         { "include": "#continued" },
@@ -167,8 +176,11 @@
       ]
     },
     {
-      "name": "constant.character.todo.vso",
-      "begin": "^\\s*[⊙]",
+      "name": "meta.task.todo.vso",
+      "begin": "^(\\s*[⊙])",
+      "beginCaptures": {
+        "1": { "name": "constant.character.todo.vso" }
+      },
       "end": "$",
       "patterns": [
         { "include": "#todo" },
@@ -181,8 +193,11 @@
       ]
     },
     {
-      "name": "constant.character.done.vso",
-      "begin": "^\\s*[\u2296]",
+      "name": "meta.task.done.vso",
+      "begin": "^(\\s*[\u2296])",
+      "beginCaptures": {
+        "1": { "name": "constant.character.done.vso" }
+      },
       "end": "$",
       "patterns": [
         { "include": "#tag" },
