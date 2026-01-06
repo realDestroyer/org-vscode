@@ -178,6 +178,121 @@ const DEFAULT_COLORS = {
     foreground: "#dcdcaa",
     background: "",
     fontStyle: "bold"
+  },
+
+  "Link": {
+    scope: "markup.underline.link.vso",
+    foreground: "#4fc1ff",
+    background: "",
+    fontStyle: "underline"
+  },
+  "Inline Code / Verbatim": {
+    scope: "markup.inline.raw.vso",
+    foreground: "#ce9178",
+    background: "",
+    fontStyle: ""
+  },
+  "Priority Cookie": {
+    scope: "constant.other.priority.vso",
+    foreground: "#d7ba7d",
+    background: "",
+    fontStyle: "bold"
+  },
+  "Checkbox": {
+    scope: "constant.character.checkbox.vso",
+    foreground: "#4ec9b0",
+    background: "",
+    fontStyle: "bold"
+  },
+  "List Bullet": {
+    scope: "punctuation.definition.list.vso",
+    foreground: "#d4d4d4",
+    background: "",
+    fontStyle: ""
+  },
+  "Ordered List Number": {
+    scope: "constant.numeric.list.vso",
+    foreground: "#b5cea8",
+    background: "",
+    fontStyle: ""
+  },
+  "Table": {
+    scope: "meta.table.vso",
+    foreground: "#d4d4d4",
+    background: "",
+    fontStyle: ""
+  },
+  "Comment": {
+    scope: ["comment.line.number-sign.vso", "comment.vso"],
+    foreground: "#6a9955",
+    background: "",
+    fontStyle: "italic"
+  },
+  "Block Begin": {
+    scope: "keyword.control.block.begin.vso",
+    foreground: "#569cd6",
+    background: "",
+    fontStyle: ""
+  },
+  "Block End": {
+    scope: "keyword.control.block.end.vso",
+    foreground: "#569cd6",
+    background: "",
+    fontStyle: ""
+  },
+  "Source Block": {
+    scope: "meta.block.src.vso",
+    foreground: "#d4d4d4",
+    background: "",
+    fontStyle: ""
+  },
+  "Quote Block": {
+    scope: "meta.block.quote.vso",
+    foreground: "#d4d4d4",
+    background: "",
+    fontStyle: ""
+  },
+  "Example Block": {
+    scope: "meta.block.example.vso",
+    foreground: "#d4d4d4",
+    background: "",
+    fontStyle: ""
+  },
+  "Math (inline)": {
+    scope: "string.other.math.inline.vso",
+    foreground: "#dcdcaa",
+    background: "",
+    fontStyle: ""
+  },
+  "Math (block)": {
+    scope: "meta.block.math.vso",
+    foreground: "#dcdcaa",
+    background: "",
+    fontStyle: ""
+  },
+  "Emphasis Bold": {
+    scope: "markup.bold.vso",
+    foreground: "#d4d4d4",
+    background: "",
+    fontStyle: "bold"
+  },
+  "Emphasis Italic": {
+    scope: "markup.italic.vso",
+    foreground: "#d4d4d4",
+    background: "",
+    fontStyle: "italic"
+  },
+  "Emphasis Underline": {
+    scope: "markup.underline.vso",
+    foreground: "#d4d4d4",
+    background: "",
+    fontStyle: "underline"
+  },
+  "Emphasis Strike": {
+    scope: "markup.strike.vso",
+    foreground: "#d4d4d4",
+    background: "",
+    fontStyle: ""
   }
 };
 
@@ -204,6 +319,27 @@ const SCOPE_GROUPS = {
     "Heading Level 3",
     "Org Directive",
     "Property Key"
+  ],
+  "Org Syntax": [
+    "Link",
+    "Inline Code / Verbatim",
+    "Priority Cookie",
+    "Checkbox",
+    "List Bullet",
+    "Ordered List Number",
+    "Table",
+    "Comment",
+    "Block Begin",
+    "Block End",
+    "Source Block",
+    "Quote Block",
+    "Example Block",
+    "Math (inline)",
+    "Math (block)",
+    "Emphasis Bold",
+    "Emphasis Italic",
+    "Emphasis Underline",
+    "Emphasis Strike"
   ]
 };
 
@@ -1107,7 +1243,26 @@ function getPreviewText(scopeName) {
     "Property Key": ":OWNER: Doug",
     "Heading Level 1": "* Heading",
     "Heading Level 2": "** Subheading",
-    "Heading Level 3": "*** Detail"
+    "Heading Level 3": "*** Detail",
+    "Link": "[[https://example.com][Example link]]",
+    "Inline Code / Verbatim": "=inline code=",
+    "Priority Cookie": "[#A]",
+    "Checkbox": "[X]",
+    "List Bullet": "-",
+    "Ordered List Number": "1.",
+    "Table": "| a | b |",
+    "Comment": "# comment",
+    "Block Begin": "#+BEGIN_SRC js",
+    "Block End": "#+END_SRC",
+    "Source Block": "console.log('hi')",
+    "Quote Block": "quoted text",
+    "Example Block": "example text",
+    "Math (inline)": "$a^2 + b^2 = c^2$",
+    "Math (block)": "$$\\int_0^1 x^2 dx$$",
+    "Emphasis Bold": "*bold*",
+    "Emphasis Italic": "/italic/",
+    "Emphasis Underline": "_underline_",
+    "Emphasis Strike": "+strike+"
   };
   return previews[scopeName] || scopeName;
 }

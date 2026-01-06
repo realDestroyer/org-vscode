@@ -2,6 +2,12 @@
 
 # [Unreleased]
 
+# [2.1.5] 01-06-26
+`Fixed / Enhanced`
+
+- **Fix: Task-state highlighting scopes:** Unicode task symbols now use `constant.character.*.vso` only for the symbol itself (not the entire line), restoring correct per-token coloring for TODO/IN_PROGRESS/CONTINUED/DONE/ABANDONED headings.
+- **Enhanced: Syntax Color Customizer:** Added controls for additional Org syntax scopes (links, lists, checkboxes, blocks, math, emphasis, priority, comments, and tables).
+
 # [2.1.4] 01-06-26
 `Enhanced`
 
