@@ -1,0 +1,133 @@
+#+TITLE: Org-vscode Demo Walkthrough
+#+FILETAGS: :DEMO:ORG_VSCODE:
+
+# This file is designed as a quick “tour” of Org-vscode.
+# Follow sections top-to-bottom for a demo video.
+# Lines starting with "#" are narration prompts.
+
+* [2026-01-05 Mon] Core Editing ----------------------------------------------------------------
+
+# 1) TODO status cycling (single line)
+# Cursor on the keyword and use Ctrl+Left / Ctrl+Right.
+* TODO Cycle me through keywords :INTRO:
+
+# 2) Multi-line selection editing (status cycling)
+# Select the next 3 task lines and cycle together.
+* TODO Multi-line status change #1 :MULTILINE:
+* TODO Multi-line status change #2 :MULTILINE:
+* TODO Multi-line status change #3 :MULTILINE:
+
+# 3) Move blocks up/down (Shift+Alt+Up/Down)
+* TODO Move this task block around :EDITING:
+  Some indented notes move with the task.
+  - [ ] And checkboxes move too
+
+# 4) Folding / unfolding (Ctrl+Shift+[ / ])
+* TODO Fold me
+  Hidden notes…
+
+# 5) Emphasis rendering (*bold* /italic/ _underline_ +strike+)
+* TODO Emphasis demo :STYLE:
+  Here is *bold*, /italic/, _underline_, and +strike+.
+
+* [2026-01-06 Tue] Org-Mode Compatibility + Tags ------------------------------------------------
+
+# 6) Emacs-style end-of-headline tags
+* TODO Tags live at end-of-headline :WORK:HOME:
+
+# 7) Inline tag insertion (Ctrl+Shift+T)
+* TODO Add a tag to me (end-of-headline) :TAGS:
+
+# 8) FILETAGS inheritance (used by Tagged Agenda match strings)
+# (This file already has #+FILETAGS at the top.)
+* TODO Inherits :DEMO:ORG_VSCODE: via FILETAGS
+
+* [2026-01-07 Wed] Planning (SCHEDULED / DEADLINE / CLOSED) -------------------------------------
+
+# 9) Planning lines live under the headline (v2 format)
+# Use Ctrl+Alt+S to toggle SCHEDULED. Use Ctrl+Alt+D to toggle DEADLINE.
+* TODO Schedule + deadline demo :PLANNING:
+  SCHEDULED: [2026-01-07]  DEADLINE: [2026-01-20]
+
+# 10) Align Scheduled Tasks (Alt+Shift+A)
+# This is intentionally misaligned spacing; run Align Scheduled Tasks.
+* TODO Misaligned planning line :ALIGN:
+  SCHEDULED: [2026-01-07]   DEADLINE: [2026-01-25]
+
+# 11) Date tools
+# - Smart date forward/backward (Alt+Shift+Right/Left)
+# - Deadline date forward/backward (Ctrl+Shift+Right/Left)
+* TODO Try date adjustments here :DATES:
+  SCHEDULED: [2026-01-07]  DEADLINE: [2026-01-21]
+
+* [2026-01-08 Thu] Checkboxes + Statistics Cookies ----------------------------------------------
+
+# 12) Checkbox toggling (Ctrl+Alt+X) + hierarchical parent completion
+* TODO Checkbox basics [/] :CHECKBOX:
+  - [ ] Parent item
+    - [ ] Child 1
+    - [ ] Child 2
+  - [ ] Standalone item
+
+# 13) Percent cookie (same stats, different display)
+* TODO Checkbox percent [%] :CHECKBOX:
+  - [ ] A
+  - [X] B
+  - [ ] C
+
+# 14) List-item cookie scope
+# Put a cookie on a list item to scope to that item’s subtree.
+* TODO List-item cookie scope :CHECKBOX:
+  - [-] Release checklist [/] 
+    - [X] Write changelog
+    - [ ] Package VSIX
+    - [ ] Publish
+
+* [2026-01-09 Fri] Subtree TODO Completion Stats -------------------------------------------------
+
+# 15) Subtree completion cookie on a heading includes:
+# - checkbox completion under the subtree
+# - TODO subtree completion (DONE/ABANDONED count as complete)
+* TODO Subtree completion overview [/] :SUBTREE:
+  SCHEDULED: [2026-01-09]  DEADLINE: [2026-01-31]
+
+** DONE Child task complete #1
+  CLOSED: [2026-01-05 Mon 09:00]
+** ABANDONED Child task counts complete too
+  CLOSED: [2026-01-05 Mon 09:05]
+** IN_PROGRESS Child task incomplete
+** TODO Child task incomplete
+
+** Checklist under subtree (also counts toward the cookie)
+   - [X] Checkbox complete
+   - [ ] Checkbox incomplete
+
+* [2026-01-10 Sat] Views (Agenda / Tagged Agenda / Calendar) --------------------------------------
+
+# 16) Create a few scheduled tasks with tags so you can demo:
+# - Agenda View (scheduled items)
+# - Tagged Agenda (filter by tags / match strings)
+# - Calendar View
+* TODO Prep demo video outline :WORK:DEMO:
+  SCHEDULED: [2026-01-10]
+
+* TODO Record the demo :WORK:DEMO:
+  SCHEDULED: [2026-01-10]  DEADLINE: [2026-01-11]
+
+* TODO Publish to both marketplaces :RELEASE:DEMO:
+  SCHEDULED: [2026-01-10]
+
+* [2026-01-11 Sun] Tables + Exports -------------------------------------------------------------
+
+# 17) Insert Org Table command / snippet
+| Column A | Column B |
+|----------+----------|
+| A1       | B1       |
+| A2       | B2       |
+
+# 18) Reporting
+# - Export Current Tasks
+# - Export Yearly Summary
+# - Generate Executive Report
+# - Year-In-Review Dashboard
+* TODO Try the reporting commands from Command Palette :REPORTS:

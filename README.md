@@ -14,6 +14,25 @@
 
 Org-vscode helps you manage tasks, notes, and projects in plain text `.org` files — with a keyboard-first workflow, clickable Agenda/Calendar views, tags, checklists, and multi-line selection editing.
 
+## Feature Highlights
+
+- Selection-aware editing across multiple lines (status, schedule, deadline, tags, indentation)
+- v2 Org-mode alignment: `:TAGS:` at end of headline, planning lines under headings, `CLOSED:` stamp
+- TODO workflow: `TODO → IN_PROGRESS → CONTINUED → DONE/ABANDONED` (plus CONTINUED auto-forwarding)
+- Agenda View + Tagged Agenda View (Emacs-style match strings) + Calendar View
+- Checklists with hierarchical parent/child checkbox states
+- Org-mode statistics cookies: `[/]` (fraction) and `[%]` (percent)
+- Subtree completion stats on headings (TODO subtree completion + checkbox completion)
+- Emphasis rendering for `*bold*`, `/italic/`, `_underline_`, `+strike+`
+- Org table generator (command + snippets)
+- Reports/tools: Export Current Tasks, Export Yearly Summary, Executive Report, Year-In-Review Dashboard
+- Customization: Syntax Color Customizer + settings for heading markers / indentation / decorations
+
+See every feature in one file:
+
+- View: https://github.com/realDestroyer/org-vscode/blob/master/examples/demo-walkthrough.org
+- Download: https://raw.githubusercontent.com/realDestroyer/org-vscode/master/examples/demo-walkthrough.org
+
 For the full guide (examples + screenshots), see:
 
 - https://github.com/realDestroyer/org-vscode/blob/master/docs/howto.md
