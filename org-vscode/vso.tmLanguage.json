@@ -4,6 +4,30 @@
   "scopeName": "source.vso",
   "patterns": [
     {
+      "include": "#org_blocks"
+    },
+    {
+      "include": "#org_tables"
+    },
+    {
+      "include": "#org_lists"
+    },
+    {
+      "include": "#org_links"
+    },
+    {
+      "include": "#org_math"
+    },
+    {
+      "include": "#org_emphasis"
+    },
+    {
+      "include": "#org_priority"
+    },
+    {
+      "include": "#org_comments"
+    },
+    {
       "name": "entity.other.attribute-name.tag.vso",
       "comment": "Inline TAG block",
       "match": "\\[\\+TAG:[^\\]]*\\]"
@@ -212,6 +236,369 @@
     { "include": "#timestamp" }
   ],
   "repository": {
+    "org_comments": {
+      "patterns": [
+        {
+          "name": "comment.line.number-sign.vso",
+          "match": "^\\s*#(?!\\+).*$"
+        }
+      ]
+    },
+    "org_priority": {
+      "patterns": [
+        {
+          "name": "constant.other.priority.vso",
+          "match": "\\[#[A-Z0-9]\\]"
+        }
+      ]
+    },
+    "org_emphasis": {
+      "patterns": [
+        {
+          "name": "markup.bold.vso",
+          "match": "(?<!\\S)\\*[^*\\n]+\\*(?!\\S)"
+        },
+        {
+          "name": "markup.italic.vso",
+          "match": "(?<!\\S)/[^/\\n]+/(?!\\S)"
+        },
+        {
+          "name": "markup.underline.vso",
+          "match": "(?<!\\S)_[^_\\n]+_(?!\\S)"
+        },
+        {
+          "name": "markup.strike.vso",
+          "match": "(?<!\\S)\\+[^+\\n]+\\+(?!\\S)"
+        },
+        {
+          "name": "markup.inline.raw.vso",
+          "match": "(?<!\\S)=[^=\\n]+=(?!\\S)"
+        },
+        {
+          "name": "markup.inline.raw.vso",
+          "match": "(?<!\\S)~[^~\\n]+~(?!\\S)"
+        },
+        {
+          "name": "markup.inline.raw.vso",
+          "comment": "Backtick inline code (non-standard Org, but common in docs)",
+          "match": "`[^`\\n]+`"
+        }
+      ]
+    },
+    "org_math": {
+      "patterns": [
+        {
+          "name": "meta.block.math.vso",
+          "begin": "^\\s*\\$\\$\\s*$",
+          "end": "^\\s*\\$\\$\\s*$",
+          "patterns": [
+            { "include": "#org_emphasis" },
+            { "include": "#org_links" }
+          ]
+        },
+        {
+          "name": "string.other.math.inline.vso",
+          "match": "(?<!\\$)\\$[^\\$\\n]+\\$(?!\\$)"
+        }
+      ]
+    },
+    "org_links": {
+      "patterns": [
+        {
+          "name": "markup.underline.link.vso",
+          "match": "\\[\\[[^\\]\\n]+\\](?:\\[[^\\]\\n]*\\])?\\]"
+        },
+        {
+          "name": "markup.underline.link.vso",
+          "match": "\\bhttps?://\\S+"
+        },
+        {
+          "name": "markup.underline.link.vso",
+          "match": "\\bmailto:[^\\s>]+"
+        },
+        {
+          "name": "markup.underline.link.vso",
+          "match": "\\bfile:[^\\s>]+"
+        }
+      ]
+    },
+    "org_tables": {
+      "patterns": [
+        {
+          "name": "meta.table.vso",
+          "match": "^\\s*\\|.*\\|\\s*$",
+          "captures": {
+            "0": { "name": "meta.table.row.vso" }
+          }
+        }
+      ]
+    },
+    "org_lists": {
+      "patterns": [
+        {
+          "name": "meta.list.unordered.vso",
+          "begin": "^\\s*([-+*])\\s+",
+          "beginCaptures": {
+            "1": { "name": "punctuation.definition.list.vso" }
+          },
+          "end": "$",
+          "patterns": [
+            { "include": "#org_list_checkbox" },
+            { "include": "#org_emphasis" },
+            { "include": "#org_links" }
+          ]
+        },
+        {
+          "name": "meta.list.ordered.vso",
+          "begin": "^\\s*(\\d+)([.)])\\s+",
+          "beginCaptures": {
+            "1": { "name": "constant.numeric.list.vso" },
+            "2": { "name": "punctuation.definition.list.vso" }
+          },
+          "end": "$",
+          "patterns": [
+            { "include": "#org_list_checkbox" },
+            { "include": "#org_emphasis" },
+            { "include": "#org_links" }
+          ]
+        }
+      ]
+    },
+    "org_list_checkbox": {
+      "patterns": [
+        {
+          "name": "constant.character.checkbox.vso",
+          "match": "\\[(?: |X|x|-)\\]"
+        }
+      ]
+    },
+    "org_blocks": {
+      "patterns": [
+        {
+          "name": "meta.block.src.vso",
+          "begin": "^\\s*#\\+BEGIN_SRC\\b.*$",
+          "beginCaptures": { "0": { "name": "keyword.control.block.begin.vso" } },
+          "end": "^\\s*#\\+END_SRC\\s*$",
+          "endCaptures": { "0": { "name": "keyword.control.block.end.vso" } },
+          "patterns": [
+            { "include": "#org_src_python" },
+            { "include": "#org_src_javascript" },
+            { "include": "#org_src_typescript" },
+            { "include": "#org_src_json" },
+            { "include": "#org_src_yaml" },
+            { "include": "#org_src_sql" },
+            { "include": "#org_src_shell" },
+            { "include": "#org_src_html" },
+            { "include": "#org_src_css" },
+            { "include": "#org_src_java" },
+            { "include": "#org_src_c" },
+            { "include": "#org_src_cpp" },
+            { "include": "#org_src_rust" },
+            { "include": "#org_src_go" }
+          ]
+        },
+        {
+          "name": "meta.block.quote.vso",
+          "begin": "^\\s*#\\+BEGIN_QUOTE\\s*$",
+          "beginCaptures": { "0": { "name": "keyword.control.block.begin.vso" } },
+          "end": "^\\s*#\\+END_QUOTE\\s*$",
+          "endCaptures": { "0": { "name": "keyword.control.block.end.vso" } },
+          "patterns": [
+            { "include": "#org_emphasis" },
+            { "include": "#org_links" }
+          ]
+        },
+        {
+          "name": "meta.block.example.vso",
+          "begin": "^\\s*#\\+BEGIN_EXAMPLE\\s*$",
+          "beginCaptures": { "0": { "name": "keyword.control.block.begin.vso" } },
+          "end": "^\\s*#\\+END_EXAMPLE\\s*$",
+          "endCaptures": { "0": { "name": "keyword.control.block.end.vso" } }
+        },
+        {
+          "name": "meta.block.verse.vso",
+          "begin": "^\\s*#\\+BEGIN_VERSE\\s*$",
+          "beginCaptures": { "0": { "name": "keyword.control.block.begin.vso" } },
+          "end": "^\\s*#\\+END_VERSE\\s*$",
+          "endCaptures": { "0": { "name": "keyword.control.block.end.vso" } }
+        },
+        {
+          "name": "meta.block.center.vso",
+          "begin": "^\\s*#\\+BEGIN_CENTER\\s*$",
+          "beginCaptures": { "0": { "name": "keyword.control.block.begin.vso" } },
+          "end": "^\\s*#\\+END_CENTER\\s*$",
+          "endCaptures": { "0": { "name": "keyword.control.block.end.vso" } }
+        }
+      ]
+    },
+    "org_src_python": {
+      "patterns": [
+        {
+          "begin": "^\\s*#\\+BEGIN_SRC\\s+python\\b.*$",
+          "end": "^\\s*#\\+END_SRC\\s*$",
+          "contentName": "source.python",
+          "patterns": [
+            { "include": "source.python" }
+          ]
+        }
+      ]
+    },
+    "org_src_javascript": {
+      "patterns": [
+        {
+          "begin": "^\\s*#\\+BEGIN_SRC\\s+(?:javascript|js)\\b.*$",
+          "end": "^\\s*#\\+END_SRC\\s*$",
+          "contentName": "source.js",
+          "patterns": [
+            { "include": "source.js" }
+          ]
+        }
+      ]
+    },
+    "org_src_typescript": {
+      "patterns": [
+        {
+          "begin": "^\\s*#\\+BEGIN_SRC\\s+(?:typescript|ts)\\b.*$",
+          "end": "^\\s*#\\+END_SRC\\s*$",
+          "contentName": "source.ts",
+          "patterns": [
+            { "include": "source.ts" }
+          ]
+        }
+      ]
+    },
+    "org_src_json": {
+      "patterns": [
+        {
+          "begin": "^\\s*#\\+BEGIN_SRC\\s+json\\b.*$",
+          "end": "^\\s*#\\+END_SRC\\s*$",
+          "contentName": "source.json",
+          "patterns": [
+            { "include": "source.json" }
+          ]
+        }
+      ]
+    },
+    "org_src_yaml": {
+      "patterns": [
+        {
+          "begin": "^\\s*#\\+BEGIN_SRC\\s+(?:yaml|yml)\\b.*$",
+          "end": "^\\s*#\\+END_SRC\\s*$",
+          "contentName": "source.yaml",
+          "patterns": [
+            { "include": "source.yaml" }
+          ]
+        }
+      ]
+    },
+    "org_src_sql": {
+      "patterns": [
+        {
+          "begin": "^\\s*#\\+BEGIN_SRC\\s+sql\\b.*$",
+          "end": "^\\s*#\\+END_SRC\\s*$",
+          "contentName": "source.sql",
+          "patterns": [
+            { "include": "source.sql" }
+          ]
+        }
+      ]
+    },
+    "org_src_shell": {
+      "patterns": [
+        {
+          "begin": "^\\s*#\\+BEGIN_SRC\\s+(?:shell|bash|sh)\\b.*$",
+          "end": "^\\s*#\\+END_SRC\\s*$",
+          "contentName": "source.shell",
+          "patterns": [
+            { "include": "source.shell" }
+          ]
+        }
+      ]
+    },
+    "org_src_html": {
+      "patterns": [
+        {
+          "begin": "^\\s*#\\+BEGIN_SRC\\s+html\\b.*$",
+          "end": "^\\s*#\\+END_SRC\\s*$",
+          "contentName": "text.html.basic",
+          "patterns": [
+            { "include": "text.html.basic" }
+          ]
+        }
+      ]
+    },
+    "org_src_css": {
+      "patterns": [
+        {
+          "begin": "^\\s*#\\+BEGIN_SRC\\s+css\\b.*$",
+          "end": "^\\s*#\\+END_SRC\\s*$",
+          "contentName": "source.css",
+          "patterns": [
+            { "include": "source.css" }
+          ]
+        }
+      ]
+    },
+    "org_src_java": {
+      "patterns": [
+        {
+          "begin": "^\\s*#\\+BEGIN_SRC\\s+java\\b.*$",
+          "end": "^\\s*#\\+END_SRC\\s*$",
+          "contentName": "source.java",
+          "patterns": [
+            { "include": "source.java" }
+          ]
+        }
+      ]
+    },
+    "org_src_c": {
+      "patterns": [
+        {
+          "begin": "^\\s*#\\+BEGIN_SRC\\s+c\\b.*$",
+          "end": "^\\s*#\\+END_SRC\\s*$",
+          "contentName": "source.c",
+          "patterns": [
+            { "include": "source.c" }
+          ]
+        }
+      ]
+    },
+    "org_src_cpp": {
+      "patterns": [
+        {
+          "begin": "^\\s*#\\+BEGIN_SRC\\s+(?:cpp|c\\+\\+)\\b.*$",
+          "end": "^\\s*#\\+END_SRC\\s*$",
+          "contentName": "source.cpp",
+          "patterns": [
+            { "include": "source.cpp" }
+          ]
+        }
+      ]
+    },
+    "org_src_rust": {
+      "patterns": [
+        {
+          "begin": "^\\s*#\\+BEGIN_SRC\\s+rust\\b.*$",
+          "end": "^\\s*#\\+END_SRC\\s*$",
+          "contentName": "source.rust",
+          "patterns": [
+            { "include": "source.rust" }
+          ]
+        }
+      ]
+    },
+    "org_src_go": {
+      "patterns": [
+        {
+          "begin": "^\\s*#\\+BEGIN_SRC\\s+go\\b.*$",
+          "end": "^\\s*#\\+END_SRC\\s*$",
+          "contentName": "source.go",
+          "patterns": [
+            { "include": "source.go" }
+          ]
+        }
+      ]
+    },
     "scheduled": {
       "patterns": [
         {

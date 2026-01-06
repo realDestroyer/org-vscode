@@ -131,3 +131,72 @@
 # - Generate Executive Report
 # - Year-In-Review Dashboard
 * TODO Try the reporting commands from Command Palette :REPORTS:
+
+* [2026-01-12 Mon] Org Syntax Parity (Links / Blocks / Math / Properties) ------------------------
+
+# 19) Priorities (Org-style cookies)
+* TODO [#A] Priority demo (A/B/C) :PRIORITY:
+
+# 20) More emphasis: inline code and verbatim
+* TODO Inline code/verbatim demo :STYLE:
+  Use =inline code= and ~verbatim~ for literal text.
+
+# 21) Attributes / directives (used by exporters and previews)
+#+CAPTION: Example caption (directive)
+#+ATTR_HTML: :width 600
+
+# 22) Links: external, file, heading, id, and internal targets
+* TODO Link navigation demo :LINKS:
+  - Bare URL: https://orgmode.org
+  - Bracket link with description: [[https://orgmode.org][Org manual]]
+  - Mail link: mailto:someone@example.com
+  - File link (relative): [[file:../docs/howto.md][Open the How-To]]
+  - Internal heading link: [[*Tables + Exports][Jump to the tables section]]
+
+  This heading has a global ID and a CUSTOM_ID (anchor-like):
+  :PROPERTIES:
+  :ID: 11111111-2222-3333-4444-555555555555
+  :CUSTOM_ID: demo-custom-id
+  :END:
+
+  - ID link (cross-file capable): [[id:11111111-2222-3333-4444-555555555555][Jump via ID]]
+  - Anchor link (targets / CUSTOM_ID): [[#demo-custom-id][Jump via #anchor]]
+
+  A classic Org target looks like this (link to it with [[#demo-target]]):
+  <<demo-target>>
+
+# 23) Lists: ordered, unordered, and checkboxes
+* TODO List syntax demo :LISTS:
+  - Unordered bullet
+  + Alternate unordered bullet
+  1. Ordered item (1.)
+  2) Ordered item (2))
+  - [ ] Checkbox unchecked
+  - [-] Checkbox partial
+  - [X] Checkbox checked
+
+# 24) Blocks: SRC blocks and other BEGIN/END blocks
+* TODO Block syntax demo :BLOCKS:
+  #+BEGIN_SRC javascript
+  function greet(name) {
+    console.log(`Hello, ${name}`);
+  }
+  greet("Org-vscode");
+  #+END_SRC
+
+  #+BEGIN_QUOTE
+  Quoted block text.
+  #+END_QUOTE
+
+  #+BEGIN_EXAMPLE
+  Example block text (no markup processing).
+  #+END_EXAMPLE
+
+# 25) Math: inline and display fragments
+* TODO Math demo :MATH:
+  Inline math: $E = mc^2$
+
+  Display math:
+  $$
+  \sum_{i=1}^{n} i = \frac{n(n+1)}{2}
+  $$
