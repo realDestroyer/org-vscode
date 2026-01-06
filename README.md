@@ -30,8 +30,8 @@ Org-vscode helps you manage tasks, notes, and projects in plain text `.org` file
 
 See every feature in one file:
 
-- View: https://github.com/realDestroyer/org-vscode/blob/master/examples/demo-walkthrough.org
-- Download: https://raw.githubusercontent.com/realDestroyer/org-vscode/master/examples/demo-walkthrough.org
+- Demo video (MP4): https://github.com/realDestroyer/org-vscode/blob/master/Images/demo-example-file.mp4
+- Download the example file: https://raw.githubusercontent.com/realDestroyer/org-vscode/master/examples/demo-walkthrough.org
 
 For the full guide (examples + screenshots), see:
 
