@@ -8,6 +8,8 @@
 > A fast, keyboard-driven Org Mode–style task manager built for Visual Studio Code.
 > Inspired by Emacs Org Mode
 
+Org-vscode’s long-term direction is to emulate Emacs Org Mode as closely as practical in VS Code (syntax, navigation, and editing workflows). Some Emacs features are still in progress — see the v2.2 parity checklist below.
+
 ---
 
 ## Summary
@@ -24,6 +26,9 @@ Org-vscode helps you manage tasks, notes, and projects in plain text `.org` file
 - Org-mode statistics cookies: `[/]` (fraction) and `[%]` (percent)
 - Subtree completion stats on headings (TODO subtree completion + checkbox completion)
 - Emphasis rendering for `*bold*`, `/italic/`, `_underline_`, `+strike+`
+- Org-mode syntax highlighting for common constructs: lists, code blocks, links, priorities (`[#A]`), property drawers, directives (`#+...`), and basic math fragments
+- Smart navigation helpers: Document Outline (headings) + clickable Org links (including `[[*heading]]`, `[[id:...]]`, `[[#target]]`, `file:`, `http(s)`, `mailto:`)
+- Org link auto-completion inside `[[...]]` (including workspace-wide `id:` suggestions)
 - Org table generator (command + snippets)
 - Reports/tools: Export Current Tasks, Export Yearly Summary, Executive Report, Year-In-Review Dashboard
 - Customization: Syntax Color Customizer + settings for heading markers / indentation / decorations
@@ -37,6 +42,15 @@ See every feature in one file:
 For the full guide (examples + screenshots), see:
 
 - https://github.com/realDestroyer/org-vscode/blob/master/docs/howto.md
+
+## 🚀 Quick Start (Emacs-inspired)
+
+Most workflows are designed to feel familiar if you use Emacs Org Mode — keyboard-first, selection-aware edits, and “structure-first” navigation.
+
+- Open the Command Palette and run Org-vscode commands (many have default keybindings below).
+- Use `Ctrl+Shift+O` to jump to headings (Outline is powered by the Org heading structure).
+- Use `Ctrl+Click` (Windows/Linux) / `Cmd+Click` (Mac) on `[[links]]` to follow them.
+- Type `[[` (or `[[id:`) to trigger Org link completion.
 
 ## 🔑 Keyboard Shortcuts
 
@@ -67,6 +81,18 @@ Most editing shortcuts support multi-line selection: highlight multiple task lin
 | `Ctrl + Shift + C`   | Open the Calendar View                                 |
 | `Ctrl + Shift + E`   | Export all active (non-DONE) tasks to CurrentTasks.org |
 | `Ctrl + Alt + M`     | Show popup message (GitHub link)                       |
+
+---
+
+## 🎯 Emacs Org-mode Parity (v2.2 goal)
+
+We’re working toward a “parity release” (v2.2) that matches key Org-mode workflows more 1:1.
+
+- Planned: Real-time preview + scroll sync
+- Planned: Org-like context-aware insert (Meta-Return style) for headings/lists/tables/properties
+- Planned: Property management commands (set/update properties, auto-create drawers, unique ID generation)
+- Planned: Smart TAB folding behavior across headings/lists/blocks/properties
+- Planned: Insert link command + richer link editing utilities
 
 ---
 
