@@ -61,6 +61,7 @@ VS Code Settings editor (search for `Org-vscode:`):
 * [📝 Create a New .org File](#create-a-new-org-file)
 * [🔖 Create a Header](#create-a-header)
 * [🧩 Org-vscode Snippets](#org-vscode-snippets)
+* [🔎 Org syntax + links](#org-syntax--links)
 * [📂 Open a File by Tags or Titles](#open-a-file-by-tags-or-titles)
 * [📅 Agenda View & Scheduling](#agenda-view--scheduling)
 * [☑️ Checkboxes](#checkboxes)
@@ -177,6 +178,53 @@ Just type the prefix and hit `Tab` to expand the snippet inside a `.org` file.
 ```org
 * TODO Task description
   SCHEDULED: [04-21-2025]
+```
+
+---
+
+## 🔎 Org syntax + links <a id="org-syntax--links"></a>
+
+Org-vscode includes expanded Org-mode syntax highlighting plus navigation helpers for common Org constructs.
+
+### Syntax highlighting (examples)
+
+- Blocks:
+
+```org
+#+BEGIN_SRC javascript
+console.log('hello')
+#+END_SRC
+```
+
+- Inline fragments:
+
+```org
+Inline math: $a^2 + b^2 = c^2$
+Priority: [#A]
+```
+
+- Properties/drawers:
+
+```org
+:PROPERTIES:
+:ID: 01234567-89ab-cdef-0123-456789abcdef
+:CUSTOM_ID: demo-anchor
+:END:
+```
+
+### Link navigation + completion
+
+- Follow `[[links]]` with Ctrl+Click (Windows/Linux) / Cmd+Click (Mac).
+- Type `[[` (or `[[id:`) to get link completions.
+
+Examples:
+
+```org
+[[https://example.com][External link]]
+[[file:./notes.org][Local file]]
+[[*A Heading In This File]]
+[[id:01234567-89ab-cdef-0123-456789abcdef]]
+[[#demo-anchor]]
 ```
 
 #### `/checklist` <a id="checklist"></a>
