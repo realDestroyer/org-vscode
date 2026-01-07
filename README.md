@@ -87,20 +87,6 @@ Most editing shortcuts support multi-line selection: highlight multiple task lin
 
 ---
 
-## 🎯 Emacs Org-mode Parity (v2.2 goal)
-
-We’re working toward a “parity release” (v2.2) that matches key Org-mode workflows more 1:1.
-
-- Planned: Real-time preview + scroll sync
-- Real-time preview + scroll sync (MVP)
-- Org-like context-aware insert (Meta-Return style): `Alt+Enter` inserts a new heading / list item / table row depending on context
-- Planned: LaTeX fragment rendering (inline "image" preview, org-fragtog-style)
-- Planned: Property management commands (set/update properties, auto-create drawers, unique ID generation)
-- Planned: Smart TAB folding behavior across headings/lists/blocks/properties
-- Planned: Insert link command + richer link editing utilities
-
----
-
 ## 🧩 Snippets
 
 | Prefix       | Description                     |
