@@ -44,27 +44,34 @@ This repo bundles the extension into `dist/extension.js`. For a release, ensure 
 1. **Merge to `master`**
     - Ensure CI/tests are green.
 
-2. **Bump version**
+2. **Update docs**
+   - Ensure user-facing docs reflect changes:
+      - `README.md`
+      - `docs/CHANGELOG.md`
+      - `docs/howto.md` / `docs/roadmap.md` (as needed)
+
+3. **Bump version**
     - Update the version in:
        - `org-vscode/package.json`
        - `org-vscode/org-vscode/package.json` (dev/test copy)
 
-3. **Bundle + test**
+4. **Bundle + test**
     - From `org-vscode/`:
        - `npm run bundle`
-    - From `org-vscode/org-vscode/`:
-       - `npm test`
+   - From `org-vscode/org-vscode/` (dev/test copy):
+      - `npm run test:unit`
+      - `npm test`
 
-4. **Package VSIX**
+5. **Package VSIX**
     - From `org-vscode/`:
        - `npx vsce package`
 
-5. **Publish to VS Code Marketplace**
+6. **Publish to VS Code Marketplace**
     - Requires a VSCE publisher token configured for `realDestroyer`.
     - From `org-vscode/`:
        - `npx vsce publish`
 
-6. **Publish to OpenVSX**
+7. **Publish to OpenVSX**
     - Requires an OpenVSX token (commonly via `OVSX_PAT`).
     - From `org-vscode/`:
        - `npx ovsx publish -p $env:OVSX_PAT`

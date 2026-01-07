@@ -62,6 +62,8 @@ VS Code Settings editor (search for `Org-vscode:`):
 * [🔖 Create a Header](#create-a-header)
 * [🧩 Org-vscode Snippets](#org-vscode-snippets)
 * [🔎 Org syntax + links](#org-syntax--links)
+* [🪟 Preview (Live HTML)](#preview-live-html)
+* [∑ Math Symbol Decorations](#math-symbol-decorations)
 * [📂 Open a File by Tags or Titles](#open-a-file-by-tags-or-titles)
 * [📅 Agenda View & Scheduling](#agenda-view--scheduling)
 * [☑️ Checkboxes](#checkboxes)
@@ -258,6 +260,42 @@ Examples:
 ```
 
 Snippets make it easy to maintain formatting consistency and move quickly through repetitive structures!
+
+---
+
+## 🪟 Preview (Live HTML) <a id="preview-live-html"></a>
+
+Org-vscode includes a lightweight Live Preview (webview) so you can read your Org file as rendered HTML while you edit.
+
+- Open preview to the side: `Ctrl + Alt + P`
+- Or use the Command Palette:
+  - **Org-vscode: Open Preview**
+  - **Org-vscode: Open Preview To Side**
+
+Notes:
+
+- Preview updates automatically as you type.
+- Scroll sync (editor → preview) is supported.
+
+---
+
+## ∑ Math Symbol Decorations <a id="math-symbol-decorations"></a>
+
+Inside math fragments (e.g. `$...$` or `$$...$$`), Org-vscode can optionally render common LaTeX commands as Unicode symbols while editing.
+
+Example:
+
+```org
+Inline: $\alpha + \beta = \gamma$ and $a \leq b$.
+```
+
+Toggle the feature:
+
+```json
+"Org-vscode.decorateMath": true
+```
+
+This is intentionally lightweight (not a full LaTeX renderer). For org-fragtog-style “fragment images”, see the roadmap.
 
 ---
 

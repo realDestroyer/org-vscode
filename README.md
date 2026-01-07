@@ -27,6 +27,8 @@ Org-vscode helps you manage tasks, notes, and projects in plain text `.org` file
 - Subtree completion stats on headings (TODO subtree completion + checkbox completion)
 - Emphasis rendering for `*bold*`, `/italic/`, `_underline_`, `+strike+`
 - Org-mode syntax highlighting for common constructs: lists, code blocks, links, priorities (`[#A]`), property drawers, directives (`#+...`), and basic math fragments
+- Live Preview (HTML) with editor → preview scroll sync
+- Math symbol decorations (experimental): renders common LaTeX commands (e.g. `\alpha`) as Unicode glyphs while editing
 - Smart navigation helpers: Document Outline (headings) + clickable Org links (including `[[*heading]]`, `[[id:...]]`, `[[#target]]`, `file:`, `http(s)`, `mailto:`)
 - Org link auto-completion inside `[[...]]` (including workspace-wide `id:` suggestions)
 - Org table generator (command + snippets)
@@ -35,7 +37,6 @@ Org-vscode helps you manage tasks, notes, and projects in plain text `.org` file
 
 See every feature in one file:
 
-- Demo video (MP4): https://github.com/realDestroyer/org-vscode/blob/master/Images/demo-example-file.mp4
 - Demo GIF: https://github.com/realDestroyer/org-vscode/blob/master/Images/demo-example-file.gif
 - Download the example file: https://raw.githubusercontent.com/realDestroyer/org-vscode/master/examples/demo-walkthrough.org
 
@@ -64,6 +65,7 @@ Most editing shortcuts support multi-line selection: highlight multiple task lin
 | `Shift + Alt + ↓`    | Move task block down                                   |
 | `Alt + →`            | Increase heading level (selection-aware)               |
 | `Alt + ←`            | Decrease heading level (selection-aware)               |
+| `Alt + Enter`        | Smart insert new element (Org Meta-Return style)       |
 | `Ctrl + Shift + [`   | Fold section                                           |
 | `Ctrl + Shift + ]`   | Unfold section                                         |
 | `Ctrl + Alt + S`     | Schedule a task (selection-aware)                      |
@@ -79,6 +81,7 @@ Most editing shortcuts support multi-line selection: highlight multiple task lin
 | *(Command Palette)*  | Org-vscode: Convert Dates in Current File              |
 | `Ctrl + Shift + G`   | Open the Tagged Agenda View                            |
 | `Ctrl + Shift + C`   | Open the Calendar View                                 |
+| `Ctrl + Alt + P`     | Open Live Preview to the side                          |
 | `Ctrl + Shift + E`   | Export all active (non-DONE) tasks to CurrentTasks.org |
 | `Ctrl + Alt + M`     | Show popup message (GitHub link)                       |
 
@@ -89,7 +92,9 @@ Most editing shortcuts support multi-line selection: highlight multiple task lin
 We’re working toward a “parity release” (v2.2) that matches key Org-mode workflows more 1:1.
 
 - Planned: Real-time preview + scroll sync
-- Planned: Org-like context-aware insert (Meta-Return style) for headings/lists/tables/properties
+- Real-time preview + scroll sync (MVP)
+- Org-like context-aware insert (Meta-Return style): `Alt+Enter` inserts a new heading / list item / table row depending on context
+- Planned: LaTeX fragment rendering (inline "image" preview, org-fragtog-style)
 - Planned: Property management commands (set/update properties, auto-create drawers, unique ID generation)
 - Planned: Smart TAB folding behavior across headings/lists/blocks/properties
 - Planned: Insert link command + richer link editing utilities
