@@ -2,7 +2,7 @@
 	"name": "org-vscode",
 	"displayName": "org-vscode",
 	"description": "Quickly create todo lists, take notes, plan projects and organize your thoughts.",
-	"version": "2.1.5",
+	"version": "2.2.0",
 	"repository": "https://www.github.com/realDestroyer/org-vscode",
 	"icon": "Logo.png",
 	"publisher": "realDestroyer",
@@ -20,13 +20,16 @@
 		"onLanguage:vsorg",
 		"onLanguage:org-vscode",
 		"onLanguage:vso",
+		"onCommand:org-vscode.openPreview",
+		"onCommand:org-vscode.openPreviewToSide",
 		"onCommand:extension.viewAgenda",
 		"onCommand:extension.migrateFileToV2",
 		"onCommand:extension.createVsoFile",
 		"onCommand:extension.openSyntaxColorCustomizer",
 		"onCommand:orgMode.exportYearSummary",
 		"onCommand:orgMode.generateExecutiveReport",
-		"onCommand:orgMode.openYearInReview"
+		"onCommand:orgMode.openYearInReview",
+		"onCommand:org-vscode.insertNewElement"
 	],
 	"keywords": [
 		"todo",
@@ -331,6 +334,12 @@
 					"order": 10,
 					"default": true,
 					"description": "Render Org emphasis markers (*bold*, /italic/, _underline_) using editor decorations and hide the marker characters unless the cursor is on them."
+				},
+				"Org-vscode.decorateMath": {
+					"type": "boolean",
+					"order": 10.5,
+					"default": true,
+					"description": "Render common LaTeX commands (e.g. \\alpha, \\sum) inside $...$ and $$...$$ math using editor decorations."
 				}
 			}
 		},
@@ -338,6 +347,18 @@
 			{
 				"command": "extension.setFolderPath",
 				"title": "org-vscode Change Org-vscode Directory"
+			},
+			{
+				"command": "org-vscode.openPreview",
+				"title": "Org-vscode: Open Preview"
+			},
+			{
+				"command": "org-vscode.openPreviewToSide",
+				"title": "Org-vscode: Open Preview to Side"
+			},
+			{
+				"command": "org-vscode.insertNewElement",
+				"title": "Org-vscode: Insert New Element (Smart)"
 			},
 			{
 				"command": "extension.migrateFileToV2",
@@ -465,6 +486,21 @@
 			}
 		],
 		"keybindings": [
+			{
+				"command": "org-vscode.openPreviewToSide",
+				"key": "ctrl+alt+p",
+				"when": "(editorLangId == 'vso' || editorLangId == 'org' || editorLangId == 'vsorg' || editorLangId == 'org-vscode') && editorTextFocus"
+			},
+			{
+				"command": "org-vscode.insertNewElement",
+				"key": "alt+enter",
+				"when": "(editorLangId == 'vso' || editorLangId == 'org' || editorLangId == 'vsorg' || editorLangId == 'org-vscode') && editorTextFocus"
+			},
+			{
+				"command": "extension.toggleCheckboxItem",
+				"key": "ctrl+alt+x",
+				"when": "(editorLangId == 'vso' || editorLangId == 'org' || editorLangId == 'vsorg' || editorLangId == 'org-vscode') && editorTextFocus"
+			},
 			{
 				"key": "ctrl+right",
 				"command": "-extension.incrementDate"
