@@ -306,14 +306,37 @@
           "name": "meta.block.math.vso",
           "begin": "^\\s*\\$\\$\\s*$",
           "end": "^\\s*\\$\\$\\s*$",
+          "beginCaptures": {
+            "0": { "name": "punctuation.definition.math.block.vso" }
+          },
+          "endCaptures": {
+            "0": { "name": "punctuation.definition.math.block.vso" }
+          },
           "patterns": [
+            { "name": "support.function.latex.command.vso", "match": "\\\\\\\\[A-Za-z]+" },
+            { "name": "constant.character.escape.latex.vso", "match": "\\\\\\\\." },
+            { "name": "punctuation.section.group.latex.vso", "match": "[{}\\\\[\\\\]()]" },
+            { "name": "keyword.operator.math.vso", "match": "[\\^_=+\\-*/]" },
             { "include": "#org_emphasis" },
             { "include": "#org_links" }
           ]
         },
         {
           "name": "string.other.math.inline.vso",
-          "match": "(?<!\\$)\\$[^\\$\\n]+\\$(?!\\$)"
+          "begin": "(?<!\\$)\\$",
+          "beginCaptures": {
+            "0": { "name": "punctuation.definition.math.inline.vso" }
+          },
+          "end": "\\$(?!\\$)",
+          "endCaptures": {
+            "0": { "name": "punctuation.definition.math.inline.vso" }
+          },
+          "patterns": [
+            { "name": "support.function.latex.command.vso", "match": "\\\\\\\\[A-Za-z]+" },
+            { "name": "constant.character.escape.latex.vso", "match": "\\\\\\\\." },
+            { "name": "punctuation.section.group.latex.vso", "match": "[{}\\\\[\\\\]()]" },
+            { "name": "keyword.operator.math.vso", "match": "[\\^_=+\\-*/]" }
+          ]
         }
       ]
     },
