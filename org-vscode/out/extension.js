@@ -51,13 +51,16 @@ const { registerCheckboxAutoDone } = require("./checkboxAutoDone");
 const { registerCheckboxStatsDecorations } = require("./checkboxStatsDecorations");
 const { registerMarkupCommands } = require("./markupCommands");
 const { registerOrgEmphasisDecorations } = require("./orgEmphasisDecorations");
+const { registerMathDecorations } = require("./mathDecorations");
 const { registerOrgLinkProvider } = require("./orgLinkProvider");
 const { registerOrgSymbolProvider } = require("./orgSymbolProvider");
 const { registerOrgCompletionProvider } = require("./orgCompletionProvider");
+const { registerOrgPreview } = require("./orgPreview");
 const { migrateFileToV2 } = require("./migrateFileToV2");
 const { insertCheckboxItem } = require("./insertCheckboxItem");
 const { toggleCheckboxCookie } = require("./toggleCheckboxCookie");
 const { toggleCheckboxItemAtCursor } = require("./toggleCheckboxItem");
+const { insertNewElement } = require("./smartInsertNewElement");
 
 // Startup log for debugging
 console.log("📌 agenda.js has been loaded in extension.js");
@@ -164,6 +167,12 @@ function activate(ctx) {
   // Emacs-style emphasis rendering (bold/italic/underline) + hide markers when not editing them
   registerOrgEmphasisDecorations(ctx);
 
+  // Render common LaTeX commands inside math as Unicode glyphs (decorations only)
+  registerMathDecorations(ctx);
+
+  // Live preview webview (MVP) + editor -> preview scroll sync
+  registerOrgPreview(ctx);
+
   // Date format changes are not auto-applied to existing files because swapping
   // MM-DD and DD-MM can be ambiguous (e.g. 04-05-2026). Provide an explicit command instead.
   vscode.workspace.onDidChangeConfiguration((event) => {
@@ -230,6 +239,7 @@ function activate(ctx) {
   ctx.subscriptions.push(vscode.commands.registerCommand("extension.insertCheckboxItem", insertCheckboxItem));
   ctx.subscriptions.push(vscode.commands.registerCommand("extension.toggleCheckboxCookie", toggleCheckboxCookie));
   ctx.subscriptions.push(vscode.commands.registerCommand("extension.toggleCheckboxItem", toggleCheckboxItemAtCursor));
+  ctx.subscriptions.push(vscode.commands.registerCommand("org-vscode.insertNewElement", insertNewElement));
 
   // org-vscode.insertTable is registered inside insertTable.activate()
   insertTable.activate(ctx);

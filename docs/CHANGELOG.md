@@ -2,6 +2,14 @@
 
 # [Unreleased]
 
+# [2.2.0] 01-06-26
+`Added / Enhanced`
+
+- **Preview (MVP):** Live HTML preview with editor → preview scroll sync. Commands: `Org-vscode: Open Preview` and `Org-vscode: Open Preview To Side`.
+- **Keybinding:** `Ctrl+Alt+P` opens preview to the side.
+- **Editing (Org Meta-Return style):** `Alt+Enter` smart-inserts a new heading / list item / table row depending on context.
+- **Math (experimental):** Optional math symbol decorations that render common LaTeX commands as Unicode glyphs inside `$...$` and `$$...$$` (setting: `Org-vscode.decorateMath`).
+
 # [2.1.5] 01-06-26
 `Fixed / Enhanced`
 

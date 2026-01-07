@@ -117,6 +117,16 @@
 * TODO Publish to both marketplaces :RELEASE:DEMO:
   SCHEDULED: [2026-01-10]
 
+* [2026-01-10 Sat] Preview (Live HTML) -----------------------------------------------------------
+
+# 16b) Live preview (MVP) + scroll sync
+# Use Ctrl+Alt+P to open preview to the side.
+# Then scroll the editor: the preview should follow.
+* TODO Open the Org Preview :PREVIEW:
+  Tip: Command Palette also has:
+  - Org-vscode: Open Preview
+  - Org-vscode: Open Preview to Side
+
 * [2026-01-11 Sun] Tables + Exports -------------------------------------------------------------
 
 # 17) Insert Org Table command / snippet
@@ -166,7 +176,7 @@
   <<demo-target>>
 
 # 23) Lists: ordered, unordered, and checkboxes
-* TODO List syntax demo :LISTS:
+* IN_PROGRESS List syntax demo :LISTS:
   - Unordered bullet
   + Alternate unordered bullet
   1. Ordered item (1.)
@@ -196,7 +206,17 @@
 * TODO Math demo :MATH:
   Inline math: $E = mc^2$
 
+  # 25a) Math symbol rendering (decorations)
+  # LaTeX commands like \alpha and \sum should render as symbols in the editor.
+  Inline with commands: $\alpha + \beta = \gamma$
+  Operators: $a \leq b \Rightarrow a \neq b$
+
+  
   Display math:
   $$
   \sum_{i=1}^{n} i = \frac{n(n+1)}{2}
+  \int_0^1 x^2\,dx = \frac{1}{3}
   $$
+
+  # If you want to see the raw commands instead of symbols, set:
+  #   Org-vscode.decorateMath = false
