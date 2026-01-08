@@ -45,6 +45,7 @@ const { exportYearSummary } = require("./yearSummary");
 const { generateExecutiveReport } = require("./yearExecutiveReport");
 const { openYearInReview } = require("./yearDashboard");
 const { openSyntaxColorCustomizer } = require("./syntaxColorCustomizer");
+const { openKeybindingCustomizer } = require("./keybindingCustomizer");
 const { registerUnicodeHeadingDecorations } = require("./unicodeHeadingDecorations");
 const { registerTodoLineDecorations } = require("./todoLineDecorations");
 const { registerCheckboxAutoDone } = require("./checkboxAutoDone");
@@ -236,6 +237,7 @@ function activate(ctx) {
   ctx.subscriptions.push(vscode.commands.registerCommand("extension.viewTaggedAgenda", taggedAgenda));
   ctx.subscriptions.push(vscode.commands.registerCommand("extension.openCalendarView", openCalendarView));
   ctx.subscriptions.push(vscode.commands.registerCommand("extension.openSyntaxColorCustomizer", openSyntaxColorCustomizer));
+  ctx.subscriptions.push(vscode.commands.registerCommand("extension.openKeybindingCustomizer", openKeybindingCustomizer));
   ctx.subscriptions.push(vscode.commands.registerCommand("extension.insertCheckboxItem", insertCheckboxItem));
   ctx.subscriptions.push(vscode.commands.registerCommand("extension.toggleCheckboxCookie", toggleCheckboxCookie));
   ctx.subscriptions.push(vscode.commands.registerCommand("extension.toggleCheckboxItem", toggleCheckboxItemAtCursor));
