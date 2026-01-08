@@ -2,6 +2,13 @@
 
 # [Unreleased]
 
+# [2.2.1] 01-07-26
+`Fixed / Enhanced`
+
+- **Fix: Activation bundling:** Updated the bundle pipeline to prefer ESM entrypoints (avoids a runtime crash caused by a missing `./impl/*` module).
+- **Enhanced: Keyboard shortcuts discoverability:** Legacy `extension.*` commands now display under the `org-vscode:` category without changing command IDs.
+- **Enhanced: Keybinding Customizer:** Cleaner command display names, summaries for all rows, hides noisy `when` clauses, includes commands without default keybindings, and keeps summary text on one line.
+
 # [2.2.0] 01-06-26
 `Added / Enhanced`
 

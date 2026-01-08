@@ -14,6 +14,7 @@ Test Files/**
 Roadmap/**
 examples/**
 Images/**
+!Images/org-vscode-logo.png
 org-vscode/**
 
 # Build helpers
