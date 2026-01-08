@@ -2,9 +2,9 @@
 	"name": "org-vscode",
 	"displayName": "org-vscode",
 	"description": "Quickly create todo lists, take notes, plan projects and organize your thoughts.",
-	"version": "2.2.0",
+	"version": "2.2.1",
 	"repository": "https://www.github.com/realDestroyer/org-vscode",
-	"icon": "Logo.png",
+	"icon": "Images/org-vscode-logo.png",
 	"publisher": "realDestroyer",
 	"license": "MIT",
 	"engines": {
@@ -26,6 +26,7 @@
 		"onCommand:extension.migrateFileToV2",
 		"onCommand:extension.createVsoFile",
 		"onCommand:extension.openSyntaxColorCustomizer",
+		"onCommand:extension.openKeybindingCustomizer",
 		"onCommand:orgMode.exportYearSummary",
 		"onCommand:orgMode.generateExecutiveReport",
 		"onCommand:orgMode.openYearInReview",
@@ -401,6 +402,10 @@
 				"title": "org-vscode Customize Syntax Colors"
 			},
 			{
+				"command": "extension.openKeybindingCustomizer",
+				"title": "org-vscode Customize Keybindings"
+			},
+			{
 				"command": "extension.toggleBoldMarkup",
 				"title": "Org-vscode: Toggle Bold Markup"
 			},
@@ -447,6 +452,41 @@
 			{
 				"command": "extension.decrementDate",
 				"title": "Decrement Date Stamp"
+			},
+			{
+				"command": "extension.moveBlockUp",
+				"category": "org-vscode",
+				"title": "MoveBlockUp"
+			},
+			{
+				"command": "extension.moveBlockDown",
+				"category": "org-vscode",
+				"title": "MoveBlockDown"
+			},
+			{
+				"command": "extension.toggleCheckboxItem",
+				"category": "org-vscode",
+				"title": "ToggleCheckboxItem"
+			},
+			{
+				"command": "extension.toggleStatusLeft",
+				"category": "org-vscode",
+				"title": "ToggleStatusLeft"
+			},
+			{
+				"command": "extension.toggleStatusRight",
+				"category": "org-vscode",
+				"title": "ToggleStatusRight"
+			},
+			{
+				"command": "extension.increment",
+				"category": "org-vscode",
+				"title": "Increment"
+			},
+			{
+				"command": "extension.decrement",
+				"category": "org-vscode",
+				"title": "Decrement"
 			},
 			{
 				"command": "extension.addTagToTask",
@@ -665,7 +705,7 @@
 		"postinstall": "npm run bundle",
 		"fetch-media": "node ./org-vscode/scripts/fetch-media.js",
 		"test": "npm run bundle && node ./org-vscode/test/runTest.js",
-		"bundle": "node -e \"require('fs').mkdirSync('dist', { recursive: true })\" && node ./org-vscode/scripts/fetch-media.js && esbuild ./org-vscode/out/extension.js --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node --minify && node ./scripts/copy-media.js",
+		"bundle": "node -e \"require('fs').mkdirSync('dist', { recursive: true })\" && node ./org-vscode/scripts/fetch-media.js && esbuild ./org-vscode/out/extension.js --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node --main-fields=module,main --minify && node ./scripts/copy-media.js",
 		"vscode:prepublish": "npm run bundle",
 		"package": "npm run bundle && npx vsce package --readme-path README.md --changelog-path docs/CHANGELOG.md",
 		"publish": "npm run bundle && npx vsce publish --readme-path README.md --changelog-path docs/CHANGELOG.md"
@@ -682,6 +722,7 @@
 	"dependencies": {
 		"fs-extra": "^7.0.0",
 		"gray-matter": "^4.0.1",
+		"jsonc-parser": "^3.3.1",
 		"klaw": "^3.0.0",
 		"moment": "^2.29.4"
 	},
