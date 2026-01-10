@@ -2,11 +2,11 @@
 const vscode = require("vscode");
 const moment = require("moment");
 const taskKeywordManager = require("./taskKeywordManager");
-const { isPlanningLine, parsePlanningFromText, normalizeTagsAfterPlanning } = require("./orgTagUtils");
+const { isPlanningLine, parsePlanningFromText, normalizeTagsAfterPlanning, getAcceptedDateFormats } = require("./orgTagUtils");
 
-const DAY_HEADING_REGEX = /^(\s*)(⊘|\*+)\s*\[(\d{2,4}-\d{2}-\d{2,4})\s+([A-Za-z]{3})\](.*)$/;
-const SCHEDULED_REGEX = /SCHEDULED:\s*\[(\d{2,4}-\d{2}-\d{2,4})\]/;
-const DEADLINE_REGEX = /DEADLINE:\s*\[(\d{2,4}-\d{2}-\d{2,4})\]/;
+const DAY_HEADING_REGEX = /^(\s*)(⊘|\*+)\s*\[(\d{2,4}-\d{2}-\d{2,4})(?:\s+([A-Za-z]{3}))?(?:\s+\d{1,2}:\d{2})?\](.*)$/;
+const SCHEDULED_REGEX = /SCHEDULED:\s*\[(\d{2,4}-\d{2}-\d{2,4})(?:\s+\w{3})?(?:\s+\d{1,2}:\d{2})?\]/;
+const DEADLINE_REGEX = /DEADLINE:\s*\[(\d{2,4}-\d{2}-\d{2,4})(?:\s+\w{3})?(?:\s+\d{1,2}:\d{2})?\]/;
 
 function getImmediatePlanningLine(lines, headingIndex) {
   const idx = headingIndex + 1;
@@ -94,7 +94,7 @@ function findLastTaskLineUnderHeading(lines, headingLineIndex) {
 function parseOrgDate(dateStr) {
   const config = vscode.workspace.getConfiguration("Org-vscode");
   const configuredFormat = config.get("dateFormat", "YYYY-MM-DD");
-  const formatsToTry = [configuredFormat, "MM-DD-YYYY", "DD-MM-YYYY", "YYYY-MM-DD"];
+  const formatsToTry = getAcceptedDateFormats(configuredFormat);
   for (const fmt of formatsToTry) {
     const parsed = moment(dateStr, fmt, true);
     if (parsed.isValid()) {
@@ -178,7 +178,7 @@ function getTaskIdentifier(lineText) {
     .replace(/^\s*\*+\s+/, "")
     .replace(/[⊙⊘⊖⊜⊗]/g, "")
     .replace(/\b(TODO|IN_PROGRESS|CONTINUED|DONE|ABANDONED)\b/g, "")
-    .replace(/SCHEDULED:\s*\[\d{2,4}-\d{2}-\d{2,4}\]/g, "")
+    .replace(new RegExp(SCHEDULED_REGEX.source, 'g'), "")
     .replace(/(?:CLOSED|COMPLETED):\s*\[.*?\]/g, "")
     .replace(/\s+/g, " ")
     .trim();

@@ -1,5 +1,6 @@
 const vscode = require("vscode");
 const moment = require("moment");
+const { getAcceptedDateFormats } = require("./orgTagUtils");
 
 function incrementDate(forward = true) {
     const editor = vscode.window.activeTextEditor;
@@ -31,10 +32,10 @@ function incrementDate(forward = true) {
 
     const config = vscode.workspace.getConfiguration("Org-vscode");
     const dateFormat = config.get("dateFormat", "YYYY-MM-DD");
-    const acceptedDateFormats = [dateFormat, "MM-DD-YYYY", "DD-MM-YYYY", "YYYY-MM-DD"];
+    const acceptedDateFormats = getAcceptedDateFormats(dateFormat);
 
-    // Match Date Format: ⊘ [date DDD] OR * [date DDD]
-    const dateRegex = /^(\s*)(⊘|\*+)\s*\[(\d{2,4}-\d{2}-\d{2,4}) (\w{3})\]/;
+    // Match Date Format: ⊘ [date DDD HH:MM] OR * [date DDD HH:MM] (ddd and time are optional)
+    const dateRegex = /^(\s*)(⊘|\*+)\s*\[(\d{2,4}-\d{2}-\d{2,4})(?: (\w{3}))?(?: (\d{1,2}:\d{2}))?\]/;
 
     const edit = new vscode.WorkspaceEdit();
     let touched = false;
@@ -50,13 +51,18 @@ function incrementDate(forward = true) {
         const indent = match[1] || "";
         const marker = match[2];
         const currentDate = match[3];
+        const hadDayAbbrev = match[4] !== undefined;
+        const timeComponent = match[5] || null;
         const parsed = moment(currentDate, acceptedDateFormats, true);
         if (!parsed.isValid()) {
             warnedParse = true;
             continue;
         }
         const newDate = parsed.add(forward ? 1 : -1, "days");
-        const newFormattedDate = `${indent}${marker} [${newDate.format(dateFormat)} ${newDate.format("ddd")}]`;
+        const formattedDate = newDate.format(dateFormat);
+        const dayPart = hadDayAbbrev ? ` ${newDate.format("ddd")}` : "";
+        const timePart = timeComponent ? ` ${timeComponent}` : "";
+        const newFormattedDate = `${indent}${marker} [${formattedDate}${dayPart}${timePart}]`;
         const updatedText = text.replace(dateRegex, newFormattedDate);
         if (updatedText !== text) {
             edit.replace(document.uri, line.range, updatedText);

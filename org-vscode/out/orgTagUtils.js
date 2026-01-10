@@ -346,6 +346,43 @@ function matchesTagMatchString(raw, tags, options) {
   });
 }
 
+/**
+ * Returns the standard array of accepted date formats for parsing Org-mode dates.
+ * Matches Emacs org-mode timestamp format: DATE [DAYNAME] [H:MM or HH:MM]
+ * All components after DATE are optional.
+ *
+ * @param {string} dateFormat - The on-disk date format from Org-vscode.dateFormat setting (e.g., "YYYY-MM-DD")
+ * @returns {string[]} Array of moment.js format strings to try
+ */
+function getAcceptedDateFormats(dateFormat) {
+  return [
+    // On-disk format (dateFormat setting) - all variants
+    // Note: Both H:mm and HH:mm are included to support both 1-digit and 2-digit hours
+    dateFormat + " ddd HH:mm",    // With day abbreviation and 2-digit hour time
+    dateFormat + " ddd H:mm",     // With day abbreviation and 1-digit hour time
+    dateFormat + " ddd",          // With day abbreviation only
+    dateFormat + " HH:mm",        // With 2-digit hour time only (no day)
+    dateFormat + " H:mm",         // With 1-digit hour time only (no day)
+    dateFormat,                   // Base format
+
+    // MM-DD-YYYY fallback - all variants (backwards compatibility)
+    "MM-DD-YYYY ddd HH:mm",
+    "MM-DD-YYYY ddd H:mm",
+    "MM-DD-YYYY ddd",
+    "MM-DD-YYYY HH:mm",
+    "MM-DD-YYYY H:mm",
+    "MM-DD-YYYY",
+
+    // ISO fallback - all variants
+    "YYYY-MM-DD ddd HH:mm",
+    "YYYY-MM-DD ddd H:mm",
+    "YYYY-MM-DD ddd",
+    "YYYY-MM-DD HH:mm",
+    "YYYY-MM-DD H:mm",
+    "YYYY-MM-DD"
+  ];
+}
+
 module.exports = {
   normalizeTag,
   uniqueUpper,
@@ -367,5 +404,6 @@ module.exports = {
   expandGroupTag,
   parseTagMatchString,
   matchesTagMatchString,
-  normalizeTagMatchInput
+  normalizeTagMatchInput,
+  getAcceptedDateFormats
 };

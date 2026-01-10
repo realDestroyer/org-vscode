@@ -4,7 +4,7 @@ const vscode = require("vscode");   // VSCode API access
 const fs = require("fs");           // File system module to read/write org files
 const path = require("path");       // For cross-platform path handling
 const moment = require("moment");   // Date formatting library
-const { getAllTagsFromLine, stripAllTagSyntax, parseFileTagsFromText, createInheritanceTracker, getPlanningForHeading, isPlanningLine, normalizeTagsAfterPlanning } = require("./orgTagUtils");
+const { getAllTagsFromLine, stripAllTagSyntax, parseFileTagsFromText, createInheritanceTracker, getPlanningForHeading, isPlanningLine, normalizeTagsAfterPlanning, getAcceptedDateFormats } = require("./orgTagUtils");
 
 let calendarPanel = null; // Keeps reference to the Webview panel (singleton instance)
 
@@ -89,7 +89,8 @@ function sendTasksToCalendar(panel) {
               .trim();
 
             // Parse date with error detection
-            let parsedDate = moment(scheduledDate, [dateFormat, "MM-DD-YYYY", "YYYY-MM-DD"], true);
+            // Try configured format with day abbreviation first, then without, then common fallbacks
+            let parsedDate = moment(scheduledDate, getAcceptedDateFormats(dateFormat), true);
             let parseError = null;
 
             if (!parsedDate.isValid()) {

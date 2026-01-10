@@ -68,11 +68,11 @@ function convertDatesInText({ text, sourceMode, explicitSourceFormat, targetForm
   // 1) Day headings: "⊘ [04-29-2026 Wed]" OR "* [04-29-2026 Wed]" (and allow leading indent)
   // Capture groups:
   //  1 indent
-  //  2 marker (⊘ or *...)
-  //  3 date
-  //  4 weekday
-  //  5 rest of line (optional)
-  text = text.replace(/^(\s*)(?:⊘|\*+)\s*\[(\d{2,4}-\d{2}-\d{2,4})\s+(\w{3})\](.*)$/gm, (full, indent, dateStr, _weekday, rest) => {
+  //  2 date
+  //  3 weekday (optional)
+  //  4 time (optional)
+  //  5 rest of line
+  text = text.replace(/^(\s*)(?:⊘|\*+)\s*\[(\d{2,4}-\d{2}-\d{2,4})(?:\s+(\w{3}))?(?:\s+(\d{1,2}:\d{2}))?\](.*)$/gm, (full, indent, dateStr, _weekday, time, rest) => {
     return replaceBracketedDate(dateStr, (parsed, formatted) => {
       if (!parsed || !formatted) {
         return full;
@@ -81,7 +81,8 @@ function convertDatesInText({ text, sourceMode, explicitSourceFormat, targetForm
       // Preserve original marker from the full match start.
       const markerMatch = full.match(/^(\s*)(⊘|\*+)\s*\[/);
       const marker = markerMatch ? markerMatch[2] : "⊘";
-      return `${indent}${marker} [${formatted} ${weekday}]${rest}`;
+      const timePart = time ? ` ${time}` : "";
+      return `${indent}${marker} [${formatted} ${weekday}${timePart}]${rest}`;
     });
   });
 

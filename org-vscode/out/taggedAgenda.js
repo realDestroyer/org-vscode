@@ -5,7 +5,7 @@ const os = require("os");
 const moment = require("moment");
 const taskKeywordManager = require("./taskKeywordManager");
 const continuedTaskHandler = require("./continuedTaskHandler");
-const { stripAllTagSyntax, parseFileTagsFromText, parseTagGroupsFromText, createInheritanceTracker, matchesTagMatchString, normalizeTagMatchInput, getPlanningForHeading, isPlanningLine, parsePlanningFromText, normalizeTagsAfterPlanning } = require("./orgTagUtils");
+const { stripAllTagSyntax, parseFileTagsFromText, parseTagGroupsFromText, createInheritanceTracker, matchesTagMatchString, normalizeTagMatchInput, getPlanningForHeading, isPlanningLine, parsePlanningFromText, normalizeTagsAfterPlanning, getAcceptedDateFormats } = require("./orgTagUtils");
 const { computeCheckboxStatsByHeadingLine, formatCheckboxStats, findCheckboxCookie } = require("./checkboxStats");
 const { computeCheckboxToggleEdits } = require("./checkboxToggle");
 
@@ -329,7 +329,7 @@ function showTaggedAgendaView(tag, items) {
 function getTaggedWebviewContent(webview, nonce, localMomentJs, tag, items) {
   const config = vscode.workspace.getConfiguration("Org-vscode");
   const dateFormat = config.get("dateFormat", "YYYY-MM-DD");
-  const acceptedDateFormats = [dateFormat, "MM-DD-YYYY", "DD-MM-YYYY", "YYYY-MM-DD"];
+  const acceptedDateFormats = getAcceptedDateFormats(dateFormat);
   const grouped = {};
 
   for (const item of items) {

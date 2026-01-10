@@ -7,7 +7,7 @@ const moment = require("moment");
 const taskKeywordManager = require("../taskKeywordManager");
 const continuedTaskHandler = require("../continuedTaskHandler");
 const path = require("path");
-const { stripAllTagSyntax, getPlanningForHeading, isPlanningLine, parsePlanningFromText, normalizeTagsAfterPlanning } = require("../orgTagUtils");
+const { stripAllTagSyntax, getPlanningForHeading, isPlanningLine, parsePlanningFromText, normalizeTagsAfterPlanning, getAcceptedDateFormats } = require("../orgTagUtils");
 const { formatCheckboxStats, findCheckboxCookie, computeHierarchicalCheckboxStatsInRange } = require("../checkboxStats");
 const { computeCheckboxToggleEdits } = require("../checkboxToggle");
 
@@ -16,7 +16,7 @@ module.exports = function () {
   let config = vscode.workspace.getConfiguration("Org-vscode");
     let folderPath = config.get("folderPath");
     let dateFormat = config.get("dateFormat", "YYYY-MM-DD");
-    let acceptedDateFormats = [dateFormat, "MM-DD-YYYY", "DD-MM-YYYY", "YYYY-MM-DD"];
+    let acceptedDateFormats = getAcceptedDateFormats(dateFormat);
     let folder;
     let taskText;
     let taskKeywordMatch = "";

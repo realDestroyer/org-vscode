@@ -1,5 +1,6 @@
 const vscode = require("vscode");
 const moment = require("moment");
+const { getAcceptedDateFormats } = require("./orgTagUtils");
 
 /**
  * Adjusts DEADLINE dates on the current line
@@ -35,10 +36,10 @@ function deadlineDateAdjust(forward = true) {
 
     const config = vscode.workspace.getConfiguration("Org-vscode");
     const dateFormat = config.get("dateFormat", "YYYY-MM-DD");
-    const acceptedDateFormats = [dateFormat, "MM-DD-YYYY", "DD-MM-YYYY", "YYYY-MM-DD"];
+    const acceptedDateFormats = getAcceptedDateFormats(dateFormat);
 
-    // Match DEADLINE: with optional time
-    const deadlineRegex = /DEADLINE:\s*\[(\d{2,4}-\d{2}-\d{2,4})(?:\s+(\d{2}:\d{2}(?::\d{2})?))?\]/;
+    // Match DEADLINE: with optional ddd and time
+    const deadlineRegex = /DEADLINE:\s*\[(\d{2,4}-\d{2}-\d{2,4})(?: (\w{3}))?(?: (\d{1,2}:\d{2}))?\]/;
 
     const edit = new vscode.WorkspaceEdit();
     let touched = false;
@@ -52,16 +53,18 @@ function deadlineDateAdjust(forward = true) {
             continue;
         }
         const currentDate = match[1];
-        const timeComponent = match[2] || null;
+        const hadDayAbbrev = match[2] !== undefined;
+        const timeComponent = match[3] || null;
         const parsed = moment(currentDate, acceptedDateFormats, true);
         if (!parsed.isValid()) {
             warnedParse = true;
             continue;
         }
-        const newDate = parsed.add(forward ? 1 : -1, "day").format(dateFormat);
-        const newDeadline = timeComponent
-            ? `DEADLINE: [${newDate} ${timeComponent}]`
-            : `DEADLINE: [${newDate}]`;
+        const newDate = parsed.add(forward ? 1 : -1, "day");
+        const formattedDate = newDate.format(dateFormat);
+        const dayPart = hadDayAbbrev ? ` ${newDate.format("ddd")}` : "";
+        const timePart = timeComponent ? ` ${timeComponent}` : "";
+        const newDeadline = `DEADLINE: [${formattedDate}${dayPart}${timePart}]`;
         const updatedText = text.replace(deadlineRegex, newDeadline);
         if (updatedText !== text) {
             edit.replace(document.uri, line.range, updatedText);
