@@ -55,11 +55,19 @@ function sendTasksToCalendar(panel) {
       return;
     }
 
+  const skippedFiles = [];
+
   files.forEach(file => {
       // Ignore non-.org files and the special CurrentTasks.org export file
       if (file.endsWith(".org") && !file.startsWith(".") && file !== "CurrentTasks.org") {
         let filePath = path.join(dirPath, file);
-        let fileText = fs.readFileSync(filePath, "utf-8");
+        let fileText;
+        try {
+          fileText = fs.readFileSync(filePath, "utf-8");
+        } catch (fileErr) {
+          skippedFiles.push({ file, reason: fileErr.message });
+          return;
+        }
         let content = fileText.split(/\r?\n/);
         const tracker = createInheritanceTracker(parseFileTagsFromText(fileText));
 
@@ -115,12 +123,23 @@ function sendTasksToCalendar(panel) {
 
     // Send task data to calendar webview if the panel is open
     const errorCount = tasks.filter(t => t.error).length;
+    const skippedCount = skippedFiles.length;
+
+    let errorSummary = null;
+    const skippedSummary = skippedFiles.map(s => `${s.file} (${s.reason})`).join("; ");
+    if (errorCount > 0 && skippedCount > 0) {
+      errorSummary = `${errorCount} task(s) with date errors. Skipped ${skippedCount} file(s): ${skippedSummary}`;
+    } else if (errorCount > 0) {
+      errorSummary = `${errorCount} task(s) with date errors`;
+    } else if (skippedCount > 0) {
+      errorSummary = `Skipped ${skippedCount} unreadable file(s): ${skippedSummary}`;
+    }
 
     if (panel) {
       panel.webview.postMessage({
         tasks,
-        errorCount,
-        errorSummary: errorCount > 0 ? `${errorCount} task(s) with date errors` : null
+        errorCount: errorCount + skippedCount,
+        errorSummary
       });
     }
   });
