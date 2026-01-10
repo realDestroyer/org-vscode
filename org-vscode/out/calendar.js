@@ -88,13 +88,24 @@ function sendTasksToCalendar(panel) {
               .replace(/^\*+\s+/, '')                                         // Remove the leading org '*' heading marker(s)
               .trim();
 
+            // Parse date with error detection
+            let parsedDate = moment(scheduledDate, [dateFormat, "MM-DD-YYYY", "YYYY-MM-DD"], true);
+            let parseError = null;
+
+            if (!parsedDate.isValid()) {
+              parseError = `Invalid date: ${scheduledDate}`;
+              parsedDate = moment(); // Fallback to today
+            }
+
             tasks.push({
               text: cleanedText, // For display in calendar
               fullText: fullLine, // For backend matching (reschedule logic)
-              date: moment(scheduledDate, [dateFormat, "MM-DD-YYYY", "YYYY-MM-DD"], true).format("YYYY-MM-DD"),
+              date: parsedDate.format("YYYY-MM-DD"),
               file: file,
               tags: tags,
-              id: file + '#' + lineIndex // stable id for rescheduling
+              id: file + '#' + lineIndex, // stable id for rescheduling
+              error: parseError,
+              originalDate: scheduledDate
             });
           }
         });
@@ -102,8 +113,14 @@ function sendTasksToCalendar(panel) {
     });
 
     // Send task data to calendar webview if the panel is open
+    const errorCount = tasks.filter(t => t.error).length;
+
     if (panel) {
-      panel.webview.postMessage({ tasks });
+      panel.webview.postMessage({
+        tasks,
+        errorCount,
+        errorSummary: errorCount > 0 ? `${errorCount} task(s) with date errors` : null
+      });
     }
   });
 }
@@ -408,18 +425,21 @@ function getCalendarWebviewContent({ webview, nonce }) {
           title:t.text,
           start:t.date,
           file:t.file,
-          originalDate:t.date,
+          originalDate:t.originalDate||t.date,
           fullText:t.fullText,
-          backgroundColor:color,
-          borderColor:color,
+          backgroundColor:t.error?'':color,
+          borderColor:t.error?'':color,
           textColor:'#ffffff',
-          extendedProps:{file:t.file,originalDate:t.date,fullText:t.fullText}
+          classNames:t.error?['event-error']:[],
+          extendedProps:{file:t.file,originalDate:t.originalDate||t.date,fullText:t.fullText,error:t.error||null,isError:!!t.error}
         };
       }));
       const status=document.getElementById('status');
       if(status){
+        const errorCount=all.filter(t=>t.error).length;
         const rangeNote=lastRange?moment(lastRange.start).format('MMM D')+' – '+moment(lastRange.end).subtract(1,'day').format('MMM D'):'';
         status.textContent=tasks.length+' task(s) in view'
+          +(errorCount>0?' ⚠️ '+errorCount+' error(s)':'')
           +(rangeNote?' · '+rangeNote:'')
           +(activeFile?' · '+activeFile:'')
           +(activeTags.length?' · filtered':'' );
@@ -449,6 +469,17 @@ function getCalendarWebviewContent({ webview, nonce }) {
         eventDrop:i=>{
           const nd=moment(i.event.start).format(orgDateFormat);
           vscode.postMessage({command:'rescheduleTask',id:i.event.id,file:i.event.extendedProps.file,oldDate:i.event.extendedProps.originalDate,newDate:nd,text:i.event.extendedProps.fullText});
+        },
+        eventDidMount:info=>{
+          if(info.event.extendedProps.error){
+            const title=info.event.extendedProps.error+'\\nOriginal: '+info.event.extendedProps.originalDate+'\\nShowing at today\\'s date. Click to open file.';
+            info.el.title=title;
+            const titleEl=info.el.querySelector('.fc-event-title');
+            if(titleEl){titleEl.textContent='⚠️ '+titleEl.textContent;}
+          }else{
+            const title=info.event.title+'\\nFile: '+info.event.extendedProps.file+'\\nDate: '+info.event.extendedProps.originalDate;
+            info.el.title=title;
+          }
         }
       });
       cal.render();
@@ -456,6 +487,15 @@ function getCalendarWebviewContent({ webview, nonce }) {
       window.addEventListener('message',ev=>{
         if(!ev.data||!ev.data.tasks) return;
         all=ev.data.tasks;
+        const banner=document.getElementById('error-banner');
+        if(banner){
+          if(ev.data.errorCount>0){
+            banner.className='visible';
+            banner.textContent=ev.data.errorSummary;
+          }else{
+            banner.className='';
+          }
+        }
         if(cal){
           renderCurrentRange({start:cal.view.activeStart,end:cal.view.activeEnd});
         }
@@ -505,6 +545,10 @@ function getCalendarWebviewContent({ webview, nonce }) {
     '.file-chip.inactive{opacity:.35;}',
     '.file-chip.selected{outline:2px solid rgba(255,255,255,.9);box-shadow:0 0 0 2px rgba(255,255,255,.25);}',
     '.no-tags{font-size:11px;color:#6b7280;padding:12px;text-align:center;font-style:italic;}',
+    '#error-banner{margin:0 0 12px;padding:10px 14px;background:var(--vscode-inputValidation-errorBackground);border:1px solid var(--vscode-inputValidation-errorBorder);border-radius:6px;font-size:12px;color:var(--vscode-inputValidation-errorForeground);display:none;align-items:center;gap:8px;flex-shrink:0;}',
+    '#error-banner.visible{display:flex;}',
+    '#error-banner::before{content:"⚠️";font-size:16px;}',
+    '.event-error{background-color:var(--vscode-inputValidation-errorBackground)!important;border:2px dashed var(--vscode-inputValidation-errorBorder)!important;color:var(--vscode-inputValidation-errorForeground)!important;}',
     '</style>',
     '<script nonce="'+nonce+'" src="'+momentJs+'"></script>',
     '<script nonce="'+nonce+'" src="'+fullCalendarJs+'"></script>',
@@ -520,6 +564,7 @@ function getCalendarWebviewContent({ webview, nonce }) {
     '</aside>',
     '<main id="main-content">',
     '<h1>Calendar View</h1>',
+    '<div id="error-banner"></div>',
     '<div id="calendar-wrapper"><div id="calendar"></div></div>',
     '<div id="status">Loading…</div>',
     '</main>',
