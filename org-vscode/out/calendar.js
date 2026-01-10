@@ -4,7 +4,7 @@ const vscode = require("vscode");   // VSCode API access
 const fs = require("fs");           // File system module to read/write org files
 const path = require("path");       // For cross-platform path handling
 const moment = require("moment");   // Date formatting library
-const { getAllTagsFromLine, stripAllTagSyntax, parseFileTagsFromText, createInheritanceTracker, getPlanningForHeading, isPlanningLine, normalizeTagsAfterPlanning, getAcceptedDateFormats } = require("./orgTagUtils");
+const { getAllTagsFromLine, stripAllTagSyntax, parseFileTagsFromText, createInheritanceTracker, getPlanningForHeading, isPlanningLine, normalizeTagsAfterPlanning, getAcceptedDateFormats, SCHEDULED_STRIP_RE, SCHEDULED_REGEX, DEADLINE_REGEX } = require("./orgTagUtils");
 
 let calendarPanel = null; // Keeps reference to the Webview panel (singleton instance)
 
@@ -83,7 +83,7 @@ function sendTasksToCalendar(panel) {
 
             const cleanedText = stripAllTagSyntax(fullLine)
               .replace(/\b(TODO|IN_PROGRESS|DONE|CONTINUED|ABANDONED)\b/, '') // Remove keyword
-              .replace(/SCHEDULED:.*/, '')                                     // Strip scheduled portion
+              .replace(SCHEDULED_STRIP_RE, '')                                 // Strip scheduled portion
               .replace(/[⊙⊖⊘⊜⊗]/g, '')                                         // Remove the leading Unicode symbol
               .replace(/^\*+\s+/, '')                                         // Remove the leading org '*' heading marker(s)
               .trim();
@@ -218,7 +218,7 @@ function rescheduleTaskById(taskId, newDate) {
 
   // Replace or insert SCHEDULED: [MM-DD-YYYY] on that line
   const headlineText = normalizeTagsAfterPlanning(lines[lineIndex])
-    .replace(/\s*SCHEDULED:\s*\[[^\]]*\]/, "")
+    .replace(SCHEDULED_STRIP_RE, "")
     .trimRight();
   lines[lineIndex] = headlineText;
 
@@ -230,12 +230,12 @@ function rescheduleTaskById(taskId, newDate) {
   if (isPlanningLine(nextLine)) {
     const indent = nextLine.match(/^\s*/)?.[0] || planningIndent;
     let body = String(nextLine).trim()
-      .replace(/\s*SCHEDULED:\s*\[[^\]]*\]/, "")
+      .replace(SCHEDULED_STRIP_RE, "")
       .replace(/\s{2,}/g, " ")
       .trim();
 
-    if (/\bDEADLINE:\s*\[/.test(body)) {
-      body = body.replace(/DEADLINE:\s*\[[^\]]*\]/, `${scheduledTag}  $&`);
+    if (DEADLINE_REGEX.test(body)) {
+      body = body.replace(DEADLINE_REGEX, `${scheduledTag}  $&`);
     } else {
       body = body ? `${body}  ${scheduledTag}` : scheduledTag;
     }

@@ -1,7 +1,7 @@
 const vscode = require("vscode");
 const fs = require("fs");
 const moment = require("moment");
-const { isPlanningLine, getAcceptedDateFormats } = require("./orgTagUtils");
+const { isPlanningLine, getAcceptedDateFormats, SCHEDULED_REGEX } = require("./orgTagUtils");
 
 function rescheduleTask(forward = true) {
     const editor = vscode.window.activeTextEditor;
@@ -35,8 +35,7 @@ function rescheduleTask(forward = true) {
     const dateFormat = config.get("dateFormat", "YYYY-MM-DD");
     const acceptedDateFormats = getAcceptedDateFormats(dateFormat);
 
-    // Match SCHEDULED date format (with optional ddd and time)
-    const dateRegex = /SCHEDULED:\s*\[(\d{2,4}-\d{2}-\d{2,4})(?: (\w{3}))?(?: (\d{1,2}:\d{2}))?\]/;
+    const dateRegex = SCHEDULED_REGEX;
 
     const edit = new vscode.WorkspaceEdit();
     let touched = false;

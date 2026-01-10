@@ -5,7 +5,7 @@ const os = require("os");
 const moment = require("moment");
 const taskKeywordManager = require("./taskKeywordManager");
 const continuedTaskHandler = require("./continuedTaskHandler");
-const { stripAllTagSyntax, parseFileTagsFromText, parseTagGroupsFromText, createInheritanceTracker, matchesTagMatchString, normalizeTagMatchInput, getPlanningForHeading, isPlanningLine, parsePlanningFromText, normalizeTagsAfterPlanning, getAcceptedDateFormats } = require("./orgTagUtils");
+const { stripAllTagSyntax, parseFileTagsFromText, parseTagGroupsFromText, createInheritanceTracker, matchesTagMatchString, normalizeTagMatchInput, getPlanningForHeading, isPlanningLine, parsePlanningFromText, normalizeTagsAfterPlanning, getAcceptedDateFormats, stripInlinePlanning } = require("./orgTagUtils");
 const { computeCheckboxStatsByHeadingLine, formatCheckboxStats, findCheckboxCookie } = require("./checkboxStats");
 const { computeCheckboxToggleEdits } = require("./checkboxToggle");
 
@@ -159,11 +159,7 @@ async function updateTaskStatusInFile(file, taskText, scheduledDate, newStatus, 
 
   const indent = currentLine.text.match(/^\s*/)?.[0] || "";
   const cleanedHeadline = taskKeywordManager.cleanTaskText(
-    normalizeTagsAfterPlanning(currentLine.text)
-      .replace(/\s*(?:SCHEDULED|DEADLINE|CLOSED|COMPLETED):\s*\[[^\]]*\]/g, "")
-      .replace(/\s*(?:SCHEDULED|DEADLINE|CLOSED|COMPLETED):\[[^\]]*\]/g, "")
-      .replace(/\s{2,}/g, " ")
-      .trim()
+    stripInlinePlanning(normalizeTagsAfterPlanning(currentLine.text)).trim()
   );
   let newLine = taskKeywordManager.buildTaskLine(indent, newStatus, cleanedHeadline, { headingMarkerStyle, starPrefix });
 

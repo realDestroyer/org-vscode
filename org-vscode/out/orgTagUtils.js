@@ -9,6 +9,55 @@ const VALID_TAG = /^[A-Za-z0-9_@#%]+$/;
 
 const PLANNING_KEYWORDS = ["SCHEDULED", "DEADLINE", "CLOSED", "COMPLETED"];
 
+// ============================================================================
+// Centralized Regex Constants for Date/Planning Parsing
+// ============================================================================
+// All files should import these instead of defining inline regexes.
+//
+// Date format: \d{2,4}-\d{2}-\d{2,4} supports both YYYY-MM-DD and MM-DD-YYYY
+// Optional weekday: (?:\s+(\w{3}))?  e.g. "Sat"
+// Optional time: (?:\s+(\d{1,2}:\d{2}))?  e.g. "14:30" or "9:00"
+// ============================================================================
+
+// --- Parsing Regexes (with capture groups) ---
+// Capture groups: (1) date, (2) weekday, (3) time
+const SCHEDULED_REGEX = /SCHEDULED:\s*\[(\d{2,4}-\d{2}-\d{2,4})(?:\s+(\w{3}))?(?:\s+(\d{1,2}:\d{2}))?\]/;
+const DEADLINE_REGEX = /DEADLINE:\s*\[(\d{2,4}-\d{2}-\d{2,4})(?:\s+(\w{3}))?(?:\s+(\d{1,2}:\d{2}))?\]/;
+const CLOSED_REGEX = /(?:CLOSED|COMPLETED):\s*\[(\d{2,4}-\d{2}-\d{2,4})(?:\s+(\w{3}))?(?:\s+(\d{1,2}:\d{2}))?\]/;
+
+// Day heading regex
+// Capture groups: (1) indent, (2) marker (⊘ or asterisks), (3) date, (4) weekday, (5) time, (6) rest of line
+const DAY_HEADING_REGEX = /^(\s*)(⊘|\*+)\s*\[(\d{2,4}-\d{2}-\d{2,4})(?:\s+([A-Za-z]{3}))?(?:\s+(\d{1,2}:\d{2}))?\](.*)$/;
+
+// Day heading regex for decoration purposes (asterisks only, permissive for in-editing)
+// - Only matches asterisk markers (\*+), not unicode ⊘
+// - Uses .*$ ending (no closing ] required) to match partial lines during editing
+// - Capture groups: (1) indent, (2) asterisks - only what's needed for decoration
+const DAY_HEADING_DECORATE_REGEX = /^(\s*)(\*+)\s*\[(\d{2,4}-\d{2}-\d{2,4})(?:\s+([A-Za-z]{3}))?.*$/;
+
+// Task prefix regex - matches task lines with status keywords
+const TASK_PREFIX_REGEX = /^(\s*)(?:[⊙⊘⊜⊖⊗]\s*)?(?:\*+\s+)?(?:TODO|IN_PROGRESS|CONTINUED|DONE|ABANDONED)\b/;
+
+// --- Strip Regexes (for removal, no capture needed) ---
+// Use with .replace(REGEX, "") - note: no 'g' flag, use new RegExp(X.source, 'g') for global
+const SCHEDULED_STRIP_RE = /\s*SCHEDULED:\s*\[[^\]]*\]/;
+const DEADLINE_STRIP_RE = /\s*DEADLINE:\s*\[[^\]]*\]/;
+const CLOSED_STRIP_RE = /\s*(?:CLOSED|COMPLETED):\s*\[[^\]]*\]/;
+const PLANNING_STRIP_RE = /\s*(?:SCHEDULED|DEADLINE|CLOSED|COMPLETED):\s*\[[^\]]*\]/;
+
+/**
+ * Strip all inline planning stamps (SCHEDULED/DEADLINE/CLOSED/COMPLETED) from text.
+ * Consolidates duplicate whitespace and trims trailing whitespace.
+ * @param {string} text - The text to strip planning from
+ * @returns {string} Text with planning stamps removed
+ */
+function stripInlinePlanning(text) {
+  return String(text || "")
+    .replace(new RegExp(PLANNING_STRIP_RE.source, "g"), "")
+    .replace(/\s{2,}/g, " ")
+    .trimRight();
+}
+
 function isPlanningLine(line) {
   const text = String(line || "");
   // In Emacs Org, planning often lives on the line *after* the heading,
@@ -384,6 +433,19 @@ function getAcceptedDateFormats(dateFormat) {
 }
 
 module.exports = {
+  // Centralized regex constants
+  SCHEDULED_REGEX,
+  DEADLINE_REGEX,
+  CLOSED_REGEX,
+  DAY_HEADING_REGEX,
+  DAY_HEADING_DECORATE_REGEX,
+  TASK_PREFIX_REGEX,
+  SCHEDULED_STRIP_RE,
+  DEADLINE_STRIP_RE,
+  CLOSED_STRIP_RE,
+  PLANNING_STRIP_RE,
+  // Functions
+  stripInlinePlanning,
   normalizeTag,
   uniqueUpper,
   isPlanningLine,

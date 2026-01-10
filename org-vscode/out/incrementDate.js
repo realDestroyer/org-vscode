@@ -1,6 +1,6 @@
 const vscode = require("vscode");
 const moment = require("moment");
-const { getAcceptedDateFormats } = require("./orgTagUtils");
+const { getAcceptedDateFormats, DAY_HEADING_REGEX } = require("./orgTagUtils");
 
 function incrementDate(forward = true) {
     const editor = vscode.window.activeTextEditor;
@@ -34,8 +34,9 @@ function incrementDate(forward = true) {
     const dateFormat = config.get("dateFormat", "YYYY-MM-DD");
     const acceptedDateFormats = getAcceptedDateFormats(dateFormat);
 
-    // Match Date Format: ⊘ [date DDD HH:MM] OR * [date DDD HH:MM] (ddd and time are optional)
-    const dateRegex = /^(\s*)(⊘|\*+)\s*\[(\d{2,4}-\d{2}-\d{2,4})(?: (\w{3}))?(?: (\d{1,2}:\d{2}))?\]/;
+    // Match day heading: ⊘ [date DDD HH:MM] OR * [date DDD HH:MM] (ddd and time are optional)
+    // DAY_HEADING_REGEX groups: (1) indent, (2) marker, (3) date, (4) weekday, (5) time, (6) rest
+    const dateRegex = DAY_HEADING_REGEX;
 
     const edit = new vscode.WorkspaceEdit();
     let touched = false;
@@ -53,6 +54,7 @@ function incrementDate(forward = true) {
         const currentDate = match[3];
         const hadDayAbbrev = match[4] !== undefined;
         const timeComponent = match[5] || null;
+        const rest = match[6] || "";
         const parsed = moment(currentDate, acceptedDateFormats, true);
         if (!parsed.isValid()) {
             warnedParse = true;
@@ -62,8 +64,7 @@ function incrementDate(forward = true) {
         const formattedDate = newDate.format(dateFormat);
         const dayPart = hadDayAbbrev ? ` ${newDate.format("ddd")}` : "";
         const timePart = timeComponent ? ` ${timeComponent}` : "";
-        const newFormattedDate = `${indent}${marker} [${formattedDate}${dayPart}${timePart}]`;
-        const updatedText = text.replace(dateRegex, newFormattedDate);
+        const updatedText = `${indent}${marker} [${formattedDate}${dayPart}${timePart}]${rest}`;
         if (updatedText !== text) {
             edit.replace(document.uri, line.range, updatedText);
             touched = true;

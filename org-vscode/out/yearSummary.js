@@ -2,7 +2,7 @@ const vscode = require("vscode");
 const fs = require("fs");
 const path = require("path");
 const moment = require("moment");
-const { getAllTagsFromLine, stripAllTagSyntax, isPlanningLine } = require("./orgTagUtils");
+const { getAllTagsFromLine, stripAllTagSyntax, isPlanningLine, parsePlanningFromText, PLANNING_STRIP_RE } = require("./orgTagUtils");
 
 const ORG_SYMBOL_REGEX = /\s*[⊙⊖⊘⊜⊗]\s*/g;
 const FORMULA_PREFIX_REGEX = /^[=+\-@]/;
@@ -142,23 +142,19 @@ function extractMetadata(line) {
     .trim();
 
   const tags = getAllTagsFromLine(cleaned);
-  const scheduledMatch = cleaned.match(/SCHEDULED:\s*\[(.*?)\]/);
-  const closedMatch = cleaned.match(/(?:CLOSED|COMPLETED):\s*\[(.*?)\]/);
-  const deadlineMatch = cleaned.match(/DEADLINE:\s*\[(.*?)\]/);
+  const planning = parsePlanningFromText(cleaned);
 
   const title = stripAllTagSyntax(cleaned)
-    .replace(/SCHEDULED:.*/, "")
-    .replace(/(?:CLOSED|COMPLETED):.*/, "")
-    .replace(/DEADLINE:.*/, "")
+    .replace(new RegExp(PLANNING_STRIP_RE.source, "g"), "")
     .replace(/:+\s*$/, "")
     .trim();
 
   return {
     title,
     tags,
-    scheduled: scheduledMatch ? scheduledMatch[1] : null,
-    completed: closedMatch ? closedMatch[1] : null,
-    deadline: deadlineMatch ? deadlineMatch[1] : null
+    scheduled: planning.scheduled,
+    completed: planning.closed,
+    deadline: planning.deadline
   };
 }
 

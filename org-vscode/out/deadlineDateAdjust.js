@@ -1,6 +1,6 @@
 const vscode = require("vscode");
 const moment = require("moment");
-const { getAcceptedDateFormats } = require("./orgTagUtils");
+const { getAcceptedDateFormats, DEADLINE_REGEX } = require("./orgTagUtils");
 
 /**
  * Adjusts DEADLINE dates on the current line
@@ -38,8 +38,7 @@ function deadlineDateAdjust(forward = true) {
     const dateFormat = config.get("dateFormat", "YYYY-MM-DD");
     const acceptedDateFormats = getAcceptedDateFormats(dateFormat);
 
-    // Match DEADLINE: with optional ddd and time
-    const deadlineRegex = /DEADLINE:\s*\[(\d{2,4}-\d{2}-\d{2,4})(?: (\w{3}))?(?: (\d{1,2}:\d{2}))?\]/;
+    const deadlineRegex = DEADLINE_REGEX;
 
     const edit = new vscode.WorkspaceEdit();
     let touched = false;

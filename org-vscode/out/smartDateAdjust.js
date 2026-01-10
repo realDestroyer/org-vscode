@@ -1,6 +1,6 @@
 const vscode = require("vscode");
 const moment = require("moment");
-const { isPlanningLine, getAcceptedDateFormats } = require("./orgTagUtils");
+const { isPlanningLine, getAcceptedDateFormats, DAY_HEADING_REGEX, SCHEDULED_REGEX } = require("./orgTagUtils");
 
 /**
  * Smart date adjustment - detects what type of date is on the current line
@@ -40,8 +40,8 @@ function smartDateAdjust(forward = true) {
     }
     const sortedLines = Array.from(targetLines).sort((a, b) => b - a);
 
-    const dayHeadingRegex = /^(\s*)(⊘|\*+)\s*\[(\d{2,4}-\d{2}-\d{2,4})(?: (\w{3}))?(?: (\d{1,2}:\d{2}))?\]/;
-    const scheduledRegex = /SCHEDULED:\s*\[(\d{2,4}-\d{2}-\d{2,4})(?: (\w{3}))?(?: (\d{1,2}:\d{2}))?\]/;
+    const dayHeadingRegex = DAY_HEADING_REGEX;
+    const scheduledRegex = SCHEDULED_REGEX;
 
     const edit = new vscode.WorkspaceEdit();
     let touched = false;
@@ -70,7 +70,8 @@ function smartDateAdjust(forward = true) {
             const formattedDate = newDate.format(dateFormat);
             const dayPart = hadDayAbbrev ? ` ${newDate.format("ddd")}` : "";
             const timePart = timeComponent ? ` ${timeComponent}` : "";
-            const newFormattedDate = `${indent}${marker} [${formattedDate}${dayPart}${timePart}]`;
+            const suffix = dayMatch[6] || "";
+            const newFormattedDate = `${indent}${marker} [${formattedDate}${dayPart}${timePart}]${suffix}`;
             const updatedText = text.replace(dayHeadingRegex, newFormattedDate);
             if (updatedText !== text) {
                 edit.replace(document.uri, line.range, updatedText);
