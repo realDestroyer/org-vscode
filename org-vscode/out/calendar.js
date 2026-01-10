@@ -4,7 +4,7 @@ const vscode = require("vscode");   // VSCode API access
 const fs = require("fs");           // File system module to read/write org files
 const path = require("path");       // For cross-platform path handling
 const moment = require("moment");   // Date formatting library
-const { getAllTagsFromLine, stripAllTagSyntax, parseFileTagsFromText, createInheritanceTracker, getPlanningForHeading, isPlanningLine, normalizeTagsAfterPlanning, getAcceptedDateFormats, SCHEDULED_STRIP_RE, SCHEDULED_REGEX, DEADLINE_REGEX } = require("./orgTagUtils");
+const { getAllTagsFromLine, stripAllTagSyntax, parseFileTagsFromText, createInheritanceTracker, getPlanningForHeading, isPlanningLine, normalizeTagsAfterPlanning, getAcceptedDateFormats, buildScheduledReplacement, getMatchingScheduledOnLine, SCHEDULED_STRIP_RE, SCHEDULED_REGEX, DEADLINE_REGEX } = require("./orgTagUtils");
 
 let calendarPanel = null; // Keeps reference to the Webview panel (singleton instance)
 
@@ -128,6 +128,7 @@ function sendTasksToCalendar(panel) {
 /**
  * Updates a specific task's scheduled date inside the specified .org file.
  * Matches based on original task text and the old scheduled date.
+ * Handles SCHEDULED on both inline (same line) and planning line (next line).
  */
 function rescheduleTask(file, oldDate, newDate, taskText) {
   let filePath = path.join(setMainDir(), file);
@@ -136,6 +137,7 @@ function rescheduleTask(file, oldDate, newDate, taskText) {
 
   const config = vscode.workspace.getConfiguration("Org-vscode");
   const dateFormat = config.get("dateFormat", "YYYY-MM-DD");
+  const acceptedDateFormats = getAcceptedDateFormats(dateFormat);
 
   // Try to parse the new date using known formats (ISO or configured format)
   let parsedNewDate = moment(newDate, ["YYYY-MM-DD", dateFormat, "MM-DD-YYYY", "DD-MM-YYYY"], true);
@@ -144,29 +146,45 @@ function rescheduleTask(file, oldDate, newDate, taskText) {
     return;
   }
 
-  // Format both old and new dates into the user's configured org format
-  let formattedOldDate = moment(oldDate, "YYYY-MM-DD").format(dateFormat);
+  // Parse the old date for comparison
+  let parsedOldDate = moment(oldDate, "YYYY-MM-DD", true);
+  if (!parsedOldDate.isValid()) {
+    vscode.window.showErrorMessage(`Failed to reschedule task: Invalid old date.`);
+    return;
+  }
+
   let formattedNewDate = parsedNewDate.format(dateFormat);
-
-  // Build a regex pattern that matches the original scheduled date
-  let scheduledRegex = new RegExp(`SCHEDULED:\\s*\\[${formattedOldDate}\\]`);
-
   let updated = false;
 
-  // Step through every line and look for a match with the task text and scheduled date
-  let updatedLines = fileLines.map(line => {
+  // Find the task line, then check inline and next line for SCHEDULED
+  for (let i = 0; i < fileLines.length; i++) {
+    const line = fileLines[i];
     const fullLine = line.trim();
 
-    if (fullLine === taskText && scheduledRegex.test(line)) {
-      updated = true;
-      return line.replace(scheduledRegex, `SCHEDULED: [${formattedNewDate}]`);
-    }
+    if (fullLine === taskText) {
+      // Check for inline SCHEDULED on this line
+      let match = getMatchingScheduledOnLine(line, parsedOldDate, acceptedDateFormats);
+      if (match) {
+        fileLines[i] = line.replace(SCHEDULED_REGEX, buildScheduledReplacement(match, parsedNewDate, formattedNewDate));
+        updated = true;
+        break;
+      }
 
-    return line;
-  });
+      // Check for SCHEDULED on the next planning line
+      if (i + 1 < fileLines.length && isPlanningLine(fileLines[i + 1])) {
+        match = getMatchingScheduledOnLine(fileLines[i + 1], parsedOldDate, acceptedDateFormats);
+        if (match) {
+          fileLines[i + 1] = fileLines[i + 1].replace(SCHEDULED_REGEX, buildScheduledReplacement(match, parsedNewDate, formattedNewDate));
+          updated = true;
+          break;
+        }
+      }
+    }
+  }
+
   if (updated) {
     // If we successfully found and updated the task, write the new content back to disk
-    fs.writeFileSync(filePath, updatedLines.join("\n"), "utf-8");
+    fs.writeFileSync(filePath, fileLines.join("\n"), "utf-8");
 
     // Let the user know it succeeded and trigger a refresh of the calendar
     vscode.window.showInformationMessage(`Task rescheduled to ${formattedNewDate} in ${file}`);

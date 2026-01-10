@@ -1,5 +1,7 @@
 "use strict";
 
+const moment = require("moment");
+
 // Utilities for parsing and formatting Org-mode style tags.
 // Supports both legacy org-vscode inline tags ([+TAG:FOO,BAR]) and Emacs-style end-of-headline tags (:FOO:BAR:).
 
@@ -432,6 +434,38 @@ function getAcceptedDateFormats(dateFormat) {
   ];
 }
 
+/**
+ * Build a SCHEDULED replacement string, preserving day abbreviation and time if present.
+ * @param {RegExpMatchArray} match - Match from SCHEDULED_REGEX
+ * @param {moment.Moment} parsedNewDate - The new date as a moment object
+ * @param {string} formattedNewDate - The new date formatted per dateFormat setting
+ * @returns {string} The replacement SCHEDULED string
+ */
+function buildScheduledReplacement(match, parsedNewDate, formattedNewDate) {
+  const hadDayAbbrev = match[2] !== undefined;
+  const timeComponent = match[3] || null;
+  const dayPart = hadDayAbbrev ? ` ${parsedNewDate.format("ddd")}` : "";
+  const timePart = timeComponent ? ` ${timeComponent}` : "";
+  return `SCHEDULED: [${formattedNewDate}${dayPart}${timePart}]`;
+}
+
+/**
+ * Check if a line has SCHEDULED matching a specific date.
+ * @param {string} line - The line to check
+ * @param {moment.Moment} targetDate - The date to match against
+ * @param {string[]} acceptedDateFormats - Formats to try when parsing
+ * @returns {RegExpMatchArray|null} The match if found and date matches, null otherwise
+ */
+function getMatchingScheduledOnLine(line, targetDate, acceptedDateFormats) {
+  const match = line.match(SCHEDULED_REGEX);
+  if (!match) return null;
+  const existingDate = moment(match[1], acceptedDateFormats, true);
+  if (existingDate.isValid() && existingDate.isSame(targetDate, 'day')) {
+    return match;
+  }
+  return null;
+}
+
 module.exports = {
   // Centralized regex constants
   SCHEDULED_REGEX,
@@ -467,5 +501,7 @@ module.exports = {
   parseTagMatchString,
   matchesTagMatchString,
   normalizeTagMatchInput,
-  getAcceptedDateFormats
+  getAcceptedDateFormats,
+  buildScheduledReplacement,
+  getMatchingScheduledOnLine
 };
