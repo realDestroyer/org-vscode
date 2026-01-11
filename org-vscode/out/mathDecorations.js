@@ -203,7 +203,9 @@ function computeDecorationsForEditor(editor) {
       let match;
       while ((match = commandRegex.exec(text)) != null) {
         const command = match[0];
-        const symbol = DEFAULT_COMMAND_MAP[command];
+        // Back-compat/robustness: some builds have map keys using "\\\\alpha" (string value "\\alpha").
+        // Our regex yields "\\alpha" (string value "\alpha"). Try both forms.
+        const symbol = DEFAULT_COMMAND_MAP[command] || DEFAULT_COMMAND_MAP["\\" + command];
         if (!symbol) continue;
 
         const startChar = match.index;
