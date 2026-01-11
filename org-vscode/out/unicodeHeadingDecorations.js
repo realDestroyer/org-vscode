@@ -1,10 +1,10 @@
 "use strict";
 
 const vscode = require("vscode");
+const { DAY_HEADING_DECORATE_REGEX } = require("./orgTagUtils");
 
 const TASK_LINE_REGEX = /^(\s*)(\*+)\s+(TODO|IN_PROGRESS|CONTINUED|DONE|ABANDONED)\b/;
 const HEADING_LINE_REGEX = /^(\s*)(\*+)\s+\S/;
-const DAY_HEADING_REGEX = /^(\s*)(\*+)\s*\[(\d{2,4}-\d{2}-\d{2,4})(?:\s+([A-Za-z]{3}))?.*$/;
 const UNICODE_PREFIX_REGEX = /^(\s*)[⊙⊘⊜⊖⊗]\s/;
 
 const STATUS_TO_SCOPE = {
@@ -86,7 +86,7 @@ function getRevealLines(editor) {
 
     const lineText = editor.document.lineAt(lineNumber).text;
     const taskMatch = lineText.match(TASK_LINE_REGEX);
-    const dayMatch = !taskMatch ? lineText.match(DAY_HEADING_REGEX) : null;
+    const dayMatch = !taskMatch ? lineText.match(DAY_HEADING_DECORATE_REGEX) : null;
     const headingMatch = !taskMatch && !dayMatch ? lineText.match(HEADING_LINE_REGEX) : null;
     const match = taskMatch || dayMatch || headingMatch;
     if (!match) continue;
@@ -193,7 +193,7 @@ function computeDecorationsForEditor(editor) {
         continue;
       }
 
-      const dayMatch = lineText.match(DAY_HEADING_REGEX);
+      const dayMatch = lineText.match(DAY_HEADING_DECORATE_REGEX);
       if (dayMatch) {
         const indent = dayMatch[1] || "";
         const stars = dayMatch[2] || "";

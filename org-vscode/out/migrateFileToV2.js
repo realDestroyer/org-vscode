@@ -6,31 +6,15 @@ const {
   normalizeTagsAfterPlanning,
   setEndOfLineTags,
   isPlanningLine,
-  parsePlanningFromText
+  parsePlanningFromText,
+  PLANNING_STRIP_RE
 } = require("./orgTagUtils");
 
 const SUPPORTED_LANGUAGE_IDS = new Set(["vso", "org", "vsorg", "org-vscode"]);
 
 function extractPlanningFromLine(text) {
-  const t = String(text || "");
-  const parts = {
-    scheduled: null,
-    deadline: null,
-    closed: null,
-    completed: null
-  };
-
-  const scheduledMatch = t.match(/SCHEDULED:\s*\[([^\]]+)\]/);
-  const deadlineMatch = t.match(/DEADLINE:\s*\[([^\]]+)\]/);
-  const closedMatch = t.match(/CLOSED:\s*\[([^\]]+)\]/);
-  const completedMatch = t.match(/COMPLETED:\s*\[([^\]]+)\]/);
-
-  if (scheduledMatch) parts.scheduled = scheduledMatch[1];
-  if (deadlineMatch) parts.deadline = deadlineMatch[1];
-  if (closedMatch) parts.closed = closedMatch[1];
-  if (completedMatch) parts.completed = completedMatch[1];
-
-  return parts;
+  // Reuse parsePlanningFromText which does the same thing
+  return parsePlanningFromText(text);
 }
 
 function mergePlanning(a, b) {
@@ -64,7 +48,7 @@ function buildPlanningLine(indent, planning) {
 function removeInlinePlanningFromHeadingLine(line) {
   let out = String(line || "");
   // Remove planning tokens on the same line as the heading.
-  out = out.replace(/\s+(?:SCHEDULED|DEADLINE|CLOSED|COMPLETED):\s*\[[^\]]*\]/g, "");
+  out = out.replace(new RegExp(PLANNING_STRIP_RE.source, "g"), "");
   return out.replace(/\s+$/g, "");
 }
 

@@ -121,7 +121,7 @@ async function alignSchedules() {
             ? lineReplacements.get(lineNumber)
             : document.lineAt(lineNumber).text;
 
-        let match = String(baseLine || "").match(/^(\s*)(.*?)(\s+SCHEDULED:\s*\[\d{2,4}-\d{2}-\d{2,4}\])(\s+DEADLINE:\s*\[\d{2,4}-\d{2}-\d{2,4}(?:\s+\d{2}:\d{2}(?::\d{2})?)?\])?/);
+        let match = String(baseLine || "").match(/^(\s*)(.*?)(\s+SCHEDULED:\s*\[\d{2,4}-\d{2}-\d{2,4}(?:\s+\w{3})?(?:\s+\d{1,2}:\d{2})?\])(\s+DEADLINE:\s*\[\d{2,4}-\d{2}-\d{2,4}(?:\s+\w{3})?(?:\s+\d{1,2}:\d{2})?\])?/);
         if (!match) continue;
 
         const taskText = match[2].trimEnd();

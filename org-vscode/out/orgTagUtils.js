@@ -1,5 +1,7 @@
 "use strict";
 
+const moment = require("moment");
+
 // Utilities for parsing and formatting Org-mode style tags.
 // Supports both legacy org-vscode inline tags ([+TAG:FOO,BAR]) and Emacs-style end-of-headline tags (:FOO:BAR:).
 
@@ -8,6 +10,55 @@
 const VALID_TAG = /^[A-Za-z0-9_@#%]+$/;
 
 const PLANNING_KEYWORDS = ["SCHEDULED", "DEADLINE", "CLOSED", "COMPLETED"];
+
+// ============================================================================
+// Centralized Regex Constants for Date/Planning Parsing
+// ============================================================================
+// All files should import these instead of defining inline regexes.
+//
+// Date format: \d{2,4}-\d{2}-\d{2,4} supports both YYYY-MM-DD and MM-DD-YYYY
+// Optional weekday: (?:\s+(\w{3}))?  e.g. "Sat"
+// Optional time: (?:\s+(\d{1,2}:\d{2}))?  e.g. "14:30" or "9:00"
+// ============================================================================
+
+// --- Parsing Regexes (with capture groups) ---
+// Capture groups: (1) date, (2) weekday, (3) time
+const SCHEDULED_REGEX = /SCHEDULED:\s*\[(\d{2,4}-\d{2}-\d{2,4})(?:\s+(\w{3}))?(?:\s+(\d{1,2}:\d{2}))?\]/;
+const DEADLINE_REGEX = /DEADLINE:\s*\[(\d{2,4}-\d{2}-\d{2,4})(?:\s+(\w{3}))?(?:\s+(\d{1,2}:\d{2}))?\]/;
+const CLOSED_REGEX = /(?:CLOSED|COMPLETED):\s*\[(\d{2,4}-\d{2}-\d{2,4})(?:\s+(\w{3}))?(?:\s+(\d{1,2}:\d{2}))?\]/;
+
+// Day heading regex
+// Capture groups: (1) indent, (2) marker (⊘ or asterisks), (3) date, (4) weekday, (5) time, (6) rest of line
+const DAY_HEADING_REGEX = /^(\s*)(⊘|\*+)\s*\[(\d{2,4}-\d{2}-\d{2,4})(?:\s+([A-Za-z]{3}))?(?:\s+(\d{1,2}:\d{2}))?\](.*)$/;
+
+// Day heading regex for decoration purposes (asterisks only, permissive for in-editing)
+// - Only matches asterisk markers (\*+), not unicode ⊘
+// - Uses .*$ ending (no closing ] required) to match partial lines during editing
+// - Capture groups: (1) indent, (2) asterisks - only what's needed for decoration
+const DAY_HEADING_DECORATE_REGEX = /^(\s*)(\*+)\s*\[(\d{2,4}-\d{2}-\d{2,4})(?:\s+([A-Za-z]{3}))?.*$/;
+
+// Task prefix regex - matches task lines with status keywords
+const TASK_PREFIX_REGEX = /^(\s*)(?:[⊙⊘⊜⊖⊗]\s*)?(?:\*+\s+)?(?:TODO|IN_PROGRESS|CONTINUED|DONE|ABANDONED)\b/;
+
+// --- Strip Regexes (for removal, no capture needed) ---
+// Use with .replace(REGEX, "") - note: no 'g' flag, use new RegExp(X.source, 'g') for global
+const SCHEDULED_STRIP_RE = /\s*SCHEDULED:\s*\[[^\]]*\]/;
+const DEADLINE_STRIP_RE = /\s*DEADLINE:\s*\[[^\]]*\]/;
+const CLOSED_STRIP_RE = /\s*(?:CLOSED|COMPLETED):\s*\[[^\]]*\]/;
+const PLANNING_STRIP_RE = /\s*(?:SCHEDULED|DEADLINE|CLOSED|COMPLETED):\s*\[[^\]]*\]/;
+
+/**
+ * Strip all inline planning stamps (SCHEDULED/DEADLINE/CLOSED/COMPLETED) from text.
+ * Consolidates duplicate whitespace and trims trailing whitespace.
+ * @param {string} text - The text to strip planning from
+ * @returns {string} Text with planning stamps removed
+ */
+function stripInlinePlanning(text) {
+  return String(text || "")
+    .replace(new RegExp(PLANNING_STRIP_RE.source, "g"), "")
+    .replace(/\s{2,}/g, " ")
+    .trimRight();
+}
 
 function isPlanningLine(line) {
   const text = String(line || "");
@@ -346,7 +397,89 @@ function matchesTagMatchString(raw, tags, options) {
   });
 }
 
+/**
+ * Returns the standard array of accepted date formats for parsing Org-mode dates.
+ * Matches Emacs org-mode timestamp format: DATE [DAYNAME] [H:MM or HH:MM]
+ * All components after DATE are optional.
+ *
+ * @param {string} dateFormat - The on-disk date format from Org-vscode.dateFormat setting (e.g., "YYYY-MM-DD")
+ * @returns {string[]} Array of moment.js format strings to try
+ */
+function getAcceptedDateFormats(dateFormat) {
+  return [
+    // On-disk format (dateFormat setting) - all variants
+    // Note: Both H:mm and HH:mm are included to support both 1-digit and 2-digit hours
+    dateFormat + " ddd HH:mm",    // With day abbreviation and 2-digit hour time
+    dateFormat + " ddd H:mm",     // With day abbreviation and 1-digit hour time
+    dateFormat + " ddd",          // With day abbreviation only
+    dateFormat + " HH:mm",        // With 2-digit hour time only (no day)
+    dateFormat + " H:mm",         // With 1-digit hour time only (no day)
+    dateFormat,                   // Base format
+
+    // MM-DD-YYYY fallback - all variants (backwards compatibility)
+    "MM-DD-YYYY ddd HH:mm",
+    "MM-DD-YYYY ddd H:mm",
+    "MM-DD-YYYY ddd",
+    "MM-DD-YYYY HH:mm",
+    "MM-DD-YYYY H:mm",
+    "MM-DD-YYYY",
+
+    // ISO fallback - all variants
+    "YYYY-MM-DD ddd HH:mm",
+    "YYYY-MM-DD ddd H:mm",
+    "YYYY-MM-DD ddd",
+    "YYYY-MM-DD HH:mm",
+    "YYYY-MM-DD H:mm",
+    "YYYY-MM-DD"
+  ];
+}
+
+/**
+ * Build a SCHEDULED replacement string, preserving day abbreviation and time if present.
+ * @param {RegExpMatchArray} match - Match from SCHEDULED_REGEX
+ * @param {moment.Moment} parsedNewDate - The new date as a moment object
+ * @param {string} formattedNewDate - The new date formatted per dateFormat setting
+ * @returns {string} The replacement SCHEDULED string
+ */
+function buildScheduledReplacement(match, parsedNewDate, formattedNewDate) {
+  const hadDayAbbrev = match[2] !== undefined;
+  const timeComponent = match[3] || null;
+  const dayPart = hadDayAbbrev ? ` ${parsedNewDate.format("ddd")}` : "";
+  const timePart = timeComponent ? ` ${timeComponent}` : "";
+  return `SCHEDULED: [${formattedNewDate}${dayPart}${timePart}]`;
+}
+
+/**
+ * Check if a line has SCHEDULED matching a specific date.
+ * @param {string} line - The line to check
+ * @param {moment.Moment} targetDate - The date to match against
+ * @param {string[]} acceptedDateFormats - Formats to try when parsing
+ * @returns {RegExpMatchArray|null} The match if found and date matches, null otherwise
+ */
+function getMatchingScheduledOnLine(line, targetDate, acceptedDateFormats) {
+  const match = line.match(SCHEDULED_REGEX);
+  if (!match) return null;
+  const existingDate = moment(match[1], acceptedDateFormats, true);
+  if (existingDate.isValid() && existingDate.isSame(targetDate, 'day')) {
+    return match;
+  }
+  return null;
+}
+
 module.exports = {
+  // Centralized regex constants
+  SCHEDULED_REGEX,
+  DEADLINE_REGEX,
+  CLOSED_REGEX,
+  DAY_HEADING_REGEX,
+  DAY_HEADING_DECORATE_REGEX,
+  TASK_PREFIX_REGEX,
+  SCHEDULED_STRIP_RE,
+  DEADLINE_STRIP_RE,
+  CLOSED_STRIP_RE,
+  PLANNING_STRIP_RE,
+  // Functions
+  stripInlinePlanning,
   normalizeTag,
   uniqueUpper,
   isPlanningLine,
@@ -367,5 +500,8 @@ module.exports = {
   expandGroupTag,
   parseTagMatchString,
   matchesTagMatchString,
-  normalizeTagMatchInput
+  normalizeTagMatchInput,
+  getAcceptedDateFormats,
+  buildScheduledReplacement,
+  getMatchingScheduledOnLine
 };

@@ -4,7 +4,7 @@ const vscode = require("vscode");   // VSCode API access
 const fs = require("fs");           // File system module to read/write org files
 const path = require("path");       // For cross-platform path handling
 const moment = require("moment");   // Date formatting library
-const { getAllTagsFromLine, stripAllTagSyntax, parseFileTagsFromText, createInheritanceTracker, getPlanningForHeading, isPlanningLine, normalizeTagsAfterPlanning } = require("./orgTagUtils");
+const { getAllTagsFromLine, stripAllTagSyntax, parseFileTagsFromText, createInheritanceTracker, getPlanningForHeading, isPlanningLine, normalizeTagsAfterPlanning, getAcceptedDateFormats, buildScheduledReplacement, getMatchingScheduledOnLine, SCHEDULED_STRIP_RE, SCHEDULED_REGEX, DEADLINE_REGEX } = require("./orgTagUtils");
 
 let calendarPanel = null; // Keeps reference to the Webview panel (singleton instance)
 
@@ -55,11 +55,19 @@ function sendTasksToCalendar(panel) {
       return;
     }
 
+  const skippedFiles = [];
+
   files.forEach(file => {
       // Ignore non-.org files and the special CurrentTasks.org export file
       if (file.endsWith(".org") && !file.startsWith(".") && file !== "CurrentTasks.org") {
         let filePath = path.join(dirPath, file);
-        let fileText = fs.readFileSync(filePath, "utf-8");
+        let fileText;
+        try {
+          fileText = fs.readFileSync(filePath, "utf-8");
+        } catch (fileErr) {
+          skippedFiles.push({ file, reason: fileErr.message });
+          return;
+        }
         let content = fileText.split(/\r?\n/);
         const tracker = createInheritanceTracker(parseFileTagsFromText(fileText));
 
@@ -83,18 +91,30 @@ function sendTasksToCalendar(panel) {
 
             const cleanedText = stripAllTagSyntax(fullLine)
               .replace(/\b(TODO|IN_PROGRESS|DONE|CONTINUED|ABANDONED)\b/, '') // Remove keyword
-              .replace(/SCHEDULED:.*/, '')                                     // Strip scheduled portion
+              .replace(SCHEDULED_STRIP_RE, '')                                 // Strip scheduled portion
               .replace(/[⊙⊖⊘⊜⊗]/g, '')                                         // Remove the leading Unicode symbol
               .replace(/^\*+\s+/, '')                                         // Remove the leading org '*' heading marker(s)
               .trim();
 
+            // Parse date with error detection
+            // Try configured format with day abbreviation first, then without, then common fallbacks
+            let parsedDate = moment(scheduledDate, getAcceptedDateFormats(dateFormat), true);
+            let parseError = null;
+
+            if (!parsedDate.isValid()) {
+              parseError = `Invalid date: ${scheduledDate}`;
+              parsedDate = moment(); // Fallback to today
+            }
+
             tasks.push({
               text: cleanedText, // For display in calendar
               fullText: fullLine, // For backend matching (reschedule logic)
-              date: moment(scheduledDate, [dateFormat, "MM-DD-YYYY", "YYYY-MM-DD"], true).format("YYYY-MM-DD"),
+              date: parsedDate.format("YYYY-MM-DD"),
               file: file,
               tags: tags,
-              id: file + '#' + lineIndex // stable id for rescheduling
+              id: file + '#' + lineIndex, // stable id for rescheduling
+              error: parseError,
+              originalDate: scheduledDate
             });
           }
         });
@@ -102,14 +122,32 @@ function sendTasksToCalendar(panel) {
     });
 
     // Send task data to calendar webview if the panel is open
+    const errorCount = tasks.filter(t => t.error).length;
+    const skippedCount = skippedFiles.length;
+
+    let errorSummary = null;
+    const skippedSummary = skippedFiles.map(s => `${s.file} (${s.reason})`).join("; ");
+    if (errorCount > 0 && skippedCount > 0) {
+      errorSummary = `${errorCount} task(s) with date errors. Skipped ${skippedCount} file(s): ${skippedSummary}`;
+    } else if (errorCount > 0) {
+      errorSummary = `${errorCount} task(s) with date errors`;
+    } else if (skippedCount > 0) {
+      errorSummary = `Skipped ${skippedCount} unreadable file(s): ${skippedSummary}`;
+    }
+
     if (panel) {
-      panel.webview.postMessage({ tasks });
+      panel.webview.postMessage({
+        tasks,
+        errorCount: errorCount + skippedCount,
+        errorSummary
+      });
     }
   });
 }
 /**
  * Updates a specific task's scheduled date inside the specified .org file.
  * Matches based on original task text and the old scheduled date.
+ * Handles SCHEDULED on both inline (same line) and planning line (next line).
  */
 function rescheduleTask(file, oldDate, newDate, taskText) {
   let filePath = path.join(setMainDir(), file);
@@ -118,6 +156,7 @@ function rescheduleTask(file, oldDate, newDate, taskText) {
 
   const config = vscode.workspace.getConfiguration("Org-vscode");
   const dateFormat = config.get("dateFormat", "YYYY-MM-DD");
+  const acceptedDateFormats = getAcceptedDateFormats(dateFormat);
 
   // Try to parse the new date using known formats (ISO or configured format)
   let parsedNewDate = moment(newDate, ["YYYY-MM-DD", dateFormat, "MM-DD-YYYY", "DD-MM-YYYY"], true);
@@ -126,29 +165,45 @@ function rescheduleTask(file, oldDate, newDate, taskText) {
     return;
   }
 
-  // Format both old and new dates into the user's configured org format
-  let formattedOldDate = moment(oldDate, "YYYY-MM-DD").format(dateFormat);
+  // Parse the old date for comparison
+  let parsedOldDate = moment(oldDate, "YYYY-MM-DD", true);
+  if (!parsedOldDate.isValid()) {
+    vscode.window.showErrorMessage(`Failed to reschedule task: Invalid old date.`);
+    return;
+  }
+
   let formattedNewDate = parsedNewDate.format(dateFormat);
-
-  // Build a regex pattern that matches the original scheduled date
-  let scheduledRegex = new RegExp(`SCHEDULED:\\s*\\[${formattedOldDate}\\]`);
-
   let updated = false;
 
-  // Step through every line and look for a match with the task text and scheduled date
-  let updatedLines = fileLines.map(line => {
+  // Find the task line, then check inline and next line for SCHEDULED
+  for (let i = 0; i < fileLines.length; i++) {
+    const line = fileLines[i];
     const fullLine = line.trim();
 
-    if (fullLine === taskText && scheduledRegex.test(line)) {
-      updated = true;
-      return line.replace(scheduledRegex, `SCHEDULED: [${formattedNewDate}]`);
-    }
+    if (fullLine === taskText) {
+      // Check for inline SCHEDULED on this line
+      let match = getMatchingScheduledOnLine(line, parsedOldDate, acceptedDateFormats);
+      if (match) {
+        fileLines[i] = line.replace(SCHEDULED_REGEX, buildScheduledReplacement(match, parsedNewDate, formattedNewDate));
+        updated = true;
+        break;
+      }
 
-    return line;
-  });
+      // Check for SCHEDULED on the next planning line
+      if (i + 1 < fileLines.length && isPlanningLine(fileLines[i + 1])) {
+        match = getMatchingScheduledOnLine(fileLines[i + 1], parsedOldDate, acceptedDateFormats);
+        if (match) {
+          fileLines[i + 1] = fileLines[i + 1].replace(SCHEDULED_REGEX, buildScheduledReplacement(match, parsedNewDate, formattedNewDate));
+          updated = true;
+          break;
+        }
+      }
+    }
+  }
+
   if (updated) {
     // If we successfully found and updated the task, write the new content back to disk
-    fs.writeFileSync(filePath, updatedLines.join("\n"), "utf-8");
+    fs.writeFileSync(filePath, fileLines.join("\n"), "utf-8");
 
     // Let the user know it succeeded and trigger a refresh of the calendar
     vscode.window.showInformationMessage(`Task rescheduled to ${formattedNewDate} in ${file}`);
@@ -200,7 +255,7 @@ function rescheduleTaskById(taskId, newDate) {
 
   // Replace or insert SCHEDULED: [MM-DD-YYYY] on that line
   const headlineText = normalizeTagsAfterPlanning(lines[lineIndex])
-    .replace(/\s*SCHEDULED:\s*\[[^\]]*\]/, "")
+    .replace(SCHEDULED_STRIP_RE, "")
     .trimRight();
   lines[lineIndex] = headlineText;
 
@@ -212,12 +267,12 @@ function rescheduleTaskById(taskId, newDate) {
   if (isPlanningLine(nextLine)) {
     const indent = nextLine.match(/^\s*/)?.[0] || planningIndent;
     let body = String(nextLine).trim()
-      .replace(/\s*SCHEDULED:\s*\[[^\]]*\]/, "")
+      .replace(SCHEDULED_STRIP_RE, "")
       .replace(/\s{2,}/g, " ")
       .trim();
 
-    if (/\bDEADLINE:\s*\[/.test(body)) {
-      body = body.replace(/DEADLINE:\s*\[[^\]]*\]/, `${scheduledTag}  $&`);
+    if (DEADLINE_REGEX.test(body)) {
+      body = body.replace(DEADLINE_REGEX, `${scheduledTag}  $&`);
     } else {
       body = body ? `${body}  ${scheduledTag}` : scheduledTag;
     }
@@ -408,18 +463,21 @@ function getCalendarWebviewContent({ webview, nonce }) {
           title:t.text,
           start:t.date,
           file:t.file,
-          originalDate:t.date,
+          originalDate:t.originalDate||t.date,
           fullText:t.fullText,
-          backgroundColor:color,
-          borderColor:color,
+          backgroundColor:t.error?'':color,
+          borderColor:t.error?'':color,
           textColor:'#ffffff',
-          extendedProps:{file:t.file,originalDate:t.date,fullText:t.fullText}
+          classNames:t.error?['event-error']:[],
+          extendedProps:{file:t.file,originalDate:t.originalDate||t.date,fullText:t.fullText,error:t.error||null,isError:!!t.error}
         };
       }));
       const status=document.getElementById('status');
       if(status){
+        const errorCount=all.filter(t=>t.error).length;
         const rangeNote=lastRange?moment(lastRange.start).format('MMM D')+' – '+moment(lastRange.end).subtract(1,'day').format('MMM D'):'';
         status.textContent=tasks.length+' task(s) in view'
+          +(errorCount>0?' ⚠️ '+errorCount+' error(s)':'')
           +(rangeNote?' · '+rangeNote:'')
           +(activeFile?' · '+activeFile:'')
           +(activeTags.length?' · filtered':'' );
@@ -449,6 +507,17 @@ function getCalendarWebviewContent({ webview, nonce }) {
         eventDrop:i=>{
           const nd=moment(i.event.start).format(orgDateFormat);
           vscode.postMessage({command:'rescheduleTask',id:i.event.id,file:i.event.extendedProps.file,oldDate:i.event.extendedProps.originalDate,newDate:nd,text:i.event.extendedProps.fullText});
+        },
+        eventDidMount:info=>{
+          if(info.event.extendedProps.error){
+            const title=info.event.extendedProps.error+'\\nOriginal: '+info.event.extendedProps.originalDate+'\\nShowing at today\\'s date. Click to open file.';
+            info.el.title=title;
+            const titleEl=info.el.querySelector('.fc-event-title');
+            if(titleEl){titleEl.textContent='⚠️ '+titleEl.textContent;}
+          }else{
+            const title=info.event.title+'\\nFile: '+info.event.extendedProps.file+'\\nDate: '+info.event.extendedProps.originalDate;
+            info.el.title=title;
+          }
         }
       });
       cal.render();
@@ -456,6 +525,15 @@ function getCalendarWebviewContent({ webview, nonce }) {
       window.addEventListener('message',ev=>{
         if(!ev.data||!ev.data.tasks) return;
         all=ev.data.tasks;
+        const banner=document.getElementById('error-banner');
+        if(banner){
+          if(ev.data.errorCount>0){
+            banner.className='visible';
+            banner.textContent=ev.data.errorSummary;
+          }else{
+            banner.className='';
+          }
+        }
         if(cal){
           renderCurrentRange({start:cal.view.activeStart,end:cal.view.activeEnd});
         }
@@ -477,34 +555,38 @@ function getCalendarWebviewContent({ webview, nonce }) {
     '<title>Calendar View</title>',
     '<link rel="stylesheet" href="'+fullCalendarCss+'">',
     '<style nonce="'+nonce+'">',
-    'body{font-family:"Segoe UI",Arial,sans-serif;margin:0;padding:0;background:#1f1f24;color:#f4f4f5;height:100vh;overflow:hidden;}',
+    'body{font-family:var(--vscode-font-family);margin:0;padding:0;background:var(--vscode-editor-background);color:var(--vscode-editor-foreground);height:100vh;overflow:hidden;}',
     '#app-container{display:flex;height:100vh;overflow:hidden;}',
-    '#sidebar{width:200px;min-width:160px;max-width:280px;background:#2a2a30;border-right:1px solid #3a3a42;display:flex;flex-direction:column;overflow:hidden;}',
-    '#sidebar-header{padding:12px 14px;border-bottom:1px solid #3a3a42;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:#9ca3af;flex-shrink:0;}',
-    '#file-bubbles{flex:0 0 auto;max-height:170px;overflow-y:auto;padding:8px;display:flex;flex-direction:column;gap:6px;border-bottom:1px solid #3a3a42;}',
+    '#sidebar{width:200px;min-width:160px;max-width:280px;background:var(--vscode-sideBar-background);border-right:1px solid var(--vscode-sideBar-border);display:flex;flex-direction:column;overflow:hidden;}',
+    '#sidebar-header{padding:12px 14px;border-bottom:1px solid var(--vscode-sideBar-border);font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--vscode-descriptionForeground);flex-shrink:0;}',
+    '#file-bubbles{flex:0 0 auto;max-height:170px;overflow-y:auto;padding:8px;display:flex;flex-direction:column;gap:6px;border-bottom:1px solid var(--vscode-sideBar-border);}',
     '#tag-bubbles{flex:1;overflow-y:auto;padding:8px;display:flex;flex-direction:column;gap:6px;}',
     '#file-bubbles::-webkit-scrollbar{width:6px;}',
-    '#file-bubbles::-webkit-scrollbar-track{background:#2a2a30;}',
-    '#file-bubbles::-webkit-scrollbar-thumb{background:#4a4a52;border-radius:3px;}',
-    '#file-bubbles::-webkit-scrollbar-thumb:hover{background:#5a5a62;}',
+    '#file-bubbles::-webkit-scrollbar-track{background:var(--vscode-sideBar-background);}',
+    '#file-bubbles::-webkit-scrollbar-thumb{background:var(--vscode-scrollbarSlider-background);border-radius:3px;}',
+    '#file-bubbles::-webkit-scrollbar-thumb:hover{background:var(--vscode-scrollbarSlider-hoverBackground);}',
     '#tag-bubbles::-webkit-scrollbar{width:6px;}',
-    '#tag-bubbles::-webkit-scrollbar-track{background:#2a2a30;}',
-    '#tag-bubbles::-webkit-scrollbar-thumb{background:#4a4a52;border-radius:3px;}',
-    '#tag-bubbles::-webkit-scrollbar-thumb:hover{background:#5a5a62;}',
+    '#tag-bubbles::-webkit-scrollbar-track{background:var(--vscode-sideBar-background);}',
+    '#tag-bubbles::-webkit-scrollbar-thumb{background:var(--vscode-scrollbarSlider-background);border-radius:3px;}',
+    '#tag-bubbles::-webkit-scrollbar-thumb:hover{background:var(--vscode-scrollbarSlider-hoverBackground);}',
     '#main-content{flex:1;display:flex;flex-direction:column;overflow:hidden;padding:16px;}',
     'h1{font-size:18px;font-weight:600;margin:0 0 10px;flex-shrink:0;}',
     '#calendar-wrapper{flex:1;overflow:auto;max-width:980px;}',
     '#calendar{background:#fff;color:#000;padding:10px;border-radius:10px;box-shadow:0 8px 30px rgba(0,0,0,.35);}',
     '#status{font-size:12px;margin-top:10px;text-align:center;opacity:.8;flex-shrink:0;}',
-    '.tag-chip{display:flex;align-items:center;padding:6px 12px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.4px;border-radius:6px;color:#fff;cursor:pointer;user-select:none;box-shadow:0 2px 4px rgba(0,0,0,.2);transition:transform .1s ease,opacity .1s ease;border:1px solid transparent;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}',
+    '.tag-chip{display:flex;align-items:center;padding:6px 12px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.4px;border-radius:6px;color:var(--vscode-button-foreground);cursor:pointer;user-select:none;box-shadow:0 2px 4px rgba(0,0,0,.2);transition:transform .1s ease,opacity .1s ease;border:1px solid transparent;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}',
     '.tag-chip:hover{transform:translateX(2px);opacity:.95;box-shadow:0 3px 8px rgba(0,0,0,.3);}',
     '.tag-chip.inactive{opacity:.35;filter:saturate(20%);}',
-    '.tag-chip.selected{outline:2px solid rgba(255,255,255,.9);box-shadow:0 0 0 2px rgba(255,255,255,.25);}',
-    '.file-chip{display:flex;align-items:center;padding:6px 12px;font-size:11px;font-weight:600;border-radius:6px;color:#fff;cursor:pointer;user-select:none;box-shadow:0 2px 4px rgba(0,0,0,.2);transition:transform .1s ease,opacity .1s ease;border:1px solid #4a4a52;background:#4a4a52;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}',
-    '.file-chip:hover{transform:translateX(2px);opacity:.95;box-shadow:0 3px 8px rgba(0,0,0,.3);}',
+    '.tag-chip.selected{outline:2px solid var(--vscode-focusBorder);box-shadow:0 0 0 2px var(--vscode-focusBorder);}',
+    '.file-chip{display:flex;align-items:center;padding:6px 12px;font-size:11px;font-weight:600;border-radius:6px;color:var(--vscode-button-secondaryForeground);cursor:pointer;user-select:none;box-shadow:0 2px 4px rgba(0,0,0,.2);transition:transform .1s ease,opacity .1s ease;border:1px solid var(--vscode-button-border);background:var(--vscode-button-secondaryBackground);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}',
+    '.file-chip:hover{transform:translateX(2px);opacity:.95;box-shadow:0 3px 8px rgba(0,0,0,.3);background:var(--vscode-button-secondaryHoverBackground);}',
     '.file-chip.inactive{opacity:.35;}',
-    '.file-chip.selected{outline:2px solid rgba(255,255,255,.9);box-shadow:0 0 0 2px rgba(255,255,255,.25);}',
-    '.no-tags{font-size:11px;color:#6b7280;padding:12px;text-align:center;font-style:italic;}',
+    '.file-chip.selected{outline:2px solid var(--vscode-focusBorder);box-shadow:0 0 0 2px var(--vscode-focusBorder);}',
+    '.no-tags{font-size:11px;color:var(--vscode-descriptionForeground);padding:12px;text-align:center;font-style:italic;}',
+    '#error-banner{margin:0 0 12px;padding:10px 14px;background:var(--vscode-inputValidation-errorBackground);border:1px solid var(--vscode-inputValidation-errorBorder);border-radius:6px;font-size:12px;color:var(--vscode-inputValidation-errorForeground);display:none;align-items:center;gap:8px;flex-shrink:0;}',
+    '#error-banner.visible{display:flex;}',
+    '#error-banner::before{content:"⚠️";font-size:16px;}',
+    '.event-error{background-color:var(--vscode-inputValidation-errorBackground)!important;border:2px dashed var(--vscode-inputValidation-errorBorder)!important;color:var(--vscode-inputValidation-errorForeground)!important;}',
     '</style>',
     '<script nonce="'+nonce+'" src="'+momentJs+'"></script>',
     '<script nonce="'+nonce+'" src="'+fullCalendarJs+'"></script>',
@@ -520,6 +602,7 @@ function getCalendarWebviewContent({ webview, nonce }) {
     '</aside>',
     '<main id="main-content">',
     '<h1>Calendar View</h1>',
+    '<div id="error-banner"></div>',
     '<div id="calendar-wrapper"><div id="calendar"></div></div>',
     '<div id="status">Loading…</div>',
     '</main>',
