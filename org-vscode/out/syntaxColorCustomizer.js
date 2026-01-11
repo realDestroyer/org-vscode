@@ -628,16 +628,16 @@ function getWebviewContent(nonce, currentColors) {
   <title>Syntax Color Customizer</title>
   <style nonce="${nonce}">
     :root {
-      --bg-primary: #1e1e1e;
-      --bg-secondary: #252526;
-      --bg-tertiary: #2d2d30;
-      --text-primary: #cccccc;
-      --text-secondary: #9d9d9d;
-      --accent: #0e639c;
-      --accent-hover: #1177bb;
-      --border: #3c3c3c;
-      --success: #4ec9b0;
-      --warning: #dcdcaa;
+      --bg-primary: var(--vscode-editor-background);
+      --bg-secondary: var(--vscode-sideBar-background, var(--vscode-editor-background));
+      --bg-tertiary: var(--vscode-input-background);
+      --text-primary: var(--vscode-editor-foreground);
+      --text-secondary: var(--vscode-descriptionForeground);
+      --accent: var(--vscode-button-background);
+      --accent-hover: var(--vscode-button-hoverBackground);
+      --border: var(--vscode-panel-border, var(--vscode-widget-border));
+      --success: var(--vscode-terminal-ansiGreen);
+      --warning: var(--vscode-editorWarning-foreground);
     }
 
     * {
