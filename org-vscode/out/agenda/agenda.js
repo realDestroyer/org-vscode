@@ -192,19 +192,21 @@ module.exports = function () {
                   // Build HTML task entry
                   let renderedTask = "";
                   if (taskKeywordMatch !== null) {
+                    const taskLineNumber = j + 1;
                     renderedTask =
-                      '<span class="filename" data-file="' + items[i] + '">' + items[i] + ":</span> " +
-                      '<span class="' + taskKeywordMatch[0].toLowerCase() + '" data-filename="' + items[i] + '" data-text="' + taskText + '" data-date="' + cleanDate + '">' + taskKeywordMatch[0] + '</span>' +
-                      '<span class="taskText">' + taskText + "</span>" +
+                      `<span class="filename" data-file="${items[i]}" data-line="${taskLineNumber}">${items[i]}:</span> ` +
+                      `<span class="${taskKeywordMatch[0].toLowerCase()}" data-filename="${items[i]}" data-text="${taskText}" data-date="${cleanDate}">${taskKeywordMatch[0]}</span>` +
+                      `<span class="taskText agenda-task-link" data-file="${items[i]}" data-line="${taskLineNumber}">${taskText}</span>` +
                       checkboxBadge +
-                      '<span class="scheduled">SCHEDULED</span>' +
+                      `<span class="scheduled">SCHEDULED</span>` +
                       deadlineBadge;
                   } else {
+                    const taskLineNumber = j + 1;
                     renderedTask =
-                      '<span class="filename" data-file="' + items[i] + '">' + items[i] + ":</span> " +
-                      '<span class="taskText">' + taskText + "</span>" +
+                      `<span class="filename" data-file="${items[i]}" data-line="${taskLineNumber}">${items[i]}:</span> ` +
+                      `<span class="taskText agenda-task-link" data-file="${items[i]}" data-line="${taskLineNumber}">${taskText}</span>` +
                       checkboxBadge +
-                      '<span class="scheduled">SCHEDULED</span>' +
+                      `<span class="scheduled">SCHEDULED</span>` +
                       deadlineBadge;
                   }
 
@@ -314,6 +316,24 @@ module.exports = function () {
           let fullPath = path.join(setMainDir(), message.text);
           vscode.workspace.openTextDocument(vscode.Uri.file(fullPath)).then(doc => {
             vscode.window.showTextDocument(doc, vscode.ViewColumn.One, false);
+          });
+        } else if (message.command === "revealTask") {
+          const fileName = String(message.file || "");
+          const lineNumber = Number(message.lineNumber);
+          if (!fileName || !Number.isFinite(lineNumber) || lineNumber < 1) {
+            return;
+          }
+
+          const fullPath = path.join(setMainDir(), fileName);
+          const uri = vscode.Uri.file(fullPath);
+          vscode.workspace.openTextDocument(uri).then(doc => {
+            vscode.window.showTextDocument(doc, vscode.ViewColumn.One, false).then(editor => {
+              if (!editor) return;
+              const targetLine = Math.min(Math.max(0, lineNumber - 1), Math.max(0, doc.lineCount - 1));
+              const pos = new vscode.Position(targetLine, 0);
+              editor.selection = new vscode.Selection(pos, pos);
+              editor.revealRange(new vscode.Range(pos, pos), vscode.TextEditorRevealType.InCenter);
+            });
           });
         } else if (message.command === "changeStatus") {
           const parts = String(message.text || "").split(",");
@@ -709,6 +729,15 @@ module.exports = function () {
           font-family: 'Roboto Mono', sans-serif;
           font-weight: 400;
         }
+
+        .agenda-task-link{
+          cursor: pointer;
+        }
+
+        .panel.agenda-selected{
+          outline: 2px solid #2f6999;
+          outline-offset: 2px;
+        }
         .late{
           background-color: #DF9930;
 
@@ -856,6 +885,8 @@ module.exports = function () {
         <script>
         const vscode = acquireVsCodeApi();
         const dateFormat = "${dateFormat}";
+        const revealTaskOnClick = ${config.get("agendaRevealTaskOnClick", true) ? "true" : "false"};
+        const highlightTaskOnClick = ${config.get("agendaHighlightTaskOnClick", true) ? "true" : "false"};
 
         function getAllFilesFromDom() {
           const els = Array.from(document.querySelectorAll('.filename[data-file]'));
@@ -1046,6 +1077,33 @@ module.exports = function () {
               });
 
               return;
+            }
+
+            // Reveal the clicked task/filename in the source file.
+            const revealEl = (event.target && event.target.closest)
+              ? event.target.closest('.agenda-task-link[data-file][data-line], .filename[data-file][data-line]')
+              : null;
+            if (revealEl && revealTaskOnClick) {
+              const file = revealEl.dataset.file;
+              const lineNumber = Number(revealEl.dataset.line);
+              if (file && Number.isFinite(lineNumber) && lineNumber > 0) {
+                vscode.postMessage({
+                  command: 'revealTask',
+                  file,
+                  lineNumber
+                });
+
+                if (highlightTaskOnClick) {
+                  document.querySelectorAll('.panel.agenda-selected').forEach(p => p.classList.remove('agenda-selected'));
+                  const panel = revealEl.closest('.panel');
+                  if (panel) panel.classList.add('agenda-selected');
+                }
+
+                // Avoid also triggering the filename open handler.
+                if (revealEl.classList.contains('filename')) {
+                  return;
+                }
+              }
             }
 
             let class0 = event.srcElement.classList[0];
