@@ -3,7 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const vscode = require("vscode");
 const showMessage_1 = require("./showMessage");
 const moment = require("moment");
-const { isPlanningLine, normalizeTagsAfterPlanning } = require("./orgTagUtils");
+const { isPlanningLine, normalizeTagsAfterPlanning, DAY_HEADING_REGEX, TASK_PREFIX_REGEX, SCHEDULED_STRIP_RE, DEADLINE_REGEX } = require("./orgTagUtils");
 module.exports = function () {
     const { activeTextEditor } = vscode.window;
     if (!activeTextEditor || activeTextEditor.document.languageId !== "vso") {
@@ -11,8 +11,8 @@ module.exports = function () {
     }
     const { document } = activeTextEditor;
 
-    const dayHeadingRegex = /^\s*(⊘|\*+)\s*\[\d{2,4}-\d{2}-\d{2,4}\s+[A-Za-z]{3}\]/;
-    const taskPrefixRegex = /^\s*(?:[⊙⊘⊜⊖⊗]\s*)?(?:\*+\s+)?(?:TODO|IN_PROGRESS|CONTINUED|DONE|ABANDONED)\b/;
+    const dayHeadingRegex = DAY_HEADING_REGEX;
+    const taskPrefixRegex = TASK_PREFIX_REGEX;
 
     const selections = (activeTextEditor.selections && activeTextEditor.selections.length)
         ? activeTextEditor.selections
@@ -74,7 +74,7 @@ module.exports = function () {
         const lineNumber = linesToRemove[0];
         const currentLine = document.lineAt(lineNumber);
         const removeScheduled = normalizeTagsAfterPlanning(currentLine.text)
-            .replace(/\s*SCHEDULED:\s*\[[^\]]*\]/, "")
+            .replace(SCHEDULED_STRIP_RE, "")
             .trimRight();
         workspaceEdit.replace(document.uri, currentLine.range, removeScheduled);
 
@@ -84,7 +84,7 @@ module.exports = function () {
             if (isPlanningLine(nextLine.text) && nextLine.text.includes("SCHEDULED:")) {
                 const indent = nextLine.text.match(/^\s*/)?.[0] || "";
                 const body = nextLine.text.trim()
-                    .replace(/\s*SCHEDULED:\s*\[[^\]]*\]/, "")
+                    .replace(SCHEDULED_STRIP_RE, "")
                     .replace(/\s{2,}/g, " ")
                     .trim();
                 if (!body) {
@@ -105,7 +105,7 @@ module.exports = function () {
         for (const lineNumber of linesToRemove) {
             const currentLine = document.lineAt(lineNumber);
             const cleanedHeadline = normalizeTagsAfterPlanning(currentLine.text)
-                .replace(/\s*SCHEDULED:\s*\[[^\]]*\]/, "")
+                .replace(SCHEDULED_STRIP_RE, "")
                 .trimRight();
             workspaceEdit.replace(document.uri, currentLine.range, cleanedHeadline);
 
@@ -114,7 +114,7 @@ module.exports = function () {
                 if (isPlanningLine(nextLine.text) && nextLine.text.includes("SCHEDULED:")) {
                     const indent = nextLine.text.match(/^\s*/)?.[0] || "";
                     const body = nextLine.text.trim()
-                        .replace(/\s*SCHEDULED:\s*\[[^\]]*\]/, "")
+                        .replace(SCHEDULED_STRIP_RE, "")
                         .replace(/\s{2,}/g, " ")
                         .trim();
                     if (!body) {
@@ -147,7 +147,7 @@ module.exports = function () {
             for (const lineNumber of linesToAdd) {
                 const currentLine = document.lineAt(lineNumber);
                 const headlineText = normalizeTagsAfterPlanning(currentLine.text)
-                    .replace(/\s*SCHEDULED:\s*\[[^\]]*\]/, "")
+                    .replace(SCHEDULED_STRIP_RE, "")
                     .trimRight();
                 workspaceEdit.replace(document.uri, currentLine.range, headlineText);
 
@@ -161,12 +161,12 @@ module.exports = function () {
                     // Upsert SCHEDULED into existing planning line, keeping it before DEADLINE when present.
                     const indent = nextLine.text.match(/^\s*/)?.[0] || planningIndent;
                     let body = nextLine.text.trim()
-                        .replace(/\s*SCHEDULED:\s*\[[^\]]*\]/, "")
+                        .replace(SCHEDULED_STRIP_RE, "")
                         .replace(/\s{2,}/g, " ")
                         .trim();
 
-                    if (/\bDEADLINE:\s*\[/.test(body)) {
-                        body = body.replace(/DEADLINE:\s*\[[^\]]*\]/, `${scheduledTag}  $&`);
+                    if (DEADLINE_REGEX.test(body)) {
+                        body = body.replace(DEADLINE_REGEX, `${scheduledTag}  $&`);
                     }
                     else {
                         body = body ? `${body}  ${scheduledTag}` : scheduledTag;

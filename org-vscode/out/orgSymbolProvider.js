@@ -1,6 +1,7 @@
 "use strict";
 
 const vscode = require("vscode");
+const { PLANNING_STRIP_RE } = require("./orgTagUtils");
 
 const STATUS_WORDS = new Set(["TODO", "IN_PROGRESS", "CONTINUED", "DONE", "ABANDONED"]);
 
@@ -43,7 +44,7 @@ function extractHeadingTitle(rest) {
   out = out.replace(/^\s*\[#([A-Z0-9])\]\s+/, "");
 
   // Strip trailing planning stamps on heading line
-  out = out.replace(/\s+(?:SCHEDULED|DEADLINE|CLOSED|COMPLETED):\s*\[[^\]]*\]/g, "");
+  out = out.replace(new RegExp(PLANNING_STRIP_RE.source, "g"), "");
 
   // Strip trailing tags like :tag1:tag2:
   out = out.replace(/\s+:(?:[A-Za-z0-9_@#%\-]+:)+\s*$/g, "");

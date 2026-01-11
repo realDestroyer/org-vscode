@@ -1,7 +1,7 @@
 const vscode = require("vscode");
 const fs = require("fs");
 const moment = require("moment");
-const { isPlanningLine } = require("./orgTagUtils");
+const { isPlanningLine, getAcceptedDateFormats, SCHEDULED_REGEX } = require("./orgTagUtils");
 
 function rescheduleTask(forward = true) {
     const editor = vscode.window.activeTextEditor;
@@ -33,10 +33,9 @@ function rescheduleTask(forward = true) {
 
     const config = vscode.workspace.getConfiguration("Org-vscode");
     const dateFormat = config.get("dateFormat", "YYYY-MM-DD");
-    const acceptedDateFormats = [dateFormat, "MM-DD-YYYY", "DD-MM-YYYY", "YYYY-MM-DD"];
+    const acceptedDateFormats = getAcceptedDateFormats(dateFormat);
 
-    // Match SCHEDULED date format
-    const dateRegex = /SCHEDULED:\s*\[(\d{2,4}-\d{2}-\d{2,4})\]/;
+    const dateRegex = SCHEDULED_REGEX;
 
     const edit = new vscode.WorkspaceEdit();
     let touched = false;
@@ -67,13 +66,18 @@ function rescheduleTask(forward = true) {
         }
 
         const currentDate = targetMatch[1];
+        const hadDayAbbrev = targetMatch[2] !== undefined;
+        const hadTime = targetMatch[3] !== undefined;
         const parsed = moment(currentDate, acceptedDateFormats, true);
         if (!parsed.isValid()) {
             warnedParse = true;
             continue;
         }
-        const newDate = parsed.add(forward ? 1 : -1, "day").format(dateFormat);
-        const updatedText = target.lineText.replace(dateRegex, `SCHEDULED: [${newDate}]`);
+        const newDate = parsed.add(forward ? 1 : -1, "day");
+        const formattedDate = newDate.format(dateFormat);
+        const dayPart = hadDayAbbrev ? ` ${newDate.format("ddd")}` : "";
+        const timePart = hadTime ? ` ${targetMatch[3]}` : "";
+        const updatedText = target.lineText.replace(dateRegex, `SCHEDULED: [${formattedDate}${dayPart}${timePart}]`);
         if (updatedText !== target.lineText) {
             const targetLine = document.lineAt(target.lineNumber);
             edit.replace(document.uri, targetLine.range, updatedText);

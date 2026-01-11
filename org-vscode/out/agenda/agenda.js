@@ -7,7 +7,7 @@ const moment = require("moment");
 const taskKeywordManager = require("../taskKeywordManager");
 const continuedTaskHandler = require("../continuedTaskHandler");
 const path = require("path");
-const { stripAllTagSyntax, getPlanningForHeading, isPlanningLine, parsePlanningFromText, normalizeTagsAfterPlanning } = require("../orgTagUtils");
+const { stripAllTagSyntax, getPlanningForHeading, isPlanningLine, parsePlanningFromText, normalizeTagsAfterPlanning, getAcceptedDateFormats, DEADLINE_REGEX, stripInlinePlanning } = require("../orgTagUtils");
 const { formatCheckboxStats, findCheckboxCookie, computeHierarchicalCheckboxStatsInRange } = require("../checkboxStats");
 const { computeCheckboxToggleEdits } = require("../checkboxToggle");
 
@@ -16,7 +16,7 @@ module.exports = function () {
   let config = vscode.workspace.getConfiguration("Org-vscode");
     let folderPath = config.get("folderPath");
     let dateFormat = config.get("dateFormat", "YYYY-MM-DD");
-    let acceptedDateFormats = [dateFormat, "MM-DD-YYYY", "DD-MM-YYYY", "YYYY-MM-DD"];
+    let acceptedDateFormats = getAcceptedDateFormats(dateFormat);
     let folder;
     let taskText;
     let taskKeywordMatch = "";
@@ -125,7 +125,7 @@ module.exports = function () {
                   if (nextIndent.length > baseIndent.length) {
                     children.push({ text: nextLine, lineNumber: k + 1 });
                     // Check for DEADLINE in child lines
-                    const dlMatch = nextLine.match(/DEADLINE:\s*\[([\d-]+(?:\s+[\d:]+)?)\]/);
+                    const dlMatch = nextLine.match(DEADLINE_REGEX);
                     if (dlMatch && !deadlineFromChildren) {
                       deadlineFromChildren = dlMatch[1];
                     }
@@ -135,7 +135,7 @@ module.exports = function () {
                 }
                 
                 // Also check for DEADLINE on the task line itself
-                const inlineDeadlineMatch = element.match(/DEADLINE:\s*\[([\d-]+(?:\s+[\d:]+)?)\]/);
+                const inlineDeadlineMatch = element.match(DEADLINE_REGEX);
                 const deadlineStr = inlineDeadlineMatch ? inlineDeadlineMatch[1] : deadlineFromChildren;
 
                 // Extract core task text and scheduled date
@@ -391,11 +391,7 @@ module.exports = function () {
             const indent = currentLine.text.match(/^\s*/)?.[0] || "";
 
             const cleanedHeadline = taskKeywordManager.cleanTaskText(
-              normalizeTagsAfterPlanning(currentLine.text)
-                .replace(/\s*(?:SCHEDULED|DEADLINE|CLOSED|COMPLETED):\s*\[[^\]]*\]/g, "")
-                .replace(/\s*(?:SCHEDULED|DEADLINE|CLOSED|COMPLETED):\[[^\]]*\]/g, "")
-                .replace(/\s{2,}/g, " ")
-                .trim()
+              stripInlinePlanning(normalizeTagsAfterPlanning(currentLine.text)).trim()
             );
             const newHeadlineOnly = taskKeywordManager.buildTaskLine(indent, newStatus, cleanedHeadline, { headingMarkerStyle, starPrefix });
 
