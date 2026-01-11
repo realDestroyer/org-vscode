@@ -347,182 +347,218 @@
 		"commands": [
 			{
 				"command": "extension.setFolderPath",
-				"title": "org-vscode Change Org-vscode Directory"
+				"category": "Org-vscode",
+				"title": "Change Org Directory"
 			},
 			{
 				"command": "org-vscode.openPreview",
-				"title": "Org-vscode: Open Preview"
+				"category": "Org-vscode",
+				"title": "Open Preview"
 			},
 			{
 				"command": "org-vscode.openPreviewToSide",
-				"title": "Org-vscode: Open Preview to Side"
+				"category": "Org-vscode",
+				"title": "Open Preview to Side"
 			},
 			{
 				"command": "org-vscode.insertNewElement",
-				"title": "Org-vscode: Insert New Element (Smart)"
+				"category": "Org-vscode",
+				"title": "Insert New Element (Smart)"
 			},
 			{
 				"command": "extension.migrateFileToV2",
-				"title": "org-vscode: Migrate File to v2 Format"
+				"category": "Org-vscode",
+				"title": "Migrate File to v2 Format"
 			},
 			{
 				"command": "extension.convertDatesInActiveFile",
-				"title": "Org-vscode: Convert Dates in Current File"
+				"category": "Org-vscode",
+				"title": "Convert Dates in Current File"
 			},
 			{
 				"command": "extension.rescheduleTaskForward",
+				"category": "Org-vscode",
 				"title": "Reschedule Task Forward"
 			},
 			{
 				"command": "extension.rescheduleTaskBackward",
+				"category": "Org-vscode",
 				"title": "Reschedule Task Backward"
 			},
 			{
 				"command": "extension.smartDateForward",
+				"category": "Org-vscode",
 				"title": "Smart Date Forward (Day Heading or SCHEDULED)"
 			},
 			{
 				"command": "extension.smartDateBackward",
+				"category": "Org-vscode",
 				"title": "Smart Date Backward (Day Heading or SCHEDULED)"
 			},
 			{
 				"command": "extension.deadlineDateForward",
+				"category": "Org-vscode",
 				"title": "Deadline Date Forward"
 			},
 			{
 				"command": "extension.deadlineDateBackward",
+				"category": "Org-vscode",
 				"title": "Deadline Date Backward"
 			},
 			{
 				"command": "extension.openCalendarView",
+				"category": "Org-vscode",
 				"title": "Open Calendar View"
 			},
 			{
 				"command": "extension.openSyntaxColorCustomizer",
-				"title": "org-vscode Customize Syntax Colors"
+				"category": "Org-vscode",
+				"title": "Customize Syntax Colors"
 			},
 			{
 				"command": "extension.openKeybindingCustomizer",
-				"title": "org-vscode Customize Keybindings"
+				"category": "Org-vscode",
+				"title": "Customize Keybindings"
 			},
 			{
 				"command": "extension.toggleBoldMarkup",
-				"title": "Org-vscode: Toggle Bold Markup"
+				"category": "Org-vscode",
+				"title": "Toggle Bold Markup"
 			},
 			{
 				"command": "extension.toggleItalicMarkup",
-				"title": "Org-vscode: Toggle Italic Markup"
+				"category": "Org-vscode",
+				"title": "Toggle Italic Markup"
 			},
 			{
 				"command": "extension.toggleUnderlineMarkup",
-				"title": "Org-vscode: Toggle Underline Markup"
+				"category": "Org-vscode",
+				"title": "Toggle Underline Markup"
 			},
 			{
 				"command": "extension.createVsoFile",
-				"title": "org-vscode Create New .org file"
+				"category": "Org-vscode",
+				"title": "Create New .org File"
 			},
 			{
 				"command": "extension.getTags",
-				"title": "org-vscode Open By Tag"
+				"category": "Org-vscode",
+				"title": "Open By Tag"
 			},
 			{
 				"command": "extension.getTitles",
-				"title": "org-vscode Open By Title "
+				"category": "Org-vscode",
+				"title": "Open By Title"
 			},
 			{
 				"command": "extension.viewAgenda",
-				"title": "org-vscode Agenda View"
+				"category": "Org-vscode",
+				"title": "Agenda View"
 			},
 			{
 				"command": "extension.alignSchedules",
+				"category": "Org-vscode",
 				"title": "Align Scheduled Tasks"
 			},
 			{
 				"command": "extension.deadline",
+				"category": "Org-vscode",
 				"title": "Add Deadline to Task"
 			},
 			{
 				"command": "extension.insertDateStamp",
+				"category": "Org-vscode",
 				"title": "Insert Date Stamp"
 			},
 			{
 				"command": "extension.incrementDate",
+				"category": "Org-vscode",
 				"title": "Increment Date Stamp"
 			},
 			{
 				"command": "extension.decrementDate",
+				"category": "Org-vscode",
 				"title": "Decrement Date Stamp"
 			},
 			{
 				"command": "extension.moveBlockUp",
-				"category": "org-vscode",
-				"title": "MoveBlockUp"
+				"category": "Org-vscode",
+				"title": "Move Block Up"
 			},
 			{
 				"command": "extension.moveBlockDown",
-				"category": "org-vscode",
-				"title": "MoveBlockDown"
+				"category": "Org-vscode",
+				"title": "Move Block Down"
 			},
 			{
 				"command": "extension.toggleCheckboxItem",
-				"category": "org-vscode",
-				"title": "ToggleCheckboxItem"
+				"category": "Org-vscode",
+				"title": "Toggle Checkbox Item"
 			},
 			{
 				"command": "extension.toggleStatusLeft",
-				"category": "org-vscode",
-				"title": "ToggleStatusLeft"
+				"category": "Org-vscode",
+				"title": "Toggle Status Left"
 			},
 			{
 				"command": "extension.toggleStatusRight",
-				"category": "org-vscode",
-				"title": "ToggleStatusRight"
+				"category": "Org-vscode",
+				"title": "Toggle Status Right"
 			},
 			{
 				"command": "extension.increment",
-				"category": "org-vscode",
+				"category": "Org-vscode",
 				"title": "Increment"
 			},
 			{
 				"command": "extension.decrement",
-				"category": "org-vscode",
+				"category": "Org-vscode",
 				"title": "Decrement"
 			},
 			{
 				"command": "extension.addTagToTask",
+				"category": "Org-vscode",
 				"title": "Add Tag to Task"
 			},
 			{
 				"command": "extension.addFileTag",
+				"category": "Org-vscode",
 				"title": "Add File Tag"
 			},
 			{
 				"command": "extension.viewTaggedAgenda",
+				"category": "Org-vscode",
 				"title": "View Tagged Agenda"
 			},
 			{
 				"command": "extension.addSeparator",
+				"category": "Org-vscode",
 				"title": "Add Separator"
 			},
 			{
 				"command": "orgMode.exportYearSummary",
-				"title": "org-vscode: Export Yearly Summary"
+				"category": "Org-vscode",
+				"title": "Export Yearly Summary"
 			},
 			{
 				"command": "orgMode.generateExecutiveReport",
-				"title": "org-vscode: Generate Executive Report"
+				"category": "Org-vscode",
+				"title": "Generate Executive Report"
 			},
 			{
 				"command": "orgMode.openYearInReview",
-				"title": "org-vscode: Open Year-In-Review Dashboard"
+				"category": "Org-vscode",
+				"title": "Open Year-In-Review Dashboard"
 			},
 			{
 				"command": "org-vscode.insertTable",
-				"title": "org-vscode: Insert Org Table"
+				"category": "Org-vscode",
+				"title": "Insert Org Table"
 			},
 			{
 				"command": "org-vscode.exportCurrentTasks",
-				"title": "org-vscode: Export Current Tasks"
+				"category": "Org-vscode",
+				"title": "Export Current Tasks"
 			}
 		],
 		"keybindings": [
