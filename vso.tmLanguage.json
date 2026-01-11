@@ -677,40 +677,50 @@
     "task_text_todo": {
       "patterns": [
         {
-          "name": "string.task.todo.vso",
-          "match": "(?<=TODO\\s+).*?(?=(?:\\s+(?:SCHEDULED:|DEADLINE:|CLOSED:|COMPLETED:))|(?:\\s+:(?:[A-Za-z0-9_@#%\\-]+:)+(?=\\s+(?:SCHEDULED:|DEADLINE:|CLOSED:|COMPLETED:)))|(?:\\s+:(?:[A-Za-z0-9_@#%\\-]+:)+\\s*$)|$)"
+          "match": "(?<=TODO)(\\s+)(.*?)(?=(?:\\s+(?:SCHEDULED:|DEADLINE:|CLOSED:|COMPLETED:))|(?:\\s+:(?:[A-Za-z0-9_@#%\\-]+:)+(?=\\s+(?:SCHEDULED:|DEADLINE:|CLOSED:|COMPLETED:)))|(?:\\s+:(?:[A-Za-z0-9_@#%\\-]+:)+\\s*$)|$)",
+          "captures": {
+            "2": { "name": "string.task.todo.vso" }
+          }
         }
       ]
     },
     "task_text_in_progress": {
       "patterns": [
         {
-          "name": "string.task.in_progress.vso",
-          "match": "(?<=IN_PROGRESS\\s+).*?(?=(?:\\s+(?:SCHEDULED:|DEADLINE:|CLOSED:|COMPLETED:))|(?:\\s+:(?:[A-Za-z0-9_@#%\\-]+:)+(?=\\s+(?:SCHEDULED:|DEADLINE:|CLOSED:|COMPLETED:)))|(?:\\s+:(?:[A-Za-z0-9_@#%\\-]+:)+\\s*$)|$)"
+          "match": "(?<=IN_PROGRESS)(\\s+)(.*?)(?=(?:\\s+(?:SCHEDULED:|DEADLINE:|CLOSED:|COMPLETED:))|(?:\\s+:(?:[A-Za-z0-9_@#%\\-]+:)+(?=\\s+(?:SCHEDULED:|DEADLINE:|CLOSED:|COMPLETED:)))|(?:\\s+:(?:[A-Za-z0-9_@#%\\-]+:)+\\s*$)|$)",
+          "captures": {
+            "2": { "name": "string.task.in_progress.vso" }
+          }
         }
       ]
     },
     "task_text_done": {
       "patterns": [
         {
-          "name": "string.task.done.vso",
-          "match": "(?<=DONE\\s+).*?(?=(?:\\s+(?:SCHEDULED:|DEADLINE:|CLOSED:|COMPLETED:))|(?:\\s+:(?:[A-Za-z0-9_@#%\\-]+:)+(?=\\s+(?:SCHEDULED:|DEADLINE:|CLOSED:|COMPLETED:)))|(?:\\s+:(?:[A-Za-z0-9_@#%\\-]+:)+\\s*$)|$)"
+          "match": "(?<=DONE)(\\s+)(.*?)(?=(?:\\s+(?:SCHEDULED:|DEADLINE:|CLOSED:|COMPLETED:))|(?:\\s+:(?:[A-Za-z0-9_@#%\\-]+:)+(?=\\s+(?:SCHEDULED:|DEADLINE:|CLOSED:|COMPLETED:)))|(?:\\s+:(?:[A-Za-z0-9_@#%\\-]+:)+\\s*$)|$)",
+          "captures": {
+            "2": { "name": "string.task.done.vso" }
+          }
         }
       ]
     },
     "task_text_abandoned": {
       "patterns": [
         {
-          "name": "string.task.abandoned.vso",
-          "match": "(?<=ABANDONED\\s+).*?(?=(?:\\s+(?:SCHEDULED:|DEADLINE:|CLOSED:|COMPLETED:))|(?:\\s+:(?:[A-Za-z0-9_@#%\\-]+:)+(?=\\s+(?:SCHEDULED:|DEADLINE:|CLOSED:|COMPLETED:)))|(?:\\s+:(?:[A-Za-z0-9_@#%\\-]+:)+\\s*$)|$)"
+          "match": "(?<=ABANDONED)(\\s+)(.*?)(?=(?:\\s+(?:SCHEDULED:|DEADLINE:|CLOSED:|COMPLETED:))|(?:\\s+:(?:[A-Za-z0-9_@#%\\-]+:)+(?=\\s+(?:SCHEDULED:|DEADLINE:|CLOSED:|COMPLETED:)))|(?:\\s+:(?:[A-Za-z0-9_@#%\\-]+:)+\\s*$)|$)",
+          "captures": {
+            "2": { "name": "string.task.abandoned.vso" }
+          }
         }
       ]
     },
     "task_text_continued": {
       "patterns": [
         {
-          "name": "string.task.continued.vso",
-          "match": "(?<=CONTINUED\\s+).*?(?=(?:\\s+(?:SCHEDULED:|DEADLINE:|CLOSED:|COMPLETED:))|(?:\\s+:(?:[A-Za-z0-9_@#%\\-]+:)+(?=\\s+(?:SCHEDULED:|DEADLINE:|CLOSED:|COMPLETED:)))|(?:\\s+:(?:[A-Za-z0-9_@#%\\-]+:)+\\s*$)|$)"
+          "match": "(?<=CONTINUED)(\\s+)(.*?)(?=(?:\\s+(?:SCHEDULED:|DEADLINE:|CLOSED:|COMPLETED:))|(?:\\s+:(?:[A-Za-z0-9_@#%\\-]+:)+(?=\\s+(?:SCHEDULED:|DEADLINE:|CLOSED:|COMPLETED:)))|(?:\\s+:(?:[A-Za-z0-9_@#%\\-]+:)+\\s*$)|$)",
+          "captures": {
+            "2": { "name": "string.task.continued.vso" }
+          }
         }
       ]
     },
