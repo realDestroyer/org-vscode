@@ -87,7 +87,13 @@ module.exports = function () {
 
     // Reads all .org files and builds agenda view HTML blocks grouped by scheduled date
     function readFiles() {
-      fs.readdir(setMainDir(), (err, items) => {
+      const dirPath = setMainDir();
+      fs.readdir(dirPath, (err, items) => {
+        if (err) {
+          vscode.window.showErrorMessage(`Error reading org directory: ${err.message}`);
+          return;
+        }
+
         function getSortTimestampFromAgendaKey(key) {
           const dateMatch = key.match(/\[(\d{2,4}-\d{2}-\d{2,4})\]/);
           if (!dateMatch) {
@@ -97,13 +103,20 @@ module.exports = function () {
           return parsed.isValid() ? parsed.valueOf() : null;
         }
 
+        const skippedFiles = [];
+
         for (let i = 0; i < items.length; i++) {
-          if (items[i].includes(".org")) {
-            if (items[i] === "CurrentTasks.org") continue; // Skip export file
+          if (items[i].endsWith(".org") && !items[i].startsWith(".") && items[i] !== "CurrentTasks.org") {
 
             // Read the contents of the .org file
-            const fullPath = path.join(setMainDir(), items[i]);
-            const fileText = fs.readFileSync(fullPath).toString().split(/\r?\n/);
+            const fullPath = path.join(dirPath, items[i]);
+            let fileText;
+            try {
+              fileText = fs.readFileSync(fullPath).toString().split(/\r?\n/);
+            } catch (fileErr) {
+              skippedFiles.push({ file: items[i], reason: fileErr.message });
+              continue;
+            }
 
             // Iterate through lines to find scheduled, non-completed tasks (only TODO and IN_PROGRESS)
             for (let j = 0; j < fileText.length; j++) {
@@ -277,25 +290,23 @@ module.exports = function () {
           itemInSortedObject += property + sortedObject[property] + "</br>";
         });
 
-        createWebview();
+        createWebview(skippedFiles);
       });
     }
 
     function setMainDir() {
       let config = vscode.workspace.getConfiguration("Org-vscode");
       let folderPath = config.get("folderPath");
-      if (!folderPath || folderPath.trim() === "") {
-        vscode.window.showErrorMessage("No org directory set. Please configure 'Org-vscode.folderPath' in settings.");
-        return null;
-      }
-      return folderPath;
+      return (folderPath && folderPath.trim() !== "")
+        ? folderPath
+        : path.join(os.homedir(), "VSOrgFiles");
     }
 
-    function createWebview() {
+    function createWebview(skippedFiles) {
       let reload = false;
       let suppressReloadForFsPath = null;
       let fullAgendaView = vscode.window.createWebviewPanel("fullAgenda", "Full Agenda View", vscode.ViewColumn.Beside, { enableScripts: true });
-      fullAgendaView.webview.html = getWebviewContent(sortedObject);
+      fullAgendaView.webview.html = getWebviewContent(sortedObject, skippedFiles);
 
       const saveDisposable = vscode.workspace.onDidSaveTextDocument((savedDoc) => {
         if (suppressReloadForFsPath && savedDoc && savedDoc.uri && savedDoc.uri.fsPath === suppressReloadForFsPath) {
@@ -525,7 +536,11 @@ module.exports = function () {
         }
       });
     }
-        function getWebviewContent(task) {
+        function getWebviewContent(task, skippedFiles) {
+            const errorBannerContent = (skippedFiles && skippedFiles.length > 0)
+              ? skippedFiles.map(s => `${s.file} (${s.reason})`).join("; ")
+              : "";
+            const errorBannerClass = errorBannerContent ? "visible" : "";
             return `<!DOCTYPE html>
         <html lang="en">
         <head>
@@ -874,10 +889,30 @@ module.exports = function () {
         .filtered-out {
           display: none !important;
         }
+        #error-banner {
+          margin: 0 0 12px;
+          padding: 10px 14px;
+          background: #f8d7da;
+          border: 1px solid #f5c6cb;
+          border-radius: 6px;
+          font-size: 12px;
+          color: #721c24;
+          display: none;
+          align-items: center;
+          gap: 8px;
+        }
+        #error-banner.visible {
+          display: flex;
+        }
+        #error-banner::before {
+          content: "⚠️";
+          font-size: 16px;
+        }
         </style>
         <body>
 
         <h1>Agenda View</h1>
+        <div id="error-banner" class="${errorBannerClass}">${errorBannerContent}</div>
         <div id="file-bubbles" aria-label="File filter"></div>
         <div id="display-agenda">
         ${itemInSortedObject}
