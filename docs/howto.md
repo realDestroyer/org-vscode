@@ -317,6 +317,17 @@ You can open a file using either:
 
 The Agenda View shows only **TODO** and **IN_PROGRESS** tasks. Tasks marked as CONTINUED, DONE, or ABANDONED are excluded for a cleaner view of what still needs attention.
 
+### Click-to-navigate (Agenda + Tagged Agenda)
+
+You can click the **task text** (or the **filename**) to jump your cursor to the exact line in the source `.org` file.
+
+Optional settings:
+
+```json
+"Org-vscode.agendaRevealTaskOnClick": true,
+"Org-vscode.agendaHighlightTaskOnClick": true
+```
+
 <img src="https://github.com/realdestroyer/org-vscode/blob/master/Images/openAgenda.gif?raw=true" width="700" height="400" />
 
 ---
@@ -645,7 +656,8 @@ This lets you filter tasks across all files by tag(s). Two modes are supported:
 
 * Groups results by file
 * Shows each task with its current status, schedule date, and tags
-* Clickable filenames open the source
+* Clickable filenames open the source (or reveal the exact task line)
+* Clickable task text reveals the exact task line
 * Clickable status cycles through keywords
 * Use `[Expand All]` / `[Collapse All]` buttons to show/hide groups
 

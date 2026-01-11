@@ -2,6 +2,8 @@
 
 # [Unreleased]
 
+- **Agenda View / Tagged Agenda:** Click task text (or filename) to reveal the exact source line in the editor. Settings: `Org-vscode.agendaRevealTaskOnClick` and `Org-vscode.agendaHighlightTaskOnClick`.
+
 # [2.2.1] 01-07-26
 `Fixed / Enhanced`
 
