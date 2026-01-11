@@ -542,12 +542,27 @@ function getNonce() {
  * Generates the webview HTML content
  */
 function getWebviewContent(nonce, currentColors) {
+  function escapeCssAttrValue(value) {
+    return String(value || "").replace(/\\/g, "\\\\").replace(/\"/g, "\\\"");
+  }
+
+  let previewCss = "";
+
   const groupsHtml = Object.entries(SCOPE_GROUPS).map(([groupName, scopeNames]) => {
     const scopesHtml = scopeNames.map(name => {
       const settings = currentColors[name];
       const technicalScope = Array.isArray(settings.scope) ? settings.scope.join(", ") : settings.scope;
       const supportsBackground = /\bKeyword\b/.test(name);
-      const previewStyle = `color: ${settings.foreground}; ${supportsBackground && settings.background ? `background-color: ${settings.background};` : ''} ${settings.fontStyle ? `font-style: ${settings.fontStyle.includes('italic') ? 'italic' : 'normal'}; font-weight: ${settings.fontStyle.includes('bold') ? 'bold' : 'normal'};` : ''}`;
+
+      const previewSelector = `.preview[data-scope="${escapeCssAttrValue(name)}"]`;
+      const previewRule = [
+        `color: ${settings.foreground};`,
+        supportsBackground && settings.background ? `background-color: ${settings.background};` : "",
+        settings.fontStyle ? `font-style: ${settings.fontStyle.includes('italic') ? 'italic' : 'normal'};` : "",
+        settings.fontStyle ? `font-weight: ${settings.fontStyle.includes('bold') ? 'bold' : 'normal'};` : ""
+      ].filter(Boolean).join(" ");
+
+      previewCss += `${previewSelector} { ${previewRule} }\n`;
       
       return `
         <div class="scope-row" data-scope="${name}">
@@ -603,7 +618,7 @@ function getWebviewContent(nonce, currentColors) {
                 <span>Italic</span>
               </label>
             </div>
-            <div class="preview" style="${previewStyle}" data-scope="${name}">
+            <div class="preview" data-scope="${name}">
               ${getPreviewText(name)}
             </div>
           </div>
@@ -623,7 +638,7 @@ function getWebviewContent(nonce, currentColors) {
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'nonce-${nonce}';">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'nonce-${nonce}'; script-src 'nonce-${nonce}';">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Syntax Color Customizer</title>
   <style nonce="${nonce}">
@@ -639,6 +654,8 @@ function getWebviewContent(nonce, currentColors) {
       --success: var(--vscode-terminal-ansiGreen);
       --warning: var(--vscode-editorWarning-foreground);
     }
+
+    ${previewCss}
 
     * {
       box-sizing: border-box;
