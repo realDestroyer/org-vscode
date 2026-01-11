@@ -2,6 +2,11 @@
 
 # [Unreleased]
 
+# [2.2.3] 01-11-26
+`Fixed`
+
+- **Tagged Agenda:** Clicking task text now reveals the source line in the existing editor (or opens in the left column), matching Agenda View instead of opening in the webview column.
+
 # [2.2.2] 01-11-26
 `Enhanced`
 

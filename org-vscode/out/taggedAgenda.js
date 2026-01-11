@@ -270,10 +270,25 @@ function showTaggedAgendaView(tag, items) {
   panel.webview.onDidReceiveMessage(message => {
     console.log("📩 Received message from webview:", message);
     if (message.command === "openFile") {
+      const fileName = String(message.file || "");
+      if (!fileName) {
+        return;
+      }
+
       const orgDir = getOrgFolder();
-      const filePath = path.join(orgDir, message.file);
-      vscode.workspace.openTextDocument(vscode.Uri.file(filePath)).then(doc => {
-        vscode.window.showTextDocument(doc, { preview: false });
+      const filePath = path.join(orgDir, fileName);
+      const uri = vscode.Uri.file(filePath);
+
+      const existing = vscode.window.visibleTextEditors
+        .find(e => e && e.document && e.document.uri && e.document.uri.fsPath === uri.fsPath);
+
+      if (existing) {
+        vscode.window.showTextDocument(existing.document, existing.viewColumn, false);
+        return;
+      }
+
+      vscode.workspace.openTextDocument(uri).then(doc => {
+        vscode.window.showTextDocument(doc, vscode.ViewColumn.One, false);
       });
     } else if (message.command === "revealTask") {
       const fileName = String(message.file || "");
@@ -285,14 +300,27 @@ function showTaggedAgendaView(tag, items) {
       const orgDir = getOrgFolder();
       const filePath = path.join(orgDir, fileName);
       const uri = vscode.Uri.file(filePath);
+
+      const revealInEditor = (doc, editor) => {
+        if (!editor) return;
+        const targetLine = Math.min(Math.max(0, lineNumber - 1), Math.max(0, doc.lineCount - 1));
+        const pos = new vscode.Position(targetLine, 0);
+        editor.selection = new vscode.Selection(pos, pos);
+        editor.revealRange(new vscode.Range(pos, pos), vscode.TextEditorRevealType.InCenter);
+      };
+
+      const existing = vscode.window.visibleTextEditors
+        .find(e => e && e.document && e.document.uri && e.document.uri.fsPath === uri.fsPath);
+
+      if (existing) {
+        vscode.window.showTextDocument(existing.document, existing.viewColumn, false)
+          .then(editor => revealInEditor(existing.document, editor));
+        return;
+      }
+
       vscode.workspace.openTextDocument(uri).then(doc => {
-        vscode.window.showTextDocument(doc, { preview: false }).then(editor => {
-          if (!editor) return;
-          const targetLine = Math.min(Math.max(0, lineNumber - 1), Math.max(0, doc.lineCount - 1));
-          const pos = new vscode.Position(targetLine, 0);
-          editor.selection = new vscode.Selection(pos, pos);
-          editor.revealRange(new vscode.Range(pos, pos), vscode.TextEditorRevealType.InCenter);
-        });
+        vscode.window.showTextDocument(doc, vscode.ViewColumn.One, false)
+          .then(editor => revealInEditor(doc, editor));
       });
     } else if (message.command === "changeStatus") {
       const parts = message.text.split(",");

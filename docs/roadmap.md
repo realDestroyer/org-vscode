@@ -1,6 +1,6 @@
 ﻿# Roadmap
 
-Live version: 2.2.2
+Live version: 2.2.3
 
 These are the features that I have either already implemented, or plan to in the near future.
 
