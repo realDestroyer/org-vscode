@@ -542,12 +542,27 @@ function getNonce() {
  * Generates the webview HTML content
  */
 function getWebviewContent(nonce, currentColors) {
+  function escapeCssAttrValue(value) {
+    return String(value || "").replace(/\\/g, "\\\\").replace(/\"/g, "\\\"");
+  }
+
+  let previewCss = "";
+
   const groupsHtml = Object.entries(SCOPE_GROUPS).map(([groupName, scopeNames]) => {
     const scopesHtml = scopeNames.map(name => {
       const settings = currentColors[name];
       const technicalScope = Array.isArray(settings.scope) ? settings.scope.join(", ") : settings.scope;
       const supportsBackground = /\bKeyword\b/.test(name);
-      const previewStyle = `color: ${settings.foreground}; ${supportsBackground && settings.background ? `background-color: ${settings.background};` : ''} ${settings.fontStyle ? `font-style: ${settings.fontStyle.includes('italic') ? 'italic' : 'normal'}; font-weight: ${settings.fontStyle.includes('bold') ? 'bold' : 'normal'};` : ''}`;
+
+      const previewSelector = `.preview[data-scope="${escapeCssAttrValue(name)}"]`;
+      const previewRule = [
+        `color: ${settings.foreground};`,
+        supportsBackground && settings.background ? `background-color: ${settings.background};` : "",
+        settings.fontStyle ? `font-style: ${settings.fontStyle.includes('italic') ? 'italic' : 'normal'};` : "",
+        settings.fontStyle ? `font-weight: ${settings.fontStyle.includes('bold') ? 'bold' : 'normal'};` : ""
+      ].filter(Boolean).join(" ");
+
+      previewCss += `${previewSelector} { ${previewRule} }\n`;
       
       return `
         <div class="scope-row" data-scope="${name}">
@@ -603,7 +618,7 @@ function getWebviewContent(nonce, currentColors) {
                 <span>Italic</span>
               </label>
             </div>
-            <div class="preview" style="${previewStyle}" data-scope="${name}">
+            <div class="preview" data-scope="${name}">
               ${getPreviewText(name)}
             </div>
           </div>
@@ -628,17 +643,19 @@ function getWebviewContent(nonce, currentColors) {
   <title>Syntax Color Customizer</title>
   <style nonce="${nonce}">
     :root {
-      --bg-primary: #1e1e1e;
-      --bg-secondary: #252526;
-      --bg-tertiary: #2d2d30;
-      --text-primary: #cccccc;
-      --text-secondary: #9d9d9d;
-      --accent: #0e639c;
-      --accent-hover: #1177bb;
-      --border: #3c3c3c;
-      --success: #4ec9b0;
-      --warning: #dcdcaa;
+      --bg-primary: var(--vscode-editor-background);
+      --bg-secondary: var(--vscode-sideBar-background, var(--vscode-editor-background));
+      --bg-tertiary: var(--vscode-input-background);
+      --text-primary: var(--vscode-editor-foreground);
+      --text-secondary: var(--vscode-descriptionForeground);
+      --accent: var(--vscode-button-background);
+      --accent-hover: var(--vscode-button-hoverBackground);
+      --border: var(--vscode-panel-border, var(--vscode-widget-border));
+      --success: var(--vscode-terminal-ansiGreen);
+      --warning: var(--vscode-editorWarning-foreground);
     }
+
+    ${previewCss}
 
     * {
       box-sizing: border-box;
