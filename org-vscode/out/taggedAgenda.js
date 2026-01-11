@@ -727,8 +727,7 @@ body{
 
         .panel.agenda-selected{
           outline: 2px solid #2f6999;
-          outline-offset: -2px;
-          background-color: rgba(47, 105, 153, 0.06);
+          outline-offset: 2px;
         }
         .checkbox-stats {
           float: left;
