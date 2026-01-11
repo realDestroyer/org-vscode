@@ -2,6 +2,10 @@
 
 # [Unreleased]
 
+`Fixed`
+
+- **Tagged Agenda:** Clicking a task (with highlight enabled) no longer applies a filled background to the selected row; it now matches Agenda View’s outline-only highlight. Disable via `Org-vscode.agendaHighlightTaskOnClick`.
+
 # [2.2.3] 01-11-26
 `Fixed`
 
