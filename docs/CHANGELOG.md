@@ -2,6 +2,16 @@
 
 # [Unreleased]
 
+`Added / Enhanced`
+
+- **Properties (Emacs parity):** Property drawer management commands:
+  - `Org-vscode: Set Property` (creates/updates drawers as needed)
+  - `Org-vscode: Get Property (with inheritance)` (local → parent headings → file `#+PROPERTY`)
+  - `Org-vscode: Delete Property` (removes empty drawers)
+- **IDs:**
+  - `Org-vscode: Get or Create ID` (creates a UUID when missing; copies to clipboard)
+  - `Org-vscode: Set ID` (sets/replaces ID; empty input generates a UUID; copies to clipboard)
+
 `Fixed`
 
 - **Tagged Agenda:** Clicking a task (with highlight enabled) no longer applies a filled background to the selected row; it now matches Agenda View’s outline-only highlight. Disable via `Org-vscode.agendaHighlightTaskOnClick`.
