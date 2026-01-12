@@ -14,7 +14,7 @@ Org-vscode’s long-term direction is to emulate Emacs Org Mode as closely as pr
 
 If the embedded video doesn’t render in your viewer, open: https://github.com/realDestroyer/org-vscode/raw/master/Images/demo1.mp4
 
-<video src="https://github.com/realDestroyer/org-vscode/raw/master/Images/demo1.mp4"></video>
+<video src="https://github.com/realDestroyer/org-vscode/raw/refs/heads/master/Images/demo1.mp4"></video>
 
 ---
 
