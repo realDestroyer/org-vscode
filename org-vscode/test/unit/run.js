@@ -11,6 +11,7 @@ const tests = [
   require(path.join(__dirname, 'checkbox-cookie-toggle.test.js')),
   require(path.join(__dirname, 'checkbox-auto-done.test.js')),
   require(path.join(__dirname, 'checkbox-toggle.test.js')),
+  require(path.join(__dirname, 'org-properties.test.js')),
   require(path.join(__dirname, 'smart-insert-new-element.test.js')),
   require(path.join(__dirname, 'math-decorations-map.test.js')),
   require(path.join(__dirname, 'date-parsing.test.js')),

@@ -366,6 +366,31 @@
 				"title": "Insert New Element (Smart)"
 			},
 			{
+				"command": "org-vscode.setProperty",
+				"category": "Org-vscode",
+				"title": "Set Property"
+			},
+			{
+				"command": "org-vscode.getProperty",
+				"category": "Org-vscode",
+				"title": "Get Property (with inheritance)"
+			},
+			{
+				"command": "org-vscode.deleteProperty",
+				"category": "Org-vscode",
+				"title": "Delete Property"
+			},
+			{
+				"command": "org-vscode.setId",
+				"category": "Org-vscode",
+				"title": "Set ID"
+			},
+			{
+				"command": "org-vscode.getOrCreateId",
+				"category": "Org-vscode",
+				"title": "Get or Create ID"
+			},
+			{
 				"command": "extension.migrateFileToV2",
 				"category": "Org-vscode",
 				"title": "Migrate File to v2 Format"

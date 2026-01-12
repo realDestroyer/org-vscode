@@ -37,6 +37,7 @@ Org-vscode helps you manage tasks, notes, and projects in plain text `.org` file
 - Math symbol decorations (experimental): renders common LaTeX commands (e.g. `\alpha`) as Unicode glyphs while editing
 - Smart navigation helpers: Document Outline (headings) + clickable Org links (including `[[*heading]]`, `[[id:...]]`, `[[#target]]`, `file:`, `http(s)`, `mailto:`)
 - Org link auto-completion inside `[[...]]` (including workspace-wide `id:` suggestions)
+- Property drawer helpers: set/get/delete properties (with inheritance) + ID helpers (get-or-create, set/replace)
 - Org table generator (command + snippets)
 - Reports/tools: Export Current Tasks, Export Yearly Summary, Executive Report, Year-In-Review Dashboard
 - Customization: Syntax Color Customizer + settings for heading markers / indentation / decorations
