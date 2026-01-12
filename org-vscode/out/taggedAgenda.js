@@ -26,12 +26,25 @@ module.exports = async function taggedAgenda() {
   const matchExpr = normalizeTagMatchInput(tagInput);
 
   const agendaItems = [];
+  const skippedFiles = [];
   const orgDir = getOrgFolder();
-  const files = fs.readdirSync(orgDir).filter(file => file.endsWith(".org") && !file.startsWith("."));
+  let files;
+  try {
+    files = fs.readdirSync(orgDir).filter(file => file.endsWith(".org") && !file.startsWith(".") && file !== "CurrentTasks.org");
+  } catch (dirErr) {
+    vscode.window.showErrorMessage(`Error reading org directory: ${dirErr.message}`);
+    return;
+  }
 
   for (const file of files) {
     const filePath = path.join(orgDir, file);
-    const fileText = fs.readFileSync(filePath, "utf8");
+    let fileText;
+    try {
+      fileText = fs.readFileSync(filePath, "utf8");
+    } catch (fileErr) {
+      skippedFiles.push({ file, reason: fileErr.message });
+      continue;
+    }
     const lines = fileText.split(/\r?\n/);
     const checkboxStatsByLine = computeCheckboxStatsByHeadingLine(lines);
     const tracker = createInheritanceTracker(parseFileTagsFromText(fileText));
@@ -88,7 +101,7 @@ module.exports = async function taggedAgenda() {
     });
   }
 
-  showTaggedAgendaView(matchExpr, agendaItems);
+  showTaggedAgendaView(matchExpr, agendaItems, skippedFiles);
 };
 
 async function updateTaskStatusInFile(file, taskText, scheduledDate, newStatus, removeCompleted) {
@@ -247,7 +260,7 @@ function getOrgFolder() {
   return folderPath && folderPath.trim() !== "" ? folderPath : path.join(os.homedir(), "VSOrgFiles");
 }
 
-function showTaggedAgendaView(tag, items) {
+function showTaggedAgendaView(tag, items, skippedFiles) {
   const panel = vscode.window.createWebviewPanel(
     "taggedAgendaView",
     `Tagged Agenda: ${tag}`,
@@ -265,7 +278,7 @@ function showTaggedAgendaView(tag, items) {
   const mediaDir = path.join(__dirname, "..", "media");
   const localMoment = panel.webview.asWebviewUri(vscode.Uri.file(path.join(mediaDir, "moment.min.js")));
 
-  panel.webview.html = getTaggedWebviewContent(panel.webview, nonce, String(localMoment), tag, items);
+  panel.webview.html = getTaggedWebviewContent(panel.webview, nonce, String(localMoment), tag, items, skippedFiles);
 
   panel.webview.onDidReceiveMessage(message => {
     console.log("📩 Received message from webview:", message);
@@ -369,10 +382,14 @@ function showTaggedAgendaView(tag, items) {
   });
 }
 
-function getTaggedWebviewContent(webview, nonce, localMomentJs, tag, items) {
+function getTaggedWebviewContent(webview, nonce, localMomentJs, tag, items, skippedFiles) {
   const config = vscode.workspace.getConfiguration("Org-vscode");
   const dateFormat = config.get("dateFormat", "YYYY-MM-DD");
   const acceptedDateFormats = getAcceptedDateFormats(dateFormat);
+  const errorBannerContent = (skippedFiles && skippedFiles.length > 0)
+    ? skippedFiles.map(s => `${s.file} (${s.reason})`).join("; ")
+    : "";
+  const errorBannerClass = errorBannerContent ? "visible" : "";
   const grouped = {};
 
   for (const item of items) {
@@ -799,10 +816,30 @@ body{
         .org-checkbox {
           vertical-align: middle;
         }
+        #error-banner {
+          margin: 0 0 12px;
+          padding: 10px 14px;
+          background: #f8d7da;
+          border: 1px solid #f5c6cb;
+          border-radius: 6px;
+          font-size: 12px;
+          color: #721c24;
+          display: none;
+          align-items: center;
+          gap: 8px;
+        }
+        #error-banner.visible {
+          display: flex;
+        }
+        #error-banner::before {
+          content: "⚠️";
+          font-size: 16px;
+        }
   </style>
 </head>
 <body>
   <h1>Tagged Agenda: ${tag}</h1>
+  <div id="error-banner" class="${errorBannerClass}">${errorBannerContent}</div>
   <div style="margin-bottom: 10px;">
   <button class="expand-collapse" id="expand-all">Expand All</button>
   <button class="expand-collapse" id="collapse-all">Collapse All</button>
