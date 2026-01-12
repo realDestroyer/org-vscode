@@ -1,6 +1,11 @@
 #+TITLE: Org-vscode Demo Walkthrough
 #+FILETAGS: :DEMO:ORG_VSCODE:
 
+# Tag groups (used by Tagged Agenda match strings)
+# - Group tags: [ GROUP : MEMBER1 MEMBER2 ]
+# - Mutually exclusive groups: { GROUP : MEMBER1 MEMBER2 }
+#+TAGS: [ GTD : WORK HOME ] { CONTEXT : @WORK @HOME }
+
 # This file is designed as a quick “tour” of Org-vscode.
 # Follow sections top-to-bottom for a demo video.
 # Lines starting with "#" are narration prompts.
@@ -117,6 +122,38 @@
 * TODO Publish to both marketplaces :RELEASE:DEMO:
   SCHEDULED: [2026-01-10]
 
+# 16a) Open Agenda View
+# Command Palette: Org-vscode: Agenda View
+# - Click a task (or filename) in the webview to reveal the exact line in this file.
+# - Optional: the last clicked row can be highlighted (outline-only).
+# Settings:
+#   Org-vscode.agendaRevealTaskOnClick = true/false
+#   Org-vscode.agendaHighlightTaskOnClick = true/false
+
+# 16b) Open Tagged Agenda + try match strings
+# Keybinding: Ctrl+Shift+G
+# Try these inputs at the prompt:
+# - AND: +WORK+DEMO   (or: WORK,DEMO   or: all:work,demo)
+# - OR:  WORK|HOME    (or: any:work,home)
+# - NOT: -RELEASE
+# - Group tag: +GTD   (matches tasks tagged WORK or HOME based on #+TAGS group)
+
+# 16c) Open Calendar View + drag/drop reschedule
+# Keybinding: Ctrl+Shift+C
+# - Drag a task to another day to rewrite the SCHEDULED date.
+# - Click a task to reveal it in the source file.
+
+* TODO Calendar drag-drop demo :@WORK:WORK:
+  SCHEDULED: [2026-01-10]
+
+* TODO Tagged Agenda group demo (matches +GTD) :@HOME:HOME:
+  SCHEDULED: [2026-01-10]
+
+* CONTINUED Optional includeContinued demo :WORK:
+  SCHEDULED: [2026-01-10]
+  # By default, Tagged Agenda omits CONTINUED tasks to avoid duplicates.
+  # To include them, set: Org-vscode.includeContinuedInTaggedAgenda = true
+
 * [2026-01-10 Sat] Preview (Live HTML) -----------------------------------------------------------
 
 # 16b) Live preview (MVP) + scroll sync
@@ -220,3 +257,29 @@
 
   # If you want to see the raw commands instead of symbols, set:
   #   Org-vscode.decorateMath = false
+
+* [2026-01-13 Tue] Navigation + Tooling ----------------------------------------------------------
+
+# 26) Open-by-tag / open-by-title helpers
+# Command Palette:
+# - Org-vscode: Open By Tag
+# - Org-vscode: Open By Title
+
+# 27) Smart insert new element (Alt+Enter)
+# Try Alt+Enter in a few places:
+# - On a heading line: inserts a new heading
+# - On a list item: inserts a new list item
+# - In a table row: inserts a new row
+* TODO Try Alt+Enter on this heading :EDITING:
+
+  - List item A
+  - List item B
+
+| Table A | Table B |
+|---------+---------|
+| A       | B       |
+
+# 28) Customization tools
+# Command Palette:
+# - Org-vscode: Open Syntax Color Customizer
+# - Org-vscode: Open Keybinding Customizer
