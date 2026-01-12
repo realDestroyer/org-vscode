@@ -10,6 +10,12 @@
 
 Org-vscode’s long-term direction is to emulate Emacs Org Mode as closely as practical in VS Code (syntax, navigation, and editing workflows). Some Emacs features are still in progress — see the v2.2 parity checklist below.
 
+## 🎬 Demo Video
+
+If the embedded video doesn’t render in your viewer, open: https://raw.githubusercontent.com/realDestroyer/org-vscode/master/Images/demo1.mp4
+
+<video controls width="700" src="https://raw.githubusercontent.com/realDestroyer/org-vscode/master/Images/demo1.mp4"></video>
+
 ---
 
 ## Summary
@@ -105,10 +111,6 @@ Most editing shortcuts support multi-line selection: highlight multiple task lin
 | `/day`       | Day heading with date & separator |
 
 ---
-
-## 🎬 Demo
-
-<img src="https://github.com/realdestroyer/org-vscode/blob/master/Images/fullDemo.gif?raw=true" width="700" height="400" />
 
 ## ✅ Multi-line selection editing
 
