@@ -10,11 +10,11 @@
 
 Org-vscode’s long-term direction is to emulate Emacs Org Mode as closely as practical in VS Code (syntax, navigation, and editing workflows). Some Emacs features are still in progress — see the v2.2 parity checklist below.
 
-## 🎬 Demo Video
+## 🎬 Demo
 
-If the embedded video doesn’t render in your viewer, open: https://github.com/realDestroyer/org-vscode/raw/master/Images/demo1.mp4
+![Demo](https://github.com/realDestroyer/org-vscode/raw/master/Images/demo-example-file.gif)
 
-<video src="https://github.com/realDestroyer/org-vscode/raw/refs/heads/master/Images/demo1.mp4"></video>
+Video download (mp4): https://github.com/realDestroyer/org-vscode/raw/master/Images/demo1.mp4
 
 ---
 
