@@ -2,6 +2,10 @@
 
 # [Unreleased]
 
+(No entries yet.)
+
+# [2.2.4] 01-11-26
+
 `Added / Enhanced`
 
 - **Properties (Emacs parity):** Property drawer management commands:
