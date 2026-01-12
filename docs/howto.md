@@ -62,6 +62,7 @@ VS Code Settings editor (search for `Org-vscode:`):
 * [🔖 Create a Header](#create-a-header)
 * [🧩 Org-vscode Snippets](#org-vscode-snippets)
 * [🔎 Org syntax + links](#org-syntax--links)
+* [🧾 Properties & IDs](#properties--ids)
 * [🪟 Preview (Live HTML)](#preview-live-html)
 * [∑ Math Symbol Decorations](#math-symbol-decorations)
 * [📂 Open a File by Tags or Titles](#open-a-file-by-tags-or-titles)
@@ -228,6 +229,59 @@ Examples:
 [[id:01234567-89ab-cdef-0123-456789abcdef]]
 [[#demo-anchor]]
 ```
+
+---
+
+## 🧾 Properties & IDs <a id="properties--ids"></a>
+
+Org-vscode supports Org-style property drawers and provides commands to manage properties without manual drawer editing.
+
+### Property drawers
+
+Property drawers use the canonical Org syntax:
+
+```org
+:PROPERTIES:
+:OWNER: Alice
+:CUSTOM_ID: demo-anchor
+:END:
+```
+
+### Commands
+
+- **Org-vscode: Set Property**
+  - Sets/updates a property on the nearest heading.
+  - Creates a `:PROPERTIES:` drawer if missing.
+- **Org-vscode: Get Property (with inheritance)**
+  - Looks up a property using Emacs-style precedence:
+    1) current heading drawer
+    2) parent heading drawers (nearest parent first)
+    3) file-level `#+PROPERTY` directives
+- **Org-vscode: Delete Property**
+  - Deletes a property from the nearest heading and removes the drawer if it becomes empty.
+
+### File-level properties (`#+PROPERTY`)
+
+You can define file defaults with:
+
+```org
+#+PROPERTY: OWNER Alice
+```
+
+These act as a fallback for `Get Property (with inheritance)` when the property isn’t found on the current heading or any parent heading.
+
+### IDs
+
+IDs are used for cross-file link navigation and completion via `[[id:...]]`.
+
+- **Org-vscode: Get or Create ID**
+  - Ensures the nearest heading has an `:ID:` property.
+  - Creates a UUID when missing.
+  - Copies the ID to your clipboard.
+- **Org-vscode: Set ID**
+  - Sets/replaces the `:ID:` property on the nearest heading.
+  - If you submit an empty input, it generates a UUID.
+  - Copies the resulting ID to your clipboard.
 
 #### `/checklist` <a id="checklist"></a>
 
