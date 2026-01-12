@@ -228,6 +228,13 @@
 						}
 					},
 					{
+						"name": "Property Drawer",
+						"scope": "meta.block.property.vso",
+						"settings": {
+							"foreground": "#cccccc"
+						}
+					},
+					{
 						"name": "Property Key",
 						"scope": "variable.other.property-key.vso",
 						"settings": {

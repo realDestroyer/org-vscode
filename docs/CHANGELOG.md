@@ -2,7 +2,9 @@
 
 # [Unreleased]
 
-(No entries yet.)
+`Enhanced`
+
+- **Syntax Color Customizer:** Added a `Property Drawer` control (scope: `meta.block.property.vso`) so you can style `:PROPERTIES:`…`:END:` blocks.
 
 # [2.2.4] 01-11-26
 
