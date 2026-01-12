@@ -6,6 +6,9 @@
 # - Mutually exclusive groups: { GROUP : MEMBER1 MEMBER2 }
 #+TAGS: [ GTD : WORK HOME ] { CONTEXT : @WORK @HOME }
 
+# File-level properties (used as fallback for inherited lookups)
+#+PROPERTY: OWNER Demo Owner
+
 # This file is designed as a quick “tour” of Org-vscode.
 # Follow sections top-to-bottom for a demo video.
 # Lines starting with "#" are narration prompts.
@@ -211,6 +214,36 @@
 
   A classic Org target looks like this (link to it with [[#demo-target]]):
   <<demo-target>>
+
+* [2026-01-12 Mon] Properties + IDs (Commands) ---------------------------------------------------
+
+# 22a) Property and ID commands (Command Palette)
+# Commands:
+# - Org-vscode: Set Property
+# - Org-vscode: Get Property (with inheritance)
+# - Org-vscode: Delete Property
+# - Org-vscode: Get or Create ID
+# - Org-vscode: Set ID
+
+# 22b) Inheritance demo:
+# - This heading defines OWNER locally.
+# - The child heading inherits OWNER unless it overrides it.
+* TODO Parent property (OWNER=Parent) :PROPERTIES:
+  :OWNER: Parent
+  :END:
+
+** TODO Child inherits OWNER
+
+** TODO Child overrides OWNER :PROPERTIES:
+   :OWNER: Child
+   :END:
+
+# Try: run “Get Property (with inheritance)” on each heading for OWNER.
+# Also try “Delete Property” on the child override and re-run “Get Property”.
+
+# 22c) ID commands demo:
+# - Run “Get or Create ID” on a heading without an :ID: (it will add one and copy it).
+# - Run “Set ID” and paste a custom UUID (or submit empty input to auto-generate).
 
 # 23) Lists: ordered, unordered, and checkboxes
 * IN_PROGRESS List syntax demo :LISTS:
