@@ -104,12 +104,14 @@ function activateExtension(extensionRoot, vscodeMock) {
 }
 
 function testAllContributedCommandsAreRegistered() {
-  // test/unit -> test -> <extension root>
+  // test/unit -> test -> org-vscode (extension root here)
   const extensionRoot = path.resolve(__dirname, '..', '..');
+  // But package.json is one level up from org-vscode
+  const packageJsonRoot = path.resolve(__dirname, '..', '..', '..');
 
   return withMockedVscode((vscodeMock) => {
     const registered = activateExtension(extensionRoot, vscodeMock);
-    const contributed = getContributedCommands(extensionRoot);
+    const contributed = getContributedCommands(packageJsonRoot);
 
     // Sanity check: we expect at least a handful of commands.
     assert.ok(contributed.length > 0, 'No contributed commands found in package.json');
