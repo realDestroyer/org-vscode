@@ -155,6 +155,12 @@ const DEFAULT_COLORS = {
     background: "",
     fontStyle: ""
   },
+  "Property Drawer": {
+    scope: "meta.block.property.vso",
+    foreground: "#cccccc",
+    background: "",
+    fontStyle: ""
+  },
   "Property Key": {
     scope: "variable.other.property-key.vso",
     foreground: "#b5cea8",
@@ -318,6 +324,7 @@ const SCOPE_GROUPS = {
     "Heading Level 2",
     "Heading Level 3",
     "Org Directive",
+    "Property Drawer",
     "Property Key"
   ],
   "Org Syntax": [
@@ -552,7 +559,7 @@ function getWebviewContent(nonce, currentColors) {
     const scopesHtml = scopeNames.map(name => {
       const settings = currentColors[name];
       const technicalScope = Array.isArray(settings.scope) ? settings.scope.join(", ") : settings.scope;
-      const supportsBackground = /\bKeyword\b/.test(name);
+      const supportsBackground = /\bKeyword\b/.test(name) || name === "Property Drawer";
 
       const previewSelector = `.preview[data-scope="${escapeCssAttrValue(name)}"]`;
       const previewRule = [
@@ -1257,6 +1264,7 @@ function getPreviewText(scopeName) {
     "Agenda Date": "[12-11-2025]",
     "Day Header Date": "[12-11-2025 Thu]",
     "Org Directive": "#+TITLE: Work",
+    "Property Drawer": ":PROPERTIES: ... :END:",
     "Property Key": ":OWNER: Doug",
     "Heading Level 1": "* Heading",
     "Heading Level 2": "** Subheading",
