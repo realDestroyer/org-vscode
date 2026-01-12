@@ -838,7 +838,7 @@ Elements are grouped for easy navigation:
 * **CONTINUED Tasks** - Symbol, keyword, and task text
 * **DONE Tasks** - Symbol, keyword, and task text
 * **ABANDONED Tasks** - Symbol, keyword, and task text
-* **Other Elements** - SCHEDULED stamp, inline tags, agenda dates
+* **Other Elements** - SCHEDULED stamp, inline tags, agenda dates, property drawers
 
 #### 💾 Save & Reset <a id="save-and-reset"></a>
 
