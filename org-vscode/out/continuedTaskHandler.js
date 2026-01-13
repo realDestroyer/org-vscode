@@ -1,4 +1,4 @@
-// Handles auto-forwarding of CONTINUED tasks to the next day
+// Handles auto-forwarding of forward-trigger tasks (default: CONTINUED) to the next day
 const vscode = require("vscode");
 const moment = require("moment");
 const taskKeywordManager = require("./taskKeywordManager");
@@ -145,7 +145,7 @@ function buildDayHeading(date, weekday, suffix = "", indent = "", marker = "⊘"
  * Build a forwarded task line (as TODO with updated schedule)
  */
 function buildForwardedTask(originalLine, newDate, indent = "  ") {
-  // Clean the task and rebuild as TODO
+  // Clean the task and rebuild as the first configured workflow keyword
   const originalCleaned = taskKeywordManager.cleanTaskText(normalizeTagsAfterPlanning(originalLine));
 
   const config = vscode.workspace.getConfiguration("Org-vscode");
@@ -158,7 +158,8 @@ function buildForwardedTask(originalLine, newDate, indent = "  ") {
   const hasInlinePlanning = Boolean(planningFromHeadline.scheduled || planningFromHeadline.deadline || planningFromHeadline.closed);
 
   const cleanedHeadlineText = stripInlinePlanning(originalCleaned);
-  const headline = taskKeywordManager.buildTaskLine(indent, "TODO", cleanedHeadlineText, { headingMarkerStyle, starPrefix });
+  const resetKeyword = taskKeywordManager.getDefaultKeyword();
+  const headline = taskKeywordManager.buildTaskLine(indent, resetKeyword, cleanedHeadlineText, { headingMarkerStyle, starPrefix });
 
   // Only update scheduling when the original task had a scheduled stamp.
   if (!hasInlinePlanning || !planningFromHeadline.scheduled) {
@@ -178,10 +179,8 @@ function buildForwardedTask(originalLine, newDate, indent = "  ") {
  * Extract a normalized task identifier for matching (title + tags, no dates/status)
  */
 function getTaskIdentifier(lineText) {
-  return lineText
-    .replace(/^\s*\*+\s+/, "")
-    .replace(/[⊙⊘⊖⊜⊗]/g, "")
-    .replace(/\b(TODO|IN_PROGRESS|CONTINUED|DONE|ABANDONED)\b/g, "")
+  const cleaned = taskKeywordManager.cleanTaskText(normalizeTagsAfterPlanning(lineText));
+  return cleaned
     .replace(new RegExp(SCHEDULED_REGEX.source, 'g'), "")
     .replace(new RegExp(CLOSED_STRIP_RE.source, 'g'), "")
     .replace(/\s+/g, " ")

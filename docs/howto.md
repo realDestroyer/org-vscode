@@ -3,7 +3,7 @@
 > Organize your thoughts and tasks into hierarchical lists.
 >
 > * Create items using `*` (Org-mode compatible, recommended) with optional decorative Unicode rendering.
-> * Mark tasks as `TODO`, `IN_PROGRESS`, `CONTINUED`, `ABANDONED`, or `DONE`.
+> * Mark tasks using configurable workflow states (TODO keywords) via `Org-vscode.workflowStates`.
 > * Fold lists with `Tab`.
 > * Increment or decrement headings using `Alt + Left/Right`.
 
@@ -57,13 +57,14 @@ VS Code Settings editor (search for `Org-vscode:`):
 
 * [✅ Multi-line selection editing](#-multi-line-selection-editing)
 * [🧭 v2 Format + Migration](#v2-format--migration)
+* [✅ Workflow States (TODO Keywords)](#workflow-states-todo-keywords)
 * [📁 Change the Main Directory](#change-the-main-directory)
 * [📝 Create a New .org File](#create-a-new-org-file)
 * [🔖 Create a Header](#create-a-header)
 * [🧩 Org-vscode Snippets](#org-vscode-snippets)
 * [🔎 Org syntax + links](#org-syntax--links)
 * [🧾 Properties & IDs](#properties--ids)
-* [🪟 Preview (Live HTML)](#preview-live-html)
+* [🪟 Preview (Live HTML/Markdown/etc.)](#preview-live-html)
 * [∑ Math Symbol Decorations](#math-symbol-decorations)
 * [📂 Open a File by Tags or Titles](#open-a-file-by-tags-or-titles)
 * [📅 Agenda View & Scheduling](#agenda-view--scheduling)
@@ -123,6 +124,38 @@ Notes:
 * Day headings are skipped where it wouldn’t make sense to edit them.
 
 <img src="https://github.com/realdestroyer/org-vscode/blob/master/Images/multiline-support-example.gif?raw=true" width="700" height="400" />
+
+---
+
+## ✅ Workflow States (TODO Keywords) <a id="workflow-states-todo-keywords"></a>
+
+Org-vscode’s task keywords (workflow states) are **configurable** via `Org-vscode.workflowStates`.
+
+You can edit this setting either:
+
+- In JSON (Settings UI or `settings.json`), or
+- Via the built-in GUI: run **“org-vscode Customize Syntax Colors”** and switch to the **Workflow States** tab.
+
+- The **order** of the array is the cycle order used by `Ctrl + →` / `Ctrl + ←`.
+- Each state can optionally define semantics like:
+  - **done-like** (used by exports/reports)
+  - **CLOSED stamping** when transitioning into the state
+  - **carryover/forward-trigger** behavior (default: `CONTINUED`)
+  - **Agenda / Tagged Agenda visibility**
+
+Default configuration (short example):
+
+```json
+"Org-vscode.workflowStates": [
+  { "keyword": "TODO", "marker": "⊙", "agendaVisibility": "show", "taggedAgendaVisibility": "show" },
+  { "keyword": "IN_PROGRESS", "marker": "⊘", "agendaVisibility": "show", "taggedAgendaVisibility": "show" },
+  { "keyword": "CONTINUED", "marker": "⊜", "triggersForward": true, "agendaVisibility": "hide", "taggedAgendaVisibility": "hide" },
+  { "keyword": "DONE", "marker": "⊖", "isDoneLike": true, "stampsClosed": true, "agendaVisibility": "hide", "taggedAgendaVisibility": "hide" },
+  { "keyword": "ABANDONED", "marker": "⊗", "isDoneLike": true, "agendaVisibility": "hide", "taggedAgendaVisibility": "hide" }
+]
+```
+
+**Note on syntax highlighting:** TextMate grammars/scopes are static, so custom keywords won’t automatically get new keyword-specific scopes. Org-vscode compensates with decorations by mapping custom states into a small set of legacy “buckets” for coloring.
 
 ---
 
@@ -369,7 +402,9 @@ You can open a file using either:
 * **Schedule an item** → Use `Ctrl + Alt + S`.
 * **View all scheduled items** → Use **`Org-vscode: Agenda View`**.
 
-The Agenda View shows only **TODO** and **IN_PROGRESS** tasks. Tasks marked as CONTINUED, DONE, or ABANDONED are excluded for a cleaner view of what still needs attention.
+The Agenda View respects `Org-vscode.workflowStates[*].agendaVisibility`.
+
+By default it shows **TODO** and **IN_PROGRESS** tasks, and hides **CONTINUED** / **DONE** / **ABANDONED**.
 
 ### Click-to-navigate (Agenda + Tagged Agenda)
 
@@ -460,20 +495,21 @@ Tasks with deadlines show color-coded badges:
 
 ## 🔄 CONTINUED Auto-Forwarding <a id="continued-auto-forwarding"></a>
 
-When you toggle a task to `CONTINUED` status, Org-vscode automatically copies it to the next day as a `TODO` task with an updated scheduled date.
+Org-vscode supports a configurable “carryover/forward-trigger” state (default: `CONTINUED`).
+
+When you toggle a task into the forward-trigger state, Org-vscode automatically copies it to the next day as the **first configured workflow state** (default: `TODO`) with an updated scheduled date.
 
 This works both from the editor hotkeys and when you click the keyword in Agenda/TaggedAgenda views.
 
 ### How It Works
 
-1. **Toggle to CONTINUED** (`Ctrl + →` or `Ctrl + ←`, or click the task keyword in Agenda/TaggedAgenda)
-  - The task on the current day becomes `CONTINUED`
-  - A copy appears under the next day's heading as `TODO`
-   - The SCHEDULED date is updated to the next day
+1. **Toggle into the forward-trigger state** (default: `CONTINUED`) using `Ctrl + →` / `Ctrl + ←` or by clicking the keyword in Agenda/TaggedAgenda.
+  - The task on the current day becomes the forward-trigger keyword.
+  - A copy appears under the next day's heading as the **first workflow keyword** (default: `TODO`).
+  - The `SCHEDULED:` date is updated to the next day.
 
-2. **Toggle away from CONTINUED**
-   - If you change the task back to TODO, IN_PROGRESS, DONE, or ABANDONED
-   - The forwarded copy is automatically removed from the next day
+2. **Toggle away from the forward-trigger state**
+  - The forwarded copy is automatically removed from the next day.
 
 ### Example
 
@@ -508,16 +544,20 @@ This feature ensures tasks that roll over to the next day are automatically trac
 
 Org-vscode supports two heading marker styles:
 
-- **unicode** (default): uses custom Unicode symbols to visually represent task state / depth.
-- **asterisks**: preserves Org-style `*` headings in-file for interoperability.
+- **unicode** (default): task headings may include an optional Unicode marker *from your configured workflow state* (e.g. `⊙ TODO ...`).
+- **asterisks**: preserves Org-style `* TODO ...` headings in-file for interoperability.
 
-| Asterisk Level | Unicode Symbol | Description                    |
-| -------------- | -------------- | ------------------------------ |
-| `* `           | ⊙              | Top-level task                 |
-| `** `          | ⊘              | In-progress subtask            |
-| `*** `         | ⊖              | Completed or nested subtask    |
-| `**** `        | ⊙ (indented)   | Nested task under ⊖            |
-| `***** `       | ⊘ (indented)   | Deeper nested in-progress task |
+Important:
+
+- **Heading depth** is always determined by the number of asterisks at the start of the line (`*`, `**`, `***`, ...).
+- **Workflow markers** (like `⊙`, `⊘`, etc.) come from `Org-vscode.workflowStates[*].marker` and represent the task state — they do not represent heading depth.
+
+If you want Org-compatible source files but still prefer a “pretty” UI, enable decorations:
+
+```json
+"Org-vscode.headingMarkerStyle": "asterisks",
+"Org-vscode.decorateUnicodeHeadings": true
+```
 
 **Note:**
 
@@ -530,29 +570,32 @@ Org-vscode supports two heading marker styles:
 
 ## 🔁 Cycle Task Statuses <a id="cycle-task-statuses"></a>
 
-Org-vscode supports five task states. In `unicode` marker style, each state is represented with a symbol:
+Org-vscode task states (TODO keywords) are configurable via `Org-vscode.workflowStates`.
 
-In the editor, the fastest way to cycle task keywords is:
+In the editor, you can change task keywords in two ways:
 
 * `Ctrl + →` — cycle forward (selection-aware)
 * `Ctrl + ←` — cycle backward (selection-aware)
+* **Org-vscode: Set TODO State...** — pick an exact state from a list (Command Palette)
 
-| Status Keyword | Symbol | Description               |
-| -------------- | ------ | ------------------------- |
-| `TODO`         | ⊙      | New task to be done       |
-| `IN_PROGRESS`  | ⊘      | Currently being worked on |
-| `CONTINUED`    | ⊜      | Paused or rolling forward |
-| `DONE`         | ⊖      | Completed                 |
-| `ABANDONED`    | ⊗      | No longer relevant        |
+Default task states (when you do not override `workflowStates`):
+
+| Status Keyword | Symbol | Notes |
+| -------------- | ------ | ----- |
+| `TODO`         | ⊙      | First state in the cycle |
+| `IN_PROGRESS`  | ⊘      | Work-in-progress |
+| `CONTINUED`    | ⊜      | Default carryover/forward-trigger state |
+| `DONE`         | ⊖      | done-like; stamps `CLOSED:` |
+| `ABANDONED`    | ⊗      | done-like |
 
 ### 💡 Ways to Change Task Status <a id="ways-to-change-task-status"></a>
 
 #### 🔘 In Agenda View or Tagged Agenda View <a id="in-agenda-view-or-tagged-agenda-view"></a>
 
-* Click on the current status (e.g. `TODO`) to cycle through the options.
+* Click on the current status (e.g. `TODO`) to cycle through the configured options.
 * The task line is automatically updated in the source file.
-* If switching **to `DONE`**, a `CLOSED:` timestamp is inserted on the next line.
-* If switching **from `DONE` to any other state**, the `CLOSED:` line is removed.
+* If switching **into a state that stamps CLOSED** (default: `DONE`), a `CLOSED:` timestamp is inserted on the next line.
+* If switching **out of a CLOSED-stamping state**, the `CLOSED:` line is removed.
 
 #### ✏️ In the `.org` file directly <a id="in-the-org-file-directly"></a>
 

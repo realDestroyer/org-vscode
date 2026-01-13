@@ -25,6 +25,30 @@ module.exports = async function () {
   const dateFormat = config.get("dateFormat", "YYYY-MM-DD");
   const workflowRegistry = taskKeywordManager.getWorkflowRegistry();
 
+  const cycleKeywords = workflowRegistry.getCycleKeywords();
+  if (!cycleKeywords || cycleKeywords.length === 0) {
+    await vscode.window.showErrorMessage("Org-vscode: No workflow states configured.");
+    return;
+  }
+
+  const pickItems = cycleKeywords.map((keyword) => {
+    const marker = taskKeywordManager.getSymbolForKeyword(keyword);
+    return {
+      label: keyword,
+      description: marker ? marker.trim() : "",
+      detail: workflowRegistry.isDoneLike(keyword) ? "done-like" : ""
+    };
+  });
+
+  const selected = await vscode.window.showQuickPick(pickItems, {
+    placeHolder: "Set TODO state",
+    matchOnDescription: true,
+    matchOnDetail: true
+  });
+  if (!selected) return;
+
+  const targetKeyword = selected.label;
+
   const { document } = activeTextEditor;
   const selections = (activeTextEditor.selections && activeTextEditor.selections.length)
     ? activeTextEditor.selections
@@ -78,6 +102,7 @@ module.exports = async function () {
     const leadingSpaces = currentLine.text.slice(0, currentLine.firstNonWhitespaceCharacterIndex);
     const starPrefixMatch = currentLine.text.match(/^\s*(\*+)/);
     const starPrefix = starPrefixMatch ? starPrefixMatch[1] : "*";
+
     const planningFromHeadline = parsePlanningFromText(currentLine.text);
     const planningFromNext = (nextLine && isPlanningLine(nextLine.text)) ? parsePlanningFromText(nextLine.text) : {};
     const planningFromNextNext = (nextNextLine && isPlanningLine(nextNextLine.text)) ? parsePlanningFromText(nextNextLine.text) : {};
@@ -91,36 +116,36 @@ module.exports = async function () {
 
     const headlineNoPlanning = stripInlinePlanning(normalizeTagsAfterPlanning(currentLine.text));
     const cleanedText = taskKeywordManager.cleanTaskText(headlineNoPlanning);
-    const { keyword: nextKeyword } = taskKeywordManager.rotateKeyword(currentKeyword, "left");
 
-    let newLine = taskKeywordManager.buildTaskLine(leadingSpaces, nextKeyword, cleanedText, { headingMarkerStyle, starPrefix });
     const workspaceEdit = new vscode.WorkspaceEdit();
 
-    // Upsert/remove CLOSED in the planning line.
-    if (workflowRegistry.stampsClosed(nextKeyword)) {
+    // Upsert/remove CLOSED in the planning line (preferred: single planning line under the headline).
+    if (workflowRegistry.stampsClosed(targetKeyword)) {
       mergedPlanning.closed = moment().format(`${dateFormat} ddd HH:mm`);
     } else if (workflowRegistry.stampsClosed(currentKeyword)) {
       mergedPlanning.closed = null;
     }
 
-    const planningIndent = `${leadingSpaces}  `;
-    const planningBody = buildPlanningBody(mergedPlanning);
-
     // Handle forward-trigger transitions (default: CONTINUED)
-    if (workflowRegistry.triggersForward(nextKeyword) && !workflowRegistry.triggersForward(currentKeyword)) {
+    if (workflowRegistry.triggersForward(targetKeyword) && !workflowRegistry.triggersForward(currentKeyword)) {
       const forwardEdit = continuedTaskHandler.handleContinuedTransition(document, lineNumber);
       if (forwardEdit && forwardEdit.type === "insert") {
         workspaceEdit.insert(document.uri, forwardEdit.position, forwardEdit.text);
       }
-    } else if (workflowRegistry.triggersForward(currentKeyword) && !workflowRegistry.triggersForward(nextKeyword)) {
+    } else if (workflowRegistry.triggersForward(currentKeyword) && !workflowRegistry.triggersForward(targetKeyword)) {
       const removeEdit = continuedTaskHandler.handleContinuedRemoval(document, lineNumber);
       if (removeEdit && removeEdit.type === "delete") {
         workspaceEdit.delete(document.uri, removeEdit.range);
       }
     }
 
+    const newLine = taskKeywordManager.buildTaskLine(leadingSpaces, targetKeyword, cleanedText, { headingMarkerStyle, starPrefix });
     workspaceEdit.replace(document.uri, currentLine.range, newLine);
 
+    const planningIndent = `${leadingSpaces}  `;
+    const planningBody = buildPlanningBody(mergedPlanning);
+
+    // Normalize planning line placement immediately after the headline.
     if (planningBody) {
       if (nextLine && isPlanningLine(nextLine.text)) {
         workspaceEdit.replace(document.uri, nextLine.range, `${planningIndent}${planningBody}`);
@@ -159,8 +184,8 @@ module.exports = async function () {
         changesForCurrentTasks.push({
           originalFile,
           cleanedText,
-          nextKeyword,
-          stampsClosed: workflowRegistry.stampsClosed(nextKeyword),
+          nextKeyword: targetKeyword,
+          stampsClosed: workflowRegistry.stampsClosed(targetKeyword),
           headingMarkerStyle
         });
       }

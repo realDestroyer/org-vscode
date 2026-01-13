@@ -9,7 +9,20 @@ function buildReportModel(sourcePath, parsed) {
   const perTag = aggregates.perTag || {};
   const perMonth = aggregates.perMonth || {};
   const totalTasks = aggregates.totalTasks || 0;
-  const doneCount = perStatus.DONE || 0;
+  const workflow = parsed.workflowMeta || {};
+  const stampsClosedKeywords = Array.isArray(workflow.stampsClosedKeywords) && workflow.stampsClosedKeywords.length
+    ? workflow.stampsClosedKeywords
+    : ["DONE"];
+  const forwardKeywords = Array.isArray(workflow.forwardKeywords) && workflow.forwardKeywords.length
+    ? workflow.forwardKeywords
+    : ["CONTINUED"];
+  const inProgressKeywords = Array.isArray(workflow.inProgressKeywords) && workflow.inProgressKeywords.length
+    ? workflow.inProgressKeywords
+    : ["IN_PROGRESS"];
+
+  const doneCount = typeof aggregates.completedCount === "number"
+    ? aggregates.completedCount
+    : stampsClosedKeywords.reduce((sum, k) => sum + (perStatus[k] || 0), 0);
 
   return {
     year: parsed.year,
@@ -25,9 +38,9 @@ function buildReportModel(sourcePath, parsed) {
     statusBreakdown: rankMap(perStatus),
     topTags: rankMap(perTag, 10),
     timeline: buildTimeline(perMonth),
-    wins: collectTasks(parsed.days, task => task.status === "DONE" && (task.tags || []).length, 5),
-    carryover: collectTasks(parsed.days, task => task.status === "CONTINUED", 5),
-    inProgress: collectTasks(parsed.days, task => task.status === "IN_PROGRESS", 5)
+    wins: collectTasks(parsed.days, task => stampsClosedKeywords.includes(task.status) && (task.tags || []).length, 5),
+    carryover: collectTasks(parsed.days, task => forwardKeywords.includes(task.status), 5),
+    inProgress: collectTasks(parsed.days, task => inProgressKeywords.includes(task.status), 5)
   };
 }
 

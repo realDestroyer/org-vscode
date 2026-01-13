@@ -1,11 +1,39 @@
 "use strict";
 
-const HEADING_LINE_REGEX = /^(\s*)(\*+|[⊙⊘⊜⊖⊗])\s+\S/;
+const taskKeywordManager = require("./taskKeywordManager");
+
+function escapeRegExp(text) {
+  return String(text).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function getHeadingMarkerAlternation(registry) {
+  const markers = (registry?.states || [])
+    .map((s) => s && s.marker)
+    .filter((m) => typeof m === "string" && m.length > 0);
+  const deduped = Array.from(new Set(markers));
+  if (!deduped.length) return "";
+  return deduped.map(escapeRegExp).join("|");
+}
+
+function getHeadingLineRegex(registry) {
+  const markerAlt = getHeadingMarkerAlternation(registry);
+  const markerPart = markerAlt ? `(?:${markerAlt})` : "";
+  const headMarker = markerPart ? `(?:\\*+|${markerPart})` : "\\*+";
+  return new RegExp(`^(\\s*)(${headMarker})\\s+\\S`);
+}
+
+function isHeadingLine(text, registry) {
+  return getHeadingLineRegex(registry).test(String(text || ""));
+}
+
+function isTaskHeadingLine(text, registry) {
+  const t = String(text || "");
+  if (!isHeadingLine(t, registry)) return false;
+  return Boolean(taskKeywordManager.findTaskKeyword(t));
+}
+
 const CHECKBOX_REGEX = /^\s*[-+*]\s+\[( |x|X|-)\]\s+/;
 const CHECKBOX_COOKIE_REGEX = /\[(\d+\/\d+|\d+%|\/|%)\]/;
-const HEADING_WITH_STATUS_REGEX = /^(\s*)(\*+|[⊙⊘⊜⊖⊗])\s+(TODO|IN_PROGRESS|CONTINUED|DONE|ABANDONED)\b/;
-
-const DONE_KEYWORDS = new Set(["DONE", "ABANDONED"]);
 
 function getIndentLength(line) {
   const m = String(line || "").match(/^\s*/);
@@ -91,13 +119,15 @@ function computeTodoStatsInRange(lines, startInclusive, endExclusive) {
   let total = 0;
   let checked = 0;
 
+  const registry = taskKeywordManager.getWorkflowRegistry();
+
   for (let i = start; i < end; i++) {
     const line = String(safeLines[i] || "");
-    const m = line.match(HEADING_WITH_STATUS_REGEX);
-    if (!m) continue;
-    const status = String(m[3] || "");
+    if (!isTaskHeadingLine(line, registry)) continue;
+    const status = taskKeywordManager.findTaskKeyword(line);
+    if (!status) continue;
     total += 1;
-    if (DONE_KEYWORDS.has(status)) {
+    if (registry.isDoneLike(status) || registry.stampsClosed(status)) {
       checked += 1;
     }
   }
@@ -148,6 +178,8 @@ function computeCheckboxStatsByHeadingLine(lines) {
   const result = new Map();
 
   const safeLines = Array.isArray(lines) ? lines : [];
+  const registry = taskKeywordManager.getWorkflowRegistry();
+  const HEADING_LINE_REGEX = getHeadingLineRegex(registry);
 
   for (let i = 0; i < safeLines.length; i++) {
     const line = String(safeLines[i] || "");

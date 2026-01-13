@@ -7,6 +7,7 @@
  */
 
 const vscode = require("vscode");
+const workflowStates = require("./workflowStates");
 
 // Default color definitions matching the extension's configurationDefaults.
 // Note: "Body / Notes Text" uses theme default unless the user explicitly saves a value.
@@ -375,8 +376,9 @@ function openSyntaxColorCustomizer() {
   
   // Load current user settings
   const currentColors = getCurrentColors();
+  const currentWorkflowStates = getCurrentWorkflowStates();
   
-  customizerPanel.webview.html = getWebviewContent(nonce, currentColors);
+  customizerPanel.webview.html = getWebviewContent(nonce, currentColors, currentWorkflowStates);
 
   customizerPanel.webview.onDidReceiveMessage(async (message) => {
     try {
@@ -384,6 +386,14 @@ function openSyntaxColorCustomizer() {
         case "saveColors":
           await saveColors(message.colors);
           vscode.window.showInformationMessage("Syntax colors saved successfully!");
+          break;
+        case "saveWorkflowStates":
+          await saveWorkflowStates(message.states);
+          customizerPanel.webview.postMessage({
+            command: "workflowStatesUpdated",
+            payload: getCurrentWorkflowStates()
+          });
+          vscode.window.showInformationMessage("Workflow states saved successfully!");
           break;
         case "resetToDefaults":
           await resetToDefaults();
@@ -393,6 +403,14 @@ function openSyntaxColorCustomizer() {
             colors: DEFAULT_COLORS
           });
           vscode.window.showInformationMessage("Colors reset to defaults!");
+          break;
+        case "resetWorkflowStatesToDefaults":
+          await resetWorkflowStatesToDefaults();
+          customizerPanel.webview.postMessage({
+            command: "workflowStatesUpdated",
+            payload: getCurrentWorkflowStates()
+          });
+          vscode.window.showInformationMessage("Workflow states reset to defaults!");
           break;
         case "openKeyboardShortcuts":
           vscode.commands.executeCommand("workbench.action.openGlobalKeybindings", "org-vscode");
@@ -453,6 +471,22 @@ function getCurrentColors() {
   }
 
   return colors;
+}
+
+/**
+ * Gets the current workflow state settings (validated + normalized) from user configuration.
+ */
+function getCurrentWorkflowStates() {
+  const config = vscode.workspace.getConfiguration("Org-vscode");
+  const raw = config.get("workflowStates");
+  const result = workflowStates.validateAndNormalizeWorkflowStates(raw);
+  return {
+    usingDefaults: raw === undefined || raw === null,
+    ok: result.ok,
+    errors: result.errors,
+    states: result.value,
+    defaults: workflowStates.getDefaultWorkflowStates()
+  };
 }
 
 /**
@@ -534,6 +568,35 @@ async function resetToDefaults() {
 }
 
 /**
+ * Saves workflow state settings to user configuration.
+ */
+async function saveWorkflowStates(states) {
+  const config = vscode.workspace.getConfiguration("Org-vscode");
+  const result = workflowStates.validateAndNormalizeWorkflowStates(states);
+  if (!result.ok) {
+    throw new Error(result.errors.join("; ") || "Invalid workflow states");
+  }
+
+  await config.update(
+    "workflowStates",
+    result.value,
+    vscode.ConfigurationTarget.Global
+  );
+}
+
+/**
+ * Resets workflow states by clearing the user setting so defaults apply.
+ */
+async function resetWorkflowStatesToDefaults() {
+  const config = vscode.workspace.getConfiguration("Org-vscode");
+  await config.update(
+    "workflowStates",
+    undefined,
+    vscode.ConfigurationTarget.Global
+  );
+}
+
+/**
  * Generates a nonce for CSP
  */
 function getNonce() {
@@ -548,7 +611,7 @@ function getNonce() {
 /**
  * Generates the webview HTML content
  */
-function getWebviewContent(nonce, currentColors) {
+function getWebviewContent(nonce, currentColors, currentWorkflowStates) {
   function escapeCssAttrValue(value) {
     return String(value || "").replace(/\\/g, "\\\\").replace(/\"/g, "\\\"");
   }
@@ -905,6 +968,138 @@ function getWebviewContent(nonce, currentColors) {
       display: inline;
     }
 
+    .tabs {
+      display: flex;
+      gap: 8px;
+      margin: 16px 0 20px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .tab-button {
+      border: none;
+      background: transparent;
+      color: var(--text-secondary);
+      padding: 10px 12px;
+      border-bottom: 2px solid transparent;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    .tab-button.active {
+      color: var(--text-primary);
+      border-bottom-color: var(--accent);
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    .panel {
+      background: var(--bg-secondary);
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      padding: 16px;
+    }
+
+    .banner {
+      display: none;
+      background: rgba(255, 166, 0, 0.12);
+      border: 1px solid var(--warning);
+      color: var(--text-primary);
+      padding: 10px 12px;
+      border-radius: 6px;
+      margin-bottom: 12px;
+      font-size: 13px;
+    }
+
+    .banner.visible {
+      display: block;
+    }
+
+    .workflow-actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+      align-items: center;
+    }
+
+    .workflow-meta {
+      color: var(--text-secondary);
+      font-size: 12px;
+    }
+
+    table.workflow {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    table.workflow th,
+    table.workflow td {
+      border-bottom: 1px solid var(--border);
+      padding: 8px;
+      vertical-align: middle;
+      text-align: left;
+    }
+
+    table.workflow th {
+      color: var(--text-secondary);
+      font-weight: 600;
+      background: var(--bg-tertiary);
+      position: sticky;
+      top: 0;
+      z-index: 1;
+    }
+
+    .workflow input[type="text"],
+    .workflow select {
+      width: 100%;
+      padding: 6px 8px;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      background: var(--bg-tertiary);
+      color: var(--text-primary);
+      font-family: 'Consolas', 'Courier New', monospace;
+      font-size: 12px;
+    }
+
+    .workflow .cell-small {
+      width: 90px;
+    }
+
+    .workflow .cell-medium {
+      width: 140px;
+    }
+
+    .workflow .cell-actions {
+      width: 170px;
+      white-space: nowrap;
+    }
+
+    .mini-btn {
+      padding: 6px 10px;
+      border-radius: 4px;
+      border: 1px solid var(--border);
+      background: var(--bg-tertiary);
+      color: var(--text-primary);
+      cursor: pointer;
+      font-size: 12px;
+      margin-right: 6px;
+    }
+
+    .mini-btn:hover {
+      background: var(--border);
+    }
+
+    .danger {
+      border-color: rgba(255,0,0,0.35);
+    }
+
     @media (max-width: 900px) {
       .scope-row {
         flex-direction: column;
@@ -924,37 +1119,86 @@ function getWebviewContent(nonce, currentColors) {
       <h1>🎨 Syntax Color Customizer</h1>
       <span class="unsaved-indicator" id="unsaved">● Unsaved changes</span>
     </div>
-    <div class="header-actions">
-      <button class="btn-secondary" id="reset-btn">Reset to Defaults</button>
+    <div class="header-actions" id="actions-colors">
+      <button class="btn-secondary" id="reset-btn">Reset Colors</button>
       <button class="btn-primary" id="save-btn">💾 Save Colors</button>
+    </div>
+    <div class="header-actions" id="actions-workflow" style="display:none;">
+      <button class="btn-secondary" id="reset-workflow-btn">Reset Workflow</button>
+      <button class="btn-primary" id="save-workflow-btn">💾 Save Workflow</button>
     </div>
   </div>
 
-  <p class="description">
-    Customize the syntax highlighting colors for your org-vscode files. Changes will be saved to your 
-    VS Code user settings. Pick colors using the color picker or enter hex codes directly. 
-    Toggle bold and italic styles as desired.
-  </p>
-
-  <div id="scope-groups">
-    ${groupsHtml}
+  <div class="tabs" role="tablist" aria-label="Customizer Tabs">
+    <button class="tab-button active" data-tab="colors" role="tab" aria-selected="true">Syntax Colors</button>
+    <button class="tab-button" data-tab="workflow" role="tab" aria-selected="false">Workflow States</button>
   </div>
 
-  <div class="keyboard-section">
-    <h2>⌨️ Keyboard Shortcuts</h2>
-    <p>
-      To customize keyboard shortcuts for org-vscode commands, use VS Code's built-in Keyboard Shortcuts editor.
+  <div class="tab-content active" id="tab-colors" role="tabpanel">
+    <p class="description">
+      Customize the syntax highlighting colors for your org-vscode files. Changes will be saved to your 
+      VS Code user settings. Pick colors using the color picker or enter hex codes directly. 
+      Toggle bold and italic styles as desired.
     </p>
-    <button class="btn-link" id="open-keybindings">Open Keyboard Shortcuts (filtered to org-vscode)</button>
+
+    <div id="scope-groups">
+      ${groupsHtml}
+    </div>
+
+    <div class="keyboard-section">
+      <h2>⌨️ Keyboard Shortcuts</h2>
+      <p>
+        To customize keyboard shortcuts for org-vscode commands, use VS Code's built-in Keyboard Shortcuts editor.
+      </p>
+      <button class="btn-link" id="open-keybindings">Open Keyboard Shortcuts (filtered to org-vscode)</button>
+    </div>
+  </div>
+
+  <div class="tab-content" id="tab-workflow" role="tabpanel">
+    <p class="description">
+      Edit your Org workflow states (TODO keywords) in a friendly table. This updates the 
+      <strong>Org-vscode.workflowStates</strong> setting.
+    </p>
+
+    <div class="panel">
+      <div class="banner" id="workflow-banner"></div>
+      <div class="workflow-actions">
+        <button class="mini-btn" id="add-workflow-row">+ Add State</button>
+        <span class="workflow-meta" id="workflow-meta"></span>
+      </div>
+
+      <div style="overflow:auto; max-height: 55vh;">
+        <table class="workflow" aria-label="Workflow States">
+          <thead>
+            <tr>
+              <th class="cell-medium">Keyword</th>
+              <th class="cell-small">Marker</th>
+              <th class="cell-small">Done-like</th>
+              <th class="cell-small">Stamps CLOSED</th>
+              <th class="cell-small">Triggers Forward</th>
+              <th class="cell-small">Agenda</th>
+              <th class="cell-small">Tagged Agenda</th>
+              <th class="cell-actions">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="workflow-tbody"></tbody>
+        </table>
+      </div>
+    </div>
   </div>
 
   <script nonce="${nonce}">
     (function() {
       const vscode = acquireVsCodeApi();
       let hasUnsavedChanges = false;
+      let hasUnsavedWorkflowChanges = false;
+      let activeTab = 'colors';
       
       // Store current colors state
       const colors = ${JSON.stringify(currentColors)};
+
+      // Store current workflow states payload
+      let workflowPayload = ${JSON.stringify(currentWorkflowStates)};
 
       const BODY_NOTES_KEY = 'Body / Notes Text';
 
@@ -1006,8 +1250,50 @@ function getWebviewContent(nonce, currentColors) {
       // Mark as having unsaved changes
       function markUnsaved() {
         hasUnsavedChanges = true;
-        document.getElementById('unsaved').classList.add('visible');
+        updateUnsavedIndicator();
       }
+
+      function markWorkflowUnsaved() {
+        hasUnsavedWorkflowChanges = true;
+        updateUnsavedIndicator();
+      }
+
+      function updateUnsavedIndicator() {
+        const el = document.getElementById('unsaved');
+        const shouldShow = (activeTab === 'colors' && hasUnsavedChanges) || (activeTab === 'workflow' && hasUnsavedWorkflowChanges);
+        if (shouldShow) {
+          el.classList.add('visible');
+        } else {
+          el.classList.remove('visible');
+        }
+      }
+
+      function setActiveTab(tab) {
+        activeTab = tab;
+        document.querySelectorAll('.tab-button').forEach(btn => {
+          const isActive = btn.getAttribute('data-tab') === tab;
+          btn.classList.toggle('active', isActive);
+          btn.setAttribute('aria-selected', isActive ? 'true' : 'false');
+        });
+        const colorsPanel = document.getElementById('tab-colors');
+        const workflowPanel = document.getElementById('tab-workflow');
+        if (colorsPanel) colorsPanel.classList.toggle('active', tab === 'colors');
+        if (workflowPanel) workflowPanel.classList.toggle('active', tab === 'workflow');
+
+        const actionsColors = document.getElementById('actions-colors');
+        const actionsWorkflow = document.getElementById('actions-workflow');
+        if (actionsColors) actionsColors.style.display = tab === 'colors' ? 'flex' : 'none';
+        if (actionsWorkflow) actionsWorkflow.style.display = tab === 'workflow' ? 'flex' : 'none';
+
+        updateUnsavedIndicator();
+      }
+
+      document.querySelectorAll('.tab-button').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const tab = btn.getAttribute('data-tab');
+          setActiveTab(tab);
+        });
+      });
 
       // Update preview for a specific scope
       function updatePreview(scopeName) {
@@ -1027,6 +1313,217 @@ function getWebviewContent(nonce, currentColors) {
           preview.setAttribute('style', style);
         }
       }
+
+      function setWorkflowBanner(text, visible) {
+        const banner = document.getElementById('workflow-banner');
+        if (!banner) return;
+        banner.textContent = text || '';
+        banner.classList.toggle('visible', !!visible);
+      }
+
+      function updateWorkflowMeta() {
+        const meta = document.getElementById('workflow-meta');
+        if (!meta) return;
+        const suffix = workflowPayload.usingDefaults ? 'Using defaults (no user override set)' : 'Using custom workflowStates setting';
+        const validity = workflowPayload.ok ? '' : ' — invalid config detected, showing defaults';
+        meta.textContent = suffix + validity;
+      }
+
+      function createCheckbox(checked) {
+        const input = document.createElement('input');
+        input.type = 'checkbox';
+        input.checked = !!checked;
+        input.addEventListener('change', () => {
+          markWorkflowUnsaved();
+        });
+        return input;
+      }
+
+      function createSelect(value) {
+        const sel = document.createElement('select');
+        const optShow = document.createElement('option');
+        optShow.value = 'show';
+        optShow.textContent = 'show';
+        const optHide = document.createElement('option');
+        optHide.value = 'hide';
+        optHide.textContent = 'hide';
+        sel.appendChild(optShow);
+        sel.appendChild(optHide);
+        sel.value = value === 'hide' ? 'hide' : 'show';
+        sel.addEventListener('change', () => {
+          markWorkflowUnsaved();
+        });
+        return sel;
+      }
+
+      function createTextInput(value, { placeholder = '', upper = false } = {}) {
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.value = value || '';
+        input.placeholder = placeholder;
+        input.addEventListener('input', () => {
+          markWorkflowUnsaved();
+        });
+        input.addEventListener('blur', () => {
+          if (upper) {
+            input.value = String(input.value || '').trim().toUpperCase();
+          } else {
+            input.value = String(input.value || '').trim();
+          }
+        });
+        return input;
+      }
+
+      function renderWorkflowTable() {
+        const tbody = document.getElementById('workflow-tbody');
+        if (!tbody) return;
+        tbody.innerHTML = '';
+
+        updateWorkflowMeta();
+
+        if (!workflowPayload.ok && Array.isArray(workflowPayload.errors) && workflowPayload.errors.length > 0) {
+          setWorkflowBanner('Your workflowStates setting has errors; defaults are being used: ' + workflowPayload.errors.join(' | '), true);
+        } else {
+          setWorkflowBanner('', false);
+        }
+
+        const states = Array.isArray(workflowPayload.states) ? workflowPayload.states : [];
+
+        states.forEach((state, idx) => {
+          const tr = document.createElement('tr');
+
+          const tdKeyword = document.createElement('td');
+          const keywordInput = createTextInput(state.keyword, { placeholder: 'TODO', upper: true });
+          keywordInput.classList.add('wf-keyword');
+          tdKeyword.appendChild(keywordInput);
+
+          const tdMarker = document.createElement('td');
+          const markerInput = createTextInput(state.marker || '', { placeholder: '(none)' });
+          markerInput.classList.add('wf-marker');
+          tdMarker.appendChild(markerInput);
+
+          const tdDone = document.createElement('td');
+          const doneInput = createCheckbox(!!state.isDoneLike);
+          doneInput.classList.add('wf-isDoneLike');
+          tdDone.appendChild(doneInput);
+
+          const tdClosed = document.createElement('td');
+          const closedInput = createCheckbox(!!state.stampsClosed);
+          closedInput.classList.add('wf-stampsClosed');
+          tdClosed.appendChild(closedInput);
+
+          const tdForward = document.createElement('td');
+          const forwardInput = createCheckbox(!!state.triggersForward);
+          forwardInput.classList.add('wf-triggersForward');
+          tdForward.appendChild(forwardInput);
+
+          const tdAgenda = document.createElement('td');
+          const agendaSel = createSelect(state.agendaVisibility);
+          agendaSel.classList.add('wf-agendaVisibility');
+          tdAgenda.appendChild(agendaSel);
+
+          const tdTagged = document.createElement('td');
+          const taggedSel = createSelect(state.taggedAgendaVisibility);
+          taggedSel.classList.add('wf-taggedAgendaVisibility');
+          tdTagged.appendChild(taggedSel);
+
+          const tdActions = document.createElement('td');
+          tdActions.classList.add('cell-actions');
+
+          const upBtn = document.createElement('button');
+          upBtn.className = 'mini-btn';
+          upBtn.textContent = '↑';
+          upBtn.title = 'Move up';
+          upBtn.disabled = idx === 0;
+          upBtn.addEventListener('click', () => {
+            const s = workflowPayload.states.slice();
+            const tmp = s[idx - 1];
+            s[idx - 1] = s[idx];
+            s[idx] = tmp;
+            workflowPayload.states = s;
+            markWorkflowUnsaved();
+            renderWorkflowTable();
+          });
+
+          const downBtn = document.createElement('button');
+          downBtn.className = 'mini-btn';
+          downBtn.textContent = '↓';
+          downBtn.title = 'Move down';
+          downBtn.disabled = idx === states.length - 1;
+          downBtn.addEventListener('click', () => {
+            const s = workflowPayload.states.slice();
+            const tmp = s[idx + 1];
+            s[idx + 1] = s[idx];
+            s[idx] = tmp;
+            workflowPayload.states = s;
+            markWorkflowUnsaved();
+            renderWorkflowTable();
+          });
+
+          const delBtn = document.createElement('button');
+          delBtn.className = 'mini-btn danger';
+          delBtn.textContent = 'Delete';
+          delBtn.title = 'Delete state';
+          delBtn.addEventListener('click', () => {
+            const s = workflowPayload.states.slice();
+            s.splice(idx, 1);
+            workflowPayload.states = s;
+            markWorkflowUnsaved();
+            renderWorkflowTable();
+          });
+
+          tdActions.appendChild(upBtn);
+          tdActions.appendChild(downBtn);
+          tdActions.appendChild(delBtn);
+
+          tr.appendChild(tdKeyword);
+          tr.appendChild(tdMarker);
+          tr.appendChild(tdDone);
+          tr.appendChild(tdClosed);
+          tr.appendChild(tdForward);
+          tr.appendChild(tdAgenda);
+          tr.appendChild(tdTagged);
+          tr.appendChild(tdActions);
+
+          tbody.appendChild(tr);
+        });
+
+        if (states.length === 0) {
+          const tr = document.createElement('tr');
+          const td = document.createElement('td');
+          td.colSpan = 8;
+          td.textContent = 'No workflow states configured.';
+          td.style.color = 'var(--text-secondary)';
+          td.style.padding = '12px 8px';
+          tr.appendChild(td);
+          tbody.appendChild(tr);
+        }
+      }
+
+      function collectWorkflowStatesFromTable() {
+        const rows = Array.from(document.querySelectorAll('#workflow-tbody tr'));
+        const states = [];
+        for (const row of rows) {
+          const keywordEl = row.querySelector('.wf-keyword');
+          if (!keywordEl) continue;
+          const keyword = String(keywordEl.value || '').trim();
+          const marker = String(row.querySelector('.wf-marker')?.value || '').trim();
+          states.push({
+            keyword,
+            marker: marker,
+            isDoneLike: !!row.querySelector('.wf-isDoneLike')?.checked,
+            stampsClosed: !!row.querySelector('.wf-stampsClosed')?.checked,
+            triggersForward: !!row.querySelector('.wf-triggersForward')?.checked,
+            agendaVisibility: row.querySelector('.wf-agendaVisibility')?.value || 'show',
+            taggedAgendaVisibility: row.querySelector('.wf-taggedAgendaVisibility')?.value || 'show'
+          });
+        }
+        return states;
+      }
+
+      // Initial render
+      renderWorkflowTable();
+      setActiveTab('colors');
 
       // Background picker handlers (keyword entries only)
       document.querySelectorAll('.bg-color-picker').forEach(picker => {
@@ -1167,12 +1664,58 @@ function getWebviewContent(nonce, currentColors) {
 
           vscode.postMessage({ command: 'saveColors', colors: colorsToSave });
           hasUnsavedChanges = false;
-          document.getElementById('unsaved').classList.remove('visible');
+          updateUnsavedIndicator();
         } catch (err) {
           const msg = (err && err.message) ? err.message : String(err);
           vscode.postMessage({ command: 'webviewError', error: msg });
         }
       });
+
+      // Workflow: add row
+      const addWorkflowBtn = document.getElementById('add-workflow-row');
+      if (addWorkflowBtn) {
+        addWorkflowBtn.addEventListener('click', function() {
+          const current = Array.isArray(workflowPayload.states) ? workflowPayload.states.slice() : [];
+          current.push({
+            keyword: '',
+            marker: '',
+            isDoneLike: false,
+            stampsClosed: false,
+            triggersForward: false,
+            agendaVisibility: 'show',
+            taggedAgendaVisibility: 'show'
+          });
+          workflowPayload.states = current;
+          markWorkflowUnsaved();
+          renderWorkflowTable();
+        });
+      }
+
+      // Workflow: save
+      const saveWorkflowBtn = document.getElementById('save-workflow-btn');
+      if (saveWorkflowBtn) {
+        saveWorkflowBtn.addEventListener('click', function() {
+          try {
+            const states = collectWorkflowStatesFromTable();
+            vscode.postMessage({ command: 'saveWorkflowStates', states });
+            hasUnsavedWorkflowChanges = false;
+            updateUnsavedIndicator();
+          } catch (err) {
+            const msg = (err && err.message) ? err.message : String(err);
+            vscode.postMessage({ command: 'webviewError', error: msg });
+          }
+        });
+      }
+
+      // Workflow: reset
+      const resetWorkflowBtn = document.getElementById('reset-workflow-btn');
+      if (resetWorkflowBtn) {
+        resetWorkflowBtn.addEventListener('click', function() {
+          if (confirm('Reset workflow states to defaults? This clears your Org-vscode.workflowStates setting.')) {
+            vscode.postMessage({ command: 'resetWorkflowStatesToDefaults' });
+          }
+        });
+      }
 
       // Surface any unexpected runtime errors back to the extension.
       window.addEventListener('error', function(event) {
@@ -1226,7 +1769,14 @@ function getWebviewContent(nonce, currentColors) {
           }
           
           hasUnsavedChanges = false;
-          document.getElementById('unsaved').classList.remove('visible');
+          updateUnsavedIndicator();
+        }
+
+        if (message.command === 'workflowStatesUpdated') {
+          workflowPayload = message.payload;
+          hasUnsavedWorkflowChanges = false;
+          renderWorkflowTable();
+          updateUnsavedIndicator();
         }
       });
     })();

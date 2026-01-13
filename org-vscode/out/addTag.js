@@ -1,5 +1,6 @@
 const vscode = require("vscode");
 const { getAllTagsFromLine, setEndOfLineTags, DAY_HEADING_REGEX } = require("./orgTagUtils");
+const taskKeywordManager = require("./taskKeywordManager");
 
 /**
  * Adds a tag to the selected task/heading lines.
@@ -45,7 +46,6 @@ module.exports = function addTag() {
 
         const edit = new vscode.WorkspaceEdit();
 
-        const taskPrefixRegex = /^(\s*(?:[⊙⊘⊜⊖⊗]\s*)?(?:\*+\s+)?(?:TODO|IN_PROGRESS|CONTINUED|DONE|ABANDONED)\b)/;
         let touchedAnyLine = false;
 
         for (const lineNumber of sortedLines) {
@@ -59,7 +59,7 @@ module.exports = function addTag() {
                 continue;
             }
 
-            if (!taskPrefixRegex.test(lineText)) {
+            if (!taskKeywordManager.findTaskKeyword(lineText)) {
                 if (hasRangeSelection) {
                     continue;
                 }

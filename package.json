@@ -2,7 +2,7 @@
 	"name": "org-vscode",
 	"displayName": "org-vscode",
 	"description": "Quickly create todo lists, take notes, plan projects and organize your thoughts.",
-	"version": "2.2.4",
+	"version": "2.2.5",
 	"repository": "https://www.github.com/realDestroyer/org-vscode",
 	"icon": "Images/org-vscode-logo.png",
 	"publisher": "realDestroyer",
@@ -325,6 +325,100 @@
 					"default": false,
 					"description": "When enabled, Tagged Agenda results will include CONTINUED tasks. By default they are omitted since CONTINUED is intended as a historical breadcrumb when a task moved forward."
 				},
+				"Org-vscode.workflowStates": {
+					"scope": "window",
+					"type": "array",
+					"order": 7.1,
+					"default": [
+						{
+							"keyword": "TODO",
+							"marker": "⊙",
+							"isDoneLike": false,
+							"stampsClosed": false,
+							"triggersForward": false,
+							"agendaVisibility": "show",
+							"taggedAgendaVisibility": "show"
+						},
+						{
+							"keyword": "IN_PROGRESS",
+							"marker": "⊘",
+							"isDoneLike": false,
+							"stampsClosed": false,
+							"triggersForward": false,
+							"agendaVisibility": "show",
+							"taggedAgendaVisibility": "show"
+						},
+						{
+							"keyword": "CONTINUED",
+							"marker": "⊜",
+							"isDoneLike": false,
+							"stampsClosed": false,
+							"triggersForward": true,
+							"agendaVisibility": "hide",
+							"taggedAgendaVisibility": "hide"
+						},
+						{
+							"keyword": "DONE",
+							"marker": "⊖",
+							"isDoneLike": true,
+							"stampsClosed": true,
+							"triggersForward": false,
+							"agendaVisibility": "hide",
+							"taggedAgendaVisibility": "hide"
+						},
+						{
+							"keyword": "ABANDONED",
+							"marker": "⊗",
+							"isDoneLike": true,
+							"stampsClosed": false,
+							"triggersForward": false,
+							"agendaVisibility": "hide",
+							"taggedAgendaVisibility": "hide"
+						}
+					],
+					"items": {
+						"type": "object",
+						"required": ["keyword"],
+						"properties": {
+							"keyword": {
+								"type": "string",
+								"description": "Task state keyword (e.g. TODO, IN_PROGRESS)."
+							},
+							"marker": {
+								"type": "string",
+								"description": "Optional leading marker (unicode symbol) that can prefix headings in unicode mode."
+							},
+							"isDoneLike": {
+								"type": "boolean",
+								"default": false,
+								"description": "Whether this state is considered completed for exports/reports."
+							},
+							"stampsClosed": {
+								"type": "boolean",
+								"default": false,
+								"description": "When switching into this state, add a CLOSED: timestamp (if supported by the command/view)."
+							},
+							"triggersForward": {
+								"type": "boolean",
+								"default": false,
+								"description": "Treat this as the forward/carryover state (replaces hard-coded CONTINUED)."
+							},
+							"agendaVisibility": {
+								"type": "string",
+								"enum": ["show", "hide"],
+								"default": "show",
+								"description": "Whether tasks in this state appear in Agenda View by default."
+							},
+							"taggedAgendaVisibility": {
+								"type": "string",
+								"enum": ["show", "hide"],
+								"default": "show",
+								"description": "Whether tasks in this state appear in Tagged Agenda by default."
+							}
+						}
+					},
+					"description": "Ordered list of workflow states. Leave unset to use the extension defaults."
+				},
 				"Org-vscode.decorateTodoStateLines": {
 					"type": "boolean",
 					"order": 8,
@@ -536,6 +630,11 @@
 				"command": "extension.toggleStatusRight",
 				"category": "Org-vscode",
 				"title": "Toggle Status Right"
+			},
+			{
+				"command": "extension.setTodoState",
+				"category": "Org-vscode",
+				"title": "Set TODO State..."
 			},
 			{
 				"command": "extension.increment",

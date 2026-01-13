@@ -3,10 +3,47 @@
 const vscode = require("vscode");
 const { PLANNING_STRIP_RE } = require("./orgTagUtils");
 
-const STATUS_WORDS = new Set(["TODO", "IN_PROGRESS", "CONTINUED", "DONE", "ABANDONED"]);
+const { createWorkflowRegistry } = require("./workflowStates");
+
+function escapeRegExp(text) {
+  return String(text).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function getWorkflowStatesConfigValue() {
+  try {
+    return vscode.workspace.getConfiguration("Org-vscode").get("workflowStates");
+  } catch {
+    return undefined;
+  }
+}
+
+function getWorkflowRegistry() {
+  return createWorkflowRegistry(getWorkflowStatesConfigValue());
+}
+
+function buildUnicodeHeadingRegexFromRegistry(registry) {
+  const markers = (registry.states || [])
+    .map((s) => s && s.marker)
+    .filter((m) => typeof m === "string" && m.length > 0);
+
+  if (!markers.length) {
+    // Default legacy set if the registry has no markers for some reason.
+    return /^(\s*)([⊙⊘⊖⊜⊗])\s+(.*)$/;
+  }
+
+  const markerAlt = markers
+    .filter((m, idx) => markers.indexOf(m) === idx)
+    .map((m) => escapeRegExp(m))
+    .join("|");
+
+  return new RegExp(`^(\\s*)(?:${markerAlt})\\s+(.*)$`);
+}
 
 function parseHeadingLine(text) {
   if (typeof text !== "string") return null;
+
+  const registry = getWorkflowRegistry();
+  const unicodeHeadingRe = buildUnicodeHeadingRegexFromRegistry(registry);
 
   // Asterisk headings (Org classic)
   // Example: "*** TODO [#A] My title :tag1:tag2: SCHEDULED: [...]"
@@ -20,11 +57,11 @@ function parseHeadingLine(text) {
 
   // Unicode headings (v2 unicode marker style)
   // We infer a level from indentation (2 spaces per level by default).
-  const uni = text.match(/^(\s*)([⊙⊘⊖⊜⊗])\s+(.*)$/);
+  const uni = text.match(unicodeHeadingRe);
   if (uni) {
     const leading = uni[1] || "";
     const level = Math.floor(leading.length / 2) + 1;
-    const title = extractHeadingTitle(uni[3]);
+    const title = extractHeadingTitle(uni[2]);
     return { level, title };
   }
 
@@ -34,9 +71,11 @@ function parseHeadingLine(text) {
 function extractHeadingTitle(rest) {
   let out = String(rest || "");
 
+  const registry = getWorkflowRegistry();
+
   // Leading TODO keyword
   const maybeStatus = out.match(/^([A-Z_]+)\b\s+(.*)$/);
-  if (maybeStatus && STATUS_WORDS.has(maybeStatus[1])) {
+  if (maybeStatus && registry.isKnownState(maybeStatus[1])) {
     out = maybeStatus[2];
   }
 

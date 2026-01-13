@@ -11,12 +11,45 @@ const { stripAllTagSyntax, getPlanningForHeading, isPlanningLine, parsePlanningF
 const { formatCheckboxStats, findCheckboxCookie, computeHierarchicalCheckboxStatsInRange } = require("../checkboxStats");
 const { computeCheckboxToggleEdits } = require("../checkboxToggle");
 
+function escapeRegExp(text) {
+  return String(text).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function buildHeadingStartRegex(registry) {
+  const markers = (registry?.states || [])
+    .map((s) => s.marker)
+    .filter((m) => typeof m === "string" && m.length > 0);
+  const unique = Array.from(new Set(markers));
+  const markerAlt = unique.map(escapeRegExp).join("|");
+  const parts = ["\\*+"];
+  if (markerAlt) parts.push(`(?:${markerAlt})`);
+  return new RegExp(`^\\s*(?:${parts.join("|")})`);
+}
+
+function getKeywordBucket(keyword, registry) {
+  const k = String(keyword || "").trim().toUpperCase();
+  if (!k) return "todo";
+  if (registry?.isDoneLike && registry.isDoneLike(k)) {
+    return registry.stampsClosed && registry.stampsClosed(k) ? "done" : "abandoned";
+  }
+  if (registry?.triggersForward && registry.triggersForward(k)) return "continued";
+  const cycle = registry?.getCycleKeywords ? registry.getCycleKeywords() : [];
+  if (cycle.length && k === cycle[0]) return "todo";
+  return "in_progress";
+}
+
 module.exports = function () {
   vscode.commands.executeCommand("workbench.action.files.save").then(() => {
   let config = vscode.workspace.getConfiguration("Org-vscode");
     let folderPath = config.get("folderPath");
     let dateFormat = config.get("dateFormat", "YYYY-MM-DD");
     let acceptedDateFormats = getAcceptedDateFormats(dateFormat);
+    const registry = taskKeywordManager.getWorkflowRegistry();
+    const headingStartRegex = buildHeadingStartRegex(registry);
+    const cycleKeywords = registry.getCycleKeywords();
+    const keywordToBucket = Object.fromEntries(cycleKeywords.map((k) => [k, getKeywordBucket(k, registry)]));
+    const bucketClasses = ["todo", "in_progress", "continued", "done", "abandoned"];
+    const stampsClosedKeywords = cycleKeywords.filter((k) => registry.stampsClosed(k));
     let folder;
     let taskText;
     let taskKeywordMatch = "";
@@ -124,9 +157,12 @@ module.exports = function () {
               // Only show TODO and IN_PROGRESS tasks - exclude DONE, CONTINUED, and ABANDONED
               const planning = getPlanningForHeading(fileText, j);
               const hasScheduled = Boolean(planning && planning.scheduled);
-              const isTodoOrInProgress = /\b(TODO|IN_PROGRESS)\b/.test(element);
+              const status = taskKeywordManager.findTaskKeyword(element);
+              const state = status ? (registry.states || []).find((s) => s.keyword === status) : null;
+              const agendaVis = state && state.agendaVisibility ? state.agendaVisibility : "show";
+              const isVisibleAgendaTask = Boolean(status && agendaVis === "show" && headingStartRegex.test(element));
               
-              if (hasScheduled && isTodoOrInProgress) {
+              if (hasScheduled && isVisibleAgendaTask) {
 
                 // Capture indented child lines that belong to the current task
                 const baseIndent = element.match(/^\s*/)?.[0] || "";
@@ -156,15 +192,10 @@ module.exports = function () {
                 getDateFromTaskText = planning && planning.scheduled ? [null, planning.scheduled] : null;
 
                 if (taskTextMatch && getDateFromTaskText) {
-                  // Match the task keyword (TODO, IN_PROGRESS, etc.)
-                  taskKeywordMatch = element.match(/\b(TODO|IN_PROGRESS|CONTINUED|DONE|ABANDONED)\b/);
+                  taskKeywordMatch = status;
 
-                  // Clean up task line: remove symbols, keyword, tags
-                  taskText = stripAllTagSyntax(taskTextMatch)
-                    .replace(/[⊙⊖⊘⊜⊗]/g, "")
-                    .replace(/^\s*\*+\s+/, "")
-                    .replace(/\b(TODO|DONE|IN_PROGRESS|CONTINUED|ABANDONED)\b/, "")
-                    .trim();
+                  const normalizedHeadline = stripInlinePlanning(normalizeTagsAfterPlanning(taskTextMatch));
+                  taskText = taskKeywordManager.cleanTaskText(stripAllTagSyntax(normalizedHeadline)).trim();
 
                   // Format the task's scheduled date for grouping and display
                   const scheduledMoment = moment(getDateFromTaskText[1], acceptedDateFormats, true);
@@ -204,11 +235,12 @@ module.exports = function () {
 
                   // Build HTML task entry
                   let renderedTask = "";
-                  if (taskKeywordMatch !== null) {
+                  if (taskKeywordMatch) {
                     const taskLineNumber = j + 1;
+                    const bucket = getKeywordBucket(taskKeywordMatch, registry);
                     renderedTask =
                       `<span class="filename" data-file="${items[i]}" data-line="${taskLineNumber}">${items[i]}:</span> ` +
-                      `<span class="${taskKeywordMatch[0].toLowerCase()}" data-filename="${items[i]}" data-text="${taskText}" data-date="${cleanDate}">${taskKeywordMatch[0]}</span>` +
+                      `<span class="${bucket}" data-filename="${items[i]}" data-text="${taskText}" data-date="${cleanDate}">${taskKeywordMatch}</span>` +
                       `<span class="taskText agenda-task-link" data-file="${items[i]}" data-line="${taskLineNumber}">${taskText}</span>` +
                       checkboxBadge +
                       `<span class="scheduled">SCHEDULED</span>` +
@@ -361,20 +393,18 @@ module.exports = function () {
             const lines = document.getText().split(/\r?\n/);
 
             function normalizeHeadlineToTitle(headline) {
-              return stripAllTagSyntax(normalizeTagsAfterPlanning(headline))
-                .replace(/[⊙⊖⊘⊜⊗]/g, "")
-                .replace(/^\s*\*+\s+/, "")
-                .replace(/\b(TODO|DONE|IN_PROGRESS|CONTINUED|ABANDONED)\b/, "")
-                .trim();
+              return taskKeywordManager.cleanTaskText(
+                stripAllTagSyntax(normalizeTagsAfterPlanning(headline))
+              ).trim();
             }
 
             const dateOnly = String(date || "").replace(/^\[|\]$/g, "");
             let taskLineNumber = -1;
             for (let i = 0; i < document.lineCount; i++) {
               const lineText = document.lineAt(i).text;
-              const keywordMatch = lineText.match(/\b(TODO|IN_PROGRESS|DONE|CONTINUED|ABANDONED)\b/);
-              const isHeading = /^\s*\*+\s+/.test(lineText);
-              if (!keywordMatch || !isHeading) {
+              const keyword = taskKeywordManager.findTaskKeyword(lineText);
+              const isHeading = headingStartRegex.test(lineText);
+              if (!keyword || !isHeading) {
                 continue;
               }
 
@@ -412,8 +442,7 @@ module.exports = function () {
             const nextLine = taskLineNumber + 1 < document.lineCount ? document.lineAt(taskLineNumber + 1) : null;
             const nextNextLine = taskLineNumber + 2 < document.lineCount ? document.lineAt(taskLineNumber + 2) : null;
 
-            const currentStatusMatch = currentLine.text.match(/\b(TODO|DONE|IN_PROGRESS|CONTINUED|ABANDONED)\b/);
-            const currentStatus = currentStatusMatch ? currentStatusMatch[1] : null;
+            const currentStatus = taskKeywordManager.findTaskKeyword(currentLine.text);
 
             const headingMarkerStyle = config.get("headingMarkerStyle", "unicode");
             const starPrefixMatch = currentLine.text.match(/^\s*(\*+)/);
@@ -437,9 +466,9 @@ module.exports = function () {
               closed: planningFromNext.closed || planningFromHead.closed || planningFromNextNext.closed || null
             };
 
-            if (newStatus === "DONE") {
+            if (registry.stampsClosed(newStatus)) {
               mergedPlanning.closed = moment().format(`${dateFormat} ddd HH:mm`);
-            } else if (currentStatus === "DONE" && removeClosed) {
+            } else if (currentStatus && registry.stampsClosed(currentStatus) && removeClosed) {
               mergedPlanning.closed = null;
             }
 
@@ -453,13 +482,13 @@ module.exports = function () {
 
             const planningBody = buildPlanningBody(mergedPlanning);
 
-            // Handle CONTINUED transitions (same logic as Ctrl+Left/Right)
-            if (newStatus === "CONTINUED" && currentStatus !== "CONTINUED") {
+            // Handle forward-trigger transitions (same logic as Ctrl+Left/Right)
+            if (registry.triggersForward(newStatus) && !registry.triggersForward(currentStatus)) {
               const forwardEdit = continuedTaskHandler.handleContinuedTransition(document, taskLineNumber);
               if (forwardEdit && forwardEdit.type === "insert") {
                 workspaceEdit.insert(uri, forwardEdit.position, forwardEdit.text);
               }
-            } else if (currentStatus === "CONTINUED" && newStatus !== "CONTINUED") {
+            } else if (registry.triggersForward(currentStatus) && !registry.triggersForward(newStatus)) {
               const removeEdit = continuedTaskHandler.handleContinuedRemoval(document, taskLineNumber);
               if (removeEdit && removeEdit.type === "delete") {
                 workspaceEdit.delete(uri, removeEdit.range);
@@ -1166,7 +1195,10 @@ module.exports = function () {
             }
 
             // Cycle through statuses while maintaining proper placement and styling
-            const statuses = ["TODO", "IN_PROGRESS", "CONTINUED", "DONE", "ABANDONED"];
+            const statuses = ${JSON.stringify(cycleKeywords)};
+            const bucketClasses = ${JSON.stringify(bucketClasses)};
+            const keywordToBucket = ${JSON.stringify(keywordToBucket)};
+            const stampsClosed = ${JSON.stringify(stampsClosedKeywords)};
             let currentStatus = event.target.innerText.trim();
             let currentIndex = statuses.indexOf(currentStatus);
 
@@ -1174,24 +1206,21 @@ module.exports = function () {
               let nextStatus = statuses[(currentIndex + 1) % statuses.length];
               event.target.innerText = nextStatus;
 
-              event.srcElement.classList.remove(currentStatus.toLowerCase());
-              event.srcElement.classList.add(nextStatus.toLowerCase());
-
-              // Ensure proper styling by keeping the class structure consistent
-              event.srcElement.classList.remove("todo", "in_progress", "continued", "done", "abandoned");
-              event.srcElement.classList.add(nextStatus.toLowerCase());
+              const nextBucket = keywordToBucket[nextStatus] || "todo";
+              event.srcElement.classList.remove(...bucketClasses);
+              event.srcElement.classList.add(nextBucket);
 
               let safeText = (event.target.dataset.text || "").replaceAll(",", "&#44;");
               let safeDate = (event.target.dataset.date || "").replaceAll(",", "&#44;");
               let messageText = nextStatus + "," + event.target.dataset.filename + "," + safeText + "," + safeDate;
 
-              if (nextStatus === "DONE") {
+              if (stampsClosed.includes(nextStatus)) {
                 let completedDate = moment();
                 let formattedDate = completedDate.format(dateFormat + " ddd HH:mm");
                 messageText += ",CLOSED: [" + formattedDate + "]";
               }
 
-              if (currentStatus === "DONE") {
+              if (stampsClosed.includes(currentStatus)) {
                 messageText += ",REMOVE_CLOSED";
               }
 
