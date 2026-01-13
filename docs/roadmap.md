@@ -1,6 +1,6 @@
 ﻿# Roadmap
 
-Live version: 2.2.4
+Live version: 2.2.5
 
 These are the features that I have either already implemented, or plan to in the near future.
 
@@ -9,7 +9,7 @@ These are the features that I have either already implemented, or plan to in the
 | Feature Name              | Description                                                                                | Progress    | Version  | Author        |
 | ------------------------- | ------------------------------------------------------------------------------------------ | ----------- | -------- | ------------- |
 | v2 Org-mode Alignment     | Emacs-style end-of-headline tags, FILETAGS inheritance, planning lines under headings, CLOSED stamp, and explicit migration command | DONE | v2.0.0 | realDestroyer |
-| Tagged Agenda CONTINUED default | Tagged Agenda omits CONTINUED tasks by default (opt-in setting to include) to avoid duplicates when auto-forwarding | DONE | v2.0.2 | realDestroyer |
+| Tagged Agenda carryover default | Tagged Agenda omits carryover (forward-trigger) tasks by default to avoid duplicates when auto-forwarding (default carryover keyword: CONTINUED) | DONE | v2.0.2 | realDestroyer |
 | Org-Indent-style indent decoration | When unicode decorations are off, indentation decorations still render with a trailing `*` (Emacs Org-Indent behavior) | DONE | v2.0.2 | realDestroyer |
 | Insert Table (Org pipe output) | Insert Table webview generates canonical Org pipe tables and functions correctly under strict CSP | DONE | v2.0.2 | realDestroyer |
 | Snippets ship in VSIX | Ensure `snippets/vso.json` is included in packaged VSIX so snippet completions work after install | DONE | v2.0.2 | realDestroyer |
@@ -39,11 +39,11 @@ These are the features that I have either already implemented, or plan to in the
 | Configurable Date Format  | Ensure all date parsing/writing respects `Org-vscode.dateFormat` across commands/views     | DONE | v1.10.6 | realDestroyer |
 | Syntax Color Customizer   | Webview UI with color pickers for all task states, live preview, save/reset to defaults   | DONE        | v1.10.0  | realDestroyer |
 | Default Syntax Colors     | Extension provides out-of-box syntax highlighting via configurationDefaults               | DONE        | v1.10.0  | realDestroyer |
-| CONTINUED Auto-Forwarding | When toggling to CONTINUED, auto-copy task to next day as TODO; remove on toggle-away     | DONE        | v1.9.0   | realDestroyer |
+| Carryover Auto-Forwarding | When toggling into the forward-trigger state (default: CONTINUED), auto-copy task to next day as the first workflow state (default: TODO); remove on toggle-away | DONE | v1.9.0 | realDestroyer |
 | DEADLINE Support          | Add DEADLINE dates with Ctrl+Alt+D, snippets, and color-coded Agenda badges               | DONE        | v1.9.0   | realDestroyer |
 | Smart Date Keybinds       | Consolidated Alt+Shift+Arrow for day heading/SCHEDULED; Ctrl+Shift+Arrow for DEADLINE     | DONE        | v1.9.0   | realDestroyer |
 | Day Heading Snippet       | /day snippet inserts day heading with today's date and weekday picker                     | DONE        | v1.9.0   | realDestroyer |
-| Agenda View Filter        | Show only TODO and IN_PROGRESS tasks (exclude CONTINUED/DONE/ABANDONED)                   | DONE        | v1.9.0   | realDestroyer |
+| Agenda View Filter        | Agenda visibility is driven by workflow state configuration (default: show TODO/IN_PROGRESS; hide carryover/done-like states) | DONE | v1.9.0 | realDestroyer |
 | Yearly Summary Exporter   | Parse full-year Org files and emit CSV/JSON summaries with per-tag metrics for reviews     | DONE        | v1.8.0   | realDestroyer |
 | Executive Review Templates| Produce Markdown/HTML executive reports highlighting key accomplishments and timelines     | DONE        | v1.8.0   | realDestroyer |
 | Year-in-Review Dashboard  | Webview dashboard that visualizes yearly stats (tag heatmaps, timelines, filters)          | DONE        | v1.8.0   | realDestroyer |

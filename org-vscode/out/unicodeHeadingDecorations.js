@@ -2,10 +2,9 @@
 
 const vscode = require("vscode");
 const { DAY_HEADING_DECORATE_REGEX } = require("./orgTagUtils");
+const taskKeywordManager = require("./taskKeywordManager");
 
-const TASK_LINE_REGEX = /^(\s*)(\*+)\s+(TODO|IN_PROGRESS|CONTINUED|DONE|ABANDONED)\b/;
 const HEADING_LINE_REGEX = /^(\s*)(\*+)\s+\S/;
-const UNICODE_PREFIX_REGEX = /^(\s*)[⊙⊘⊜⊖⊗]\s/;
 
 const STATUS_TO_SCOPE = {
   TODO: "constant.character.todo.vso",
@@ -15,21 +14,39 @@ const STATUS_TO_SCOPE = {
   ABANDONED: "constant.character.abandoned.vso"
 };
 
-function statusToSymbol(status) {
-  switch (status) {
-    case "TODO":
-      return "⊙";
-    case "IN_PROGRESS":
-      return "⊘";
-    case "CONTINUED":
-      return "⊜";
-    case "DONE":
-      return "⊖";
-    case "ABANDONED":
-      return "⊗";
-    default:
-      return "";
-  }
+function getHeadingMarkerAlternation(registry) {
+  const markers = (registry?.states || [])
+    .map((s) => s && s.marker)
+    .filter((m) => typeof m === "string" && m.length > 0);
+  const deduped = Array.from(new Set(markers));
+  if (!deduped.length) return "";
+  return deduped
+    .map((m) => String(m).replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
+    .join("|");
+}
+
+function buildUnicodePrefixRegex(registry) {
+  const markerAlt = getHeadingMarkerAlternation(registry);
+  if (!markerAlt) return null;
+  return new RegExp(`^(\\s*)(?:${markerAlt})\\s`);
+}
+
+function mapKeywordToScopeKeyword(keyword, registry) {
+  const k = String(keyword || "").toUpperCase();
+  if (!k) return null;
+  if (k === "ABANDONED") return "ABANDONED";
+  if (registry && registry.stampsClosed && registry.stampsClosed(k)) return "DONE";
+  if (registry && registry.isDoneLike && registry.isDoneLike(k)) return "DONE";
+  if (registry && registry.triggersForward && registry.triggersForward(k)) return "CONTINUED";
+
+  const cycle = (registry && registry.getCycleKeywords) ? registry.getCycleKeywords() : [];
+  if (cycle.length && k === String(cycle[0] || "").toUpperCase()) return "TODO";
+  return "IN_PROGRESS";
+}
+
+function keywordToSymbol(keyword) {
+  const raw = taskKeywordManager.getSymbolForKeyword(keyword);
+  return String(raw || "").trim();
 }
 
 function normalizeScopes(scope) {
@@ -80,15 +97,19 @@ function getRevealLines(editor) {
   const revealLines = new Set();
   if (!editor) return revealLines;
 
+  const registry = taskKeywordManager.getWorkflowRegistry();
+  const unicodePrefixRe = buildUnicodePrefixRegex(registry);
+
   for (const selection of editor.selections || []) {
     const lineNumber = selection.active.line;
     if (lineNumber < 0 || lineNumber >= editor.document.lineCount) continue;
 
     const lineText = editor.document.lineAt(lineNumber).text;
-    const taskMatch = lineText.match(TASK_LINE_REGEX);
-    const dayMatch = !taskMatch ? lineText.match(DAY_HEADING_DECORATE_REGEX) : null;
-    const headingMatch = !taskMatch && !dayMatch ? lineText.match(HEADING_LINE_REGEX) : null;
-    const match = taskMatch || dayMatch || headingMatch;
+    const taskHeadingMatch = lineText.match(HEADING_LINE_REGEX);
+    const isTask = Boolean(taskHeadingMatch && taskKeywordManager.findTaskKeyword(lineText));
+    const dayMatch = !isTask ? lineText.match(DAY_HEADING_DECORATE_REGEX) : null;
+    const headingMatch = !isTask && !dayMatch ? lineText.match(HEADING_LINE_REGEX) : null;
+    const match = (isTask ? taskHeadingMatch : null) || dayMatch || headingMatch;
     if (!match) continue;
 
     const indent = match[1] || "";
@@ -134,6 +155,9 @@ function computeDecorationsForEditor(editor) {
     ? (spacesPerLevelRaw ? 2 : 0)
     : Math.max(0, Math.floor(Number(spacesPerLevelRaw) || 0));
 
+  const registry = taskKeywordManager.getWorkflowRegistry();
+  const unicodePrefixRe = buildUnicodePrefixRegex(registry);
+
   for (const visibleRange of editor.visibleRanges) {
     const startLine = Math.max(0, visibleRange.start.line);
     const endLine = Math.min(document.lineCount - 1, visibleRange.end.line);
@@ -141,7 +165,7 @@ function computeDecorationsForEditor(editor) {
     for (let lineNumber = startLine; lineNumber <= endLine; lineNumber++) {
       const lineText = document.lineAt(lineNumber).text;
 
-      if (UNICODE_PREFIX_REGEX.test(lineText)) {
+      if (unicodePrefixRe && unicodePrefixRe.test(lineText)) {
         continue;
       }
 
@@ -149,14 +173,14 @@ function computeDecorationsForEditor(editor) {
         continue;
       }
 
-      const taskMatch = lineText.match(TASK_LINE_REGEX);
-      if (taskMatch) {
-        const indent = taskMatch[1] || "";
-        const status = taskMatch[3];
-        const symbol = decorateUnicodeHeadings ? statusToSymbol(status) : "";
+      const taskHeadingMatch = lineText.match(HEADING_LINE_REGEX);
+      const keyword = taskHeadingMatch ? taskKeywordManager.findTaskKeyword(lineText) : null;
+      if (taskHeadingMatch && keyword) {
+        const indent = taskHeadingMatch[1] || "";
+        const stars = taskHeadingMatch[2] || "";
+        const symbol = decorateUnicodeHeadings ? keywordToSymbol(keyword) : "";
         if (decorateUnicodeHeadings && !symbol) continue;
 
-        const stars = taskMatch[2] || "";
         const indentCount = decorateHeadingIndentation
           ? Math.max(0, stars.length - 1) * spacesPerLevel
           : 0;
@@ -165,7 +189,8 @@ function computeDecorationsForEditor(editor) {
         // Insert unicode symbol at the start of the asterisk prefix.
         const insertAt = new vscode.Position(lineNumber, indent.length);
         const markerRange = new vscode.Range(insertAt, insertAt);
-        const scope = decorateUnicodeHeadings ? STATUS_TO_SCOPE[status] : undefined;
+        const scopeKey = mapKeywordToScopeKeyword(keyword, registry);
+        const scope = decorateUnicodeHeadings && scopeKey ? STATUS_TO_SCOPE[scopeKey] : undefined;
         const foreground = scope ? getForegroundForScope(scope) : undefined;
         markerDecorations.push({
           range: markerRange,

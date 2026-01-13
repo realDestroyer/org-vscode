@@ -8,8 +8,6 @@ const continuedTaskHandler = require("./continuedTaskHandler");
 const { isPlanningLine, parsePlanningFromText, normalizeTagsAfterPlanning, stripInlinePlanning } = require("./orgTagUtils");
 const { computeHeadingTransitions } = require("./checkboxAutoDoneTransitions");
 
-const TASK_LINE_REGEX = /^(\s*)(\*+|[⊙⊘⊜⊖⊗])\s+(TODO|IN_PROGRESS|CONTINUED|DONE|ABANDONED)\b/;
-
 const CHECKBOX_REGEX = /^\s*[-+*]\s+\[( |x|X)\]\s+/;
 
 function buildPlanningBody(planning) {
@@ -20,18 +18,23 @@ function buildPlanningBody(planning) {
   return parts.join("  ");
 }
 
-function isHeadingLine(line) {
-  return /^\s*(\*+|[⊙⊘⊜⊖⊗])\s+\S/.test(line);
+
+function pickDoneKeyword(registry) {
+  const states = registry?.states || [];
+  const stampsClosed = states.find((s) => s && s.stampsClosed);
+  if (stampsClosed?.keyword) return stampsClosed.keyword;
+  const doneLike = states.find((s) => s && s.isDoneLike);
+  if (doneLike?.keyword) return doneLike.keyword;
+  return "DONE";
 }
 
-function getHeadingLevel(match) {
-  const starsOrSymbol = match[2] || "";
-  if (starsOrSymbol.startsWith("*")) {
-    return starsOrSymbol.length;
-  }
-  // For unicode-marker files, use indentation depth as a proxy.
-  const indent = match[1] || "";
-  return 1000 + indent.length;
+function pickReopenKeyword(registry) {
+  const cycle = registry?.getCycleKeywords ? registry.getCycleKeywords() : [];
+  const states = registry?.states || [];
+  const candidate = states.find((s) => s && !s.isDoneLike && !s.triggersForward && s.keyword !== cycle[0]);
+  if (candidate?.keyword) return candidate.keyword;
+  const first = cycle[0];
+  return first || "IN_PROGRESS";
 }
 
 function isCheckboxLine(line) {
@@ -48,15 +51,15 @@ async function applyDoneToHeading(document, lineNumber) {
   const config = vscode.workspace.getConfiguration("Org-vscode");
   const headingMarkerStyle = config.get("headingMarkerStyle", "unicode");
   const dateFormat = config.get("dateFormat", "YYYY-MM-DD");
+  const registry = taskKeywordManager.getWorkflowRegistry();
 
   const currentLine = document.lineAt(lineNumber);
   const nextLine = lineNumber + 1 < document.lineCount ? document.lineAt(lineNumber + 1) : null;
   const nextNextLine = lineNumber + 2 < document.lineCount ? document.lineAt(lineNumber + 2) : null;
 
-  const keywordMatch = currentLine.text.match(/\b(TODO|IN_PROGRESS|CONTINUED|DONE|ABANDONED)\b/);
-  const currentKeyword = keywordMatch ? keywordMatch[1] : null;
+  const currentKeyword = taskKeywordManager.findTaskKeyword(currentLine.text);
   if (!currentKeyword) return;
-  if (currentKeyword === "DONE" || currentKeyword === "ABANDONED") return;
+  if (registry.isDoneLike(currentKeyword)) return;
 
   // Never convert day headings like `* [MM-DD-YYYY Wed] ...`.
   if (continuedTaskHandler.DAY_HEADING_REGEX && continuedTaskHandler.DAY_HEADING_REGEX.test(currentLine.text)) {
@@ -77,17 +80,18 @@ async function applyDoneToHeading(document, lineNumber) {
     closed: planningFromNext.closed || planningFromHeadline.closed || planningFromNextNext.closed || null
   };
 
-  mergedPlanning.closed = moment().format(`${dateFormat} ddd HH:mm`);
+  const nextKeyword = pickDoneKeyword(registry);
+  if (registry.stampsClosed(nextKeyword)) {
+    mergedPlanning.closed = moment().format(`${dateFormat} ddd HH:mm`);
+  }
 
   const headlineNoPlanning = stripInlinePlanning(normalizeTagsAfterPlanning(currentLine.text));
   const cleanedText = taskKeywordManager.cleanTaskText(headlineNoPlanning);
 
-  const nextKeyword = "DONE";
-
   const workspaceEdit = new vscode.WorkspaceEdit();
 
-  // Leaving CONTINUED should remove the continuation lines.
-  if (currentKeyword === "CONTINUED") {
+  // Leaving forward-trigger state should remove the continuation lines.
+  if (registry.triggersForward(currentKeyword)) {
     const removeEdit = continuedTaskHandler.handleContinuedRemoval(document, lineNumber);
     if (removeEdit && removeEdit.type === "delete") {
       workspaceEdit.delete(document.uri, removeEdit.range);
@@ -120,15 +124,15 @@ async function applyDoneToHeading(document, lineNumber) {
 async function applyInProgressToHeading(document, lineNumber) {
   const config = vscode.workspace.getConfiguration("Org-vscode");
   const headingMarkerStyle = config.get("headingMarkerStyle", "unicode");
+  const registry = taskKeywordManager.getWorkflowRegistry();
 
   const currentLine = document.lineAt(lineNumber);
   const nextLine = lineNumber + 1 < document.lineCount ? document.lineAt(lineNumber + 1) : null;
   const nextNextLine = lineNumber + 2 < document.lineCount ? document.lineAt(lineNumber + 2) : null;
 
-  const keywordMatch = currentLine.text.match(/\b(TODO|IN_PROGRESS|CONTINUED|DONE|ABANDONED)\b/);
-  const currentKeyword = keywordMatch ? keywordMatch[1] : null;
+  const currentKeyword = taskKeywordManager.findTaskKeyword(currentLine.text);
   if (!currentKeyword) return;
-  if (currentKeyword !== "DONE") return;
+  if (!(registry.isDoneLike(currentKeyword) && registry.stampsClosed(currentKeyword))) return;
 
   // Never convert day headings like `* [MM-DD-YYYY Wed] ...`.
   if (continuedTaskHandler.DAY_HEADING_REGEX && continuedTaskHandler.DAY_HEADING_REGEX.test(currentLine.text)) {
@@ -155,7 +159,7 @@ async function applyInProgressToHeading(document, lineNumber) {
   const headlineNoPlanning = stripInlinePlanning(normalizeTagsAfterPlanning(currentLine.text));
   const cleanedText = taskKeywordManager.cleanTaskText(headlineNoPlanning);
 
-  const nextKeyword = "IN_PROGRESS";
+  const nextKeyword = pickReopenKeyword(registry);
 
   const workspaceEdit = new vscode.WorkspaceEdit();
 

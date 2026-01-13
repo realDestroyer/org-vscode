@@ -23,6 +23,7 @@ module.exports = async function () {
   const config = vscode.workspace.getConfiguration("Org-vscode");
   const headingMarkerStyle = config.get("headingMarkerStyle", "unicode");
   const dateFormat = config.get("dateFormat", "YYYY-MM-DD");
+  const workflowRegistry = taskKeywordManager.getWorkflowRegistry();
 
   const { document } = activeTextEditor;
   const selections = (activeTextEditor.selections && activeTextEditor.selections.length)
@@ -58,8 +59,8 @@ module.exports = async function () {
     const nextLine = lineNumber + 1 < document.lineCount ? document.lineAt(lineNumber + 1) : null;
     const nextNextLine = lineNumber + 2 < document.lineCount ? document.lineAt(lineNumber + 2) : null;
 
-    const keywordMatch = currentLine.text.match(/\b(TODO|IN_PROGRESS|CONTINUED|DONE|ABANDONED)\b/);
-    if (hasRangeSelection && !keywordMatch) {
+    const currentKeyword = taskKeywordManager.findTaskKeyword(currentLine.text);
+    if (hasRangeSelection && !currentKeyword) {
       const text = currentLine.text;
       if (!text.trim()) {
         continue;
@@ -90,29 +91,28 @@ module.exports = async function () {
 
     const headlineNoPlanning = stripInlinePlanning(normalizeTagsAfterPlanning(currentLine.text));
     const cleanedText = taskKeywordManager.cleanTaskText(headlineNoPlanning);
-    const currentKeyword = keywordMatch ? keywordMatch[1] : null;
     const { keyword: nextKeyword } = taskKeywordManager.rotateKeyword(currentKeyword, "right");
 
     let newLine = taskKeywordManager.buildTaskLine(leadingSpaces, nextKeyword, cleanedText, { headingMarkerStyle, starPrefix });
     const workspaceEdit = new vscode.WorkspaceEdit();
 
     // Upsert/remove CLOSED in the planning line (preferred: single planning line under the headline).
-    if (nextKeyword === "DONE") {
+    if (workflowRegistry.stampsClosed(nextKeyword)) {
       mergedPlanning.closed = moment().format(`${dateFormat} ddd HH:mm`);
-    } else if (currentKeyword === "DONE") {
+    } else if (workflowRegistry.stampsClosed(currentKeyword)) {
       mergedPlanning.closed = null;
     }
 
     const planningIndent = `${leadingSpaces}  `;
     const planningBody = buildPlanningBody(mergedPlanning);
 
-    // Handle CONTINUED transitions
-    if (nextKeyword === "CONTINUED" && currentKeyword !== "CONTINUED") {
+    // Handle forward-trigger transitions (default: CONTINUED)
+    if (workflowRegistry.triggersForward(nextKeyword) && !workflowRegistry.triggersForward(currentKeyword)) {
       const forwardEdit = continuedTaskHandler.handleContinuedTransition(document, lineNumber);
       if (forwardEdit && forwardEdit.type === "insert") {
         workspaceEdit.insert(document.uri, forwardEdit.position, forwardEdit.text);
       }
-    } else if (currentKeyword === "CONTINUED" && nextKeyword !== "CONTINUED") {
+    } else if (workflowRegistry.triggersForward(currentKeyword) && !workflowRegistry.triggersForward(nextKeyword)) {
       const removeEdit = continuedTaskHandler.handleContinuedRemoval(document, lineNumber);
       if (removeEdit && removeEdit.type === "delete") {
         workspaceEdit.delete(document.uri, removeEdit.range);
@@ -161,6 +161,7 @@ module.exports = async function () {
           originalFile,
           cleanedText,
           nextKeyword,
+          stampsClosed: workflowRegistry.stampsClosed(nextKeyword),
           headingMarkerStyle
         });
       }
@@ -194,9 +195,12 @@ module.exports = async function () {
           starPrefix: origStarPrefix
         });
 
-        if (change.nextKeyword === "DONE" && !(originalLines[i + 1]?.includes("CLOSED") || originalLines[i + 1]?.includes("COMPLETED"))) {
-          originalLines.splice(i + 1, 0, taskKeywordManager.buildCompletedStamp(origIndent, dateFormat));
-        } else if (originalLines[i + 1]?.includes("CLOSED") || originalLines[i + 1]?.includes("COMPLETED")) {
+        const hasClosed = Boolean(originalLines[i + 1]?.includes("CLOSED") || originalLines[i + 1]?.includes("COMPLETED"));
+        if (change.stampsClosed) {
+          if (!hasClosed) {
+            originalLines.splice(i + 1, 0, taskKeywordManager.buildCompletedStamp(origIndent, dateFormat));
+          }
+        } else if (hasClosed) {
           originalLines.splice(i + 1, 1);
         }
 

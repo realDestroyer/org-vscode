@@ -26,7 +26,7 @@ Org-vscode helps you manage tasks, notes, and projects in plain text `.org` file
 
 - Selection-aware editing across multiple lines (status, schedule, deadline, tags, indentation)
 - v2 Org-mode alignment: `:TAGS:` at end of headline, planning lines under headings, `CLOSED:` stamp
-- TODO workflow: `TODO → IN_PROGRESS → CONTINUED → DONE/ABANDONED` (plus CONTINUED auto-forwarding)
+- Configurable TODO workflow states (`Org-vscode.workflowStates`) with per-state semantics (done-like, CLOSED stamping, carryover/forward-trigger, agenda visibility)
 - Agenda View + Tagged Agenda View (Emacs-style match strings) + Calendar View (click task text to jump to the exact source line)
 - Checklists with hierarchical parent/child checkbox states
 - Org-mode statistics cookies: `[/]` (fraction) and `[%]` (percent)
@@ -40,7 +40,7 @@ Org-vscode helps you manage tasks, notes, and projects in plain text `.org` file
 - Property drawer helpers: set/get/delete properties (with inheritance) + ID helpers (get-or-create, set/replace)
 - Org table generator (command + snippets)
 - Reports/tools: Export Current Tasks, Export Yearly Summary, Executive Report, Year-In-Review Dashboard
-- Customization: Syntax Color Customizer (including property drawers) + settings for heading markers / indentation / decorations
+- Customization: Syntax Color Customizer (colors + Workflow States editor) + settings for heading markers / indentation / decorations
 
 See every feature in one file:
 
@@ -68,6 +68,7 @@ Most editing shortcuts support multi-line selection: highlight multiple task lin
 | -------------------- | ------------------------------------------------------ |
 | `Ctrl + →`           | Cycle TODO keyword forward (selection-aware)           |
 | `Ctrl + ←`           | Cycle TODO keyword backward (selection-aware)          |
+| *(Command Palette)*  | Org-vscode: Set TODO State...                          |
 | `Shift + Alt + ↑`    | Move task block up (keeps children/subtree)            |
 | `Shift + Alt + ↓`    | Move task block down (keeps children/subtree)          |
 | `Alt + →`            | Increase heading level (selection-aware)               |

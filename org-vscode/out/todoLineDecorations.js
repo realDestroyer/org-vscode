@@ -1,8 +1,7 @@
 "use strict";
 
 const vscode = require("vscode");
-
-const HEADING_WITH_STATUS_REGEX = /^(\s*)(\*+|[⊙⊘⊜⊖⊗])\s+(TODO|IN_PROGRESS|CONTINUED|DONE|ABANDONED)\b/;
+const taskKeywordManager = require("./taskKeywordManager");
 
 // We intentionally base the background colors on the user's TextMate customizations
 // (editor.tokenColorCustomizations) so the same Syntax Color Customizer UI can drive both.
@@ -68,6 +67,42 @@ function shouldDecorate(editor) {
   return Boolean(config.get("decorateTodoStateLines", true));
 }
 
+function mapKeywordToDecorationBucket(keyword, registry) {
+  const k = String(keyword || "").toUpperCase();
+  if (!k) return null;
+
+  // Preserve legacy buckets/scopes; map custom states into them.
+  if (k === "ABANDONED") return "ABANDONED";
+  if (registry && registry.stampsClosed && registry.stampsClosed(k)) return "DONE";
+  if (registry && registry.isDoneLike && registry.isDoneLike(k)) return "DONE";
+  if (registry && registry.triggersForward && registry.triggersForward(k)) return "CONTINUED";
+
+  const cycle = (registry && registry.getCycleKeywords) ? registry.getCycleKeywords() : [];
+  if (cycle.length && k === String(cycle[0] || "").toUpperCase()) return "TODO";
+
+  // Default active/non-done statuses to IN_PROGRESS.
+  return "IN_PROGRESS";
+}
+
+function getHeadingMarkerAlternation(registry) {
+  const markers = (registry?.states || [])
+    .map((s) => s && s.marker)
+    .filter((m) => typeof m === "string" && m.length > 0);
+  const deduped = Array.from(new Set(markers));
+  if (!deduped.length) return "";
+  return deduped
+    .map((m) => String(m).replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
+    .join("|");
+}
+
+function isHeadingLine(text, registry) {
+  const t = String(text || "");
+  if (/^\s*\*+\s+\S/.test(t)) return true;
+  const markerAlt = getHeadingMarkerAlternation(registry);
+  if (!markerAlt) return false;
+  return new RegExp(`^\\s*(?:${markerAlt})\\s+\\S`).test(t);
+}
+
 function computeLineRanges(editor, enabledStatuses) {
   const byStatus = {
     TODO: [],
@@ -92,14 +127,18 @@ function computeLineRanges(editor, enabledStatuses) {
 
     for (let line = startLine; line <= endLine; line++) {
       const text = doc.lineAt(line).text;
-      const match = text.match(HEADING_WITH_STATUS_REGEX);
-      if (!match) continue;
 
-      const status = match[3];
-      if (!enabledStatuses.has(status)) continue;
+      const registry = taskKeywordManager.getWorkflowRegistry();
+      if (!isHeadingLine(text, registry)) continue;
+
+      const keyword = taskKeywordManager.findTaskKeyword(text);
+      if (!keyword) continue;
+
+      const bucket = mapKeywordToDecorationBucket(keyword, registry);
+      if (!bucket || !enabledStatuses.has(bucket)) continue;
 
       const endCol = text.length;
-      byStatus[status].push(new vscode.Range(line, 0, line, endCol));
+      byStatus[bucket].push(new vscode.Range(line, 0, line, endCol));
     }
   }
 

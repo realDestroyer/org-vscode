@@ -9,9 +9,38 @@ const { stripAllTagSyntax, parseFileTagsFromText, parseTagGroupsFromText, create
 const { computeCheckboxStatsByHeadingLine, formatCheckboxStats, findCheckboxCookie } = require("./checkboxStats");
 const { computeCheckboxToggleEdits } = require("./checkboxToggle");
 
+function escapeRegExp(text) {
+  return String(text).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function buildHeadingStartRegex(registry) {
+  const markers = (registry?.states || [])
+    .map((s) => s.marker)
+    .filter((m) => typeof m === "string" && m.length > 0);
+  const uniqueMarkers = Array.from(new Set(markers));
+  const markerAlt = uniqueMarkers.map(escapeRegExp).join("|");
+  const parts = ["\\*+"];
+  if (markerAlt) parts.push(`(?:${markerAlt})`);
+  return new RegExp(`^\\s*(?:${parts.join("|")})`);
+}
+
+function getKeywordBucket(keyword, registry) {
+  const k = String(keyword || "").trim().toUpperCase();
+  if (!k) return "todo";
+  if (registry?.isDoneLike && registry.isDoneLike(k)) {
+    return registry.stampsClosed && registry.stampsClosed(k) ? "done" : "abandoned";
+  }
+  if (registry?.triggersForward && registry.triggersForward(k)) return "continued";
+  const cycle = registry?.getCycleKeywords ? registry.getCycleKeywords() : [];
+  if (cycle.length && k === cycle[0]) return "todo";
+  return "in_progress";
+}
+
 module.exports = async function taggedAgenda() {
   const config = vscode.workspace.getConfiguration("Org-vscode");
   const includeContinuedInTaggedAgenda = config.get("includeContinuedInTaggedAgenda", false);
+  const registry = taskKeywordManager.getWorkflowRegistry();
+  const headingStartRegex = buildHeadingStartRegex(registry);
 
   const tagInput = await vscode.window.showInputBox({
     prompt: "Enter tag match string (Emacs style). Examples: +WORK+URGENT, WORK|HOME, +A-B. (Compat: any:a,b / all:a,b / a,b)",
@@ -52,15 +81,16 @@ module.exports = async function taggedAgenda() {
 
     lines.forEach((line, index) => {
       const tagState = tracker.handleLine(line);
-      const keywordMatch = line.match(/\b(TODO|IN_PROGRESS|DONE|CONTINUED|ABANDONED)\b/);
-      const status = keywordMatch ? keywordMatch[1] : null;
-      const startsWithSymbol = /^\s*([⊙⊖⊘⊜⊗]|\*+)/.test(line);
-      if (!tagState.isHeading || !keywordMatch || !startsWithSymbol) {
+      const status = taskKeywordManager.findTaskKeyword(line);
+      const startsWithSymbol = headingStartRegex.test(line);
+      if (!tagState.isHeading || !status || !startsWithSymbol) {
         return;
       }
 
-      // CONTINUED is primarily a historical breadcrumb; by default Tagged Agenda omits it.
-      if (status === "CONTINUED" && !includeContinuedInTaggedAgenda) {
+      // Default: hide states marked as hidden from tagged agenda.
+      const state = (registry.states || []).find((s) => s.keyword === status);
+      const taggedVis = state && state.taggedAgendaVisibility ? state.taggedAgendaVisibility : "show";
+      if (taggedVis === "hide" && !includeContinuedInTaggedAgenda) {
         return;
       }
 
@@ -105,6 +135,8 @@ module.exports = async function taggedAgenda() {
 };
 
 async function updateTaskStatusInFile(file, taskText, scheduledDate, newStatus, removeCompleted) {
+  const registry = taskKeywordManager.getWorkflowRegistry();
+  const headingStartRegex = buildHeadingStartRegex(registry);
   const orgDir = getOrgFolder();
   const filePath = path.join(orgDir, file);
   const uri = vscode.Uri.file(filePath);
@@ -116,21 +148,18 @@ async function updateTaskStatusInFile(file, taskText, scheduledDate, newStatus, 
   if (dateTag) console.log("🔍 With scheduled date tag:", dateTag);
 
   function normalizeTaskTextFromHeadline(headline) {
-    return stripAllTagSyntax(headline)
+    const normalized = stripAllTagSyntax(headline)
       .replace(/.*?\] -/, "")
-      .replace(/\s+SCHEDULED:.*/, "")
-      .replace(/[⊙⊖⊘⊜⊗]/g, "")
-      .replace(/^\s*\*+\s+/, "")
-      .replace(/\b(TODO|DONE|IN_PROGRESS|CONTINUED|ABANDONED)\b\s*/g, "")
-      .trim();
+      .replace(/\s+SCHEDULED:.*/, "");
+    return taskKeywordManager.cleanTaskText(normalized).trim();
   }
 
   let taskLineNumber = -1;
   for (let i = 0; i < document.lineCount; i++) {
     const lineText = document.lineAt(i).text;
-    const keywordMatch = lineText.match(/\b(TODO|IN_PROGRESS|DONE|CONTINUED|ABANDONED)\b/);
-    const startsWithSymbol = /^\s*([⊙⊖⊘⊜⊗]|\*+)/.test(lineText);
-    if (!keywordMatch || !startsWithSymbol) {
+    const keyword = taskKeywordManager.findTaskKeyword(lineText);
+    const startsWithSymbol = headingStartRegex.test(lineText);
+    if (!keyword || !startsWithSymbol) {
       continue;
     }
 
@@ -161,8 +190,7 @@ async function updateTaskStatusInFile(file, taskText, scheduledDate, newStatus, 
   const currentLine = document.lineAt(taskLineNumber);
   const nextLine = taskLineNumber + 1 < document.lineCount ? document.lineAt(taskLineNumber + 1) : null;
   const nextNextLine = taskLineNumber + 2 < document.lineCount ? document.lineAt(taskLineNumber + 2) : null;
-  const currentStatusMatch = currentLine.text.match(/\b(TODO|DONE|IN_PROGRESS|CONTINUED|ABANDONED)\b/);
-  const currentStatus = currentStatusMatch ? currentStatusMatch[1] : null;
+  const currentStatus = taskKeywordManager.findTaskKeyword(currentLine.text);
 
   const config = vscode.workspace.getConfiguration("Org-vscode");
   const headingMarkerStyle = config.get("headingMarkerStyle", "unicode");
@@ -191,9 +219,9 @@ async function updateTaskStatusInFile(file, taskText, scheduledDate, newStatus, 
   };
 
   // Add/remove CLOSED in the planning line (preferred: single planning line directly under heading).
-  if (newStatus === "DONE") {
+  if (registry.stampsClosed(newStatus)) {
     mergedPlanning.closed = moment().format(`${dateFormat} ddd HH:mm`);
-  } else if (currentStatus === "DONE" && removeCompleted) {
+  } else if (currentStatus && registry.stampsClosed(currentStatus) && removeCompleted) {
     mergedPlanning.closed = null;
   }
 
@@ -210,13 +238,13 @@ async function updateTaskStatusInFile(file, taskText, scheduledDate, newStatus, 
   // Remove any inline planning that might still exist on the headline.
   const newHeadlineOnly = newLine;
 
-  // Handle CONTINUED transitions
-  if (newStatus === "CONTINUED" && currentStatus !== "CONTINUED") {
+  // Handle forward-trigger transitions (CONTINUED-like)
+  if (registry.triggersForward(newStatus) && !registry.triggersForward(currentStatus)) {
     const forwardEdit = continuedTaskHandler.handleContinuedTransition(document, taskLineNumber);
     if (forwardEdit && forwardEdit.type === "insert") {
       workspaceEdit.insert(uri, forwardEdit.position, forwardEdit.text);
     }
-  } else if (currentStatus === "CONTINUED" && newStatus !== "CONTINUED") {
+  } else if (registry.triggersForward(currentStatus) && !registry.triggersForward(newStatus)) {
     const removeEdit = continuedTaskHandler.handleContinuedRemoval(document, taskLineNumber);
     if (removeEdit && removeEdit.type === "delete") {
       workspaceEdit.delete(uri, removeEdit.range);
@@ -386,6 +414,11 @@ function getTaggedWebviewContent(webview, nonce, localMomentJs, tag, items, skip
   const config = vscode.workspace.getConfiguration("Org-vscode");
   const dateFormat = config.get("dateFormat", "YYYY-MM-DD");
   const acceptedDateFormats = getAcceptedDateFormats(dateFormat);
+  const registry = taskKeywordManager.getWorkflowRegistry();
+  const cycleKeywords = registry.getCycleKeywords();
+  const keywordToBucket = Object.fromEntries(cycleKeywords.map((k) => [k, getKeywordBucket(k, registry)]));
+  const bucketClasses = ["todo", "in_progress", "continued", "done", "abandoned"];
+  const stampsClosedKeywords = cycleKeywords.filter((k) => registry.stampsClosed(k));
   const errorBannerContent = (skippedFiles && skippedFiles.length > 0)
     ? skippedFiles.map(s => `${s.file} (${s.reason})`).join("; ")
     : "";
@@ -405,9 +438,8 @@ function getTaggedWebviewContent(webview, nonce, localMomentJs, tag, items, skip
 
   const filePanels = Object.entries(grouped).map(([file, tasks]) => {
     const taskPanels = tasks.map(item => {
-      const keywordMatch = item.line.match(/\b(TODO|DONE|IN_PROGRESS|CONTINUED|ABANDONED)\b/);
-      const keyword = keywordMatch ? keywordMatch[0] : "TODO";
-      const keywordClass = keyword.toLowerCase();
+      const keyword = taskKeywordManager.findTaskKeyword(item.line) || (cycleKeywords[0] || "TODO");
+      const keywordClass = getKeywordBucket(keyword, registry);
 
       const scheduledDate = item.scheduledDate || "";
 
@@ -419,10 +451,9 @@ function getTaggedWebviewContent(webview, nonce, localMomentJs, tag, items, skip
       const taskText = stripAllTagSyntax(item.line)
         .replace(/.*?\] -/, "")
         .replace(/\s+SCHEDULED:.*/, "")
-        .replace(/[⊙⊖⊘⊜⊗]/g, "")  // Unicode cleanup
-        .replace(/^\s*\*+\s+/, "") // Org headline cleanup
-        .replace(/\b(TODO|DONE|IN_PROGRESS|CONTINUED|ABANDONED)\b\s*/g, "") // Keyword cleanup (stable matching)
         .trim();
+
+      const cleanedTaskText = taskKeywordManager.cleanTaskText(taskText).trim();
 
       const cookie = findCheckboxCookie(item.line);
       const checkboxLabel = cookie
@@ -485,8 +516,8 @@ function getTaggedWebviewContent(webview, nonce, localMomentJs, tag, items, skip
         <div class="panel ${file}">
           <div class="textDiv">
             <span class="filename" data-file="${file}" data-line="${item.lineNumber}">${file}:</span>
-            <span class="${keywordClass}" data-filename="${file}" data-text="${taskText}" data-date="${scheduledDate}">${keyword}</span>
-            <span class="taskText agenda-task-link" data-file="${file}" data-line="${item.lineNumber}">${taskText}</span>
+            <span class="${keywordClass}" data-filename="${file}" data-text="${cleanedTaskText}" data-date="${scheduledDate}">${keyword}</span>
+            <span class="taskText agenda-task-link" data-file="${file}" data-line="${item.lineNumber}">${cleanedTaskText}</span>
             ${checkboxLabel}
             ${lateLabel}
             <span class="scheduled">SCHEDULED</span>
@@ -1012,27 +1043,32 @@ body{
               });
           }
 
-          const statuses = ["TODO", "IN_PROGRESS", "CONTINUED", "DONE", "ABANDONED"];
+            const statuses = ${JSON.stringify(cycleKeywords)};
+            const bucketClasses = ${JSON.stringify(bucketClasses)};
+            const keywordToBucket = ${JSON.stringify(keywordToBucket)};
+            const stampsClosed = ${JSON.stringify(stampsClosedKeywords)};
           let currentStatus = event.target.innerText.trim();
           let currentIndex = statuses.indexOf(currentStatus);
 
           if (currentIndex !== -1) {
               let nextStatus = statuses[(currentIndex + 1) % statuses.length];
               event.target.innerText = nextStatus;
-              event.srcElement.classList.remove(...statuses.map(s => s.toLowerCase()));
-              event.srcElement.classList.add(nextStatus.toLowerCase());
+
+              const nextBucket = keywordToBucket[nextStatus] || "todo";
+              event.srcElement.classList.remove(...bucketClasses);
+              event.srcElement.classList.add(nextBucket);
 
               let safeText = event.target.dataset.text.replaceAll(",", "&#44;");
               let safeDate = event.target.dataset.date.replaceAll(",", "&#44;");
               let messageText = nextStatus + "," + event.target.dataset.filename + "," + safeText + "," + safeDate;
 
-                if (nextStatus === "DONE") {
+                if (stampsClosed.includes(nextStatus)) {
                   let completedDate = moment();
                   let formattedDate = completedDate.format(dateFormat + " ddd HH:mm");
                   messageText += ",CLOSED:[" + formattedDate + "]";
                 }
 
-                if (currentStatus === "DONE") {
+                if (stampsClosed.includes(currentStatus)) {
                   messageText += ",REMOVE_CLOSED";
                 }
 

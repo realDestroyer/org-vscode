@@ -19,7 +19,7 @@ When a user right-clicks a task (or runs a command like **Create JIRA Issue**):
    - Title
    - Tags
    - Schedule date
-   - Keyword (`TODO`, `IN_PROGRESS`, etc.)
+   - Workflow keyword (TODO state; configurable via `Org-vscode.workflowStates`)
 
 ## Tag → JIRA issue type mapping
 

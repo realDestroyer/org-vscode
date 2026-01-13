@@ -1,12 +1,27 @@
 "use strict";
 
-const HEADING_LINE_REGEX = /^(\s*)(\*+|[⊙⊘⊜⊖⊗])\s+\S/;
-const TASK_LINE_REGEX = /^(\s*)(\*+|[⊙⊘⊜⊖⊗])\s+(TODO|IN_PROGRESS|CONTINUED|DONE|ABANDONED)\b/;
-const CHECKBOX_REGEX = /^\s*[-+*]\s+\[( |x|X)\]\s+/;
+const taskKeywordManager = require("./taskKeywordManager");
 
-function isHeadingLine(line) {
-  return HEADING_LINE_REGEX.test(String(line || ""));
+function escapeRegExp(text) {
+  return String(text).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
+
+function buildHeadingRegexes(registry) {
+  const cycle = registry.getCycleKeywords();
+  const keywordAlt = cycle.length ? cycle.map(escapeRegExp).join("|") : "TODO";
+
+  const markers = (registry.states || [])
+    .map((s) => s.marker)
+    .filter((m) => typeof m === "string" && m.length > 0);
+  const markerAlt = Array.from(new Set(markers)).map(escapeRegExp).join("|");
+  const headAlt = markerAlt ? `(?:\\*+|(?:${markerAlt}))` : "\\*+";
+
+  return {
+    headingLineRegex: new RegExp(`^(\\s*)(${headAlt})\\s+\\S`),
+    taskLineRegex: new RegExp(`^(\\s*)(${headAlt})\\s+(${keywordAlt})\\b`)
+  };
+}
+const CHECKBOX_REGEX = /^\s*[-+*]\s+\[( |x|X)\]\s+/;
 
 function getHeadingLevel(match) {
   const starsOrSymbol = match[2] || "";
@@ -31,16 +46,20 @@ function isCheckboxChecked(line) {
 function computeHeadingTransitions(lines) {
   const safeLines = Array.isArray(lines) ? lines : [];
 
+  const registry = taskKeywordManager.getWorkflowRegistry();
+  const { headingLineRegex, taskLineRegex } = buildHeadingRegexes(registry);
+
   /** @type {{ lineNumber: number, level: number, status: string }[]} */
   const candidates = [];
 
   for (let i = 0; i < safeLines.length; i++) {
     const line = safeLines[i];
-    const match = String(line || "").match(TASK_LINE_REGEX);
+    const match = String(line || "").match(taskLineRegex);
     if (!match) continue;
 
-    const status = match[3];
-    if (status === "ABANDONED") continue;
+    const status = String(match[3] || "").toUpperCase();
+    // Preserve legacy behavior: ignore done-like states that don't stamp CLOSED (e.g. ABANDONED).
+    if (registry.isDoneLike(status) && !registry.stampsClosed(status)) continue;
 
     candidates.push({
       lineNumber: i,
@@ -61,8 +80,8 @@ function computeHeadingTransitions(lines) {
     for (let j = heading.lineNumber + 1; j < safeLines.length; j++) {
       const nextLine = safeLines[j];
 
-      if (isHeadingLine(nextLine)) {
-        const nextMatch = String(nextLine || "").match(TASK_LINE_REGEX) || String(nextLine || "").match(HEADING_LINE_REGEX);
+      if (headingLineRegex.test(String(nextLine || ""))) {
+        const nextMatch = String(nextLine || "").match(taskLineRegex) || String(nextLine || "").match(headingLineRegex);
         if (nextMatch) {
           const nextLevel = getHeadingLevel(nextMatch);
           if (nextLevel <= heading.level) {
@@ -79,7 +98,7 @@ function computeHeadingTransitions(lines) {
 
     if (total === 0) continue;
 
-    if (heading.status === "DONE") {
+    if (registry.isDoneLike(heading.status) && registry.stampsClosed(heading.status)) {
       if (checked < total) {
         toMarkInProgress.push(heading.lineNumber);
       }
