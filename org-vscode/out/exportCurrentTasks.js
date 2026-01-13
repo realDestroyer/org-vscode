@@ -2,6 +2,7 @@ const fs = require("fs");
 const path = require("path");
 const os = require("os");
 const vscode = require("vscode");
+const taskKeywordManager = require("./taskKeywordManager");
 
 module.exports = function () {
     const config = vscode.workspace.getConfiguration("Org-vscode");
@@ -9,7 +10,7 @@ module.exports = function () {
     const folderPath = configPath && configPath.trim() !== "" ? configPath : path.join(os.homedir(), "VSOrgFiles");
     const outputFilePath = path.join(folderPath, "CurrentTasks.org");
 
-    const keywordsToMatch = ["TODO", "IN_PROGRESS", "CONTINUED", "ABANDONED"];
+    const registry = taskKeywordManager.getWorkflowRegistry();
     const orgFiles = fs.readdirSync(folderPath).filter(f => f.endsWith(".org") && !f.startsWith(".") && f !== "CurrentTasks.org");
 
     let exportLines = [];
@@ -20,9 +21,8 @@ module.exports = function () {
 
         for (let i = 0; i < lines.length; i++) {
             const line = lines[i];
-            const keywordMatch = line.match(/\b(TODO|IN_PROGRESS|CONTINUED|ABANDONED)\b/);
-
-            if (keywordMatch && keywordsToMatch.includes(keywordMatch[0])) {
+            const keyword = taskKeywordManager.findTaskKeyword(line);
+            if (keyword && !registry.stampsClosed(keyword)) {
                 // Add file header once per file
                 if (!fileHasExportedTasks) {
                     exportLines.push(`##### Source: ${file} #####`);

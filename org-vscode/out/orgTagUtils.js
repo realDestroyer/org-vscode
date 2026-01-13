@@ -2,6 +2,8 @@
 
 const moment = require("moment");
 
+const { createWorkflowRegistry, buildTaskPrefixRegex } = require("./workflowStates");
+
 // Utilities for parsing and formatting Org-mode style tags.
 // Supports both legacy org-vscode inline tags ([+TAG:FOO,BAR]) and Emacs-style end-of-headline tags (:FOO:BAR:).
 
@@ -37,8 +39,22 @@ const DAY_HEADING_REGEX = /^(\s*)(⊘|\*+)\s*\[(\d{2,4}-\d{2}-\d{2,4})(?:\s+([A-
 // - Capture groups: (1) indent, (2) asterisks - only what's needed for decoration
 const DAY_HEADING_DECORATE_REGEX = /^(\s*)(\*+)\s*\[(\d{2,4}-\d{2}-\d{2,4})(?:\s+([A-Za-z]{3}))?.*$/;
 
-// Task prefix regex - matches task lines with status keywords
-const TASK_PREFIX_REGEX = /^(\s*)(?:[⊙⊘⊜⊖⊗]\s*)?(?:\*+\s+)?(?:TODO|IN_PROGRESS|CONTINUED|DONE|ABANDONED)\b/;
+function getWorkflowStatesConfigValue() {
+  try {
+    // Avoid a hard dependency so unit tests can run without VS Code.
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const vscode = require("vscode");
+    return vscode.workspace.getConfiguration("Org-vscode").get("workflowStates");
+  } catch {
+    return undefined;
+  }
+}
+
+function getTaskPrefixRegex() {
+  const configValue = getWorkflowStatesConfigValue();
+  const registry = createWorkflowRegistry(configValue);
+  return buildTaskPrefixRegex(registry.states);
+}
 
 // --- Strip Regexes (for removal, no capture needed) ---
 // Use with .replace(REGEX, "") - note: no 'g' flag, use new RegExp(X.source, 'g') for global
@@ -473,7 +489,7 @@ module.exports = {
   CLOSED_REGEX,
   DAY_HEADING_REGEX,
   DAY_HEADING_DECORATE_REGEX,
-  TASK_PREFIX_REGEX,
+  getTaskPrefixRegex,
   SCHEDULED_STRIP_RE,
   DEADLINE_STRIP_RE,
   CLOSED_STRIP_RE,

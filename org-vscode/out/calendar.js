@@ -4,7 +4,23 @@ const vscode = require("vscode");   // VSCode API access
 const fs = require("fs");           // File system module to read/write org files
 const path = require("path");       // For cross-platform path handling
 const moment = require("moment");   // Date formatting library
+const taskKeywordManager = require("./taskKeywordManager");
 const { getAllTagsFromLine, stripAllTagSyntax, parseFileTagsFromText, createInheritanceTracker, getPlanningForHeading, isPlanningLine, normalizeTagsAfterPlanning, getAcceptedDateFormats, buildScheduledReplacement, getMatchingScheduledOnLine, SCHEDULED_STRIP_RE, SCHEDULED_REGEX, DEADLINE_REGEX } = require("./orgTagUtils");
+
+function escapeRegExp(text) {
+  return String(text).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function buildHeadingStartRegex(registry) {
+  const markers = (registry?.states || [])
+    .map((s) => s.marker)
+    .filter((m) => typeof m === "string" && m.length > 0);
+  const unique = Array.from(new Set(markers));
+  const markerAlt = unique.map(escapeRegExp).join("|");
+  const parts = ["\\*+"];
+  if (markerAlt) parts.push(`(?:${markerAlt})`);
+  return new RegExp(`^\\s*(?:${parts.join("|")})`);
+}
 
 let calendarPanel = null; // Keeps reference to the Webview panel (singleton instance)
 
@@ -48,6 +64,8 @@ function sendTasksToCalendar(panel) {
   let dirPath = setMainDir();
   const config = vscode.workspace.getConfiguration("Org-vscode");
   const dateFormat = config.get("dateFormat", "YYYY-MM-DD");
+  const registry = taskKeywordManager.getWorkflowRegistry();
+  const headingStartRegex = buildHeadingStartRegex(registry);
 
   fs.readdir(dirPath, (err, files) => {
     if (err) {
@@ -76,11 +94,19 @@ function sendTasksToCalendar(panel) {
           const planning = getPlanningForHeading(content, lineIndex);
           const scheduledDate = planning && planning.scheduled ? planning.scheduled : null;
 
-          // Must be a scheduled task with a proper status keyword and start with a task symbol
-          const keywordMatch = line.match(/\b(TODO|IN_PROGRESS|DONE|CONTINUED|ABANDONED)\b/);
-          const startsWithSymbol = /^([⊙⊖⊘⊜⊗]|\*+)/.test(line.trim()); 
+          const keyword = taskKeywordManager.findTaskKeyword(line);
+          const startsWithSymbol = headingStartRegex.test(line.trim());
+          if (!scheduledDate || !startsWithSymbol || !keyword) {
+            return;
+          }
 
-          if (scheduledDate && startsWithSymbol && keywordMatch) {
+          const state = (registry.states || []).find((s) => s.keyword === keyword);
+          const agendaVis = state && state.agendaVisibility ? state.agendaVisibility : "show";
+          if (agendaVis === "hide") {
+            return;
+          }
+
+          if (scheduledDate) {
             // Effective tags include inherited tags from parent headings and file-level #+FILETAGS.
             // For non-asterisk headings (unicode-only), fall back to per-line tag extraction.
             const tags = (tagState && tagState.isHeading)
@@ -89,12 +115,11 @@ function sendTasksToCalendar(panel) {
 
             const fullLine = line.trim();
 
-            const cleanedText = stripAllTagSyntax(fullLine)
-              .replace(/\b(TODO|IN_PROGRESS|DONE|CONTINUED|ABANDONED)\b/, '') // Remove keyword
-              .replace(SCHEDULED_STRIP_RE, '')                                 // Strip scheduled portion
-              .replace(/[⊙⊖⊘⊜⊗]/g, '')                                         // Remove the leading Unicode symbol
-              .replace(/^\*+\s+/, '')                                         // Remove the leading org '*' heading marker(s)
-              .trim();
+            const cleanedText = taskKeywordManager.cleanTaskText(
+              stripAllTagSyntax(fullLine)
+                .replace(SCHEDULED_STRIP_RE, "")
+                .trim()
+            );
 
             // Parse date with error detection
             // Try configured format with day abbreviation first, then without, then common fallbacks

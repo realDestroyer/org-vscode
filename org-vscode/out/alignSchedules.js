@@ -1,5 +1,6 @@
 const vscode = require("vscode");
 const { isPlanningLine, parsePlanningFromText, normalizeTagsAfterPlanning } = require("./orgTagUtils");
+const taskKeywordManager = require("./taskKeywordManager");
 
 /**
  * This command aligns all SCHEDULED: timestamps to a fixed column width.
@@ -25,8 +26,6 @@ async function alignSchedules() {
     // Collect one final replacement per line to avoid overlapping edit ranges.
     const lineReplacements = new Map();
 
-    const taskPrefixRegex = /^\s*(?:[⊙⊘⊜⊖⊗]\s*)?(?:\*+\s+)?(?:TODO|IN_PROGRESS|CONTINUED|DONE|ABANDONED)\b/;
-
     // 🔍 Step 1: Find legacy inline "SCHEDULED:" on *headline* lines (for column alignment)
     // and normalize Emacs-style planning lines below headlines.
     for (let i = 0; i < totalLines; i++) {
@@ -44,7 +43,7 @@ async function alignSchedules() {
         // IMPORTANT: do NOT treat planning lines (indented SCHEDULED/DEADLINE/CLOSED lines)
         // as legacy inline "SCHEDULED" headlines; doing so drops CLOSED and can create
         // overlapping edits.
-        if (!isPlanningLine(lineText) && taskPrefixRegex.test(lineText)) {
+        if (!isPlanningLine(lineText) && taskKeywordManager.findTaskKeyword(lineText)) {
             let match = lineText.match(/^(\s*)(.*?)(\s+SCHEDULED:)/);
 
             if (match) {
@@ -69,7 +68,7 @@ async function alignSchedules() {
         }
 
         // Emacs-style: if this is a task headline, normalize the immediate planning line.
-        if (taskPrefixRegex.test(lineText) && i + 1 < totalLines) {
+        if (taskKeywordManager.findTaskKeyword(lineText) && i + 1 < totalLines) {
             const nextLine = document.lineAt(i + 1).text;
             if (isPlanningLine(nextLine) && (nextLine.includes("SCHEDULED:") || nextLine.includes("DEADLINE:") || nextLine.includes("CLOSED:") || nextLine.includes("COMPLETED"))) {
                 const headlineIndent = lineText.match(/^\s*/)?.[0] || "";

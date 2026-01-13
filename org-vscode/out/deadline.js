@@ -3,7 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const vscode = require("vscode");
 const moment = require("moment");
 const showMessage_1 = require("./showMessage");
-const { isPlanningLine, normalizeTagsAfterPlanning, DAY_HEADING_REGEX, TASK_PREFIX_REGEX, DEADLINE_STRIP_RE, SCHEDULED_REGEX } = require("./orgTagUtils");
+const { isPlanningLine, normalizeTagsAfterPlanning, DAY_HEADING_REGEX, getTaskPrefixRegex, DEADLINE_STRIP_RE, SCHEDULED_REGEX } = require("./orgTagUtils");
 
 module.exports = function () {
     const { activeTextEditor } = vscode.window;
@@ -13,7 +13,7 @@ module.exports = function () {
     const { document } = activeTextEditor;
 
     const dayHeadingRegex = DAY_HEADING_REGEX;
-    const taskPrefixRegex = TASK_PREFIX_REGEX;
+    const taskPrefixRegex = getTaskPrefixRegex();
 
     const config = vscode.workspace.getConfiguration("Org-vscode");
     const dateFormat = config.get("dateFormat", "YYYY-MM-DD");

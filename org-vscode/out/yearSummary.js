@@ -3,10 +3,26 @@ const fs = require("fs");
 const path = require("path");
 const moment = require("moment");
 const { getAllTagsFromLine, stripAllTagSyntax, isPlanningLine, parsePlanningFromText, PLANNING_STRIP_RE } = require("./orgTagUtils");
+const taskKeywordManager = require("./taskKeywordManager");
 
 const ORG_SYMBOL_REGEX = /\s*[⊙⊖⊘⊜⊗]\s*/g;
 const FORMULA_PREFIX_REGEX = /^[=+\-@]/;
 const CLOSED_LINE_REGEX = /^(?:CLOSED|COMPLETED):\s*\[(.*?)\](.*)$/i;
+
+function escapeRegExp(text) {
+  return String(text).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function buildHeadingStartRegex(registry) {
+  const markers = (registry?.states || [])
+    .map((s) => s.marker)
+    .filter((m) => typeof m === "string" && m.length > 0);
+  const unique = Array.from(new Set(markers));
+  const markerAlt = unique.map(escapeRegExp).join("|");
+  const parts = ["\\*+"];
+  if (markerAlt) parts.push(`(?:${markerAlt})`);
+  return new RegExp(`^\\s*(?:${parts.join("|")})`);
+}
 
 async function exportYearSummary() {
   try {
@@ -70,7 +86,8 @@ async function ensureReportDirectory(sourcePath, year) {
 function parseOrgContent(raw) {
   const lines = raw.split(/\r?\n/);
   const dayRegex = /^\s*(?:⊘|\*+)\s*\[(\d{2,4}-\d{2}-\d{2,4})(?:\s+([A-Za-z]{3}))?.*$/;
-  const taskRegex = /^(?<indent>\s*)(?:[⊙⊖⊘⊜⊗]|\*+)\s+(TODO|IN_PROGRESS|CONTINUED|DONE|ABANDONED)\b(.*)$/;
+  const registry = taskKeywordManager.getWorkflowRegistry();
+  const headingStartRegex = buildHeadingStartRegex(registry);
   const days = [];
   let currentDay = null;
   let currentTask = null;
@@ -91,14 +108,14 @@ function parseOrgContent(raw) {
       return;
     }
 
-    const taskMatch = line.match(taskRegex);
-    if (taskMatch && currentDay) {
+    const keyword = taskKeywordManager.findTaskKeyword(line);
+    if (keyword && currentDay && headingStartRegex.test(line)) {
       const nextLine = (index + 1 < lines.length) ? lines[index + 1] : "";
       const combined = isPlanningLine(nextLine) ? `${line}\n${nextLine}` : line;
       const metadata = extractMetadata(combined);
       currentTask = {
         line: line.trim(),
-        status: taskMatch[2],
+        status: keyword,
         title: metadata.title,
         tags: metadata.tags,
         scheduled: metadata.scheduled,
@@ -130,16 +147,24 @@ function parseOrgContent(raw) {
   });
 
   const year = deriveYear(days);
-  const aggregates = buildAggregates(days);
-  return { days, year, aggregates };
+  const aggregates = buildAggregates(days, registry);
+  const workflowMeta = {
+    cycleKeywords: registry.getCycleKeywords(),
+    doneLikeKeywords: (registry.states || []).filter((s) => s && s.isDoneLike).map((s) => s.keyword),
+    stampsClosedKeywords: (registry.states || []).filter((s) => s && s.stampsClosed).map((s) => s.keyword),
+    forwardKeywords: (registry.states || []).filter((s) => s && s.triggersForward).map((s) => s.keyword),
+    markers: (registry.states || []).map((s) => s.marker).filter((m) => typeof m === "string" && m.length > 0)
+  };
+  const cycle = workflowMeta.cycleKeywords || [];
+  workflowMeta.inProgressKeywords = (registry.states || [])
+    .filter((s) => s && !s.isDoneLike && !s.triggersForward && s.keyword !== cycle[0])
+    .map((s) => s.keyword);
+
+  return { days, year, aggregates, workflowMeta };
 }
 
 function extractMetadata(line) {
-  const cleaned = line
-    .replace(/^[\s]*[⊙⊖⊘⊜⊗]\s+/, "")
-    .replace(/^[\s]*\*+\s+/, "")
-    .replace(/\b(TODO|IN_PROGRESS|CONTINUED|DONE|ABANDONED)\b\s*:*/, "")
-    .trim();
+  const cleaned = taskKeywordManager.cleanTaskText(line).trim();
 
   const tags = getAllTagsFromLine(cleaned);
   const planning = parsePlanningFromText(cleaned);
@@ -167,12 +192,14 @@ function deriveYear(days) {
   return parsed.isValid() ? parsed.year() : new Date().getFullYear();
 }
 
-function buildAggregates(days) {
+function buildAggregates(days, registry) {
   const aggregates = {
     totalTasks: 0,
     perStatus: {},
     perTag: {},
-    perMonth: {}
+    perMonth: {},
+    doneLikeCount: 0,
+    completedCount: 0
   };
 
   days.forEach(day => {
@@ -187,6 +214,21 @@ function buildAggregates(days) {
       aggregates.perMonth[bucket] = (aggregates.perMonth[bucket] || 0) + 1;
     });
   });
+
+  if (registry && typeof registry.isDoneLike === "function") {
+    aggregates.doneLikeCount = Object.entries(aggregates.perStatus)
+      .filter(([status]) => registry.isDoneLike(status))
+      .reduce((sum, [, count]) => sum + (count || 0), 0);
+
+    const stampsClosed = Object.entries(aggregates.perStatus)
+      .filter(([status]) => registry.stampsClosed && registry.stampsClosed(status))
+      .reduce((sum, [, count]) => sum + (count || 0), 0);
+
+    aggregates.completedCount = stampsClosed || aggregates.doneLikeCount;
+  } else {
+    aggregates.completedCount = aggregates.perStatus.DONE || 0;
+    aggregates.doneLikeCount = aggregates.completedCount;
+  }
 
   return aggregates;
 }

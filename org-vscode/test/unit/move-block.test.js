@@ -75,10 +75,44 @@ function testMoveUpMovesWholeSubtreeFromInsideBody() {
   assert.strictEqual(updated[9], lines[2]);
 }
 
+function testMoveUpDoesNotDropInterveningParentHeadingOrDrawer() {
+  const lines = [
+    '* [2026-01-05 Mon] ------------------------------------------------',
+    '  * TODO Begin planning CWID (Connect with Industry Day) for LCSC',
+    '  * DONE Check back with Ken Gonzales regarding PROFINET traffic on Soldermask-GSE network [0/0] :MOSCOW_MFG:SDN:',
+    '    SCHEDULED: [2026-01-05]  DEADLINE: [2026-01-05]  CLOSED: [2026-01-11 Sun 18:11]',
+    '  ** TODO Test calculation',
+    '  * TODO Create new org-vscode features :ORG_VSCODE_FEATURES:',
+    '    :PROPERTIES:',
+    '    :ORG-VSCODE:',
+    '    :END:',
+    '  ** TODO Implement Clocking Work Time feature',
+    '    - https://orgmode.org/manual/Clocking-Work-Time.html',
+    '  ** DONE Implement Property Drawer feature',
+    '    CLOSED: [2026-01-11 Sun 20:13]'
+  ];
+
+  // Cursor on the "Implement Clocking" heading line.
+  const cursorLine = 9;
+  const result = computeMoveBlockResult(lines, cursorLine, 'up');
+  assert.ok(result, 'Expected a move result');
+
+  const updated = result.updatedLines;
+  assert.strictEqual(updated.length, lines.length, 'Move should not change total line count');
+
+  // The parent heading + drawer must not be dropped.
+  const parentIdx = updated.indexOf(lines[5]);
+  assert.ok(parentIdx !== -1, 'Parent heading should remain after move');
+  assert.strictEqual(updated[parentIdx + 1], lines[6]);
+  assert.strictEqual(updated[parentIdx + 2], lines[7]);
+  assert.strictEqual(updated[parentIdx + 3], lines[8]);
+}
+
 module.exports = {
   name: 'unit/move-block',
   run: () => {
     testMoveDownMovesWholeSubtreeFromInsideDrawer();
     testMoveUpMovesWholeSubtreeFromInsideBody();
+    testMoveUpDoesNotDropInterveningParentHeadingOrDrawer();
   }
 };

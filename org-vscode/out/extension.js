@@ -16,6 +16,7 @@ const newFile = require("./newFile");
 const changeDirectory = require("./changeDirectory");
 const keywordRight = require("./keywordRight");
 const keywordLeft = require("./keywordLeft");
+const setTodoState = require("./setTodoState");
 const moveUp = require("./moveUp");
 const moveDown = require("./moveDown");
 const getTags = require("./tags");
@@ -232,6 +233,7 @@ function activate(ctx) {
   ctx.subscriptions.push(vscode.commands.registerCommand("orgMode.openYearInReview", openYearInReview));
   ctx.subscriptions.push(vscode.commands.registerCommand("extension.toggleStatusRight", keywordRight));
   ctx.subscriptions.push(vscode.commands.registerCommand("extension.toggleStatusLeft", keywordLeft));
+  ctx.subscriptions.push(vscode.commands.registerCommand("extension.setTodoState", setTodoState));
   ctx.subscriptions.push(vscode.commands.registerCommand("extension.scheduling", scheduling));
   ctx.subscriptions.push(vscode.commands.registerCommand("extension.deadline", deadline));
   ctx.subscriptions.push(vscode.commands.registerCommand("extension.moveBlockUp", moveUp));

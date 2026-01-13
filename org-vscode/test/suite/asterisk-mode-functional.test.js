@@ -87,6 +87,46 @@ suite('Asterisk-mode functional behavior', function () {
     await waitFor(() => !doc.getText().includes('CLOSED: ['));
   });
 
+  test('Custom workflowStates drive status cycling and CLOSED stamping', async () => {
+    const cfg = vscode.workspace.getConfiguration('Org-vscode');
+    const before = cfg.inspect('workflowStates') || {};
+    const oldGlobalWorkflowStates = before.globalValue;
+
+    await cfg.update(
+      'workflowStates',
+      [
+        { keyword: 'NEXT' },
+        { keyword: 'DONE', isDoneLike: true, stampsClosed: true }
+      ],
+      vscode.ConfigurationTarget.Global
+    );
+
+    await waitFor(() => {
+      const updatedWorkflowStates = vscode.workspace.getConfiguration('Org-vscode').get('workflowStates');
+      return (
+        Array.isArray(updatedWorkflowStates) &&
+        updatedWorkflowStates.length === 2 &&
+        updatedWorkflowStates[0]?.keyword === 'NEXT'
+      );
+    });
+
+    try {
+      const uri = await writeTempVsoFile('**** NEXT Custom cycle\n');
+      const { doc, editor } = await openFileInEditor(uri);
+      setCursor(editor, 0, 0);
+
+      await vscode.commands.executeCommand('extension.toggleStatusRight');
+      await waitFor(() => doc.getText().includes('**** DONE Custom cycle'));
+      await waitFor(() => doc.getText().includes('CLOSED: ['));
+
+      await vscode.commands.executeCommand('extension.toggleStatusRight');
+      await waitFor(() => doc.getText().includes('**** NEXT Custom cycle'));
+      await waitFor(() => !doc.getText().includes('CLOSED: ['));
+    } finally {
+      await cfg.update('workflowStates', oldGlobalWorkflowStates, vscode.ConfigurationTarget.Global);
+    }
+  });
+
   test('CONTINUED forwards to next day and removal cleans it up', async () => {
     const separator = ' -------------------------------------------------------------------------------------------------------------------------------';
     const contents = [
@@ -569,5 +609,78 @@ suite('Asterisk-mode functional behavior', function () {
     assert.strictEqual(starsAfter1, starsBefore1 + 1);
     assert.strictEqual(starsAfter2, starsBefore2 + 1);
     assert.strictEqual(starsAfter3, starsBefore3 + 1);
+  });
+
+  test('Custom workflowStates keywords are treated as tasks for SCHEDULED/DEADLINE', async () => {
+    const cfg = vscode.workspace.getConfiguration('Org-vscode');
+    const before = cfg.inspect('workflowStates') || {};
+    const oldGlobalWorkflowStates = before.globalValue;
+
+    await cfg.update(
+      'workflowStates',
+      [
+        {
+          keyword: 'NEXT'
+        }
+      ],
+      vscode.ConfigurationTarget.Global
+    );
+
+    await waitFor(() => {
+      const updatedWorkflowStates = vscode.workspace.getConfiguration('Org-vscode').get('workflowStates');
+      return (
+        Array.isArray(updatedWorkflowStates) &&
+        updatedWorkflowStates[0] &&
+        updatedWorkflowStates[0].keyword === 'NEXT'
+      );
+    });
+
+    const originalShowInputBox = vscode.window.showInputBox;
+    try {
+      const contents = [
+        '  *** NEXT Task A',
+        '  *** NEXT Task B',
+        ''
+      ].join('\n');
+
+      const uri = await writeTempVsoFile(contents);
+      const { doc, editor } = await openFileInEditor(uri);
+
+      const start = new vscode.Position(0, 0);
+      const end = new vscode.Position(1, doc.lineAt(1).text.length);
+      editor.selection = new vscode.Selection(start, end);
+
+      // Add SCHEDULED to both selected tasks.
+      // Scheduling prompts for month/day/year in separate inputs.
+      const answers = ['12', '31', '2025'];
+      vscode.window.showInputBox = async () => answers.shift();
+      await vscode.commands.executeCommand('extension.scheduling');
+
+      try {
+        await waitFor(() => doc.getText().includes('SCHEDULED: [2025-12-31]'));
+      } catch (e) {
+        throw new Error(`Expected SCHEDULED to be inserted for NEXT tasks. Document was:\n${doc.getText()}`);
+      }
+
+      const afterScheduling = doc.getText();
+      const scheduledCount = (afterScheduling.match(/SCHEDULED: \[2025-12-31\]/g) || []).length;
+      assert.strictEqual(scheduledCount, 2, afterScheduling);
+
+      // Re-select the full document so DEADLINE targets both headings after inserts.
+      const start2 = new vscode.Position(0, 0);
+      const end2 = new vscode.Position(doc.lineCount - 1, doc.lineAt(doc.lineCount - 1).text.length);
+      editor.selection = new vscode.Selection(start2, end2);
+
+      // Add DEADLINE to both selected tasks.
+      // Deadline prompts for month/day/year in separate inputs.
+      const answers2 = ['12', '31', '2025'];
+      vscode.window.showInputBox = async () => answers2.shift();
+      await vscode.commands.executeCommand('extension.deadline');
+
+      await waitFor(() => doc.getText().includes('DEADLINE: [2025-12-31]'));
+    } finally {
+      vscode.window.showInputBox = originalShowInputBox;
+      await cfg.update('workflowStates', oldGlobalWorkflowStates, vscode.ConfigurationTarget.Global);
+    }
   });
 });
