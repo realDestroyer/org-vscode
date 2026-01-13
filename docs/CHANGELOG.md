@@ -6,6 +6,10 @@
 
 - **Syntax Color Customizer:** Added a `Property Drawer` control (scope: `meta.block.property.vso`) so you can style `:PROPERTIES:`…`:END:` blocks.
 
+`Fixed / Enhanced`
+
+- **Move Block Up/Down:** Moving a task block now keeps its full subtree together (child headings, drawers, and indented content) and works when your cursor is anywhere inside the block.
+
 # [2.2.4] 01-11-26
 
 `Added / Enhanced`

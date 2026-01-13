@@ -1,0 +1,152 @@
+"use strict";
+
+const UNICODE_HEADING_REGEX = /^\s*[⊙⊘⊜⊖⊗]\s/;
+const STAR_HEADING_REGEX = /^\s*(\*+)\s/;
+const DAY_HEADING_REGEX = /^\s*\*\s*\[\d{4}-\d{2}-\d{2}\b/;
+
+function getIndent(line) {
+  return line.match(/^\s*/)?.[0].length || 0;
+}
+
+function parseHeadingInfo(line) {
+  const indent = getIndent(line);
+  const starMatch = line.match(STAR_HEADING_REGEX);
+  if (starMatch) {
+    return {
+      kind: "star",
+      indent,
+      starCount: starMatch[1].length,
+      isDayHeading: DAY_HEADING_REGEX.test(line)
+    };
+  }
+
+  if (UNICODE_HEADING_REGEX.test(line)) {
+    return {
+      kind: "unicode",
+      indent,
+      starCount: null,
+      isDayHeading: false
+    };
+  }
+
+  return null;
+}
+
+function sameDepth(a, b) {
+  if (!a || !b) return false;
+  if (a.starCount != null && b.starCount != null) {
+    return a.starCount === b.starCount && a.indent === b.indent;
+  }
+  return a.indent === b.indent;
+}
+
+function isOutsideSubtree(nextInfo, currentInfo) {
+  if (!nextInfo || !currentInfo) return false;
+
+  if (currentInfo.starCount != null && nextInfo.starCount != null) {
+    if (nextInfo.starCount < currentInfo.starCount) return true;
+    if (nextInfo.starCount === currentInfo.starCount && nextInfo.indent <= currentInfo.indent) return true;
+    return false;
+  }
+
+  // Fallback: indentation-based hierarchy.
+  return nextInfo.indent <= currentInfo.indent;
+}
+
+function findNearestHeadingStart(lines, cursorLine) {
+  for (let i = Math.min(cursorLine, lines.length - 1); i >= 0; i--) {
+    const info = parseHeadingInfo(lines[i]);
+    if (info) return { startLine: i, info };
+  }
+  return null;
+}
+
+function findSubtreeEndExclusive(lines, startLine, startInfo) {
+  for (let i = startLine + 1; i < lines.length; i++) {
+    const info = parseHeadingInfo(lines[i]);
+    if (info && isOutsideSubtree(info, startInfo)) {
+      return i;
+    }
+  }
+  return lines.length;
+}
+
+function findPrevSiblingStart(lines, startLine, startInfo) {
+  for (let i = startLine - 1; i >= 0; i--) {
+    const info = parseHeadingInfo(lines[i]);
+    if (!info) continue;
+    if (info.isDayHeading) continue;
+    if (sameDepth(info, startInfo)) return { startLine: i, info };
+  }
+  return null;
+}
+
+function findNextSiblingStart(lines, endExclusive, startInfo) {
+  for (let i = endExclusive; i < lines.length; i++) {
+    const info = parseHeadingInfo(lines[i]);
+    if (!info) continue;
+    if (info.isDayHeading) continue;
+    if (sameDepth(info, startInfo)) return { startLine: i, info };
+    if (isOutsideSubtree(info, startInfo)) {
+      // We've moved past the sibling region.
+      return null;
+    }
+  }
+  return null;
+}
+
+function computeMoveBlockResult(lines, cursorLine, direction) {
+  if (!Array.isArray(lines) || lines.length === 0) return null;
+  if (typeof cursorLine !== "number" || Number.isNaN(cursorLine)) return null;
+  if (direction !== "up" && direction !== "down") return null;
+
+  const heading = findNearestHeadingStart(lines, cursorLine);
+  if (!heading) return null;
+  if (heading.info.isDayHeading) return null;
+
+  const startLine = heading.startLine;
+  const startInfo = heading.info;
+  const endExclusive = findSubtreeEndExclusive(lines, startLine, startInfo);
+
+  const offsetInBlock = Math.max(0, cursorLine - startLine);
+
+  if (direction === "up") {
+    const prev = findPrevSiblingStart(lines, startLine, startInfo);
+    if (!prev) return null;
+
+    const prevEndExclusive = findSubtreeEndExclusive(lines, prev.startLine, prev.info);
+    if (prevEndExclusive > startLine) return null;
+
+    const before = lines.slice(0, prev.startLine);
+    const prevBlock = lines.slice(prev.startLine, prevEndExclusive);
+    const curBlock = lines.slice(startLine, endExclusive);
+    const after = lines.slice(endExclusive);
+
+    const updatedLines = [...before, ...curBlock, ...prevBlock, ...after];
+    const newStartLine = prev.startLine;
+    const newCursorLine = Math.min(updatedLines.length - 1, newStartLine + offsetInBlock);
+    return { updatedLines, newCursorLine, newStartLine };
+  }
+
+  const next = findNextSiblingStart(lines, endExclusive, startInfo);
+  if (!next) return null;
+
+  const nextEndExclusive = findSubtreeEndExclusive(lines, next.startLine, next.info);
+
+  const before = lines.slice(0, startLine);
+  const curBlock = lines.slice(startLine, endExclusive);
+  const nextBlock = lines.slice(next.startLine, nextEndExclusive);
+  const after = lines.slice(nextEndExclusive);
+
+  const updatedLines = [...before, ...nextBlock, ...curBlock, ...after];
+  const newStartLine = startLine + nextBlock.length;
+  const newCursorLine = Math.min(updatedLines.length - 1, newStartLine + offsetInBlock);
+  return { updatedLines, newCursorLine, newStartLine };
+}
+
+module.exports = {
+  parseHeadingInfo,
+  findNearestHeadingStart,
+  findSubtreeEndExclusive,
+  computeMoveBlockResult
+};
