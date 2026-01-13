@@ -1,69 +1,19 @@
 const vscode = require("vscode");
+const { computeMoveBlockResult } = require("./moveBlockUtils");
 
-module.exports = function () {
+module.exports = async function () {
   const editor = vscode.window.activeTextEditor;
   if (!editor) return;
 
   const document = editor.document;
-  const position = editor.selection.active.line;
+  const cursorLine = editor.selection.active.line;
+  const cursorChar = editor.selection.active.character;
   const lines = document.getText().split(/\r?\n/);
 
-  const unicodeHeadingRegex = /^\s*[⊙⊘⊜⊖⊗]\s/;
-  const starHeadingRegex = /^\s*\*+\s/;
-  function isHeadingLine(line) {
-    return unicodeHeadingRegex.test(line) || starHeadingRegex.test(line);
-  }
+  const result = computeMoveBlockResult(lines, cursorLine, "down");
+  if (!result) return;
 
-  function getIndent(line) {
-    return line.match(/^\s*/)?.[0].length || 0;
-  }
-
-  const currentIndent = getIndent(lines[position]);
-
-  if (!isHeadingLine(lines[position])) return;
-
-  // Grab block to move
-  const block = [];
-  let i = position;
-  block.push(lines[i]);
-
-  for (i = position + 1; i < lines.length; i++) {
-    const indent = getIndent(lines[i]);
-    if (lines[i].trim() === "") {
-      block.push(lines[i]);
-    } else if (indent > currentIndent) {
-      block.push(lines[i]);
-    } else {
-      break;
-    }
-  }
-
-  // Find insertion point
-  let insertAt = i;
-  while (insertAt < lines.length) {
-    const indent = getIndent(lines[insertAt]);
-    if (
-      isHeadingLine(lines[insertAt]) &&
-      indent <= currentIndent
-    ) {
-      // Skip the next task's own block
-      insertAt++;
-      while (insertAt < lines.length && getIndent(lines[insertAt]) > indent) {
-        insertAt++;
-      }
-      break;
-    }
-    insertAt++;
-  }
-
-  const updatedLines = [
-    ...lines.slice(0, position),
-    ...lines.slice(i, insertAt),
-    ...block,
-    ...lines.slice(insertAt),
-  ];
-
-  const fullText = updatedLines.join("\n");
+  const fullText = result.updatedLines.join("\n");
 
   const edit = new vscode.WorkspaceEdit();
   const fullRange = new vscode.Range(
@@ -72,5 +22,13 @@ module.exports = function () {
   );
   edit.replace(document.uri, fullRange, fullText);
 
-  vscode.workspace.applyEdit(edit);
+  const applied = await vscode.workspace.applyEdit(edit);
+  if (!applied) return;
+
+  const newLine = Math.max(0, Math.min(result.newCursorLine, result.updatedLines.length - 1));
+  const newLineText = result.updatedLines[newLine] || "";
+  const newChar = Math.max(0, Math.min(cursorChar, newLineText.length));
+  const newPos = new vscode.Position(newLine, newChar);
+  editor.selection = new vscode.Selection(newPos, newPos);
+  editor.revealRange(new vscode.Range(newPos, newPos), vscode.TextEditorRevealType.InCenter);
 };

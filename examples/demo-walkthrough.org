@@ -26,6 +26,7 @@
 * TODO Multi-line status change #3 :MULTILINE:
 
 # 3) Move blocks up/down (Shift+Alt+Up/Down)
+# Works from anywhere inside the task block and keeps child tasks/drawers/checklists together.
 * TODO Move this task block around :EDITING:
   Some indented notes move with the task.
   - [ ] And checkboxes move too
