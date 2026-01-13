@@ -2,9 +2,14 @@
 
 # [Unreleased]
 
+# [2.2.5] 01-12-26
+
 `Enhanced`
 
+- **Configurable Workflow States:** Task keywords (TODO states) are now driven by `Org-vscode.workflowStates` (cycle order + per-state semantics like CLOSED stamping, carryover/forward-trigger, and agenda visibility).
+- **Set TODO State:** Added **Org-vscode: Set TODO State...** to set an exact keyword from a QuickPick (selection-aware).
 - **Syntax Color Customizer:** Added a `Property Drawer` control (scope: `meta.block.property.vso`) so you can style `:PROPERTIES:`…`:END:` blocks.
+- **Workflow States GUI:** Added a **Workflow States** tab to the Syntax Color Customizer so you can edit `Org-vscode.workflowStates` without writing JSON.
 
 `Fixed / Enhanced`
 

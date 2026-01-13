@@ -119,10 +119,11 @@ function computeMoveBlockResult(lines, cursorLine, direction) {
 
     const before = lines.slice(0, prev.startLine);
     const prevBlock = lines.slice(prev.startLine, prevEndExclusive);
+    const between = lines.slice(prevEndExclusive, startLine);
     const curBlock = lines.slice(startLine, endExclusive);
     const after = lines.slice(endExclusive);
 
-    const updatedLines = [...before, ...curBlock, ...prevBlock, ...after];
+    const updatedLines = [...before, ...curBlock, ...between, ...prevBlock, ...after];
     const newStartLine = prev.startLine;
     const newCursorLine = Math.min(updatedLines.length - 1, newStartLine + offsetInBlock);
     return { updatedLines, newCursorLine, newStartLine };
@@ -135,10 +136,11 @@ function computeMoveBlockResult(lines, cursorLine, direction) {
 
   const before = lines.slice(0, startLine);
   const curBlock = lines.slice(startLine, endExclusive);
+  const between = lines.slice(endExclusive, next.startLine);
   const nextBlock = lines.slice(next.startLine, nextEndExclusive);
   const after = lines.slice(nextEndExclusive);
 
-  const updatedLines = [...before, ...nextBlock, ...curBlock, ...after];
+  const updatedLines = [...before, ...nextBlock, ...between, ...curBlock, ...after];
   const newStartLine = startLine + nextBlock.length;
   const newCursorLine = Math.min(updatedLines.length - 1, newStartLine + offsetInBlock);
   return { updatedLines, newCursorLine, newStartLine };
