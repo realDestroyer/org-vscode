@@ -68,8 +68,8 @@ Most editing shortcuts support multi-line selection: highlight multiple task lin
 | -------------------- | ------------------------------------------------------ |
 | `Ctrl + →`           | Cycle TODO keyword forward (selection-aware)           |
 | `Ctrl + ←`           | Cycle TODO keyword backward (selection-aware)          |
-| `Shift + Alt + ↑`    | Move task block up                                     |
-| `Shift + Alt + ↓`    | Move task block down                                   |
+| `Shift + Alt + ↑`    | Move task block up (keeps children/subtree)            |
+| `Shift + Alt + ↓`    | Move task block down (keeps children/subtree)          |
 | `Alt + →`            | Increase heading level (selection-aware)               |
 | `Alt + ←`            | Decrease heading level (selection-aware)               |
 | `Alt + Enter`        | Smart insert new element (Org Meta-Return style)       |
