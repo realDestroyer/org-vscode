@@ -136,6 +136,22 @@ You can edit this setting either:
 - In JSON (Settings UI or `settings.json`), or
 - Via the built-in GUI: run **“org-vscode Customize Syntax Colors”** and switch to the **Workflow States** tab.
 
+### Workflow States GUI (Recommended)
+
+1. Open the Command Palette → run **org-vscode Customize Syntax Colors**.
+2. Click the **Workflow States** tab.
+3. Edit the table:
+  - **Keyword**: the TODO keyword to use in the file (must be one token; no spaces)
+  - **Marker**: optional symbol shown when using Unicode heading markers
+  - **Done-like**: counts as “done” for reports/exports
+  - **Stamps CLOSED**: writes a `CLOSED:` timestamp when entering the state
+  - **Triggers Forward**: marks the “carryover/forward-trigger” state (default is `CONTINUED`)
+  - **Agenda / Tagged Agenda**: whether this state appears in those views
+4. Reorder states with ↑ / ↓ to change your cycle order.
+5. Click **Save Workflow**.
+
+<img src="https://github.com/realdestroyer/org-vscode/blob/master/Images/keyword-customization.jpg?raw=true" width="900" />
+
 - The **order** of the array is the cycle order used by `Ctrl + →` / `Ctrl + ←`.
 - Each state can optionally define semantics like:
   - **done-like** (used by exports/reports)
