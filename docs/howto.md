@@ -28,7 +28,17 @@ Optional indentation controls (decorations + Alt+Left/Right indentation):
 
 ```json
 "Org-vscode.decorateHeadingIndentation": true,
-"Org-vscode.adjustHeadingIndentation": 2
+"Org-vscode.adjustHeadingIndentation": 2,
+"Org-vscode.autoIndentNonHeaderText": false,
+"Org-vscode.bodyIndentation": 2
+```
+
+`adjustHeadingIndentation` controls heading indentation/level operations; `bodyIndentation` controls how far non-heading/body lines (including planning lines like `SCHEDULED:` / `DEADLINE:` / `CLOSED:`) are indented under a heading.
+
+If you want body text to automatically indent under headings when you press Enter, enable:
+
+```json
+"Org-vscode.autoIndentNonHeaderText": true
 ```
 
 Indent-only mode (Org-Indent style)
@@ -657,6 +667,8 @@ This command prompts you to enter one or more tags (comma-separated), and automa
 Use this command to visually align `SCHEDULED:` timestamps (and end-of-line tags, when present) in your current `.org` file.
 This improves readability by ensuring every scheduled date starts in the same column — even across differently sized task descriptions.
 
+**v2 behavior note:** Tag alignment applies only to heading/task lines (it will not align `:PROPERTIES:` drawers). You can also configure what this command aligns (tags vs legacy inline `SCHEDULED:` vs planning-line normalization).
+
 ### v2 format demo
 
 In v2 format, planning metadata lives on the indented line directly under the heading.
@@ -677,6 +689,14 @@ In v2 format, planning metadata lives on the indented line directly under the he
 * Determines the longest task description in the file
 * Pads shorter lines so timestamps and/or end-of-line tags line up cleanly
 * Preserves original indentation
+
+Optional configuration (tags-only mode):
+
+```json
+"Org-vscode.alignSchedulesAlignTags": true,
+"Org-vscode.alignSchedulesAlignInlineScheduled": false,
+"Org-vscode.alignSchedulesNormalizePlanningLines": false
+```
 
 ---
 
