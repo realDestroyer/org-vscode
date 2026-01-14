@@ -1,6 +1,7 @@
 const vscode = require("vscode");
 const { isPlanningLine, parsePlanningFromText, normalizeTagsAfterPlanning } = require("./orgTagUtils");
 const taskKeywordManager = require("./taskKeywordManager");
+const { normalizeBodyIndentation } = require("./indentUtils");
 
 /**
  * This command aligns all SCHEDULED: timestamps to a fixed column width.
@@ -15,6 +16,11 @@ async function alignSchedules() {
     }
 
     const document = editor.document;
+    const config = vscode.workspace.getConfiguration("Org-vscode");
+    const bodyIndent = normalizeBodyIndentation(config.get("bodyIndentation", 2), 2);
+    const alignInlineScheduled = config.get("alignSchedulesAlignInlineScheduled", true);
+    const alignTags = config.get("alignSchedulesAlignTags", true);
+    const normalizePlanningLines = config.get("alignSchedulesNormalizePlanningLines", true);
     const totalLines = document.lineCount;
     let maxTaskLength = 0;
     let linesWithScheduled = [];
@@ -26,24 +32,34 @@ async function alignSchedules() {
     // Collect one final replacement per line to avoid overlapping edit ranges.
     const lineReplacements = new Map();
 
+    // Only align end-of-line tags on headings/tasks, never on drawers like :PROPERTIES:.
+    function isHeadingOrTaskLine(text) {
+        const t = String(text || "");
+        return /^\s*(?:\*+\s+|[⊙⊘⊜⊖⊗]\s+)/.test(t);
+    }
+
     // 🔍 Step 1: Find legacy inline "SCHEDULED:" on *headline* lines (for column alignment)
     // and normalize Emacs-style planning lines below headlines.
     for (let i = 0; i < totalLines; i++) {
         let lineText = document.lineAt(i).text;
 
+        const eligibleHeadline = isHeadingOrTaskLine(lineText) && (alignInlineScheduled || alignTags || normalizePlanningLines);
+
         // Normalize "tags before planning" on headlines so later alignment is consistent.
         // (We will apply it later via lineReplacements to avoid double-edits.)
-        const normalizedHeadline = normalizeTagsAfterPlanning(lineText);
-        if (normalizedHeadline !== lineText) {
-            normalizedHeadlineEdits.push({ lineNumber: i, newText: normalizedHeadline });
-            lineText = normalizedHeadline;
+        if (eligibleHeadline) {
+            const normalizedHeadline = normalizeTagsAfterPlanning(lineText);
+            if (normalizedHeadline !== lineText) {
+                normalizedHeadlineEdits.push({ lineNumber: i, newText: normalizedHeadline });
+                lineText = normalizedHeadline;
+            }
         }
 
         // Capture optional indentation, task text, and the "SCHEDULED:" keyword.
         // IMPORTANT: do NOT treat planning lines (indented SCHEDULED/DEADLINE/CLOSED lines)
         // as legacy inline "SCHEDULED" headlines; doing so drops CLOSED and can create
         // overlapping edits.
-        if (!isPlanningLine(lineText) && taskKeywordManager.findTaskKeyword(lineText)) {
+        if (alignInlineScheduled && !isPlanningLine(lineText) && taskKeywordManager.findTaskKeyword(lineText)) {
             let match = lineText.match(/^(\s*)(.*?)(\s+SCHEDULED:)/);
 
             if (match) {
@@ -59,8 +75,8 @@ async function alignSchedules() {
 
         // Track headlines with end-of-line tags so we can align them (Emacs-style).
         // Example: "* TODO Title :WORK:URGENT:"
-        const tagMatch = lineText.match(/^(\s*.*?)(\s+:(?:[A-Za-z0-9_@#%\-]+:)+)\s*$/);
-        if (tagMatch) {
+        const tagMatch = alignTags ? lineText.match(/^(\s*.*?)(\s+:(?:[A-Za-z0-9_@#%\-]+:)+)\s*$/) : null;
+        if (tagMatch && isHeadingOrTaskLine(lineText)) {
             const base = tagMatch[1].replace(/\s+$/g, "");
             const tags = tagMatch[2].trim();
             maxHeadingBaseLength = Math.max(maxHeadingBaseLength, base.length);
@@ -68,11 +84,11 @@ async function alignSchedules() {
         }
 
         // Emacs-style: if this is a task headline, normalize the immediate planning line.
-        if (taskKeywordManager.findTaskKeyword(lineText) && i + 1 < totalLines) {
+        if (normalizePlanningLines && taskKeywordManager.findTaskKeyword(lineText) && i + 1 < totalLines) {
             const nextLine = document.lineAt(i + 1).text;
             if (isPlanningLine(nextLine) && (nextLine.includes("SCHEDULED:") || nextLine.includes("DEADLINE:") || nextLine.includes("CLOSED:") || nextLine.includes("COMPLETED"))) {
                 const headlineIndent = lineText.match(/^\s*/)?.[0] || "";
-                const planningIndent = `${headlineIndent}  `;
+                const planningIndent = `${headlineIndent}${bodyIndent}`;
                 const planning = parsePlanningFromText(nextLine);
                 const parts = [];
                 if (planning.scheduled) parts.push(`SCHEDULED: [${planning.scheduled}]`);

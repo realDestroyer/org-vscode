@@ -64,6 +64,7 @@ const { toggleCheckboxCookie } = require("./toggleCheckboxCookie");
 const { toggleCheckboxItemAtCursor } = require("./toggleCheckboxItem");
 const { insertNewElement } = require("./smartInsertNewElement");
 const { registerPropertyCommands } = require("./propertyCommands");
+const { computeDesiredIndentForNewLine } = require("./indentUtils");
 
 // Startup log for debugging
 console.log("📌 agenda.js has been loaded in extension.js");
@@ -78,15 +79,40 @@ class GoOnTypingFormatter {
   provideOnTypeFormattingEdits(document, position, ch, options, token) {
     // Only respond to space key in vso docs
     const editor = vscode.window.activeTextEditor;
-    if (!editor || editor.document.languageId !== "vso" || ch !== " ") {
+    if (!editor || editor.document.languageId !== "vso" || (ch !== " " && ch !== "\n")) {
       return [];
     }
 
     const config = vscode.workspace.getConfiguration("Org-vscode");
     const headingMarkerStyle = config.get("headingMarkerStyle", "unicode");
-    if (headingMarkerStyle !== "unicode") {
-      return [];
+    const autoIndentNonHeaderText = config.get("autoIndentNonHeaderText", false);
+    const bodyIndentationRaw = config.get("bodyIndentation", 2);
+    const bodyIndentation = Math.max(0, Math.floor(Number(bodyIndentationRaw) || 0));
+    const bodyIndent = " ".repeat(bodyIndentation);
+
+    // Auto-indent non-heading lines when pressing Enter, if enabled.
+    if (ch === "\n") {
+      if (!autoIndentNonHeaderText) return [];
+
+      const line = document.lineAt(position.line);
+      const existingIndent = (line.text.match(/^\s*/)?.[0] || "");
+      const desiredIndent = computeDesiredIndentForNewLine(
+        (idx) => document.lineAt(idx).text,
+        position.line,
+        { bodyIndent }
+      );
+
+      // Only adjust indentation if the current line is empty/whitespace.
+      if (line.text.trim().length !== 0) return [];
+      if (desiredIndent === existingIndent) return [];
+
+      const start = new vscode.Position(position.line, 0);
+      const end = new vscode.Position(position.line, existingIndent.length);
+      return [vscode.TextEdit.replace(new vscode.Range(start, end), desiredIndent)];
     }
+
+    // Space-triggered unicode heading conversion
+    if (headingMarkerStyle !== "unicode") return [];
 
     const line = document.lineAt(position.line).text;
     // Guard: don't re-insert if the line already begins with a status symbol
@@ -254,7 +280,7 @@ function activate(ctx) {
 
   // Register real-time formatter for " " after typing an asterisk heading
   ctx.subscriptions.push(
-    vscode.languages.registerOnTypeFormattingEditProvider(GO_MODE, new GoOnTypingFormatter(), " ")
+    vscode.languages.registerOnTypeFormattingEditProvider(GO_MODE, new GoOnTypingFormatter(), " ", "\n")
   );
 }
 

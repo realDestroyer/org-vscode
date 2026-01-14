@@ -10,6 +10,7 @@ const path = require("path");
 const { stripAllTagSyntax, getPlanningForHeading, isPlanningLine, parsePlanningFromText, normalizeTagsAfterPlanning, getAcceptedDateFormats, DEADLINE_REGEX, stripInlinePlanning } = require("../orgTagUtils");
 const { formatCheckboxStats, findCheckboxCookie, computeHierarchicalCheckboxStatsInRange } = require("../checkboxStats");
 const { computeCheckboxToggleEdits } = require("../checkboxToggle");
+const { normalizeBodyIndentation } = require("../indentUtils");
 
 function escapeRegExp(text) {
   return String(text).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -448,6 +449,8 @@ module.exports = function () {
             const starPrefixMatch = currentLine.text.match(/^\s*(\*+)/);
             const starPrefix = starPrefixMatch ? starPrefixMatch[1] : "*";
 
+            const bodyIndent = normalizeBodyIndentation(config.get("bodyIndentation", 2), 2);
+
             const indent = currentLine.text.match(/^\s*/)?.[0] || "";
 
             const cleanedHeadline = taskKeywordManager.cleanTaskText(
@@ -455,7 +458,7 @@ module.exports = function () {
             );
             const newHeadlineOnly = taskKeywordManager.buildTaskLine(indent, newStatus, cleanedHeadline, { headingMarkerStyle, starPrefix });
 
-            const planningIndent = `${indent}  `;
+            const planningIndent = `${indent}${bodyIndent}`;
             const planningFromHead = parsePlanningFromText(currentLine.text);
             const planningFromNext = (nextLine && isPlanningLine(nextLine.text)) ? parsePlanningFromText(nextLine.text) : {};
             const planningFromNextNext = (nextNextLine && isPlanningLine(nextNextLine.text)) ? parsePlanningFromText(nextNextLine.text) : {};

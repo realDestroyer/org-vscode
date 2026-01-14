@@ -4,6 +4,7 @@ const vscode = require("vscode");
 const showMessage_1 = require("./showMessage");
 const moment = require("moment");
 const { isPlanningLine, normalizeTagsAfterPlanning, DAY_HEADING_REGEX, getTaskPrefixRegex, SCHEDULED_STRIP_RE, DEADLINE_REGEX } = require("./orgTagUtils");
+const { normalizeBodyIndentation } = require("./indentUtils");
 module.exports = function () {
     const { activeTextEditor } = vscode.window;
     if (!activeTextEditor || activeTextEditor.document.languageId !== "vso") {
@@ -41,6 +42,7 @@ module.exports = function () {
     let workspaceEdit = new vscode.WorkspaceEdit();
     const config = vscode.workspace.getConfiguration("Org-vscode");
     const dateFormat = config.get("dateFormat", "YYYY-MM-DD");
+    const bodyIndent = normalizeBodyIndentation(config.get("bodyIndentation", 2), 2);
     // Messages
     const fullDateMessage = new showMessage_1.WindowMessage("warning", "Full date must be entered", false, false);
     const notADateMessage = new showMessage_1.WindowMessage("warning", "That's not a valid date.", false, false);
@@ -152,7 +154,7 @@ module.exports = function () {
                 workspaceEdit.replace(document.uri, currentLine.range, headlineText);
 
                 const headlineIndent = headlineText.match(/^\s*/)?.[0] || "";
-                const planningIndent = `${headlineIndent}  `;
+                const planningIndent = `${headlineIndent}${bodyIndent}`;
 
                 const hasNext = (lineNumber + 1 < document.lineCount);
                 const nextLine = hasNext ? document.lineAt(lineNumber + 1) : null;

@@ -5,6 +5,7 @@ const os = require("os");
 const moment = require("moment");
 const taskKeywordManager = require("./taskKeywordManager");
 const continuedTaskHandler = require("./continuedTaskHandler");
+const { normalizeBodyIndentation } = require("./indentUtils");
 const { stripAllTagSyntax, parseFileTagsFromText, parseTagGroupsFromText, createInheritanceTracker, matchesTagMatchString, normalizeTagMatchInput, getPlanningForHeading, isPlanningLine, parsePlanningFromText, normalizeTagsAfterPlanning, getAcceptedDateFormats, stripInlinePlanning } = require("./orgTagUtils");
 const { computeCheckboxStatsByHeadingLine, formatCheckboxStats, findCheckboxCookie } = require("./checkboxStats");
 const { computeCheckboxToggleEdits } = require("./checkboxToggle");
@@ -38,6 +39,7 @@ function getKeywordBucket(keyword, registry) {
 
 module.exports = async function taggedAgenda() {
   const config = vscode.workspace.getConfiguration("Org-vscode");
+  const bodyIndent = normalizeBodyIndentation(config.get("bodyIndentation", 2), 2);
   const includeContinuedInTaggedAgenda = config.get("includeContinuedInTaggedAgenda", false);
   const registry = taskKeywordManager.getWorkflowRegistry();
   const headingStartRegex = buildHeadingStartRegex(registry);
@@ -204,7 +206,7 @@ async function updateTaskStatusInFile(file, taskText, scheduledDate, newStatus, 
   );
   let newLine = taskKeywordManager.buildTaskLine(indent, newStatus, cleanedHeadline, { headingMarkerStyle, starPrefix });
 
-  const planningIndent = `${indent}  `;
+  const planningIndent = `${indent}${bodyIndent}`;
   const planningLines = document.getText().split(/\r?\n/);
   const planningFromHead = parsePlanningFromText(currentLine.text);
   const planningFromNext = (nextLine && isPlanningLine(nextLine.text)) ? parsePlanningFromText(nextLine.text) : {};
