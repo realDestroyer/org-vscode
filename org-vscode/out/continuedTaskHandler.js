@@ -2,6 +2,7 @@
 const vscode = require("vscode");
 const moment = require("moment");
 const taskKeywordManager = require("./taskKeywordManager");
+const { normalizeBodyIndentation } = require("./indentUtils");
 const {
   isPlanningLine,
   parsePlanningFromText,
@@ -150,6 +151,7 @@ function buildForwardedTask(originalLine, newDate, indent = "  ") {
 
   const config = vscode.workspace.getConfiguration("Org-vscode");
   const headingMarkerStyle = config.get("headingMarkerStyle", "unicode");
+  const bodyIndent = normalizeBodyIndentation(config.get("bodyIndentation", 2), 2);
   const starPrefixMatch = originalLine.match(/^\s*(\*+)/);
   const starPrefix = starPrefixMatch ? starPrefixMatch[1] : "*";
 
@@ -170,7 +172,7 @@ function buildForwardedTask(originalLine, newDate, indent = "  ") {
     ...planningFromHeadline,
     scheduled: newDate
   };
-  const planningIndent = `${indent}  `;
+  const planningIndent = `${indent}${bodyIndent}`;
   const body = buildPlanningBody(updatedPlanning);
   return body ? `${headline}\n${planningIndent}${body}` : headline;
 }

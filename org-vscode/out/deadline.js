@@ -4,6 +4,7 @@ const vscode = require("vscode");
 const moment = require("moment");
 const showMessage_1 = require("./showMessage");
 const { isPlanningLine, normalizeTagsAfterPlanning, DAY_HEADING_REGEX, getTaskPrefixRegex, DEADLINE_STRIP_RE, SCHEDULED_REGEX } = require("./orgTagUtils");
+const { normalizeBodyIndentation } = require("./indentUtils");
 
 module.exports = function () {
     const { activeTextEditor } = vscode.window;
@@ -17,6 +18,7 @@ module.exports = function () {
 
     const config = vscode.workspace.getConfiguration("Org-vscode");
     const dateFormat = config.get("dateFormat", "YYYY-MM-DD");
+    const bodyIndent = normalizeBodyIndentation(config.get("bodyIndentation", 2), 2);
 
     const selections = (activeTextEditor.selections && activeTextEditor.selections.length)
         ? activeTextEditor.selections
@@ -154,7 +156,7 @@ module.exports = function () {
                 workspaceEdit.replace(document.uri, currentLine.range, headlineText);
 
                 const headlineIndent = headlineText.match(/^\s*/)?.[0] || "";
-                const planningIndent = `${headlineIndent}  `;
+                const planningIndent = `${headlineIndent}${bodyIndent}`;
                 const deadlineTag = `DEADLINE: [${formattedDate}]`;
 
                 const hasNext = (lineNumber + 1 < document.lineCount);
