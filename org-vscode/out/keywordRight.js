@@ -5,6 +5,7 @@ const taskKeywordManager = require("./taskKeywordManager");
 const continuedTaskHandler = require("./continuedTaskHandler");
 const moment = require("moment");
 const { isPlanningLine, parsePlanningFromText, normalizeTagsAfterPlanning, stripInlinePlanning } = require("./orgTagUtils");
+const { normalizeBodyIndentation } = require("./indentUtils");
 
 function buildPlanningBody(planning) {
   const parts = [];
@@ -23,6 +24,7 @@ module.exports = async function () {
   const config = vscode.workspace.getConfiguration("Org-vscode");
   const headingMarkerStyle = config.get("headingMarkerStyle", "unicode");
   const dateFormat = config.get("dateFormat", "YYYY-MM-DD");
+  const bodyIndent = normalizeBodyIndentation(config.get("bodyIndentation", 2), 2);
   const workflowRegistry = taskKeywordManager.getWorkflowRegistry();
 
   const { document } = activeTextEditor;
@@ -103,7 +105,7 @@ module.exports = async function () {
       mergedPlanning.closed = null;
     }
 
-    const planningIndent = `${leadingSpaces}  `;
+    const planningIndent = `${leadingSpaces}${bodyIndent}`;
     const planningBody = buildPlanningBody(mergedPlanning);
 
     // Handle forward-trigger transitions (default: CONTINUED)
@@ -198,7 +200,7 @@ module.exports = async function () {
         const hasClosed = Boolean(originalLines[i + 1]?.includes("CLOSED") || originalLines[i + 1]?.includes("COMPLETED"));
         if (change.stampsClosed) {
           if (!hasClosed) {
-            originalLines.splice(i + 1, 0, taskKeywordManager.buildCompletedStamp(origIndent, dateFormat));
+            originalLines.splice(i + 1, 0, taskKeywordManager.buildCompletedStamp(origIndent, dateFormat, bodyIndent));
           }
         } else if (hasClosed) {
           originalLines.splice(i + 1, 1);

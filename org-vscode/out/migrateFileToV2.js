@@ -1,6 +1,7 @@
 "use strict";
 
 const vscode = require("vscode");
+const { normalizeBodyIndentation } = require("./indentUtils");
 const {
   getAllTagsFromLine,
   normalizeTagsAfterPlanning,
@@ -33,7 +34,7 @@ function mergePlanning(a, b) {
   };
 }
 
-function buildPlanningLine(indent, planning) {
+function buildPlanningLine(indent, planning, bodyIndent) {
   const p = planning || {};
   const segs = [];
   if (p.scheduled) segs.push(`SCHEDULED: [${p.scheduled}]`);
@@ -41,7 +42,8 @@ function buildPlanningLine(indent, planning) {
   if (p.closed) segs.push(`CLOSED: [${p.closed}]`);
   if (!segs.length) return null;
   const leading = String(indent || "");
-  const normalizedIndent = leading.length >= 2 ? leading : `${leading}  `;
+  const body = (typeof bodyIndent === "string") ? bodyIndent : "  ";
+  const normalizedIndent = leading.length >= body.length ? leading : `${leading}${body}`;
   return `${normalizedIndent}${segs.join("  ")}`;
 }
 
@@ -59,10 +61,12 @@ function isHeadingLine(line) {
   return /^\s*(?:[⊙⊘⊜⊖⊗]\s*)?\*+\s+/.test(t);
 }
 
-function migrateTextToV2(fileText) {
+function migrateTextToV2(fileText, options) {
   const text = String(fileText || "");
   const eol = text.includes("\r\n") ? "\r\n" : "\n";
   const lines = text.split(/\r?\n/);
+
+  const bodyIndent = (options && typeof options.bodyIndent === "string") ? options.bodyIndent : "  ";
 
   const stats = {
     convertedLegacyTags: 0,
@@ -114,9 +118,9 @@ function migrateTextToV2(fileText) {
       // Heading is the last line in file; still migrate inline planning by appending a planning line.
       if (hadInlinePlanning) {
         const headIndent = (String(lines[i]).match(/^\s*/)?.[0] || "");
-        const planningIndent = `${headIndent}  `;
+        const planningIndent = `${headIndent}${bodyIndent}`;
         const mergedAtEof = mergePlanning(planningFromHeadline, null);
-        const newPlanningLineAtEof = buildPlanningLine(planningIndent, mergedAtEof);
+        const newPlanningLineAtEof = buildPlanningLine(planningIndent, mergedAtEof, bodyIndent);
         if (newPlanningLineAtEof) {
           lines.push(newPlanningLineAtEof);
           stats.movedInlinePlanning++;
@@ -142,9 +146,9 @@ function migrateTextToV2(fileText) {
 
     // Compute indent: inherit heading indentation, plus two spaces.
     const headIndent = (String(lines[i]).match(/^\s*/)?.[0] || "");
-    const planningIndent = `${headIndent}  `;
+    const planningIndent = `${headIndent}${bodyIndent}`;
 
-    const newPlanningLine = buildPlanningLine(planningIndent, merged);
+    const newPlanningLine = buildPlanningLine(planningIndent, merged, bodyIndent);
 
     if (newPlanningLine) {
       if (nextLooksLikePlanning) {
@@ -186,7 +190,9 @@ async function migrateFileToV2() {
   }
 
   const originalText = doc.getText();
-  const { text: newText, stats } = migrateTextToV2(originalText);
+  const config = vscode.workspace.getConfiguration("Org-vscode");
+  const bodyIndent = normalizeBodyIndentation(config.get("bodyIndentation", 2), 2);
+  const { text: newText, stats } = migrateTextToV2(originalText, { bodyIndent });
 
   if (newText === originalText) {
     vscode.window.showInformationMessage("No legacy v1 constructs found to migrate.");

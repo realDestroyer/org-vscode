@@ -133,9 +133,10 @@ function buildTaskLine(leadingSpaces, keyword, cleanedText, options = {}) {
   return `${leadingSpaces}${marker}${keyword}${suffix}`;
 }
 
-function buildCompletedStamp(leadingSpaces, dateFormat) {
+function buildCompletedStamp(leadingSpaces, dateFormat, bodyIndent) {
   const fmt = dateFormat || "MM-DD-YYYY";
-  return `${leadingSpaces}  CLOSED:[${moment().format(`${fmt} ddd HH:mm`)}]`;
+  const indent = (typeof bodyIndent === "string") ? bodyIndent : "  ";
+  return `${leadingSpaces}${indent}CLOSED:[${moment().format(`${fmt} ddd HH:mm`)}]`;
 }
 
 // Back-compat alias: prefer CLOSED, but keep the existing exported name.
