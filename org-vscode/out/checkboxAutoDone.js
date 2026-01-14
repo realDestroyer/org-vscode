@@ -7,6 +7,7 @@ const taskKeywordManager = require("./taskKeywordManager");
 const continuedTaskHandler = require("./continuedTaskHandler");
 const { isPlanningLine, parsePlanningFromText, normalizeTagsAfterPlanning, stripInlinePlanning } = require("./orgTagUtils");
 const { computeHeadingTransitions } = require("./checkboxAutoDoneTransitions");
+const { normalizeBodyIndentation } = require("./indentUtils");
 
 const CHECKBOX_REGEX = /^\s*[-+*]\s+\[( |x|X)\]\s+/;
 
@@ -51,6 +52,7 @@ async function applyDoneToHeading(document, lineNumber) {
   const config = vscode.workspace.getConfiguration("Org-vscode");
   const headingMarkerStyle = config.get("headingMarkerStyle", "unicode");
   const dateFormat = config.get("dateFormat", "YYYY-MM-DD");
+  const bodyIndent = normalizeBodyIndentation(config.get("bodyIndentation", 2), 2);
   const registry = taskKeywordManager.getWorkflowRegistry();
 
   const currentLine = document.lineAt(lineNumber);
@@ -101,7 +103,7 @@ async function applyDoneToHeading(document, lineNumber) {
   const newLine = taskKeywordManager.buildTaskLine(leadingSpaces, nextKeyword, cleanedText, { headingMarkerStyle, starPrefix });
   workspaceEdit.replace(document.uri, currentLine.range, newLine);
 
-  const planningIndent = `${leadingSpaces}  `;
+  const planningIndent = `${leadingSpaces}${bodyIndent}`;
   const planningBody = buildPlanningBody(mergedPlanning);
 
   if (planningBody) {
@@ -124,6 +126,7 @@ async function applyDoneToHeading(document, lineNumber) {
 async function applyInProgressToHeading(document, lineNumber) {
   const config = vscode.workspace.getConfiguration("Org-vscode");
   const headingMarkerStyle = config.get("headingMarkerStyle", "unicode");
+  const bodyIndent = normalizeBodyIndentation(config.get("bodyIndentation", 2), 2);
   const registry = taskKeywordManager.getWorkflowRegistry();
 
   const currentLine = document.lineAt(lineNumber);
@@ -166,7 +169,7 @@ async function applyInProgressToHeading(document, lineNumber) {
   const newLine = taskKeywordManager.buildTaskLine(leadingSpaces, nextKeyword, cleanedText, { headingMarkerStyle, starPrefix });
   workspaceEdit.replace(document.uri, currentLine.range, newLine);
 
-  const planningIndent = `${leadingSpaces}  `;
+  const planningIndent = `${leadingSpaces}${bodyIndent}`;
   const planningBody = buildPlanningBody(mergedPlanning);
 
   if (planningBody) {

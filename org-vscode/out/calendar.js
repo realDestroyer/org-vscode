@@ -6,6 +6,7 @@ const path = require("path");       // For cross-platform path handling
 const moment = require("moment");   // Date formatting library
 const taskKeywordManager = require("./taskKeywordManager");
 const { getAllTagsFromLine, stripAllTagSyntax, parseFileTagsFromText, createInheritanceTracker, getPlanningForHeading, isPlanningLine, normalizeTagsAfterPlanning, getAcceptedDateFormats, buildScheduledReplacement, getMatchingScheduledOnLine, SCHEDULED_STRIP_RE, SCHEDULED_REGEX, DEADLINE_REGEX } = require("./orgTagUtils");
+const { normalizeBodyIndentation } = require("./indentUtils");
 
 function escapeRegExp(text) {
   return String(text).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -64,6 +65,7 @@ function sendTasksToCalendar(panel) {
   let dirPath = setMainDir();
   const config = vscode.workspace.getConfiguration("Org-vscode");
   const dateFormat = config.get("dateFormat", "YYYY-MM-DD");
+  const bodyIndent = normalizeBodyIndentation(config.get("bodyIndentation", 2), 2);
   const registry = taskKeywordManager.getWorkflowRegistry();
   const headingStartRegex = buildHeadingStartRegex(registry);
 
@@ -285,7 +287,7 @@ function rescheduleTaskById(taskId, newDate) {
   lines[lineIndex] = headlineText;
 
   const headlineIndent = headlineText.match(/^\s*/)?.[0] || "";
-  const planningIndent = `${headlineIndent}  `;
+  const planningIndent = `${headlineIndent}${bodyIndent}`;
   const scheduledTag = `SCHEDULED: [${formattedNewDate}]`;
 
   const nextLine = (lineIndex + 1 < lines.length) ? lines[lineIndex + 1] : "";
