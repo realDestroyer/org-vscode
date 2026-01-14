@@ -301,11 +301,15 @@ Examples:
 [[#demo-anchor]]
 ```
 
+<img src="https://github.com/realDestroyer/org-vscode/blob/master/Images/links-example.jpg?raw=true" width="900" />
+
 ---
 
 ## 🧾 Properties & IDs <a id="properties--ids"></a>
 
 Org-vscode supports Org-style property drawers and provides commands to manage properties without manual drawer editing.
+
+<img src="https://github.com/realDestroyer/org-vscode/blob/master/Images/property-inheritance-example.jpg?raw=true" width="900" />
 
 ### Property drawers
 
@@ -396,6 +400,8 @@ Org-vscode includes a lightweight Live Preview (webview) so you can read your Or
 - Or use the Command Palette:
   - **Org-vscode: Open Preview**
   - **Org-vscode: Open Preview To Side**
+
+<img src="https://github.com/realDestroyer/org-vscode/blob/master/Images/live-preview-example.gif?raw=true" width="700" height="400" />
 
 Notes:
 
