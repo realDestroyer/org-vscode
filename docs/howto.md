@@ -7,64 +7,11 @@
 > * Fold lists with `Tab`.
 > * Increment or decrement headings using `Alt + Left/Right`.
 
-**Org-mode compatibility tip:**
-
-If you want to preserve plain `*` headings in your files for use in other editors (Emacs/org-mode), set:
-
-```json
-"Org-vscode.headingMarkerStyle": "asterisks"
-```
-
-Default is `"unicode"`.
-
-**Recommended (Org-compatible source + pretty UI):**
-
-```json
-"Org-vscode.headingMarkerStyle": "asterisks",
-"Org-vscode.decorateUnicodeHeadings": true
-```
-
-Optional indentation controls (decorations + Alt+Left/Right indentation):
-
-```json
-"Org-vscode.decorateHeadingIndentation": true,
-"Org-vscode.adjustHeadingIndentation": 2,
-"Org-vscode.autoIndentNonHeaderText": false,
-"Org-vscode.bodyIndentation": 2
-```
-
-`adjustHeadingIndentation` controls heading indentation/level operations; `bodyIndentation` controls how far non-heading/body lines (including planning lines like `SCHEDULED:` / `DEADLINE:` / `CLOSED:`) are indented under a heading.
-
-If you want body text to automatically indent under headings when you press Enter, enable:
-
-```json
-"Org-vscode.autoIndentNonHeaderText": true
-```
-
-Indent-only mode (Org-Indent style)
-
-If you prefer plain `*` headings but still want visual indentation, turn unicode markers off and leave indentation on. Headings will keep a trailing `*` visible (like Emacs Org-Indent):
-
-```json
-"Org-vscode.headingMarkerStyle": "asterisks",
-"Org-vscode.decorateUnicodeHeadings": false,
-"Org-vscode.decorateHeadingIndentation": true
-```
-
-### Settings screenshots
-
-Extensions → org-vscode → Settings:
-
-<img src="https://github.com/realDestroyer/org-vscode/blob/master/Images/extension-settings.png?raw=true" width="900" />
-
-VS Code Settings editor (search for `Org-vscode:`):
-
-<img src="https://github.com/realDestroyer/org-vscode/blob/master/Images/extension-settingsJson.png?raw=true" width="900" />
-
 ---
 
 ## 📘 Table of Contents <a id="table-of-contents"></a>
 
+* [⚙️ Extension Settings](#extension-settings)
 * [✅ Multi-line selection editing](#-multi-line-selection-editing)
 * [🧭 v2 Format + Migration](#v2-format--migration)
 * [✅ Workflow States (TODO Keywords)](#workflow-states-todo-keywords)
@@ -93,6 +40,71 @@ VS Code Settings editor (search for `Org-vscode:`):
 * [📊 Year-In-Review Dashboard](#year-in-review-dashboard)
 
 ---
+
+## ⚙️ Extension Settings <a id="extension-settings"></a>
+
+This section covers the most common editor/formatting settings so you can keep Org-vscode fast to navigate and predictable to edit.
+
+- Jump to: [Org-mode compatibility](#org-mode-compatibility), [Indentation & auto-indent](#indentation-and-auto-indent), [Settings screenshots](#settings-screenshots)
+
+### Org-mode compatibility (preserve `*` headings) <a id="org-mode-compatibility"></a>
+
+If you want to preserve plain `*` headings in your files for use in other editors (Emacs/org-mode), set:
+
+```json
+"Org-vscode.headingMarkerStyle": "asterisks"
+```
+
+Default is `"unicode"`.
+
+Recommended (Org-compatible source + pretty UI):
+
+```json
+"Org-vscode.headingMarkerStyle": "asterisks",
+"Org-vscode.decorateUnicodeHeadings": true
+```
+
+### Indentation & auto-indent <a id="indentation-and-auto-indent"></a>
+
+Optional indentation controls (decorations + Alt+Left/Right indentation):
+
+```json
+"Org-vscode.decorateHeadingIndentation": true,
+"Org-vscode.adjustHeadingIndentation": 2,
+"Org-vscode.autoIndentNonHeaderText": false,
+"Org-vscode.bodyIndentation": 2
+```
+
+Notes:
+
+- `adjustHeadingIndentation` controls heading indentation/level operations.
+- `bodyIndentation` controls how far non-heading/body lines (including planning lines like `SCHEDULED:` / `DEADLINE:` / `CLOSED:`) are indented under a heading.
+
+If you want body text to automatically indent under headings when you press Enter, enable:
+
+```json
+"Org-vscode.autoIndentNonHeaderText": true
+```
+
+Indent-only mode (Org-Indent style)
+
+If you prefer plain `*` headings but still want visual indentation, turn unicode markers off and leave indentation on. Headings will keep a trailing `*` visible (like Emacs Org-Indent):
+
+```json
+"Org-vscode.headingMarkerStyle": "asterisks",
+"Org-vscode.decorateUnicodeHeadings": false,
+"Org-vscode.decorateHeadingIndentation": true
+```
+
+### Settings screenshots <a id="settings-screenshots"></a>
+
+Extensions → org-vscode → Settings:
+
+<img src="https://github.com/realDestroyer/org-vscode/blob/master/Images/extension-settings.png?raw=true" width="900" />
+
+VS Code Settings editor (search for `Org-vscode:`):
+
+<img src="https://github.com/realDestroyer/org-vscode/blob/master/Images/extension-settingsJson.png?raw=true" width="900" />
 
 ## 🧭 v2 Format + Migration <a id="v2-format--migration"></a>
 
