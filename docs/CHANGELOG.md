@@ -2,6 +2,14 @@
 
 # [Unreleased]
 
+# [2.2.6] 01-14-26
+
+`Enhanced`
+
+- **Auto-indent body text (Issue #76):** Optional auto-indentation for non-heading lines when pressing Enter (setting: `Org-vscode.autoIndentNonHeaderText`).
+- **Configurable body indentation:** Control the indentation width used for body/planning lines (setting: `Org-vscode.bodyIndentation`).
+- **Align Schedules behavior:** `Org-vscode: Align Schedules` no longer aligns `:PROPERTIES:` drawers; alignment behavior is now configurable via `Org-vscode.alignSchedulesAlignTags`, `Org-vscode.alignSchedulesAlignInlineScheduled`, and `Org-vscode.alignSchedulesNormalizePlanningLines`.
+
 # [2.2.5] 01-12-26
 
 `Enhanced`

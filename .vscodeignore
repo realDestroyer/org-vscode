@@ -38,6 +38,7 @@ JIRA integration.txt
 
 # Local release-note scratch files
 release-notes-*.md
+pr_body.md
 
 # Local patch artifacts / packages
 *.orig
