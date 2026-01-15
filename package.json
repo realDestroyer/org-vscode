@@ -2,7 +2,7 @@
 	"name": "org-vscode",
 	"displayName": "org-vscode",
 	"description": "Quickly create todo lists, take notes, plan projects and organize your thoughts.",
-	"version": "2.2.6",
+	"version": "2.2.7",
 	"repository": "https://www.github.com/realDestroyer/org-vscode",
 	"icon": "Images/org-vscode-logo.png",
 	"publisher": "realDestroyer",
@@ -302,6 +302,20 @@
 					"multipleOf": 1,
 					"description": "Spaces per level used when toggling heading symbols with Alt+Left/Alt+Right (0 disables). Also used by decorated heading indentation when enabled."
 				},
+				"Org-vscode.autoIndentNonHeaderText": {
+					"type": "boolean",
+					"order": 4.1,
+					"default": false,
+					"description": "When enabled, pressing Enter after a heading will auto-indent the new (non-heading) line to match the heading's indentation plus bodyIndentation spaces."
+				},
+				"Org-vscode.bodyIndentation": {
+					"type": "number",
+					"order": 4.2,
+					"default": 2,
+					"minimum": 0,
+					"multipleOf": 1,
+					"description": "Number of spaces to indent body/planning lines under a heading (used by autoIndentNonHeaderText and planning-line writers). Default is 2."
+				},
 				"Org-vscode.folderPath": {
 					"type": "string",
 					"order": 6,
@@ -324,6 +338,24 @@
 					"order": 7,
 					"default": false,
 					"description": "When enabled, Tagged Agenda results will include CONTINUED tasks. By default they are omitted since CONTINUED is intended as a historical breadcrumb when a task moved forward."
+				},
+				"Org-vscode.alignSchedulesAlignTags": {
+					"type": "boolean",
+					"order": 7.01,
+					"default": true,
+					"description": "When enabled, the Align Schedules command will align end-of-line tags (e.g. :WORK:URGENT:) on heading/task lines only (never on drawers like :PROPERTIES:)."
+				},
+				"Org-vscode.alignSchedulesAlignInlineScheduled": {
+					"type": "boolean",
+					"order": 7.02,
+					"default": true,
+					"description": "When enabled, the Align Schedules command will align legacy inline SCHEDULED: stamps that appear on the same line as a task heading."
+				},
+				"Org-vscode.alignSchedulesNormalizePlanningLines": {
+					"type": "boolean",
+					"order": 7.03,
+					"default": true,
+					"description": "When enabled, the Align Schedules command will normalize the immediate planning line under a task (SCHEDULED/DEADLINE/CLOSED) using the configured bodyIndentation."
 				},
 				"Org-vscode.workflowStates": {
 					"scope": "window",
