@@ -2,6 +2,12 @@
 
 # [Unreleased]
 
+# [2.2.7] 01-15-26
+
+`Fixed / Enhanced`
+
+- **Settings UI:** Exposed `Org-vscode.bodyIndentation` and `Org-vscode.autoIndentNonHeaderText` in the VS Code Settings UI (no manual `settings.json` editing required).
+
 # [2.2.6] 01-13-26
 
 `Enhanced`
