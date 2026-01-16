@@ -68,6 +68,7 @@ function rescheduleTask(forward = true) {
         const currentDate = targetMatch[1];
         const hadDayAbbrev = targetMatch[2] !== undefined;
         const hadTime = targetMatch[3] !== undefined;
+        const suffix = targetMatch[4] ? ` ${targetMatch[4]}` : "";
         const parsed = moment(currentDate, acceptedDateFormats, true);
         if (!parsed.isValid()) {
             warnedParse = true;
@@ -77,7 +78,7 @@ function rescheduleTask(forward = true) {
         const formattedDate = newDate.format(dateFormat);
         const dayPart = hadDayAbbrev ? ` ${newDate.format("ddd")}` : "";
         const timePart = hadTime ? ` ${targetMatch[3]}` : "";
-        const updatedText = target.lineText.replace(dateRegex, `SCHEDULED: [${formattedDate}${dayPart}${timePart}]`);
+        const updatedText = target.lineText.replace(dateRegex, `SCHEDULED: [${formattedDate}${dayPart}${timePart}${suffix}]`);
         if (updatedText !== target.lineText) {
             const targetLine = document.lineAt(target.lineNumber);
             edit.replace(document.uri, targetLine.range, updatedText);

@@ -6,6 +6,7 @@ const moment = require("moment");
 const taskKeywordManager = require("./taskKeywordManager");
 const continuedTaskHandler = require("./continuedTaskHandler");
 const { isPlanningLine, parsePlanningFromText, normalizeTagsAfterPlanning, stripInlinePlanning } = require("./orgTagUtils");
+const { applyRepeatersOnCompletion } = require("./repeatedTasks");
 const { computeHeadingTransitions } = require("./checkboxAutoDoneTransitions");
 const { normalizeBodyIndentation } = require("./indentUtils");
 
@@ -82,9 +83,34 @@ async function applyDoneToHeading(document, lineNumber) {
     closed: planningFromNext.closed || planningFromHeadline.closed || planningFromNextNext.closed || null
   };
 
-  const nextKeyword = pickDoneKeyword(registry);
-  if (registry.stampsClosed(nextKeyword)) {
+  const doneKeyword = pickDoneKeyword(registry);
+  const completionStampsClosed = registry.stampsClosed(doneKeyword);
+
+  let nextKeyword = doneKeyword;
+  if (completionStampsClosed) {
     mergedPlanning.closed = moment().format(`${dateFormat} ddd HH:mm`);
+  }
+
+  // If the task has repeaters, reschedule and reopen.
+  {
+    const lines = document.getText().split(/\r?\n/);
+    const repeated = applyRepeatersOnCompletion({
+      lines,
+      headingLineIndex: lineNumber,
+      planning: mergedPlanning,
+      workflowRegistry: registry,
+      dateFormat,
+      now: moment()
+    });
+
+    if (repeated && repeated.didRepeat) {
+      mergedPlanning.scheduled = repeated.planning.scheduled;
+      mergedPlanning.deadline = repeated.planning.deadline;
+
+      if (repeated.repeatToStateKeyword) {
+        nextKeyword = repeated.repeatToStateKeyword;
+      }
+    }
   }
 
   const headlineNoPlanning = stripInlinePlanning(normalizeTagsAfterPlanning(currentLine.text));

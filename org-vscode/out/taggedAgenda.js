@@ -6,7 +6,8 @@ const moment = require("moment");
 const taskKeywordManager = require("./taskKeywordManager");
 const continuedTaskHandler = require("./continuedTaskHandler");
 const { normalizeBodyIndentation } = require("./indentUtils");
-const { stripAllTagSyntax, parseFileTagsFromText, parseTagGroupsFromText, createInheritanceTracker, matchesTagMatchString, normalizeTagMatchInput, getPlanningForHeading, isPlanningLine, parsePlanningFromText, normalizeTagsAfterPlanning, getAcceptedDateFormats, stripInlinePlanning } = require("./orgTagUtils");
+const { stripAllTagSyntax, parseFileTagsFromText, parseTagGroupsFromText, createInheritanceTracker, matchesTagMatchString, normalizeTagMatchInput, getPlanningForHeading, isPlanningLine, parsePlanningFromText, normalizeTagsAfterPlanning, getAcceptedDateFormats, stripInlinePlanning, momentFromTimestampContent } = require("./orgTagUtils");
+const { applyRepeatersOnCompletion } = require("./repeatedTasks");
 const { computeCheckboxStatsByHeadingLine, formatCheckboxStats, findCheckboxCookie } = require("./checkboxStats");
 const { computeCheckboxToggleEdits } = require("./checkboxToggle");
 
@@ -137,17 +138,23 @@ module.exports = async function taggedAgenda() {
 };
 
 async function updateTaskStatusInFile(file, taskText, scheduledDate, newStatus, removeCompleted) {
-  const registry = taskKeywordManager.getWorkflowRegistry();
-  const headingStartRegex = buildHeadingStartRegex(registry);
-  const orgDir = getOrgFolder();
-  const filePath = path.join(orgDir, file);
-  const uri = vscode.Uri.file(filePath);
-  const document = await vscode.workspace.openTextDocument(uri);
+  try {
+    const registry = taskKeywordManager.getWorkflowRegistry();
+    const headingStartRegex = buildHeadingStartRegex(registry);
+    const orgDir = getOrgFolder();
+    const filePath = path.join(orgDir, file);
+    const uri = vscode.Uri.file(filePath);
+    const document = await vscode.workspace.openTextDocument(uri);
 
-  const dateTag = scheduledDate ? `SCHEDULED: [${scheduledDate}]` : null;
-  console.log("🛠 Updating file:", filePath);
-  console.log("🔍 Looking for task text:", taskText);
-  if (dateTag) console.log("🔍 With scheduled date tag:", dateTag);
+    const config = vscode.workspace.getConfiguration("Org-vscode");
+    const bodyIndent = normalizeBodyIndentation(config.get("bodyIndentation", 2), 2);
+    const headingMarkerStyle = config.get("headingMarkerStyle", "unicode");
+    const dateFormat = config.get("dateFormat", "YYYY-MM-DD");
+
+    const dateTag = scheduledDate ? `SCHEDULED: [${scheduledDate}]` : null;
+    console.log("🛠 Updating file:", filePath);
+    console.log("🔍 Looking for task text:", taskText);
+    if (dateTag) console.log("🔍 With scheduled date tag:", dateTag);
 
   function normalizeTaskTextFromHeadline(headline) {
     const normalized = stripAllTagSyntax(headline)
@@ -156,61 +163,54 @@ async function updateTaskStatusInFile(file, taskText, scheduledDate, newStatus, 
     return taskKeywordManager.cleanTaskText(normalized).trim();
   }
 
-  let taskLineNumber = -1;
-  for (let i = 0; i < document.lineCount; i++) {
-    const lineText = document.lineAt(i).text;
-    const keyword = taskKeywordManager.findTaskKeyword(lineText);
-    const startsWithSymbol = headingStartRegex.test(lineText);
-    if (!keyword || !startsWithSymbol) {
-      continue;
-    }
-
-    const normalizedHeadlineText = normalizeTaskTextFromHeadline(lineText);
-    const matchesTask = normalizedHeadlineText === String(taskText || "").trim();
-    if (!matchesTask) {
-      continue;
-    }
-
-    if (dateTag) {
-      const planning = getPlanningForHeading(document.getText().split(/\r?\n/), i);
-      const matchesDate = planning && planning.scheduled ? (`SCHEDULED: [${planning.scheduled}]` === dateTag) : false;
-      if (!matchesDate) {
+    let taskLineNumber = -1;
+    const docLines = document.getText().split(/\r?\n/);
+    for (let i = 0; i < document.lineCount; i++) {
+      const lineText = document.lineAt(i).text;
+      const keyword = taskKeywordManager.findTaskKeyword(lineText);
+      const startsWithSymbol = headingStartRegex.test(lineText);
+      if (!keyword || !startsWithSymbol) {
         continue;
       }
+
+      const normalizedHeadlineText = normalizeTaskTextFromHeadline(lineText);
+      const matchesTask = normalizedHeadlineText === String(taskText || "").trim();
+      if (!matchesTask) {
+        continue;
+      }
+
+      if (dateTag) {
+        const planning = getPlanningForHeading(docLines, i);
+        const matchesDate = planning && planning.scheduled ? (`SCHEDULED: [${planning.scheduled}]` === dateTag) : false;
+        if (!matchesDate) {
+          continue;
+        }
+      }
+
+      taskLineNumber = i;
+      break;
     }
 
-    taskLineNumber = i;
-    break;
-  }
+    if (taskLineNumber === -1) {
+      console.error("❌ No matching line found to update.");
+      vscode.window.showErrorMessage(`Unable to find task to update: ${taskText}`);
+      return;
+    }
 
-  if (taskLineNumber === -1) {
-    console.error("❌ No matching line found to update.");
-    return;
-  }
+    const workspaceEdit = new vscode.WorkspaceEdit();
+    const currentLine = document.lineAt(taskLineNumber);
+    const nextLine = taskLineNumber + 1 < document.lineCount ? document.lineAt(taskLineNumber + 1) : null;
+    const nextNextLine = taskLineNumber + 2 < document.lineCount ? document.lineAt(taskLineNumber + 2) : null;
+    const currentStatus = taskKeywordManager.findTaskKeyword(currentLine.text);
 
-  const workspaceEdit = new vscode.WorkspaceEdit();
-  const currentLine = document.lineAt(taskLineNumber);
-  const nextLine = taskLineNumber + 1 < document.lineCount ? document.lineAt(taskLineNumber + 1) : null;
-  const nextNextLine = taskLineNumber + 2 < document.lineCount ? document.lineAt(taskLineNumber + 2) : null;
-  const currentStatus = taskKeywordManager.findTaskKeyword(currentLine.text);
+    const starPrefixMatch = currentLine.text.match(/^\s*(\*+)/);
+    const starPrefix = starPrefixMatch ? starPrefixMatch[1] : "*";
 
-  const config = vscode.workspace.getConfiguration("Org-vscode");
-  const headingMarkerStyle = config.get("headingMarkerStyle", "unicode");
-  const dateFormat = config.get("dateFormat", "YYYY-MM-DD");
-  const starPrefixMatch = currentLine.text.match(/^\s*(\*+)/);
-  const starPrefix = starPrefixMatch ? starPrefixMatch[1] : "*";
-
-  const indent = currentLine.text.match(/^\s*/)?.[0] || "";
-  const cleanedHeadline = taskKeywordManager.cleanTaskText(
-    stripInlinePlanning(normalizeTagsAfterPlanning(currentLine.text)).trim()
-  );
-  let newLine = taskKeywordManager.buildTaskLine(indent, newStatus, cleanedHeadline, { headingMarkerStyle, starPrefix });
-
-  const planningIndent = `${indent}${bodyIndent}`;
-  const planningLines = document.getText().split(/\r?\n/);
-  const planningFromHead = parsePlanningFromText(currentLine.text);
-  const planningFromNext = (nextLine && isPlanningLine(nextLine.text)) ? parsePlanningFromText(nextLine.text) : {};
-  const planningFromNextNext = (nextNextLine && isPlanningLine(nextNextLine.text)) ? parsePlanningFromText(nextNextLine.text) : {};
+    const indent = currentLine.text.match(/^\s*/)?.[0] || "";
+    const planningIndent = `${indent}${bodyIndent}`;
+    const planningFromHead = parsePlanningFromText(currentLine.text);
+    const planningFromNext = (nextLine && isPlanningLine(nextLine.text)) ? parsePlanningFromText(nextLine.text) : {};
+    const planningFromNextNext = (nextNextLine && isPlanningLine(nextNextLine.text)) ? parsePlanningFromText(nextNextLine.text) : {};
 
   // Merge any adjacent planning lines into a single planning state.
   const mergedPlanning = {
@@ -220,12 +220,39 @@ async function updateTaskStatusInFile(file, taskText, scheduledDate, newStatus, 
     closed: planningFromNext.closed || planningFromHead.closed || planningFromNextNext.closed || null
   };
 
-  // Add/remove CLOSED in the planning line (preferred: single planning line directly under heading).
-  if (registry.stampsClosed(newStatus)) {
-    mergedPlanning.closed = moment().format(`${dateFormat} ddd HH:mm`);
-  } else if (currentStatus && registry.stampsClosed(currentStatus) && removeCompleted) {
-    mergedPlanning.closed = null;
-  }
+    // Add/remove CLOSED in the planning line (preferred: single planning line directly under heading).
+    if (registry.stampsClosed(newStatus)) {
+      mergedPlanning.closed = moment().format(`${dateFormat} ddd HH:mm`);
+    } else if (currentStatus && registry.stampsClosed(currentStatus) && removeCompleted) {
+      mergedPlanning.closed = null;
+    }
+
+    // Apply repeater semantics on completion transitions.
+    let effectiveStatus = newStatus;
+    const completionTransition = registry.isDoneLike(newStatus) && !registry.isDoneLike(currentStatus);
+    if (completionTransition) {
+      const repeated = applyRepeatersOnCompletion({
+        lines: docLines,
+        headingLineIndex: taskLineNumber,
+        planning: mergedPlanning,
+        workflowRegistry: registry,
+        dateFormat,
+        now: moment()
+      });
+
+      if (repeated && repeated.didRepeat) {
+        mergedPlanning.scheduled = repeated.planning.scheduled;
+        mergedPlanning.deadline = repeated.planning.deadline;
+        if (repeated.repeatToStateKeyword) {
+          effectiveStatus = repeated.repeatToStateKeyword;
+        }
+      }
+    }
+
+    const cleanedHeadline = taskKeywordManager.cleanTaskText(
+      stripInlinePlanning(normalizeTagsAfterPlanning(currentLine.text)).trim()
+    );
+    const newHeadlineOnly = taskKeywordManager.buildTaskLine(indent, effectiveStatus, cleanedHeadline, { headingMarkerStyle, starPrefix });
 
   function buildPlanningBody(p) {
     const parts = [];
@@ -235,25 +262,22 @@ async function updateTaskStatusInFile(file, taskText, scheduledDate, newStatus, 
     return parts.join("  ");
   }
 
-  const planningBody = buildPlanningBody(mergedPlanning);
-
-  // Remove any inline planning that might still exist on the headline.
-  const newHeadlineOnly = newLine;
+    const planningBody = buildPlanningBody(mergedPlanning);
 
   // Handle forward-trigger transitions (CONTINUED-like)
-  if (registry.triggersForward(newStatus) && !registry.triggersForward(currentStatus)) {
-    const forwardEdit = continuedTaskHandler.handleContinuedTransition(document, taskLineNumber);
-    if (forwardEdit && forwardEdit.type === "insert") {
-      workspaceEdit.insert(uri, forwardEdit.position, forwardEdit.text);
+    if (registry.triggersForward(effectiveStatus) && !registry.triggersForward(currentStatus)) {
+      const forwardEdit = continuedTaskHandler.handleContinuedTransition(document, taskLineNumber);
+      if (forwardEdit && forwardEdit.type === "insert") {
+        workspaceEdit.insert(uri, forwardEdit.position, forwardEdit.text);
+      }
+    } else if (registry.triggersForward(currentStatus) && !registry.triggersForward(effectiveStatus)) {
+      const removeEdit = continuedTaskHandler.handleContinuedRemoval(document, taskLineNumber);
+      if (removeEdit && removeEdit.type === "delete") {
+        workspaceEdit.delete(uri, removeEdit.range);
+      }
     }
-  } else if (registry.triggersForward(currentStatus) && !registry.triggersForward(newStatus)) {
-    const removeEdit = continuedTaskHandler.handleContinuedRemoval(document, taskLineNumber);
-    if (removeEdit && removeEdit.type === "delete") {
-      workspaceEdit.delete(uri, removeEdit.range);
-    }
-  }
 
-  workspaceEdit.replace(uri, currentLine.range, newHeadlineOnly);
+    workspaceEdit.replace(uri, currentLine.range, newHeadlineOnly);
 
   // Ensure planning line is immediate next line (merge and normalize), and remove any extra adjacent planning line.
   if (planningBody) {
@@ -278,9 +302,16 @@ async function updateTaskStatusInFile(file, taskText, scheduledDate, newStatus, 
     }
   }
 
-  const applied = await vscode.workspace.applyEdit(workspaceEdit);
-  if (applied) {
+    const applied = await vscode.workspace.applyEdit(workspaceEdit);
+    if (!applied) {
+      vscode.window.showErrorMessage("Unable to apply task update.");
+      return;
+    }
     await document.save();
+  } catch (err) {
+    const msg = err && err.message ? err.message : String(err);
+    console.error("❌ TaggedAgenda changeStatus failed:", err);
+    vscode.window.showErrorMessage(`Tagged Agenda: failed to update task: ${msg}`);
   }
 }
 
@@ -511,7 +542,7 @@ function getTaggedWebviewContent(webview, nonce, localMomentJs, tag, items, skip
 
       const childrenBlock = renderChildrenBlock(item.children, file);
 
-      const lateLabel = scheduledDate && moment(scheduledDate, acceptedDateFormats, true).isBefore(moment(), "day")
+      const lateLabel = scheduledDate && momentFromTimestampContent(scheduledDate, acceptedDateFormats, true).isBefore(moment(), "day")
         ? `<span class="late">LATE: ${scheduledDate}</span>` : "";
 
       return `

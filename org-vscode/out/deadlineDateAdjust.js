@@ -54,6 +54,7 @@ function deadlineDateAdjust(forward = true) {
         const currentDate = match[1];
         const hadDayAbbrev = match[2] !== undefined;
         const timeComponent = match[3] || null;
+        const suffix = match[4] ? ` ${match[4]}` : "";
         const parsed = moment(currentDate, acceptedDateFormats, true);
         if (!parsed.isValid()) {
             warnedParse = true;
@@ -63,7 +64,7 @@ function deadlineDateAdjust(forward = true) {
         const formattedDate = newDate.format(dateFormat);
         const dayPart = hadDayAbbrev ? ` ${newDate.format("ddd")}` : "";
         const timePart = timeComponent ? ` ${timeComponent}` : "";
-        const newDeadline = `DEADLINE: [${formattedDate}${dayPart}${timePart}]`;
+        const newDeadline = `DEADLINE: [${formattedDate}${dayPart}${timePart}${suffix}]`;
         const updatedText = text.replace(deadlineRegex, newDeadline);
         if (updatedText !== text) {
             edit.replace(document.uri, line.range, updatedText);
