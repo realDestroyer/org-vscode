@@ -7,7 +7,8 @@ const moment = require("moment");
 const taskKeywordManager = require("../taskKeywordManager");
 const continuedTaskHandler = require("../continuedTaskHandler");
 const path = require("path");
-const { stripAllTagSyntax, getPlanningForHeading, isPlanningLine, parsePlanningFromText, normalizeTagsAfterPlanning, getAcceptedDateFormats, DEADLINE_REGEX, stripInlinePlanning } = require("../orgTagUtils");
+const { stripAllTagSyntax, getPlanningForHeading, isPlanningLine, parsePlanningFromText, normalizeTagsAfterPlanning, getAcceptedDateFormats, DEADLINE_REGEX, stripInlinePlanning, momentFromTimestampContent } = require("../orgTagUtils");
+const { applyRepeatersOnCompletion } = require("../repeatedTasks");
 const { formatCheckboxStats, findCheckboxCookie, computeHierarchicalCheckboxStatsInRange } = require("../checkboxStats");
 const { computeCheckboxToggleEdits } = require("../checkboxToggle");
 const { normalizeBodyIndentation } = require("../indentUtils");
@@ -199,7 +200,7 @@ module.exports = function () {
                   taskText = taskKeywordManager.cleanTaskText(stripAllTagSyntax(normalizedHeadline)).trim();
 
                   // Format the task's scheduled date for grouping and display
-                  const scheduledMoment = moment(getDateFromTaskText[1], acceptedDateFormats, true);
+                  const scheduledMoment = momentFromTimestampContent(getDateFromTaskText[1], acceptedDateFormats, true);
                   if (!scheduledMoment.isValid()) {
                     continue;
                   }
@@ -273,7 +274,7 @@ module.exports = function () {
                     if (scheduledMoment.isBefore(moment().startOf("day"), "day")) {
                       convertedDateArray.push({
                         date: `<div class=\"heading${overdue} [${today}]\"><h4 class=\"[${today}]\">[${today}], ${overdue.toUpperCase()}</h4></div>`,
-                        text: `<div class=\"panel [${today}]\">${renderedTask}<span class=\"late\">LATE: ${moment(getDateFromTaskText[1], acceptedDateFormats, true).format(dateFormat)}</span>${childrenBlock}</div>`
+                        text: `<div class=\"panel [${today}]\">${renderedTask}<span class=\"late\">LATE: ${momentFromTimestampContent(getDateFromTaskText[1], acceptedDateFormats, true).format(dateFormat)}</span>${childrenBlock}</div>`
                       });
                     }
                   }
@@ -420,7 +421,7 @@ module.exports = function () {
                 if (!scheduled) {
                   continue;
                 }
-                const scheduledMoment = moment(scheduled, acceptedDateFormats, true);
+                const scheduledMoment = momentFromTimestampContent(scheduled, acceptedDateFormats, true);
                 if (!scheduledMoment.isValid()) {
                   continue;
                 }
@@ -453,11 +454,6 @@ module.exports = function () {
 
             const indent = currentLine.text.match(/^\s*/)?.[0] || "";
 
-            const cleanedHeadline = taskKeywordManager.cleanTaskText(
-              stripInlinePlanning(normalizeTagsAfterPlanning(currentLine.text)).trim()
-            );
-            const newHeadlineOnly = taskKeywordManager.buildTaskLine(indent, newStatus, cleanedHeadline, { headingMarkerStyle, starPrefix });
-
             const planningIndent = `${indent}${bodyIndent}`;
             const planningFromHead = parsePlanningFromText(currentLine.text);
             const planningFromNext = (nextLine && isPlanningLine(nextLine.text)) ? parsePlanningFromText(nextLine.text) : {};
@@ -475,6 +471,32 @@ module.exports = function () {
               mergedPlanning.closed = null;
             }
 
+            let effectiveStatus = newStatus;
+            const completionTransition = registry.isDoneLike(newStatus) && !registry.isDoneLike(currentStatus);
+            if (completionTransition) {
+              const repeated = applyRepeatersOnCompletion({
+                lines,
+                headingLineIndex: taskLineNumber,
+                planning: mergedPlanning,
+                workflowRegistry: registry,
+                dateFormat,
+                now: moment()
+              });
+
+              if (repeated && repeated.didRepeat) {
+                mergedPlanning.scheduled = repeated.planning.scheduled;
+                mergedPlanning.deadline = repeated.planning.deadline;
+                if (repeated.repeatToStateKeyword) {
+                  effectiveStatus = repeated.repeatToStateKeyword;
+                }
+              }
+            }
+
+            const cleanedHeadline = taskKeywordManager.cleanTaskText(
+              stripInlinePlanning(normalizeTagsAfterPlanning(currentLine.text)).trim()
+            );
+            const newHeadlineOnly = taskKeywordManager.buildTaskLine(indent, effectiveStatus, cleanedHeadline, { headingMarkerStyle, starPrefix });
+
             function buildPlanningBody(p) {
               const segs = [];
               if (p.scheduled) segs.push(`SCHEDULED: [${p.scheduled}]`);
@@ -486,12 +508,12 @@ module.exports = function () {
             const planningBody = buildPlanningBody(mergedPlanning);
 
             // Handle forward-trigger transitions (same logic as Ctrl+Left/Right)
-            if (registry.triggersForward(newStatus) && !registry.triggersForward(currentStatus)) {
+            if (registry.triggersForward(effectiveStatus) && !registry.triggersForward(currentStatus)) {
               const forwardEdit = continuedTaskHandler.handleContinuedTransition(document, taskLineNumber);
               if (forwardEdit && forwardEdit.type === "insert") {
                 workspaceEdit.insert(uri, forwardEdit.position, forwardEdit.text);
               }
-            } else if (registry.triggersForward(currentStatus) && !registry.triggersForward(newStatus)) {
+            } else if (registry.triggersForward(currentStatus) && !registry.triggersForward(effectiveStatus)) {
               const removeEdit = continuedTaskHandler.handleContinuedRemoval(document, taskLineNumber);
               if (removeEdit && removeEdit.type === "delete") {
                 workspaceEdit.delete(uri, removeEdit.range);

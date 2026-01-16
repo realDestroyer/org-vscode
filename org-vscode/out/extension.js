@@ -65,6 +65,7 @@ const { toggleCheckboxItemAtCursor } = require("./toggleCheckboxItem");
 const { insertNewElement } = require("./smartInsertNewElement");
 const { registerPropertyCommands } = require("./propertyCommands");
 const { computeDesiredIndentForNewLine } = require("./indentUtils");
+const setRepeater = require("./setRepeater");
 
 // Startup log for debugging
 console.log("📌 agenda.js has been loaded in extension.js");
@@ -240,6 +241,9 @@ function activate(ctx) {
   ctx.subscriptions.push(vscode.commands.registerCommand("extension.smartDateBackward", smartDateBackward));
   ctx.subscriptions.push(vscode.commands.registerCommand("extension.deadlineDateForward", deadlineDateForward));
   ctx.subscriptions.push(vscode.commands.registerCommand("extension.deadlineDateBackward", deadlineDateBackward));
+  ctx.subscriptions.push(vscode.commands.registerCommand("org-vscode.setRepeater", setRepeater));
+  // Back-compat-style id for keybindings if needed.
+  ctx.subscriptions.push(vscode.commands.registerCommand("extension.setRepeater", setRepeater));
   ctx.subscriptions.push(vscode.commands.registerCommand("extension.alignSchedules", alignSchedules));
   ctx.subscriptions.push(vscode.commands.registerCommand("extension.insertDateStamp", insertDateStamp));
   ctx.subscriptions.push(vscode.commands.registerCommand("extension.incrementDate", incrementDateForward));

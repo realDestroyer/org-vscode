@@ -2,6 +2,20 @@
 
 # [Unreleased]
 
+# [2.2.8] 01-16-26
+
+`Added / Enhanced`
+
+- **Repeating tasks (Org repeaters):** Completing a task with a repeater now advances `SCHEDULED:` / `DEADLINE:` timestamps (`+`, `++`, and `.+` semantics).
+- **REPEAT_TO_STATE:** Optional `:REPEAT_TO_STATE:` property (with inheritance) controls which TODO keyword a repeating task reopens to after completion.
+- **Set Repeater command:** Added **Org-vscode: Set Repeater...** to add/update/remove repeater tokens on `SCHEDULED`, `DEADLINE`, or `BOTH`.
+
+`Fixed`
+
+- **Agenda/Calendar/Tagged Agenda:** Repeater suffixes (e.g. `+1w`) no longer break timestamp parsing or cause tasks to be omitted.
+- **Syntax highlighting:** Timestamps with repeater suffixes now tokenize correctly.
+- **Agenda/Tagged Agenda status toggles:** Completing repeating tasks from the views now reschedules/reopens and writes changes back to the file.
+
 # [2.2.7] 01-15-26
 
 `Fixed / Enhanced`

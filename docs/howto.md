@@ -27,6 +27,7 @@
 * [📅 Agenda View & Scheduling](#agenda-view--scheduling)
 * [☑️ Checkboxes](#checkboxes)
 * [⏰ Deadlines](#deadlines)
+* [🔁 Repeaters (Recurring Tasks)](#repeaters)
 * [🔄 CONTINUED Auto-Forwarding](#continued-auto-forwarding)
 * [📼 Partial Demo](#partial-demo)
 * [🔤 Unicode Headings](#unicode-headings-based-on-asterisk-level)
@@ -534,6 +535,53 @@ Tasks with deadlines show color-coded badges:
 | ⚠ DUE TODAY | 🟠 Orange | Deadline is today |
 | ⏰ Due in X days | 🟡 Yellow | 1-3 days until deadline |
 | 📅 Due: date | ⚫ Gray | 4+ days until deadline |
+
+---
+
+## 🔁 Repeaters (Recurring Tasks) <a id="repeaters"></a>
+
+Repeaters let a task automatically reschedule itself when you complete it.
+
+Add a repeater token inside the timestamp:
+
+```org
+* TODO Pay rent
+  SCHEDULED: [01-01-2026 +1m]
+```
+
+Supported repeater styles:
+
+- `+1w` (regular): shift forward one interval from the scheduled/deadline date
+- `++1w` (catch-up): keep shifting forward until the next date is in the future
+- `.+1w` (from completion): shift forward from today (completion date)
+
+Notes:
+
+- Repeaters can be used on both `SCHEDULED:` and `DEADLINE:` timestamps.
+- Repeaters work when completing a task from the editor, Agenda View, or Tagged Agenda View.
+
+### Reopen state (REPEAT_TO_STATE)
+
+By default, completing a repeating task will advance its date and reopen it as the first configured workflow state (typically `TODO`).
+
+To reopen to a specific state, set `REPEAT_TO_STATE` in a property drawer (supports inheritance from parent headings):
+
+```org
+* Project
+  :PROPERTIES:
+  :REPEAT_TO_STATE: IN_PROGRESS
+  :END:
+
+** TODO Weekly review
+   SCHEDULED: [01-15-2026 +1w]
+```
+
+### Command: Set Repeater
+
+Use **Org-vscode: Set Repeater...** to add/update/remove repeater tokens across one or more selected tasks.
+
+- You can apply to `SCHEDULED`, `DEADLINE`, or `BOTH`.
+- This command updates existing stamps; use `Ctrl + Alt + S` / `Ctrl + Alt + D` first if the task has no `SCHEDULED:`/`DEADLINE:`.
 
 ---
 

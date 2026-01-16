@@ -24,10 +24,10 @@ const PLANNING_KEYWORDS = ["SCHEDULED", "DEADLINE", "CLOSED", "COMPLETED"];
 // ============================================================================
 
 // --- Parsing Regexes (with capture groups) ---
-// Capture groups: (1) date, (2) weekday, (3) time
-const SCHEDULED_REGEX = /SCHEDULED:\s*\[(\d{2,4}-\d{2}-\d{2,4})(?:\s+(\w{3}))?(?:\s+(\d{1,2}:\d{2}))?\]/;
-const DEADLINE_REGEX = /DEADLINE:\s*\[(\d{2,4}-\d{2}-\d{2,4})(?:\s+(\w{3}))?(?:\s+(\d{1,2}:\d{2}))?\]/;
-const CLOSED_REGEX = /(?:CLOSED|COMPLETED):\s*\[(\d{2,4}-\d{2}-\d{2,4})(?:\s+(\w{3}))?(?:\s+(\d{1,2}:\d{2}))?\]/;
+// Capture groups: (1) date, (2) weekday, (3) time, (4) suffix (repeaters, warning periods, etc.)
+const SCHEDULED_REGEX = /SCHEDULED:\s*\[(\d{2,4}-\d{2}-\d{2,4})(?:\s+(\w{3}))?(?:\s+(\d{1,2}:\d{2}))?(?:\s+([^\]]+))?\]/;
+const DEADLINE_REGEX = /DEADLINE:\s*\[(\d{2,4}-\d{2}-\d{2,4})(?:\s+(\w{3}))?(?:\s+(\d{1,2}:\d{2}))?(?:\s+([^\]]+))?\]/;
+const CLOSED_REGEX = /(?:CLOSED|COMPLETED):\s*\[(\d{2,4}-\d{2}-\d{2,4})(?:\s+(\w{3}))?(?:\s+(\d{1,2}:\d{2}))?(?:\s+([^\]]+))?\]/;
 
 // Day heading regex
 // Capture groups: (1) indent, (2) marker (⊘ or asterisks), (3) date, (4) weekday, (5) time, (6) rest of line
@@ -451,6 +451,37 @@ function getAcceptedDateFormats(dateFormat) {
 }
 
 /**
+ * Normalize an Org timestamp content string (inside [] or <> without the brackets)
+ * down to just the parts moment can parse using acceptedDateFormats.
+ *
+ * Examples:
+ * - "2026-01-15" -> "2026-01-15"
+ * - "2026-01-15 Thu" -> "2026-01-15 Thu"
+ * - "2026-01-15 Thu 9:00 +1w -1d" -> "2026-01-15 Thu 9:00"
+ *
+ * @param {string} raw
+ * @returns {string}
+ */
+function normalizeTimestampContentForParsing(raw) {
+  const text = String(raw || "").trim();
+  const m = text.match(/^(\d{2,4}-\d{2}-\d{2,4})(?:\s+([A-Za-z]{3}))?(?:\s+(\d{1,2}:\d{2}))?/);
+  if (!m) return text;
+  return [m[1], m[2], m[3]].filter(Boolean).join(" ");
+}
+
+/**
+ * Parse a timestamp content string via moment(), safely ignoring repeaters/warnings.
+ * @param {string} raw
+ * @param {string[]} acceptedDateFormats
+ * @param {boolean} strict
+ * @returns {moment.Moment}
+ */
+function momentFromTimestampContent(raw, acceptedDateFormats, strict) {
+  const normalized = normalizeTimestampContentForParsing(raw);
+  return moment(normalized, acceptedDateFormats, strict);
+}
+
+/**
  * Build a SCHEDULED replacement string, preserving day abbreviation and time if present.
  * @param {RegExpMatchArray} match - Match from SCHEDULED_REGEX
  * @param {moment.Moment} parsedNewDate - The new date as a moment object
@@ -460,9 +491,10 @@ function getAcceptedDateFormats(dateFormat) {
 function buildScheduledReplacement(match, parsedNewDate, formattedNewDate) {
   const hadDayAbbrev = match[2] !== undefined;
   const timeComponent = match[3] || null;
+  const suffix = match[4] ? ` ${match[4]}` : "";
   const dayPart = hadDayAbbrev ? ` ${parsedNewDate.format("ddd")}` : "";
   const timePart = timeComponent ? ` ${timeComponent}` : "";
-  return `SCHEDULED: [${formattedNewDate}${dayPart}${timePart}]`;
+  return `SCHEDULED: [${formattedNewDate}${dayPart}${timePart}${suffix}]`;
 }
 
 /**
@@ -518,6 +550,8 @@ module.exports = {
   matchesTagMatchString,
   normalizeTagMatchInput,
   getAcceptedDateFormats,
+  normalizeTimestampContentForParsing,
+  momentFromTimestampContent,
   buildScheduledReplacement,
   getMatchingScheduledOnLine
 };

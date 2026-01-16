@@ -85,6 +85,7 @@ function smartDateAdjust(forward = true) {
             const currentDate = scheduledMatch[1];
             const hadDayAbbrev = scheduledMatch[2] !== undefined;
             const timeComponent = scheduledMatch[3] || null;
+            const suffix = scheduledMatch[4] ? ` ${scheduledMatch[4]}` : "";
             const parsed = moment(currentDate, acceptedDateFormats, true);
             if (!parsed.isValid()) {
                 warnedParse = true;
@@ -94,7 +95,7 @@ function smartDateAdjust(forward = true) {
             const formattedDate = newDate.format(dateFormat);
             const dayPart = hadDayAbbrev ? ` ${newDate.format("ddd")}` : "";
             const timePart = timeComponent ? ` ${timeComponent}` : "";
-            const updatedText = text.replace(scheduledRegex, `SCHEDULED: [${formattedDate}${dayPart}${timePart}]`);
+            const updatedText = text.replace(scheduledRegex, `SCHEDULED: [${formattedDate}${dayPart}${timePart}${suffix}]`);
             if (updatedText !== text) {
                 edit.replace(document.uri, line.range, updatedText);
                 touched = true;
@@ -112,6 +113,7 @@ function smartDateAdjust(forward = true) {
             const currentDate = pm[1];
             const hadDayAbbrev = pm[2] !== undefined;
             const timeComponent = pm[3] || null;
+            const suffix = pm[4] ? ` ${pm[4]}` : "";
             const parsed = moment(currentDate, acceptedDateFormats, true);
             if (!parsed.isValid()) {
                 warnedParse = true;
@@ -121,7 +123,7 @@ function smartDateAdjust(forward = true) {
             const formattedDate = newDate.format(dateFormat);
             const dayPart = hadDayAbbrev ? ` ${newDate.format("ddd")}` : "";
             const timePart = timeComponent ? ` ${timeComponent}` : "";
-            const updatedPlanning = planningLine.text.replace(scheduledRegex, `SCHEDULED: [${formattedDate}${dayPart}${timePart}]`);
+            const updatedPlanning = planningLine.text.replace(scheduledRegex, `SCHEDULED: [${formattedDate}${dayPart}${timePart}${suffix}]`);
             if (updatedPlanning !== planningLine.text) {
                 edit.replace(document.uri, planningLine.range, updatedPlanning);
                 touched = true;
