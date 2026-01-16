@@ -5,6 +5,7 @@ const taskKeywordManager = require("./taskKeywordManager");
 const continuedTaskHandler = require("./continuedTaskHandler");
 const moment = require("moment");
 const { isPlanningLine, parsePlanningFromText, normalizeTagsAfterPlanning, stripInlinePlanning } = require("./orgTagUtils");
+const { applyRepeatersOnCompletion } = require("./repeatedTasks");
 const { normalizeBodyIndentation } = require("./indentUtils");
 
 function buildPlanningBody(planning) {
@@ -93,17 +94,43 @@ module.exports = async function () {
 
     const headlineNoPlanning = stripInlinePlanning(normalizeTagsAfterPlanning(currentLine.text));
     const cleanedText = taskKeywordManager.cleanTaskText(headlineNoPlanning);
-    const { keyword: nextKeyword } = taskKeywordManager.rotateKeyword(currentKeyword, "left");
+    const { keyword: rotatedKeyword } = taskKeywordManager.rotateKeyword(currentKeyword, "left");
+    const completionTransition = workflowRegistry.isDoneLike(rotatedKeyword) && !workflowRegistry.isDoneLike(currentKeyword);
+    const completionStampsClosed = workflowRegistry.stampsClosed(rotatedKeyword);
 
-    let newLine = taskKeywordManager.buildTaskLine(leadingSpaces, nextKeyword, cleanedText, { headingMarkerStyle, starPrefix });
+    let nextKeyword = rotatedKeyword;
     const workspaceEdit = new vscode.WorkspaceEdit();
 
     // Upsert/remove CLOSED in the planning line.
-    if (workflowRegistry.stampsClosed(nextKeyword)) {
+    if (completionStampsClosed) {
       mergedPlanning.closed = moment().format(`${dateFormat} ddd HH:mm`);
     } else if (workflowRegistry.stampsClosed(currentKeyword)) {
       mergedPlanning.closed = null;
     }
+
+    // If this was a completion transition and the task has repeaters, reschedule and reopen.
+    if (completionTransition) {
+      const lines = document.getText().split(/\r?\n/);
+      const repeated = applyRepeatersOnCompletion({
+        lines,
+        headingLineIndex: lineNumber,
+        planning: mergedPlanning,
+        workflowRegistry,
+        dateFormat,
+        now: moment()
+      });
+
+      if (repeated && repeated.didRepeat) {
+        mergedPlanning.scheduled = repeated.planning.scheduled;
+        mergedPlanning.deadline = repeated.planning.deadline;
+
+        if (repeated.repeatToStateKeyword) {
+          nextKeyword = repeated.repeatToStateKeyword;
+        }
+      }
+    }
+
+    let newLine = taskKeywordManager.buildTaskLine(leadingSpaces, nextKeyword, cleanedText, { headingMarkerStyle, starPrefix });
 
     const planningIndent = `${leadingSpaces}${bodyIndent}`;
     const planningBody = buildPlanningBody(mergedPlanning);
@@ -162,7 +189,7 @@ module.exports = async function () {
           originalFile,
           cleanedText,
           nextKeyword,
-          stampsClosed: workflowRegistry.stampsClosed(nextKeyword),
+          stampsClosed: completionStampsClosed,
           headingMarkerStyle
         });
       }

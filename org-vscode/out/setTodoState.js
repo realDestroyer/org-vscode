@@ -5,6 +5,7 @@ const taskKeywordManager = require("./taskKeywordManager");
 const continuedTaskHandler = require("./continuedTaskHandler");
 const moment = require("moment");
 const { isPlanningLine, parsePlanningFromText, normalizeTagsAfterPlanning, stripInlinePlanning } = require("./orgTagUtils");
+const { applyRepeatersOnCompletion } = require("./repeatedTasks");
 const { normalizeBodyIndentation } = require("./indentUtils");
 
 function buildPlanningBody(planning) {
@@ -121,27 +122,52 @@ module.exports = async function () {
 
     const workspaceEdit = new vscode.WorkspaceEdit();
 
+    const completionTransition = workflowRegistry.isDoneLike(targetKeyword) && !workflowRegistry.isDoneLike(currentKeyword);
+    const completionStampsClosed = workflowRegistry.stampsClosed(targetKeyword);
+
     // Upsert/remove CLOSED in the planning line (preferred: single planning line under the headline).
-    if (workflowRegistry.stampsClosed(targetKeyword)) {
+    if (completionStampsClosed) {
       mergedPlanning.closed = moment().format(`${dateFormat} ddd HH:mm`);
     } else if (workflowRegistry.stampsClosed(currentKeyword)) {
       mergedPlanning.closed = null;
     }
 
+    let effectiveKeyword = targetKeyword;
+    if (completionTransition) {
+      const lines = document.getText().split(/\r?\n/);
+      const repeated = applyRepeatersOnCompletion({
+        lines,
+        headingLineIndex: lineNumber,
+        planning: mergedPlanning,
+        workflowRegistry,
+        dateFormat,
+        now: moment()
+      });
+
+      if (repeated && repeated.didRepeat) {
+        mergedPlanning.scheduled = repeated.planning.scheduled;
+        mergedPlanning.deadline = repeated.planning.deadline;
+
+        if (repeated.repeatToStateKeyword) {
+          effectiveKeyword = repeated.repeatToStateKeyword;
+        }
+      }
+    }
+
     // Handle forward-trigger transitions (default: CONTINUED)
-    if (workflowRegistry.triggersForward(targetKeyword) && !workflowRegistry.triggersForward(currentKeyword)) {
+    if (workflowRegistry.triggersForward(effectiveKeyword) && !workflowRegistry.triggersForward(currentKeyword)) {
       const forwardEdit = continuedTaskHandler.handleContinuedTransition(document, lineNumber);
       if (forwardEdit && forwardEdit.type === "insert") {
         workspaceEdit.insert(document.uri, forwardEdit.position, forwardEdit.text);
       }
-    } else if (workflowRegistry.triggersForward(currentKeyword) && !workflowRegistry.triggersForward(targetKeyword)) {
+    } else if (workflowRegistry.triggersForward(currentKeyword) && !workflowRegistry.triggersForward(effectiveKeyword)) {
       const removeEdit = continuedTaskHandler.handleContinuedRemoval(document, lineNumber);
       if (removeEdit && removeEdit.type === "delete") {
         workspaceEdit.delete(document.uri, removeEdit.range);
       }
     }
 
-    const newLine = taskKeywordManager.buildTaskLine(leadingSpaces, targetKeyword, cleanedText, { headingMarkerStyle, starPrefix });
+    const newLine = taskKeywordManager.buildTaskLine(leadingSpaces, effectiveKeyword, cleanedText, { headingMarkerStyle, starPrefix });
     workspaceEdit.replace(document.uri, currentLine.range, newLine);
 
     const planningIndent = `${leadingSpaces}${bodyIndent}`;
@@ -186,8 +212,8 @@ module.exports = async function () {
         changesForCurrentTasks.push({
           originalFile,
           cleanedText,
-          nextKeyword: targetKeyword,
-          stampsClosed: workflowRegistry.stampsClosed(targetKeyword),
+          nextKeyword: effectiveKeyword,
+          stampsClosed: completionStampsClosed,
           headingMarkerStyle
         });
       }

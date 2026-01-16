@@ -5,7 +5,7 @@ const fs = require("fs");           // File system module to read/write org file
 const path = require("path");       // For cross-platform path handling
 const moment = require("moment");   // Date formatting library
 const taskKeywordManager = require("./taskKeywordManager");
-const { getAllTagsFromLine, stripAllTagSyntax, parseFileTagsFromText, createInheritanceTracker, getPlanningForHeading, isPlanningLine, normalizeTagsAfterPlanning, getAcceptedDateFormats, buildScheduledReplacement, getMatchingScheduledOnLine, SCHEDULED_STRIP_RE, SCHEDULED_REGEX, DEADLINE_REGEX } = require("./orgTagUtils");
+const { getAllTagsFromLine, stripAllTagSyntax, parseFileTagsFromText, createInheritanceTracker, getPlanningForHeading, isPlanningLine, normalizeTagsAfterPlanning, getAcceptedDateFormats, buildScheduledReplacement, getMatchingScheduledOnLine, SCHEDULED_STRIP_RE, SCHEDULED_REGEX, DEADLINE_REGEX, momentFromTimestampContent } = require("./orgTagUtils");
 const { normalizeBodyIndentation } = require("./indentUtils");
 
 function escapeRegExp(text) {
@@ -125,7 +125,7 @@ function sendTasksToCalendar(panel) {
 
             // Parse date with error detection
             // Try configured format with day abbreviation first, then without, then common fallbacks
-            let parsedDate = moment(scheduledDate, getAcceptedDateFormats(dateFormat), true);
+            let parsedDate = momentFromTimestampContent(scheduledDate, getAcceptedDateFormats(dateFormat), true);
             let parseError = null;
 
             if (!parsedDate.isValid()) {
