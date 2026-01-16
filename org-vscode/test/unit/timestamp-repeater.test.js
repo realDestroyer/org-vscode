@@ -134,6 +134,12 @@ function testAdvanceDateCumulative() {
   const r1y = { type: '+', value: 1, unit: 'y' };
   const result1y = advanceDateByRepeater(baseDate.clone(), r1y, today);
   assert.strictEqual(result1y.format(dateFormat), "2027-01-15", "Cumulative +1y should add 1 year");
+
+  // +2h should add 2 hours
+  const baseDateWithTime = moment("2026-01-15 10:00", "YYYY-MM-DD HH:mm");
+  const r2h = { type: '+', value: 2, unit: 'h' };
+  const result2h = advanceDateByRepeater(baseDateWithTime.clone(), r2h, today);
+  assert.strictEqual(result2h.format("YYYY-MM-DD HH:mm"), "2026-01-15 12:00", "Cumulative +2h should add 2 hours");
 }
 
 function testAdvanceDateCatchUp() {
@@ -151,6 +157,12 @@ function testAdvanceDateCatchUp() {
   const r1w = { type: '++', value: 1, unit: 'w' };
   const result1w = advanceDateByRepeater(threeWeeksAgo.clone(), r1w, today);
   assert.strictEqual(result1w.format(dateFormat), "2026-01-22", "Catch-up ++1w should advance past today");
+
+  // ++1d with date YEARS in the past (must handle >1000 iterations)
+  const yearsAgo = moment("2020-01-01", dateFormat);
+  const resultYearsAgo = advanceDateByRepeater(yearsAgo.clone(), r1d, today);
+  assert.ok(resultYearsAgo.isAfter(today), "Catch-up ++1d from years ago should advance past today");
+  assert.strictEqual(resultYearsAgo.format(dateFormat), "2026-01-21", "Catch-up ++1d from 2020-01-01 should reach 2026-01-21");
 }
 
 function testAdvanceDateRestart() {

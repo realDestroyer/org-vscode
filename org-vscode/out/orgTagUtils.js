@@ -652,11 +652,16 @@ function advanceDateByRepeater(currentDate, repeater, today) {
     result.add(actualValue, momentUnit);
   } else if (type === '++') {
     // Catch-up: keep adding until date is in the future
-    let iterations = 0;
-    const maxIterations = 1000;
-    while (result.isSameOrBefore(now, actualUnit === 'h' ? 'hour' : 'day') && iterations < maxIterations) {
+    // Calculate how many intervals needed to pass 'now' instead of looping
+    const diffUnit = actualUnit === 'h' ? 'hours' : 'days';
+    const diff = now.diff(result, diffUnit);
+    if (diff > 0) {
+      const intervalsNeeded = Math.ceil(diff / actualValue);
+      result.add(intervalsNeeded * actualValue, momentUnit);
+    }
+    // Ensure we're strictly after now
+    while (result.isSameOrBefore(now, actualUnit === 'h' ? 'hour' : 'day')) {
       result.add(actualValue, momentUnit);
-      iterations++;
     }
   } else {
     // Cumulative: add the interval once
@@ -687,14 +692,18 @@ function rebuildTimestampContent(originalContent, newDate, dateFormat) {
   }
 
   const hadDayname = match[2] !== undefined;
-  const timeStart = match[3] || null;
+  const originalTimeStart = match[3] || null;
   const timeEnd = match[4] || null;
   const repeater = match[5] || null;
   const warning = match[6] || null;
 
   let result = newDate.format(dateFormat);
   if (hadDayname) result += ` ${newDate.format('ddd')}`;
-  if (timeStart) result += timeEnd ? ` ${timeStart}-${timeEnd}` : ` ${timeStart}`;
+  if (originalTimeStart) {
+    // Use the time from newDate (handles hour-based repeaters correctly)
+    const newTimeStart = newDate.format('HH:mm');
+    result += timeEnd ? ` ${newTimeStart}-${timeEnd}` : ` ${newTimeStart}`;
+  }
   if (repeater) result += ` ${repeater}`;
   if (warning) result += ` ${warning}`;
 

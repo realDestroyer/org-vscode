@@ -365,6 +365,12 @@ module.exports = {
   handleContinuedTransition,
   handleContinuedRemoval,
   findContainingDayHeading,
+  findNextDayHeading,
+  findLastTaskLineUnderHeading,
+  findForwardedTask,
   getTaskIdentifier,
+  getImmediatePlanningLine,
+  buildDayHeading,
+  stripInlinePlanning,
   DAY_HEADING_REGEX
 };

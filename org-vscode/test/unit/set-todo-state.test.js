@@ -160,6 +160,97 @@ function testAlreadyDoneNoChange() {
   assert.strictEqual(result.mergedPlanning.scheduled, "2026-01-15 Thu +1d", "Should NOT advance (already done)");
 }
 
+function testAllRepeaterUnits() {
+  const registry = createDefaultRegistry();
+
+  // +1d (days)
+  const resultD = computeTodoStateChange({
+    currentLineText: "* TODO Test",
+    nextLineText: "  SCHEDULED: <2026-01-15 Thu +1d>",
+    nextNextLineText: null,
+    targetKeyword: "DONE",
+    dateFormat: "YYYY-MM-DD",
+    bodyIndent: "  ",
+    headingMarkerStyle: "asterisk",
+    workflowRegistry: registry
+  });
+  assert.strictEqual(resultD.mergedPlanning.scheduled, "2026-01-16 Fri +1d", "+1d should advance by 1 day");
+
+  // +1w (weeks)
+  const resultW = computeTodoStateChange({
+    currentLineText: "* TODO Test",
+    nextLineText: "  SCHEDULED: <2026-01-15 Thu +1w>",
+    nextNextLineText: null,
+    targetKeyword: "DONE",
+    dateFormat: "YYYY-MM-DD",
+    bodyIndent: "  ",
+    headingMarkerStyle: "asterisk",
+    workflowRegistry: registry
+  });
+  assert.strictEqual(resultW.mergedPlanning.scheduled, "2026-01-22 Thu +1w", "+1w should advance by 7 days");
+
+  // +1m (months)
+  const resultM = computeTodoStateChange({
+    currentLineText: "* TODO Test",
+    nextLineText: "  SCHEDULED: <2026-01-15 Thu +1m>",
+    nextNextLineText: null,
+    targetKeyword: "DONE",
+    dateFormat: "YYYY-MM-DD",
+    bodyIndent: "  ",
+    headingMarkerStyle: "asterisk",
+    workflowRegistry: registry
+  });
+  assert.strictEqual(resultM.mergedPlanning.scheduled, "2026-02-15 Sun +1m", "+1m should advance by 1 month");
+
+  // +1y (years)
+  const resultY = computeTodoStateChange({
+    currentLineText: "* TODO Test",
+    nextLineText: "  SCHEDULED: <2026-01-15 Thu +1y>",
+    nextNextLineText: null,
+    targetKeyword: "DONE",
+    dateFormat: "YYYY-MM-DD",
+    bodyIndent: "  ",
+    headingMarkerStyle: "asterisk",
+    workflowRegistry: registry
+  });
+  assert.strictEqual(resultY.mergedPlanning.scheduled, "2027-01-15 Fri +1y", "+1y should advance by 1 year");
+
+  // +2h (hours)
+  const resultH = computeTodoStateChange({
+    currentLineText: "* TODO Test",
+    nextLineText: "  SCHEDULED: <2026-01-15 Thu 10:00 +2h>",
+    nextNextLineText: null,
+    targetKeyword: "DONE",
+    dateFormat: "YYYY-MM-DD",
+    bodyIndent: "  ",
+    headingMarkerStyle: "asterisk",
+    workflowRegistry: registry
+  });
+  assert.strictEqual(resultH.mergedPlanning.scheduled, "2026-01-15 Thu 12:00 +2h", "+2h should advance by 2 hours");
+}
+
+function testCatchUpFromYearsAgo() {
+  const registry = createDefaultRegistry();
+
+  // ++1d from 2020 should catch up to tomorrow (relative to today)
+  const result = computeTodoStateChange({
+    currentLineText: "* TODO Test",
+    nextLineText: "  SCHEDULED: <2020-01-01 Wed ++1d>",
+    nextNextLineText: null,
+    targetKeyword: "DONE",
+    dateFormat: "YYYY-MM-DD",
+    bodyIndent: "  ",
+    headingMarkerStyle: "asterisk",
+    workflowRegistry: registry
+  });
+
+  // The date should be in the future (after today)
+  const outDate = result.mergedPlanning.scheduled.split(" ")[0];
+  const today = new Date().toISOString().split("T")[0];
+  assert.ok(outDate > today, `Catch-up ++1d from 2020 should be after today (${today}), got ${outDate}`);
+  assert.ok(result.mergedPlanning.scheduled.includes("++1d"), "Should preserve ++1d repeater");
+}
+
 // ============================================================================
 // Module exports
 // ============================================================================
@@ -175,5 +266,7 @@ module.exports = {
     testDeadlineWithRepeater();
     testBuildPlanningBody();
     testAlreadyDoneNoChange();
+    testAllRepeaterUnits();
+    testCatchUpFromYearsAgo();
   }
 };
