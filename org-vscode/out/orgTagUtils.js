@@ -4,6 +4,35 @@ const moment = require("moment");
 
 const { createWorkflowRegistry, buildTaskPrefixRegex } = require("./workflowStates");
 
+// ============================================================================
+// Timestamp Activity Setting
+// ============================================================================
+// In standard Org, only active timestamps <...> appear in agenda.
+// Inactive timestamps [...] are reference-only.
+// For backward compatibility, org-vscode defaults to treating both as active.
+
+function getStrictActiveTimestampsSetting() {
+  try {
+    const vscode = require("vscode");
+    if (!vscode?.workspace?.getConfiguration) return false;
+    return vscode.workspace.getConfiguration("Org-vscode").get("strictActiveTimestamps", false);
+  } catch {
+    // Not running inside VS Code (e.g. unit tests) - default to backward compatible
+    return false;
+  }
+}
+
+/**
+ * Check if a timestamp with the given bracket type should be considered active.
+ * @param {string} bracketType - '<' for active, '[' for inactive
+ * @returns {boolean} true if the timestamp should be treated as active
+ */
+function isTimestampActive(bracketType) {
+  if (bracketType === '<') return true;
+  // If strict mode is off (default), treat [...] as active too for backward compat
+  return !getStrictActiveTimestampsSetting();
+}
+
 // Utilities for parsing and formatting Org-mode style tags.
 // Supports both legacy org-vscode inline tags ([+TAG:FOO,BAR]) and Emacs-style end-of-headline tags (:FOO:BAR:).
 
@@ -140,14 +169,17 @@ function parsePlanningFromText(text) {
   };
 
   const t = String(text || "");
-  // Match both active <...> and inactive [...] timestamps
-  const scheduledMatch = t.match(/\bSCHEDULED:\s*[<\[]([^\]>]+)[>\]]/);
-  const deadlineMatch = t.match(/\bDEADLINE:\s*[<\[]([^\]>]+)[>\]]/);
+  // Match both active <...> and inactive [...] timestamps, capturing bracket type
+  // Groups: (1) bracket type, (2) content
+  const scheduledMatch = t.match(/\bSCHEDULED:\s*([<\[])([^\]>]+)[>\]]/);
+  const deadlineMatch = t.match(/\bDEADLINE:\s*([<\[])([^\]>]+)[>\]]/);
+  // CLOSED/COMPLETED are always reference-only, not for agenda, so always match
   const closedMatch = t.match(/\bCLOSED:\s*[<\[]([^\]>]+)[>\]]/);
   const completedMatch = t.match(/\bCOMPLETED:\s*[<\[]([^\]>]+)[>\]]/);
 
-  if (scheduledMatch) out.scheduled = scheduledMatch[1];
-  if (deadlineMatch) out.deadline = deadlineMatch[1];
+  // For SCHEDULED/DEADLINE, honor strictActiveTimestamps setting
+  if (scheduledMatch && isTimestampActive(scheduledMatch[1])) out.scheduled = scheduledMatch[2];
+  if (deadlineMatch && isTimestampActive(deadlineMatch[1])) out.deadline = deadlineMatch[2];
   if (closedMatch) out.closed = closedMatch[1];
   if (completedMatch) out.completed = completedMatch[1];
 
@@ -616,7 +648,8 @@ function parseRepeater(repeaterStr) {
  * @returns {object|null} Parsed repeater or null
  */
 function getRepeaterFromTimestamp(timestampContent, bracketType) {
-  if (bracketType !== '<') return null;
+  // Honor strictActiveTimestamps setting - if strict, only active <...> has repeaters
+  if (!isTimestampActive(bracketType)) return null;
   if (!timestampContent) return null;
   const repeaterMatch = timestampContent.match(/([.+]?\+\d+[hdwmy])/);
   if (!repeaterMatch) return null;
@@ -821,5 +854,6 @@ module.exports = {
   getRepeaterFromTimestamp,
   advanceDateByRepeater,
   rebuildTimestampContent,
-  processRepeaterOnDone
+  processRepeaterOnDone,
+  isTimestampActive
 };

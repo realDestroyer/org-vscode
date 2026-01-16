@@ -90,12 +90,14 @@ function testGetRepeaterFromActiveTimestamp() {
 }
 
 function testGetRepeaterFromInactiveTimestamp() {
-  // Inactive timestamps should NOT extract repeater
+  // By default (strictActiveTimestamps=false for backward compat), inactive timestamps
+  // are treated as active and DO have repeaters. In unit tests, VS Code isn't available,
+  // so the setting defaults to false (backward compatible mode).
   const r1 = getRepeaterFromTimestamp("2026-01-15 Thu +1d", '[');
-  assert.strictEqual(r1, null, "Should return null for inactive timestamp with +1d");
+  assert.deepStrictEqual(r1, { type: '+', value: 1, unit: 'd' }, "In backward compat mode, inactive timestamps have repeaters");
 
   const r2 = getRepeaterFromTimestamp("2026-01-15 ++1w", '[');
-  assert.strictEqual(r2, null, "Should return null for inactive timestamp with ++1w");
+  assert.deepStrictEqual(r2, { type: '++', value: 1, unit: 'w' }, "In backward compat mode, inactive timestamps have repeaters");
 }
 
 function testGetRepeaterNoRepeater() {
