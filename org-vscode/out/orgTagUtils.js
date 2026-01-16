@@ -586,6 +586,189 @@ function getMatchingScheduledOnLine(line, targetDate, acceptedDateFormats) {
   return null;
 }
 
+/**
+ * Parse a repeater string like "+1d", "++1w", ".+1m"
+ * @param {string} repeaterStr - The repeater string
+ * @returns {object|null} { type: '+' | '++' | '.+', value: number, unit: 'h'|'d'|'w'|'m'|'y' } or null
+ */
+function parseRepeater(repeaterStr) {
+  if (!repeaterStr) return null;
+  const match = repeaterStr.match(/^([.+]?)(\+)(\d+)([hdwmy])$/);
+  if (!match) return null;
+  const prefix = match[1];
+  const value = parseInt(match[3], 10);
+  const unit = match[4];
+  let type;
+  if (prefix === '.') {
+    type = '.+';
+  } else if (prefix === '+') {
+    type = '++';
+  } else {
+    type = '+';
+  }
+  return { type, value, unit };
+}
+
+/**
+ * Check if a timestamp string contains a repeater. Only active timestamps <...> support repeaters.
+ * @param {string} timestampContent - Content inside the timestamp (e.g., "2024-01-15 Mon +1w")
+ * @param {string} bracketType - '<' for active, '[' for inactive
+ * @returns {object|null} Parsed repeater or null
+ */
+function getRepeaterFromTimestamp(timestampContent, bracketType) {
+  if (bracketType !== '<') return null;
+  if (!timestampContent) return null;
+  const repeaterMatch = timestampContent.match(/([.+]?\+\d+[hdwmy])/);
+  if (!repeaterMatch) return null;
+  return parseRepeater(repeaterMatch[1]);
+}
+
+/**
+ * Advance a date according to a repeater.
+ * @param {moment.Moment} currentDate - The current date
+ * @param {object} repeater - Parsed repeater { type, value, unit }
+ * @param {moment.Moment} [today] - Reference date for '.+' type (defaults to now)
+ * @returns {moment.Moment} The advanced date
+ */
+function advanceDateByRepeater(currentDate, repeater, today) {
+  const now = today || moment();
+  let result = currentDate.clone();
+  const { type, value, unit } = repeater;
+
+  const actualValue = unit === 'w' ? value * 7 : value;
+  const actualUnit = unit === 'w' ? 'd' : unit;
+  const unitMap = { h: 'hours', d: 'days', m: 'months', y: 'years' };
+  const momentUnit = unitMap[actualUnit];
+
+  if (type === '.+') {
+    // Restart: shift to today first, then add interval
+    if (actualUnit === 'h') {
+      result = now.clone();
+    } else {
+      result = now.clone().startOf('day')
+        .add(currentDate.hours(), 'hours')
+        .add(currentDate.minutes(), 'minutes');
+    }
+    result.add(actualValue, momentUnit);
+  } else if (type === '++') {
+    // Catch-up: keep adding until date is in the future
+    let iterations = 0;
+    const maxIterations = 1000;
+    while (result.isSameOrBefore(now, actualUnit === 'h' ? 'hour' : 'day') && iterations < maxIterations) {
+      result.add(actualValue, momentUnit);
+      iterations++;
+    }
+  } else {
+    // Cumulative: add the interval once
+    result.add(actualValue, momentUnit);
+  }
+
+  return result;
+}
+
+/**
+ * Rebuild a timestamp string with a new date, preserving all other components.
+ * @param {string} originalContent - Original timestamp content
+ * @param {moment.Moment} newDate - The new date
+ * @param {string} dateFormat - Date format string
+ * @returns {string} New timestamp content
+ */
+function rebuildTimestampContent(originalContent, newDate, dateFormat) {
+  const regex = new RegExp(
+    `^(${DATE_PATTERN})` +
+    `(?:\\s+(${DAYNAME_PATTERN}))?` +
+    `(?:\\s+(${TIME_PATTERN})(?:-(${TIME_PATTERN}))?)?` +
+    `(?:\\s+(${REPEATER_PATTERN}))?` +
+    `(?:\\s+(${WARNING_PATTERN}))?$`
+  );
+  const match = originalContent.match(regex);
+  if (!match) {
+    return newDate.format(dateFormat);
+  }
+
+  const hadDayname = match[2] !== undefined;
+  const timeStart = match[3] || null;
+  const timeEnd = match[4] || null;
+  const repeater = match[5] || null;
+  const warning = match[6] || null;
+
+  let result = newDate.format(dateFormat);
+  if (hadDayname) result += ` ${newDate.format('ddd')}`;
+  if (timeStart) result += timeEnd ? ` ${timeStart}-${timeEnd}` : ` ${timeStart}`;
+  if (repeater) result += ` ${repeater}`;
+  if (warning) result += ` ${warning}`;
+
+  return result;
+}
+
+/**
+ * Extract the parseable date portion from timestamp content (strips repeater/warning).
+ * @param {string} content - Timestamp content
+ * @returns {string} Date portion suitable for moment parsing
+ */
+function extractDatePortion(content) {
+  const regex = new RegExp(
+    `^(${DATE_PATTERN})` +
+    `(?:\\s+(${DAYNAME_PATTERN}))?` +
+    `(?:\\s+(${TIME_PATTERN}))?`
+  );
+  const match = content.match(regex);
+  if (!match) return content;
+
+  let result = match[1];
+  if (match[2]) result += ` ${match[2]}`;
+  if (match[3]) result += ` ${match[3]}`;
+  return result;
+}
+
+/**
+ * Process a planning line for repeaters when transitioning to DONE.
+ * Returns updated planning if a repeater was found and processed.
+ * @param {object} planning - { scheduled, deadline, closed }
+ * @param {string} dateFormat - Date format string
+ * @param {string[]} acceptedDateFormats - Accepted formats for parsing
+ * @returns {object|null} { newPlanning, hadRepeater } or null if no repeater
+ */
+function processRepeaterOnDone(planning, dateFormat, acceptedDateFormats) {
+  if (!planning) return null;
+
+  let hadRepeater = false;
+  const newPlanning = { ...planning };
+  const today = moment();
+
+  if (planning.scheduled) {
+    const repeater = getRepeaterFromTimestamp(planning.scheduled, '<');
+    if (repeater) {
+      const datePortion = extractDatePortion(planning.scheduled);
+      const currentDate = moment(datePortion, acceptedDateFormats, true);
+      if (currentDate.isValid()) {
+        const newDate = advanceDateByRepeater(currentDate, repeater, today);
+        newPlanning.scheduled = rebuildTimestampContent(planning.scheduled, newDate, dateFormat);
+        hadRepeater = true;
+      }
+    }
+  }
+
+  if (planning.deadline) {
+    const repeater = getRepeaterFromTimestamp(planning.deadline, '<');
+    if (repeater) {
+      const datePortion = extractDatePortion(planning.deadline);
+      const currentDate = moment(datePortion, acceptedDateFormats, true);
+      if (currentDate.isValid()) {
+        const newDate = advanceDateByRepeater(currentDate, repeater, today);
+        newPlanning.deadline = rebuildTimestampContent(planning.deadline, newDate, dateFormat);
+        hadRepeater = true;
+      }
+    }
+  }
+
+  if (!hadRepeater) return null;
+
+  newPlanning.closed = null;
+
+  return { newPlanning, hadRepeater };
+}
+
 module.exports = {
   // Centralized regex constants
   SCHEDULED_REGEX,
@@ -624,5 +807,10 @@ module.exports = {
   getAcceptedDateFormats,
   momentFromTimestampContent,
   buildScheduledReplacement,
-  getMatchingScheduledOnLine
+  getMatchingScheduledOnLine,
+  parseRepeater,
+  getRepeaterFromTimestamp,
+  advanceDateByRepeater,
+  rebuildTimestampContent,
+  processRepeaterOnDone
 };

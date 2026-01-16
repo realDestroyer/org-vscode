@@ -1,5 +1,4 @@
 // Handles auto-forwarding of forward-trigger tasks (default: CONTINUED) to the next day
-const vscode = require("vscode");
 const moment = require("moment");
 const taskKeywordManager = require("./taskKeywordManager");
 const { normalizeBodyIndentation } = require("./indentUtils");
@@ -114,6 +113,7 @@ function findLastTaskLineUnderHeading(lines, headingLineIndex) {
 }
 
 function parseOrgDate(dateStr) {
+  const vscode = require("vscode");
   const config = vscode.workspace.getConfiguration("Org-vscode");
   const configuredFormat = config.get("dateFormat", "YYYY-MM-DD");
   const formatsToTry = getAcceptedDateFormats(configuredFormat);
@@ -166,6 +166,7 @@ function buildDayHeading(date, weekday, suffix = "", indent = "", marker = "⊘"
  * Build a forwarded task line (as TODO with updated schedule)
  */
 function buildForwardedTask(originalLine, newDate, indent = "  ") {
+  const vscode = require("vscode");
   // Clean the task and rebuild as the first configured workflow keyword
   const originalCleaned = taskKeywordManager.cleanTaskText(normalizeTagsAfterPlanning(originalLine));
 
@@ -235,10 +236,11 @@ function findForwardedTask(lines, nextDayHeadingIndex, taskIdentifier) {
  * Returns the edits needed to forward the task to the next day
  */
 function handleContinuedTransition(document, taskLineNumber) {
+  const vscode = require("vscode");
   const lines = document.getText().split(/\r?\n/);
   const taskLine = lines[taskLineNumber];
   const planningLine = getImmediatePlanningLine(lines, taskLineNumber);
-  
+
   // Find which day this task belongs to
   const currentDay = findContainingDayHeading(lines, taskLineNumber);
   if (!currentDay) {
@@ -314,6 +316,7 @@ function handleContinuedTransition(document, taskLineNumber) {
  * Returns the edits needed to remove the forwarded task from the next day
  */
 function handleContinuedRemoval(document, taskLineNumber) {
+  const vscode = require("vscode");
   const lines = document.getText().split(/\r?\n/);
   const taskLine = lines[taskLineNumber];
   
