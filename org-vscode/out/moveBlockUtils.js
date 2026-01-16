@@ -2,7 +2,8 @@
 
 const UNICODE_HEADING_REGEX = /^\s*[⊙⊘⊜⊖⊗]\s/;
 const STAR_HEADING_REGEX = /^\s*(\*+)\s/;
-const DAY_HEADING_REGEX = /^\s*\*\s*\[\d{4}-\d{2}-\d{2}\b/;
+// Match day headings with either active <...> or inactive [...] timestamps
+const DAY_HEADING_REGEX = /^\s*\*\s*[<\[]\d{4}-\d{2}-\d{2}\b/;
 
 function getIndent(line) {
   return line.match(/^\s*/)?.[0].length || 0;

@@ -522,8 +522,9 @@ module.exports = function () {
 
             function buildPlanningBody(p) {
               const segs = [];
-              if (p.scheduled) segs.push(`SCHEDULED: [${p.scheduled}]`);
-              if (p.deadline) segs.push(`DEADLINE: [${p.deadline}]`);
+              // In Emacs: SCHEDULED/DEADLINE use active <...> (appear in agenda), CLOSED uses inactive [...]
+              if (p.scheduled) segs.push(`SCHEDULED: <${p.scheduled}>`);
+              if (p.deadline) segs.push(`DEADLINE: <${p.deadline}>`);
               if (p.closed) segs.push(`CLOSED: [${p.closed}]`);
               return segs.join("  ");
             }

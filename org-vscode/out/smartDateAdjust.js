@@ -5,8 +5,13 @@ const { isPlanningLine, getAcceptedDateFormats, DAY_HEADING_REGEX, SCHEDULED_REG
 /**
  * Smart date adjustment - detects what type of date is on the current line
  * and adjusts it accordingly:
- * - Day heading (⊘ [MM-DD-YYYY DDD]) → adjusts the day date
- * - Task with SCHEDULED: [MM-DD-YYYY] → adjusts the scheduled date
+ * - Day heading (⊘ <MM-DD-YYYY DDD>) → adjusts the day date
+ * - Task with SCHEDULED: <MM-DD-YYYY> → adjusts the scheduled date
+ *
+ * DAY_HEADING_REGEX groups: (1) indent, (2) marker, (3) open-bracket, (4) date, (5) dayname,
+ *   (6) time-start, (7) time-end, (8) repeater, (9) warning, (10) close-bracket, (11) rest
+ * SCHEDULED_REGEX groups: (1) open-bracket, (2) date, (3) dayname, (4) time-start, (5) time-end,
+ *   (6) repeater, (7) warning, (8) close-bracket
  */
 function smartDateAdjust(forward = true) {
     const editor = vscode.window.activeTextEditor;
@@ -58,9 +63,15 @@ function smartDateAdjust(forward = true) {
         if (dayMatch) {
             const indent = dayMatch[1] || "";
             const marker = dayMatch[2];
-            const currentDate = dayMatch[3];
-            const hadDayAbbrev = dayMatch[4] !== undefined;
-            const timeComponent = dayMatch[5] || null;
+            const openBracket = dayMatch[3];
+            const closeBracket = dayMatch[10];
+            const currentDate = dayMatch[4];
+            const hadDayAbbrev = dayMatch[5] !== undefined;
+            const timeStart = dayMatch[6] || null;
+            const timeEnd = dayMatch[7] || null;
+            const repeater = dayMatch[8] || null;
+            const warning = dayMatch[9] || null;
+            const suffix = dayMatch[11] || "";
             const parsed = moment(currentDate, acceptedDateFormats, true);
             if (!parsed.isValid()) {
                 warnedParse = true;
@@ -69,9 +80,10 @@ function smartDateAdjust(forward = true) {
             const newDate = parsed.add(forward ? 1 : -1, "days");
             const formattedDate = newDate.format(dateFormat);
             const dayPart = hadDayAbbrev ? ` ${newDate.format("ddd")}` : "";
-            const timePart = timeComponent ? ` ${timeComponent}` : "";
-            const suffix = dayMatch[6] || "";
-            const newFormattedDate = `${indent}${marker} [${formattedDate}${dayPart}${timePart}]${suffix}`;
+            const timePart = timeStart ? (timeEnd ? ` ${timeStart}-${timeEnd}` : ` ${timeStart}`) : "";
+            const repeaterPart = repeater ? ` ${repeater}` : "";
+            const warningPart = warning ? ` ${warning}` : "";
+            const newFormattedDate = `${indent}${marker} ${openBracket}${formattedDate}${dayPart}${timePart}${repeaterPart}${warningPart}${closeBracket}${suffix}`;
             const updatedText = text.replace(dayHeadingRegex, newFormattedDate);
             if (updatedText !== text) {
                 edit.replace(document.uri, line.range, updatedText);
@@ -82,10 +94,14 @@ function smartDateAdjust(forward = true) {
 
         const scheduledMatch = text.match(scheduledRegex);
         if (scheduledMatch) {
-            const currentDate = scheduledMatch[1];
-            const hadDayAbbrev = scheduledMatch[2] !== undefined;
-            const timeComponent = scheduledMatch[3] || null;
-            const suffix = scheduledMatch[4] ? ` ${scheduledMatch[4]}` : "";
+            const openBracket = scheduledMatch[1];
+            const closeBracket = scheduledMatch[8];
+            const currentDate = scheduledMatch[2];
+            const hadDayAbbrev = scheduledMatch[3] !== undefined;
+            const timeStart = scheduledMatch[4] || null;
+            const timeEnd = scheduledMatch[5] || null;
+            const repeater = scheduledMatch[6] || null;
+            const warning = scheduledMatch[7] || null;
             const parsed = moment(currentDate, acceptedDateFormats, true);
             if (!parsed.isValid()) {
                 warnedParse = true;
@@ -94,8 +110,10 @@ function smartDateAdjust(forward = true) {
             const newDate = parsed.add(forward ? 1 : -1, "day");
             const formattedDate = newDate.format(dateFormat);
             const dayPart = hadDayAbbrev ? ` ${newDate.format("ddd")}` : "";
-            const timePart = timeComponent ? ` ${timeComponent}` : "";
-            const updatedText = text.replace(scheduledRegex, `SCHEDULED: [${formattedDate}${dayPart}${timePart}${suffix}]`);
+            const timePart = timeStart ? (timeEnd ? ` ${timeStart}-${timeEnd}` : ` ${timeStart}`) : "";
+            const repeaterPart = repeater ? ` ${repeater}` : "";
+            const warningPart = warning ? ` ${warning}` : "";
+            const updatedText = text.replace(scheduledRegex, `SCHEDULED: ${openBracket}${formattedDate}${dayPart}${timePart}${repeaterPart}${warningPart}${closeBracket}`);
             if (updatedText !== text) {
                 edit.replace(document.uri, line.range, updatedText);
                 touched = true;
@@ -110,10 +128,14 @@ function smartDateAdjust(forward = true) {
             if (!pm) {
                 continue;
             }
-            const currentDate = pm[1];
-            const hadDayAbbrev = pm[2] !== undefined;
-            const timeComponent = pm[3] || null;
-            const suffix = pm[4] ? ` ${pm[4]}` : "";
+            const openBracket = pm[1];
+            const closeBracket = pm[8];
+            const currentDate = pm[2];
+            const hadDayAbbrev = pm[3] !== undefined;
+            const timeStart = pm[4] || null;
+            const timeEnd = pm[5] || null;
+            const repeater = pm[6] || null;
+            const warning = pm[7] || null;
             const parsed = moment(currentDate, acceptedDateFormats, true);
             if (!parsed.isValid()) {
                 warnedParse = true;
@@ -122,8 +144,10 @@ function smartDateAdjust(forward = true) {
             const newDate = parsed.add(forward ? 1 : -1, "day");
             const formattedDate = newDate.format(dateFormat);
             const dayPart = hadDayAbbrev ? ` ${newDate.format("ddd")}` : "";
-            const timePart = timeComponent ? ` ${timeComponent}` : "";
-            const updatedPlanning = planningLine.text.replace(scheduledRegex, `SCHEDULED: [${formattedDate}${dayPart}${timePart}${suffix}]`);
+            const timePart = timeStart ? (timeEnd ? ` ${timeStart}-${timeEnd}` : ` ${timeStart}`) : "";
+            const repeaterPart = repeater ? ` ${repeater}` : "";
+            const warningPart = warning ? ` ${warning}` : "";
+            const updatedPlanning = planningLine.text.replace(scheduledRegex, `SCHEDULED: ${openBracket}${formattedDate}${dayPart}${timePart}${repeaterPart}${warningPart}${closeBracket}`);
             if (updatedPlanning !== planningLine.text) {
                 edit.replace(document.uri, planningLine.range, updatedPlanning);
                 touched = true;

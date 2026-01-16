@@ -65,10 +65,16 @@ function rescheduleTask(forward = true) {
             continue;
         }
 
-        const currentDate = targetMatch[1];
-        const hadDayAbbrev = targetMatch[2] !== undefined;
-        const hadTime = targetMatch[3] !== undefined;
-        const suffix = targetMatch[4] ? ` ${targetMatch[4]}` : "";
+        // SCHEDULED_REGEX groups: (1) open-bracket, (2) date, (3) dayname, (4) time-start, (5) time-end,
+        //                         (6) repeater, (7) warning, (8) close-bracket
+        const openBracket = targetMatch[1];
+        const closeBracket = targetMatch[8];
+        const currentDate = targetMatch[2];
+        const hadDayAbbrev = targetMatch[3] !== undefined;
+        const timeStart = targetMatch[4] || null;
+        const timeEnd = targetMatch[5] || null;
+        const repeater = targetMatch[6] || null;
+        const warning = targetMatch[7] || null;
         const parsed = moment(currentDate, acceptedDateFormats, true);
         if (!parsed.isValid()) {
             warnedParse = true;
@@ -77,8 +83,10 @@ function rescheduleTask(forward = true) {
         const newDate = parsed.add(forward ? 1 : -1, "day");
         const formattedDate = newDate.format(dateFormat);
         const dayPart = hadDayAbbrev ? ` ${newDate.format("ddd")}` : "";
-        const timePart = hadTime ? ` ${targetMatch[3]}` : "";
-        const updatedText = target.lineText.replace(dateRegex, `SCHEDULED: [${formattedDate}${dayPart}${timePart}${suffix}]`);
+        const timePart = timeStart ? (timeEnd ? ` ${timeStart}-${timeEnd}` : ` ${timeStart}`) : "";
+        const repeaterPart = repeater ? ` ${repeater}` : "";
+        const warningPart = warning ? ` ${warning}` : "";
+        const updatedText = target.lineText.replace(dateRegex, `SCHEDULED: ${openBracket}${formattedDate}${dayPart}${timePart}${repeaterPart}${warningPart}${closeBracket}`);
         if (updatedText !== target.lineText) {
             const targetLine = document.lineAt(target.lineNumber);
             edit.replace(document.uri, targetLine.range, updatedText);

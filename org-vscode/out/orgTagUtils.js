@@ -18,26 +18,75 @@ const PLANNING_KEYWORDS = ["SCHEDULED", "DEADLINE", "CLOSED", "COMPLETED"];
 // ============================================================================
 // All files should import these instead of defining inline regexes.
 //
-// Date format: \d{2,4}-\d{2}-\d{2,4} supports both YYYY-MM-DD and MM-DD-YYYY
-// Optional weekday: (?:\s+(\w{3}))?  e.g. "Sat"
-// Optional time: (?:\s+(\d{1,2}:\d{2}))?  e.g. "14:30" or "9:00"
+// Full Emacs org-mode timestamp format:
+//   <DATE [DAYNAME] [TIME[-TIME]] [REPEATER] [WARNING]>   Active (appears in agenda)
+//   [DATE [DAYNAME] [TIME[-TIME]] [REPEATER] [WARNING]]   Inactive (reference only)
+//
+// Components:
+//   DATE:      YYYY-MM-DD (or MM-DD-YYYY, DD-MM-YYYY for compatibility)
+//   DAYNAME:   Mon, Tue, Wed, Thu, Fri, Sat, Sun (optional)
+//   TIME:      H:MM or HH:MM (optional)
+//   TIME-TIME: H:MM-H:MM time range (optional)
+//   REPEATER:  +Nd, ++Nw, .+Nm (cumulative/catch-up/restart) (optional)
+//              Units: h=hour, d=day, w=week, m=month, y=year
+//   WARNING:   -Nd, --Nw (warn before deadline, all/first occurrence) (optional)
+//
+// Examples:
+//   <2024-01-15>                          Active date
+//   [2024-01-15 Mon]                      Inactive with day
+//   <2024-01-15 Mon 14:00>                Active with time
+//   <2024-01-15 Mon 14:00-15:30>          Active with time range
+//   <2024-01-15 Mon +1w>                  Weekly repeater
+//   <2024-01-15 Mon .+1d>                 Daily habit (restart)
+//   <2024-01-15 -3d>                      Warn 3 days before
+//   <2024-01-15 +1m -1w>                  Monthly, warn 1 week before
 // ============================================================================
 
-// --- Parsing Regexes (with capture groups) ---
-// Capture groups: (1) date, (2) weekday, (3) time, (4) suffix (repeaters, warning periods, etc.)
-const SCHEDULED_REGEX = /SCHEDULED:\s*\[(\d{2,4}-\d{2}-\d{2,4})(?:\s+(\w{3}))?(?:\s+(\d{1,2}:\d{2}))?(?:\s+([^\]]+))?\]/;
-const DEADLINE_REGEX = /DEADLINE:\s*\[(\d{2,4}-\d{2}-\d{2,4})(?:\s+(\w{3}))?(?:\s+(\d{1,2}:\d{2}))?(?:\s+([^\]]+))?\]/;
-const CLOSED_REGEX = /(?:CLOSED|COMPLETED):\s*\[(\d{2,4}-\d{2}-\d{2,4})(?:\s+(\w{3}))?(?:\s+(\d{1,2}:\d{2}))?(?:\s+([^\]]+))?\]/;
+// Shared pattern components
+const DATE_PATTERN = '\\d{2,4}-\\d{2}-\\d{2,4}';
+const DAYNAME_PATTERN = '[A-Za-z]{3}';
+const TIME_PATTERN = '\\d{1,2}:\\d{2}';
+const REPEATER_PATTERN = '[.+]?\\+\\d+[hdwmy]';
+const WARNING_PATTERN = '-{1,2}\\d+[hdwmy]';
 
-// Day heading regex
-// Capture groups: (1) indent, (2) marker (⊘ or asterisks), (3) date, (4) weekday, (5) time, (6) rest of line
-const DAY_HEADING_REGEX = /^(\s*)(⊘|\*+)\s*\[(\d{2,4}-\d{2}-\d{2,4})(?:\s+([A-Za-z]{3}))?(?:\s+(\d{1,2}:\d{2}))?\](.*)$/;
+// Full timestamp inner pattern (without brackets)
+// Capture groups: (1) date, (2) dayname, (3) time-start, (4) time-end, (5) repeater, (6) warning
+const TIMESTAMP_INNER =
+  `(${DATE_PATTERN})` +                           // (1) date
+  `(?:\\s+(${DAYNAME_PATTERN}))?` +               // (2) dayname (optional)
+  `(?:\\s+(${TIME_PATTERN})(?:-(${TIME_PATTERN}))?)` + '?' + // (3) time-start, (4) time-end (optional)
+  `(?:\\s+(${REPEATER_PATTERN}))?` +              // (5) repeater (optional)
+  `(?:\\s+(${WARNING_PATTERN}))?`;                // (6) warning (optional)
+
+// --- Parsing Regexes (with capture groups) ---
+// SCHEDULED capture groups: (1) open-bracket, (2) date, (3) dayname, (4) time-start, (5) time-end, (6) repeater, (7) warning, (8) close-bracket
+const SCHEDULED_REGEX = new RegExp(
+  '\\bSCHEDULED:\\s*([<\\[])' + TIMESTAMP_INNER + '([>\\]])'
+);
+// DEADLINE capture groups: (1) open-bracket, (2) date, (3) dayname, (4) time-start, (5) time-end, (6) repeater, (7) warning, (8) close-bracket
+const DEADLINE_REGEX = new RegExp(
+  '\\bDEADLINE:\\s*([<\\[])' + TIMESTAMP_INNER + '([>\\]])'
+);
+// CLOSED capture groups: (1) open-bracket, (2) date, (3) dayname, (4) time-start, (5) time-end, (6) repeater, (7) warning, (8) close-bracket
+// Note: CLOSED typically doesn't have repeaters/warnings but we parse them for completeness
+const CLOSED_REGEX = new RegExp(
+  '\\b(?:CLOSED|COMPLETED):\\s*([<\\[])' + TIMESTAMP_INNER + '([>\\]])'
+);
+
+// Day heading regex - matches headings with inline timestamps like "* <2024-01-15 Mon +1w> Weekly standup"
+// In Emacs: active <...> timestamps in headlines APPEAR in agenda, inactive [...] do NOT
+// Full timestamp support including repeaters/warnings since they affect agenda behavior
+// Capture groups: (1) indent, (2) marker, (3) open-bracket, (4) date, (5) weekday, (6) time-start, (7) time-end, (8) repeater, (9) warning, (10) close-bracket, (11) rest of line
+const DAY_HEADING_REGEX = new RegExp(
+  '^(\\s*)(⊘|\\*+)\\s*([<\\[])' + TIMESTAMP_INNER + '([>\\]])(.*)$'
+);
 
 // Day heading regex for decoration purposes (asterisks only, permissive for in-editing)
 // - Only matches asterisk markers (\*+), not unicode ⊘
-// - Uses .*$ ending (no closing ] required) to match partial lines during editing
-// - Capture groups: (1) indent, (2) asterisks - only what's needed for decoration
-const DAY_HEADING_DECORATE_REGEX = /^(\s*)(\*+)\s*\[(\d{2,4}-\d{2}-\d{2,4})(?:\s+([A-Za-z]{3}))?.*$/;
+// - Uses .*$ ending (no closing bracket required) to match partial lines during editing
+// - Supports both <...> and [...] brackets
+// - Capture groups: (1) indent, (2) asterisks, (3) open-bracket, (4) date, (5) weekday
+const DAY_HEADING_DECORATE_REGEX = /^(\s*)(\*+)\s*([<\[])(\d{2,4}-\d{2}-\d{2,4})(?:\s+([A-Za-z]{3}))?.*$/;
 
 function getWorkflowStatesConfigValue() {
   try {
@@ -58,10 +107,11 @@ function getTaskPrefixRegex() {
 
 // --- Strip Regexes (for removal, no capture needed) ---
 // Use with .replace(REGEX, "") - note: no 'g' flag, use new RegExp(X.source, 'g') for global
-const SCHEDULED_STRIP_RE = /\s*SCHEDULED:\s*\[[^\]]*\]/;
-const DEADLINE_STRIP_RE = /\s*DEADLINE:\s*\[[^\]]*\]/;
-const CLOSED_STRIP_RE = /\s*(?:CLOSED|COMPLETED):\s*\[[^\]]*\]/;
-const PLANNING_STRIP_RE = /\s*(?:SCHEDULED|DEADLINE|CLOSED|COMPLETED):\s*\[[^\]]*\]/;
+// Must match both active <...> and inactive [...] timestamps with any content (including repeaters/warnings)
+const SCHEDULED_STRIP_RE = /\bSCHEDULED:\s*[<\[][^\]>]*[>\]]/;
+const DEADLINE_STRIP_RE = /\bDEADLINE:\s*[<\[][^\]>]*[>\]]/;
+const CLOSED_STRIP_RE = /\b(?:CLOSED|COMPLETED):\s*[<\[][^\]>]*[>\]]/;
+const PLANNING_STRIP_RE = /\b(?:SCHEDULED|DEADLINE|CLOSED|COMPLETED):\s*[<\[][^\]>]*[>\]]/;
 
 /**
  * Strip all inline planning stamps (SCHEDULED/DEADLINE/CLOSED/COMPLETED) from text.
@@ -78,9 +128,7 @@ function stripInlinePlanning(text) {
 
 function isPlanningLine(line) {
   const text = String(line || "");
-  // In Emacs Org, planning often lives on the line *after* the heading,
-  // typically indented with at least 2 spaces.
-  return /^\s{2,}(?:SCHEDULED|DEADLINE|CLOSED|COMPLETED):\s*\[/.test(text);
+  return /^[ \t]*(?:SCHEDULED|DEADLINE|CLOSED|COMPLETED):\s*[<\[]/.test(text);
 }
 
 function parsePlanningFromText(text) {
@@ -92,10 +140,11 @@ function parsePlanningFromText(text) {
   };
 
   const t = String(text || "");
-  const scheduledMatch = t.match(/SCHEDULED:\s*\[([^\]]+)\]/);
-  const deadlineMatch = t.match(/DEADLINE:\s*\[([^\]]+)\]/);
-  const closedMatch = t.match(/CLOSED:\s*\[([^\]]+)\]/);
-  const completedMatch = t.match(/COMPLETED:\s*\[([^\]]+)\]/);
+  // Match both active <...> and inactive [...] timestamps
+  const scheduledMatch = t.match(/\bSCHEDULED:\s*[<\[]([^\]>]+)[>\]]/);
+  const deadlineMatch = t.match(/\bDEADLINE:\s*[<\[]([^\]>]+)[>\]]/);
+  const closedMatch = t.match(/\bCLOSED:\s*[<\[]([^\]>]+)[>\]]/);
+  const completedMatch = t.match(/\bCOMPLETED:\s*[<\[]([^\]>]+)[>\]]/);
 
   if (scheduledMatch) out.scheduled = scheduledMatch[1];
   if (deadlineMatch) out.deadline = deadlineMatch[1];
@@ -482,23 +531,45 @@ function momentFromTimestampContent(raw, acceptedDateFormats, strict) {
 }
 
 /**
- * Build a SCHEDULED replacement string, preserving day abbreviation and time if present.
+ * Build a SCHEDULED replacement string, preserving all components.
+ *
+ * SCHEDULED_REGEX capture groups:
+ *   (1) open-bracket: < or [
+ *   (2) date: YYYY-MM-DD
+ *   (3) dayname: Mon, Tue, etc. (optional)
+ *   (4) time-start: HH:MM (optional)
+ *   (5) time-end: HH:MM (optional, for time ranges)
+ *   (6) repeater: +1d, ++1w, .+1m, etc. (optional)
+ *   (7) warning: -3d, --1w, etc. (optional)
+ *   (8) close-bracket: > or ]
+ *
  * @param {RegExpMatchArray} match - Match from SCHEDULED_REGEX
  * @param {moment.Moment} parsedNewDate - The new date as a moment object
  * @param {string} formattedNewDate - The new date formatted per dateFormat setting
  * @returns {string} The replacement SCHEDULED string
  */
 function buildScheduledReplacement(match, parsedNewDate, formattedNewDate) {
-  const hadDayAbbrev = match[2] !== undefined;
-  const timeComponent = match[3] || null;
-  const suffix = match[4] ? ` ${match[4]}` : "";
+  const openBracket = match[1] || '<';
+  const closeBracket = match[8] || (openBracket === '<' ? '>' : ']');
+  const hadDayAbbrev = match[3] !== undefined;
+  const timeStart = match[4] || null;
+  const timeEnd = match[5] || null;
+  const repeater = match[6] || null;
+  const warning = match[7] || null;
+
   const dayPart = hadDayAbbrev ? ` ${parsedNewDate.format("ddd")}` : "";
-  const timePart = timeComponent ? ` ${timeComponent}` : "";
-  return `SCHEDULED: [${formattedNewDate}${dayPart}${timePart}${suffix}]`;
+  const timePart = timeStart ? (timeEnd ? ` ${timeStart}-${timeEnd}` : ` ${timeStart}`) : "";
+  const repeaterPart = repeater ? ` ${repeater}` : "";
+  const warningPart = warning ? ` ${warning}` : "";
+
+  return `SCHEDULED: ${openBracket}${formattedNewDate}${dayPart}${timePart}${repeaterPart}${warningPart}${closeBracket}`;
 }
 
 /**
  * Check if a line has SCHEDULED matching a specific date.
+ *
+ * Note: With updated SCHEDULED_REGEX, the date is in capture group 2.
+ *
  * @param {string} line - The line to check
  * @param {moment.Moment} targetDate - The date to match against
  * @param {string[]} acceptedDateFormats - Formats to try when parsing
@@ -507,7 +578,8 @@ function buildScheduledReplacement(match, parsedNewDate, formattedNewDate) {
 function getMatchingScheduledOnLine(line, targetDate, acceptedDateFormats) {
   const match = line.match(SCHEDULED_REGEX);
   if (!match) return null;
-  const existingDate = moment(match[1], acceptedDateFormats, true);
+  const dateMatch = match[2];
+  const existingDate = moment(dateMatch, acceptedDateFormats, true);
   if (existingDate.isValid() && existingDate.isSame(targetDate, 'day')) {
     return match;
   }
@@ -550,7 +622,6 @@ module.exports = {
   matchesTagMatchString,
   normalizeTagMatchInput,
   getAcceptedDateFormats,
-  normalizeTimestampContentForParsing,
   momentFromTimestampContent,
   buildScheduledReplacement,
   getMatchingScheduledOnLine

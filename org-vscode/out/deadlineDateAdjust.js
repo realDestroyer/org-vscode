@@ -4,7 +4,9 @@ const { getAcceptedDateFormats, DEADLINE_REGEX } = require("./orgTagUtils");
 
 /**
  * Adjusts DEADLINE dates on the current line
- * DEADLINE: [MM-DD-YYYY] or DEADLINE: [MM-DD-YYYY HH:MM]
+ * Supports both active <...> and inactive [...] timestamps with full Emacs format
+ * DEADLINE_REGEX groups: (1) open-bracket, (2) date, (3) dayname, (4) time-start, (5) time-end,
+ *                        (6) repeater, (7) warning, (8) close-bracket
  */
 function deadlineDateAdjust(forward = true) {
     const editor = vscode.window.activeTextEditor;
@@ -51,10 +53,14 @@ function deadlineDateAdjust(forward = true) {
         if (!match) {
             continue;
         }
-        const currentDate = match[1];
-        const hadDayAbbrev = match[2] !== undefined;
-        const timeComponent = match[3] || null;
-        const suffix = match[4] ? ` ${match[4]}` : "";
+        const openBracket = match[1];
+        const closeBracket = match[8];
+        const currentDate = match[2];
+        const hadDayAbbrev = match[3] !== undefined;
+        const timeStart = match[4] || null;
+        const timeEnd = match[5] || null;
+        const repeater = match[6] || null;
+        const warning = match[7] || null;
         const parsed = moment(currentDate, acceptedDateFormats, true);
         if (!parsed.isValid()) {
             warnedParse = true;
@@ -63,8 +69,10 @@ function deadlineDateAdjust(forward = true) {
         const newDate = parsed.add(forward ? 1 : -1, "day");
         const formattedDate = newDate.format(dateFormat);
         const dayPart = hadDayAbbrev ? ` ${newDate.format("ddd")}` : "";
-        const timePart = timeComponent ? ` ${timeComponent}` : "";
-        const newDeadline = `DEADLINE: [${formattedDate}${dayPart}${timePart}${suffix}]`;
+        const timePart = timeStart ? (timeEnd ? ` ${timeStart}-${timeEnd}` : ` ${timeStart}`) : "";
+        const repeaterPart = repeater ? ` ${repeater}` : "";
+        const warningPart = warning ? ` ${warning}` : "";
+        const newDeadline = `DEADLINE: ${openBracket}${formattedDate}${dayPart}${timePart}${repeaterPart}${warningPart}${closeBracket}`;
         const updatedText = text.replace(deadlineRegex, newDeadline);
         if (updatedText !== text) {
             edit.replace(document.uri, line.range, updatedText);

@@ -46,7 +46,7 @@ function parseHeadingLine(text) {
   const unicodeHeadingRe = buildUnicodeHeadingRegexFromRegistry(registry);
 
   // Asterisk headings (Org classic)
-  // Example: "*** TODO [#A] My title :tag1:tag2: SCHEDULED: [...]"
+  // Example: "*** TODO [#A] My title :tag1:tag2: SCHEDULED: <...>"
   const star = text.match(/^\s*(\*+)\s+(.*)$/);
   if (star) {
     const level = star[1].length;

@@ -34,8 +34,9 @@ function decrementDate() {
     const dateFormat = config.get("dateFormat", "YYYY-MM-DD");
     const acceptedDateFormats = getAcceptedDateFormats(dateFormat);
 
-    // Match day heading: ⊘ [date DDD HH:MM] OR * [date DDD HH:MM] (ddd and time are optional)
-    // DAY_HEADING_REGEX groups: (1) indent, (2) marker, (3) date, (4) weekday, (5) time, (6) rest
+    // Match day heading: ⊘ <date DDD HH:MM> OR * [date DDD HH:MM] (all optional after date)
+    // DAY_HEADING_REGEX groups: (1) indent, (2) marker, (3) open-bracket, (4) date, (5) dayname,
+    //   (6) time-start, (7) time-end, (8) repeater, (9) warning, (10) close-bracket, (11) rest
     const dateRegex = DAY_HEADING_REGEX;
 
     const edit = new vscode.WorkspaceEdit();
@@ -51,10 +52,15 @@ function decrementDate() {
         }
         const indent = match[1] || "";
         const marker = match[2];
-        const currentDate = match[3];
-        const hadDayAbbrev = match[4] !== undefined;
-        const timeComponent = match[5] || null;
-        const rest = match[6] || "";
+        const openBracket = match[3];
+        const closeBracket = match[10];
+        const currentDate = match[4];
+        const hadDayAbbrev = match[5] !== undefined;
+        const timeStart = match[6] || null;
+        const timeEnd = match[7] || null;
+        const repeater = match[8] || null;
+        const warning = match[9] || null;
+        const rest = match[11] || "";
         const parsed = moment(currentDate, acceptedDateFormats, true);
         if (!parsed.isValid()) {
             warnedParse = true;
@@ -63,8 +69,10 @@ function decrementDate() {
         const newDate = parsed.subtract(1, "day");
         const formattedDate = newDate.format(dateFormat);
         const dayPart = hadDayAbbrev ? ` ${newDate.format("ddd")}` : "";
-        const timePart = timeComponent ? ` ${timeComponent}` : "";
-        const updatedText = `${indent}${marker} [${formattedDate}${dayPart}${timePart}]${rest}`;
+        const timePart = timeStart ? (timeEnd ? ` ${timeStart}-${timeEnd}` : ` ${timeStart}`) : "";
+        const repeaterPart = repeater ? ` ${repeater}` : "";
+        const warningPart = warning ? ` ${warning}` : "";
+        const updatedText = `${indent}${marker} ${openBracket}${formattedDate}${dayPart}${timePart}${repeaterPart}${warningPart}${closeBracket}${rest}`;
         if (updatedText !== text) {
             edit.replace(document.uri, line.range, updatedText);
             touched = true;

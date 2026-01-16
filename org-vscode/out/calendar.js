@@ -280,7 +280,7 @@ function rescheduleTaskById(taskId, newDate) {
   }
   const formattedNewDate = parsedNewDate.format(dateFormat);
 
-  // Replace or insert SCHEDULED: [MM-DD-YYYY] on that line
+  // Replace or insert SCHEDULED: <MM-DD-YYYY> on that line (active timestamp for agenda)
   const headlineText = normalizeTagsAfterPlanning(lines[lineIndex])
     .replace(SCHEDULED_STRIP_RE, "")
     .trimRight();
@@ -288,7 +288,7 @@ function rescheduleTaskById(taskId, newDate) {
 
   const headlineIndent = headlineText.match(/^\s*/)?.[0] || "";
   const planningIndent = `${headlineIndent}${bodyIndent}`;
-  const scheduledTag = `SCHEDULED: [${formattedNewDate}]`;
+  const scheduledTag = `SCHEDULED: <${formattedNewDate}>`;
 
   const nextLine = (lineIndex + 1 < lines.length) ? lines[lineIndex + 1] : "";
   if (isPlanningLine(nextLine)) {

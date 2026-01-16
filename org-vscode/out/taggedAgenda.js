@@ -155,7 +155,7 @@ async function updateTaskStatusInFile(file, taskText, scheduledDate, newStatus, 
     const logIntoDrawer = config.get("logIntoDrawer", false);
     const logDrawerName = config.get("logDrawerName", "LOGBOOK");
 
-    const dateTag = scheduledDate ? `SCHEDULED: [${scheduledDate}]` : null;
+    const dateTag = scheduledDate ? `SCHEDULED: <${scheduledDate}>` : null;
     console.log("🛠 Updating file:", filePath);
     console.log("🔍 Looking for task text:", taskText);
     if (dateTag) console.log("🔍 With scheduled date tag:", dateTag);
@@ -185,7 +185,7 @@ async function updateTaskStatusInFile(file, taskText, scheduledDate, newStatus, 
 
       if (dateTag) {
         const planning = getPlanningForHeading(docLines, i);
-        const matchesDate = planning && planning.scheduled ? (`SCHEDULED: [${planning.scheduled}]` === dateTag) : false;
+        const matchesDate = planning && planning.scheduled ? (`SCHEDULED: <${planning.scheduled}>` === dateTag) : false;
         if (!matchesDate) {
           continue;
         }
@@ -279,8 +279,9 @@ async function updateTaskStatusInFile(file, taskText, scheduledDate, newStatus, 
 
   function buildPlanningBody(p) {
     const parts = [];
-    if (p.scheduled) parts.push(`SCHEDULED: [${p.scheduled}]`);
-    if (p.deadline) parts.push(`DEADLINE: [${p.deadline}]`);
+    // In Emacs: SCHEDULED/DEADLINE use active <...> (appear in agenda), CLOSED uses inactive [...]
+    if (p.scheduled) parts.push(`SCHEDULED: <${p.scheduled}>`);
+    if (p.deadline) parts.push(`DEADLINE: <${p.deadline}>`);
     if (p.closed) parts.push(`CLOSED: [${p.closed}]`);
     return parts.join("  ");
   }
