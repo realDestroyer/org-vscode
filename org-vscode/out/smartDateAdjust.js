@@ -1,19 +1,17 @@
-const vscode = require("vscode");
-const moment = require("moment");
-const { isPlanningLine, getAcceptedDateFormats, DAY_HEADING_REGEX, SCHEDULED_REGEX } = require("./orgTagUtils");
+const { isPlanningLine, getAcceptedDateFormats } = require("./orgTagUtils");
+const { transformDayHeadingDate } = require("./incrementDate");
+const { transformScheduledDate } = require("./rescheduleTask");
 
 /**
  * Smart date adjustment - detects what type of date is on the current line
  * and adjusts it accordingly:
- * - Day heading (⊘ <MM-DD-YYYY DDD>) → adjusts the day date
- * - Task with SCHEDULED: <MM-DD-YYYY> → adjusts the scheduled date
+ * - Day heading (⊘ <YYYY-MM-DD DDD>) → adjusts the day date
+ * - Task with SCHEDULED: <YYYY-MM-DD> → adjusts the scheduled date
  *
- * DAY_HEADING_REGEX groups: (1) indent, (2) marker, (3) open-bracket, (4) date, (5) dayname,
- *   (6) time-start, (7) time-end, (8) repeater, (9) warning, (10) close-bracket, (11) rest
- * SCHEDULED_REGEX groups: (1) open-bracket, (2) date, (3) dayname, (4) time-start, (5) time-end,
- *   (6) repeater, (7) warning, (8) close-bracket
+ * Uses transformDayHeadingDate and transformScheduledDate for the actual transformations.
  */
 function smartDateAdjust(forward = true) {
+    const vscode = require("vscode");
     const editor = vscode.window.activeTextEditor;
     if (!editor) {
         vscode.window.showErrorMessage("No active editor detected.");
@@ -45,9 +43,6 @@ function smartDateAdjust(forward = true) {
     }
     const sortedLines = Array.from(targetLines).sort((a, b) => b - a);
 
-    const dayHeadingRegex = DAY_HEADING_REGEX;
-    const scheduledRegex = SCHEDULED_REGEX;
-
     const edit = new vscode.WorkspaceEdit();
     let touched = false;
     let warnedParse = false;
@@ -59,97 +54,44 @@ function smartDateAdjust(forward = true) {
             ? document.lineAt(lineNumber + 1).text
             : "";
 
-        const dayMatch = text.match(dayHeadingRegex);
-        if (dayMatch) {
-            const indent = dayMatch[1] || "";
-            const marker = dayMatch[2];
-            const openBracket = dayMatch[3];
-            const closeBracket = dayMatch[10];
-            const currentDate = dayMatch[4];
-            const hadDayAbbrev = dayMatch[5] !== undefined;
-            const timeStart = dayMatch[6] || null;
-            const timeEnd = dayMatch[7] || null;
-            const repeater = dayMatch[8] || null;
-            const warning = dayMatch[9] || null;
-            const suffix = dayMatch[11] || "";
-            const parsed = moment(currentDate, acceptedDateFormats, true);
-            if (!parsed.isValid()) {
-                warnedParse = true;
-                continue;
-            }
-            const newDate = parsed.add(forward ? 1 : -1, "days");
-            const formattedDate = newDate.format(dateFormat);
-            const dayPart = hadDayAbbrev ? ` ${newDate.format("ddd")}` : "";
-            const timePart = timeStart ? (timeEnd ? ` ${timeStart}-${timeEnd}` : ` ${timeStart}`) : "";
-            const repeaterPart = repeater ? ` ${repeater}` : "";
-            const warningPart = warning ? ` ${warning}` : "";
-            const newFormattedDate = `${indent}${marker} ${openBracket}${formattedDate}${dayPart}${timePart}${repeaterPart}${warningPart}${closeBracket}${suffix}`;
-            const updatedText = text.replace(dayHeadingRegex, newFormattedDate);
-            if (updatedText !== text) {
-                edit.replace(document.uri, line.range, updatedText);
+        // Try day heading first
+        const dayResult = transformDayHeadingDate(text, forward, dateFormat, acceptedDateFormats);
+        if (dayResult.parseError) {
+            warnedParse = true;
+            continue;
+        }
+        if (dayResult.text !== null) {
+            if (dayResult.text !== text) {
+                edit.replace(document.uri, line.range, dayResult.text);
                 touched = true;
             }
             continue;
         }
 
-        const scheduledMatch = text.match(scheduledRegex);
-        if (scheduledMatch) {
-            const openBracket = scheduledMatch[1];
-            const closeBracket = scheduledMatch[8];
-            const currentDate = scheduledMatch[2];
-            const hadDayAbbrev = scheduledMatch[3] !== undefined;
-            const timeStart = scheduledMatch[4] || null;
-            const timeEnd = scheduledMatch[5] || null;
-            const repeater = scheduledMatch[6] || null;
-            const warning = scheduledMatch[7] || null;
-            const parsed = moment(currentDate, acceptedDateFormats, true);
-            if (!parsed.isValid()) {
-                warnedParse = true;
-                continue;
-            }
-            const newDate = parsed.add(forward ? 1 : -1, "day");
-            const formattedDate = newDate.format(dateFormat);
-            const dayPart = hadDayAbbrev ? ` ${newDate.format("ddd")}` : "";
-            const timePart = timeStart ? (timeEnd ? ` ${timeStart}-${timeEnd}` : ` ${timeStart}`) : "";
-            const repeaterPart = repeater ? ` ${repeater}` : "";
-            const warningPart = warning ? ` ${warning}` : "";
-            const updatedText = text.replace(scheduledRegex, `SCHEDULED: ${openBracket}${formattedDate}${dayPart}${timePart}${repeaterPart}${warningPart}${closeBracket}`);
-            if (updatedText !== text) {
-                edit.replace(document.uri, line.range, updatedText);
+        // Try SCHEDULED on current line
+        const schedResult = transformScheduledDate(text, forward, dateFormat, acceptedDateFormats);
+        if (schedResult.parseError) {
+            warnedParse = true;
+            continue;
+        }
+        if (schedResult.text !== null) {
+            if (schedResult.text !== text) {
+                edit.replace(document.uri, line.range, schedResult.text);
                 touched = true;
             }
             continue;
         }
 
-        // Emacs-style: scheduled stamp on the immediate planning line.
-        if (!scheduledMatch && isPlanningLine(nextLineText) && nextLineText.match(scheduledRegex)) {
-            const planningLine = document.lineAt(lineNumber + 1);
-            const pm = planningLine.text.match(scheduledRegex);
-            if (!pm) {
-                continue;
-            }
-            const openBracket = pm[1];
-            const closeBracket = pm[8];
-            const currentDate = pm[2];
-            const hadDayAbbrev = pm[3] !== undefined;
-            const timeStart = pm[4] || null;
-            const timeEnd = pm[5] || null;
-            const repeater = pm[6] || null;
-            const warning = pm[7] || null;
-            const parsed = moment(currentDate, acceptedDateFormats, true);
-            if (!parsed.isValid()) {
+        // Emacs-style: scheduled stamp on the immediate planning line
+        if (isPlanningLine(nextLineText)) {
+            const planningResult = transformScheduledDate(nextLineText, forward, dateFormat, acceptedDateFormats);
+            if (planningResult.parseError) {
                 warnedParse = true;
                 continue;
             }
-            const newDate = parsed.add(forward ? 1 : -1, "day");
-            const formattedDate = newDate.format(dateFormat);
-            const dayPart = hadDayAbbrev ? ` ${newDate.format("ddd")}` : "";
-            const timePart = timeStart ? (timeEnd ? ` ${timeStart}-${timeEnd}` : ` ${timeStart}`) : "";
-            const repeaterPart = repeater ? ` ${repeater}` : "";
-            const warningPart = warning ? ` ${warning}` : "";
-            const updatedPlanning = planningLine.text.replace(scheduledRegex, `SCHEDULED: ${openBracket}${formattedDate}${dayPart}${timePart}${repeaterPart}${warningPart}${closeBracket}`);
-            if (updatedPlanning !== planningLine.text) {
-                edit.replace(document.uri, planningLine.range, updatedPlanning);
+            if (planningResult.text !== null && planningResult.text !== nextLineText) {
+                const planningLine = document.lineAt(lineNumber + 1);
+                edit.replace(document.uri, planningLine.range, planningResult.text);
                 touched = true;
             }
         }

@@ -21,6 +21,7 @@ const tests = [
   require(path.join(__dirname, 'repeated-tasks.test.js')),
   require(path.join(__dirname, 'calendar-reschedule.test.js')),
   require(path.join(__dirname, 'timestamp-regex.test.js')),
+  require(path.join(__dirname, 'date-mutations.test.js'))
 ];
 
 async function main() {
