@@ -357,7 +357,7 @@ function openCalendarView() {
       // Open a specific org file in the editor
       let filePath = path.join(setMainDir(), message.file);
       vscode.workspace.openTextDocument(vscode.Uri.file(filePath)).then(doc => {
-        vscode.window.showTextDocument(doc);
+        vscode.window.showTextDocument(doc, vscode.ViewColumn.One, false);
       });
 
     } else if (message.command === "rescheduleTask") {
