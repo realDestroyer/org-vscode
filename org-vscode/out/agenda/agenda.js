@@ -9,6 +9,7 @@ const continuedTaskHandler = require("../continuedTaskHandler");
 const path = require("path");
 const { stripAllTagSyntax, getPlanningForHeading, isPlanningLine, parsePlanningFromText, normalizeTagsAfterPlanning, getAcceptedDateFormats, DEADLINE_REGEX, stripInlinePlanning, momentFromTimestampContent } = require("../orgTagUtils");
 const { applyRepeatersOnCompletion } = require("../repeatedTasks");
+const { computeLogbookInsertion, formatStateChangeEntry } = require("../orgLogbook");
 const { formatCheckboxStats, findCheckboxCookie, computeHierarchicalCheckboxStatsInRange } = require("../checkboxStats");
 const { computeCheckboxToggleEdits } = require("../checkboxToggle");
 const { normalizeBodyIndentation } = require("../indentUtils");
@@ -452,6 +453,9 @@ module.exports = function () {
 
             const bodyIndent = normalizeBodyIndentation(config.get("bodyIndentation", 2), 2);
 
+            const logIntoDrawer = config.get("logIntoDrawer", false);
+            const logDrawerName = config.get("logDrawerName", "LOGBOOK");
+
             const indent = currentLine.text.match(/^\s*/)?.[0] || "";
 
             const planningIndent = `${indent}${bodyIndent}`;
@@ -474,6 +478,25 @@ module.exports = function () {
             let effectiveStatus = newStatus;
             const completionTransition = registry.isDoneLike(newStatus) && !registry.isDoneLike(currentStatus);
             if (completionTransition) {
+              if (logIntoDrawer && registry.stampsClosed(newStatus)) {
+                const completionTimestamp = moment().format(`${dateFormat} ddd HH:mm`);
+                const entry = formatStateChangeEntry({
+                  fromKeyword: currentStatus,
+                  toKeyword: newStatus,
+                  timestamp: completionTimestamp
+                });
+                if (entry) {
+                  const ins = computeLogbookInsertion(lines, taskLineNumber, {
+                    drawerName: logDrawerName,
+                    bodyIndent,
+                    entry
+                  });
+                  if (ins && ins.changed && typeof ins.lineIndex === "number" && typeof ins.text === "string") {
+                    workspaceEdit.insert(uri, new vscode.Position(ins.lineIndex, 0), ins.text);
+                  }
+                }
+              }
+
               const repeated = applyRepeatersOnCompletion({
                 lines,
                 headingLineIndex: taskLineNumber,

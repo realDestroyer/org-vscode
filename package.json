@@ -2,7 +2,7 @@
 	"name": "org-vscode",
 	"displayName": "org-vscode",
 	"description": "Quickly create todo lists, take notes, plan projects and organize your thoughts.",
-	"version": "2.2.8",
+	"version": "2.2.9",
 	"repository": "https://www.github.com/realDestroyer/org-vscode",
 	"icon": "Images/org-vscode-logo.png",
 	"publisher": "realDestroyer",
@@ -316,6 +316,18 @@
 					"minimum": 0,
 					"multipleOf": 1,
 					"description": "Number of spaces to indent body/planning lines under a heading (used by autoIndentNonHeaderText and planning-line writers). Default is 2."
+				},
+				"Org-vscode.logIntoDrawer": {
+					"type": "boolean",
+					"order": 4.3,
+					"default": false,
+					"description": "When enabled, Org-vscode records completion events as Org-mode style log entries inside a drawer (default: LOGBOOK)."
+				},
+				"Org-vscode.logDrawerName": {
+					"type": "string",
+					"order": 4.4,
+					"default": "LOGBOOK",
+					"description": "Drawer name to use when logIntoDrawer is enabled (Org-mode convention is LOGBOOK)."
 				},
 				"Org-vscode.folderPath": {
 					"type": "string",

@@ -3,6 +3,14 @@ const moment = require("moment");
 
 const { createWorkflowRegistry } = require("./workflowStates");
 
+let _cachedVscode = undefined;
+let _cachedWorkflowStatesConfig = undefined;
+let _workflowStatesConfigRead = false;
+let _cachedWorkflowRegistry = null;
+
+let _cachedTaskPrefixCaptureRegex = null;
+let _cachedCleanTaskRegexes = null;
+
 // Legacy exports retained for back-compat; the live behavior is configuration-driven.
 const keywords = ["TODO", "IN_PROGRESS", "CONTINUED", "DONE", "ABANDONED"];
 const characterArray = ["⊙ ", "⊘ ", "⊜ ", "⊖ ", "⊗ "];
@@ -19,19 +27,42 @@ function normalizeKeyword(keyword) {
 }
 
 function getWorkflowStatesConfigValue() {
+  if (_workflowStatesConfigRead) return _cachedWorkflowStatesConfig;
+  if (_cachedVscode === null) return undefined;
+
   try {
     // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const vscode = require("vscode");
-    if (!vscode?.workspace?.getConfiguration) return undefined;
-    return vscode.workspace.getConfiguration("Org-vscode").get("workflowStates");
+    _cachedVscode = require("vscode");
+    if (!_cachedVscode?.workspace?.getConfiguration) {
+      _cachedVscode = null;
+      _cachedWorkflowStatesConfig = undefined;
+      _workflowStatesConfigRead = true;
+      return undefined;
+    }
+    _cachedWorkflowStatesConfig = _cachedVscode.workspace.getConfiguration("Org-vscode").get("workflowStates");
+    _workflowStatesConfigRead = true;
+    return _cachedWorkflowStatesConfig;
   } catch {
     // Not running inside VS Code (e.g. unit tests).
+    _cachedVscode = null;
+    _cachedWorkflowStatesConfig = undefined;
+    _workflowStatesConfigRead = true;
     return undefined;
   }
 }
 
+function invalidateWorkflowCache() {
+  _cachedWorkflowStatesConfig = undefined;
+  _workflowStatesConfigRead = false;
+  _cachedWorkflowRegistry = null;
+  _cachedTaskPrefixCaptureRegex = null;
+  _cachedCleanTaskRegexes = null;
+}
+
 function getWorkflowRegistry() {
-  return createWorkflowRegistry(getWorkflowStatesConfigValue());
+  if (_cachedWorkflowRegistry) return _cachedWorkflowRegistry;
+  _cachedWorkflowRegistry = createWorkflowRegistry(getWorkflowStatesConfigValue());
+  return _cachedWorkflowRegistry;
 }
 
 function getCycleKeywords() {
@@ -54,6 +85,7 @@ function getMarkerForKeyword(keyword) {
 }
 
 function buildTaskPrefixCaptureRegex() {
+  if (_cachedTaskPrefixCaptureRegex) return _cachedTaskPrefixCaptureRegex;
   const registry = getWorkflowRegistry();
   const kws = registry.getCycleKeywords();
   const keywordAlt = kws.map(escapeRegExp).join("|");
@@ -65,7 +97,8 @@ function buildTaskPrefixCaptureRegex() {
   const markerPart = markerAlt ? `(?:${markerAlt})\\s*` : "";
 
   // Mirrors historical TASK_PREFIX_REGEX semantics, but captures the keyword.
-  return new RegExp(`^(?:\\s*)(?:${markerPart})?(?:\\*+\\s+)?(${keywordAlt})\\b`);
+  _cachedTaskPrefixCaptureRegex = new RegExp(`^(?:\\s*)(?:${markerPart})?(?:\\*+\\s+)?(${keywordAlt})\\b`);
+  return _cachedTaskPrefixCaptureRegex;
 }
 
 function findTaskKeyword(lineText) {
@@ -101,16 +134,22 @@ function rotateKeyword(currentKeyword, direction = 'left') {
 }
 
 function cleanTaskText(lineText) {
-  const registry = getWorkflowRegistry();
-  const kws = registry.getCycleKeywords();
-  const kwAlt = kws.length ? kws.map(escapeRegExp).join("|") : "";
-  const kwRe = kwAlt ? new RegExp(`\\b(?:${kwAlt})\\b`, "g") : null;
+  if (!_cachedCleanTaskRegexes) {
+    const registry = getWorkflowRegistry();
+    const kws = registry.getCycleKeywords();
+    const kwAlt = kws.length ? kws.map(escapeRegExp).join("|") : "";
+    const kwRe = kwAlt ? new RegExp(`\\b(?:${kwAlt})\\b`, "g") : null;
 
-  const markers = (registry.states || [])
-    .map((s) => s.marker)
-    .filter((m) => typeof m === "string" && m.length > 0);
-  const markerAlt = Array.from(new Set(markers)).map(escapeRegExp).join("|");
-  const markerRe = markerAlt ? new RegExp(`(?:${markerAlt})`, "g") : null;
+    const markers = (registry.states || [])
+      .map((s) => s.marker)
+      .filter((m) => typeof m === "string" && m.length > 0);
+    const markerAlt = Array.from(new Set(markers)).map(escapeRegExp).join("|");
+    const markerRe = markerAlt ? new RegExp(`(?:${markerAlt})`, "g") : null;
+
+    _cachedCleanTaskRegexes = { kwRe, markerRe };
+  }
+
+  const { kwRe, markerRe } = _cachedCleanTaskRegexes;
 
   let out = String(lineText || "");
   out = out.replace(/^\s*\*+\s+/, "");
@@ -147,6 +186,7 @@ function buildClosedStamp(leadingSpaces, dateFormat) {
 module.exports = {
   keywords,
   characterArray,
+  invalidateWorkflowCache,
   getWorkflowRegistry,
   getCycleKeywords,
   getDefaultKeyword,

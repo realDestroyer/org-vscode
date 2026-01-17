@@ -7,6 +7,7 @@ const taskKeywordManager = require("./taskKeywordManager");
 const continuedTaskHandler = require("./continuedTaskHandler");
 const { isPlanningLine, parsePlanningFromText, normalizeTagsAfterPlanning, stripInlinePlanning } = require("./orgTagUtils");
 const { applyRepeatersOnCompletion } = require("./repeatedTasks");
+const { computeLogbookInsertion, formatStateChangeEntry } = require("./orgLogbook");
 const { computeHeadingTransitions } = require("./checkboxAutoDoneTransitions");
 const { normalizeBodyIndentation } = require("./indentUtils");
 
@@ -54,6 +55,8 @@ async function applyDoneToHeading(document, lineNumber) {
   const headingMarkerStyle = config.get("headingMarkerStyle", "unicode");
   const dateFormat = config.get("dateFormat", "YYYY-MM-DD");
   const bodyIndent = normalizeBodyIndentation(config.get("bodyIndentation", 2), 2);
+  const logIntoDrawer = config.get("logIntoDrawer", false);
+  const logDrawerName = config.get("logDrawerName", "LOGBOOK");
   const registry = taskKeywordManager.getWorkflowRegistry();
 
   const currentLine = document.lineAt(lineNumber);
@@ -86,14 +89,36 @@ async function applyDoneToHeading(document, lineNumber) {
   const doneKeyword = pickDoneKeyword(registry);
   const completionStampsClosed = registry.stampsClosed(doneKeyword);
 
+  const completionTimestamp = moment().format(`${dateFormat} ddd HH:mm`);
+
   let nextKeyword = doneKeyword;
   if (completionStampsClosed) {
-    mergedPlanning.closed = moment().format(`${dateFormat} ddd HH:mm`);
+    mergedPlanning.closed = completionTimestamp;
   }
 
   // If the task has repeaters, reschedule and reopen.
   {
     const lines = document.getText().split(/\r?\n/);
+
+    // Org-mode style logging into a drawer (LOGBOOK) for completion transitions.
+    if (logIntoDrawer && completionStampsClosed) {
+      const entry = formatStateChangeEntry({
+        fromKeyword: currentKeyword,
+        toKeyword: doneKeyword,
+        timestamp: completionTimestamp
+      });
+      if (entry) {
+        const ins = computeLogbookInsertion(lines, lineNumber, {
+          drawerName: logDrawerName,
+          bodyIndent,
+          entry
+        });
+        if (ins && ins.changed && typeof ins.lineIndex === "number" && typeof ins.text === "string") {
+          workspaceEdit.insert(document.uri, new vscode.Position(ins.lineIndex, 0), ins.text);
+        }
+      }
+    }
+
     const repeated = applyRepeatersOnCompletion({
       lines,
       headingLineIndex: lineNumber,
