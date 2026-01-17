@@ -5,7 +5,7 @@ const fs = require("fs");           // File system module to read/write org file
 const path = require("path");       // For cross-platform path handling
 const moment = require("moment");   // Date formatting library
 const taskKeywordManager = require("./taskKeywordManager");
-const { getAllTagsFromLine, stripAllTagSyntax, parseFileTagsFromText, createInheritanceTracker, getPlanningForHeading, isPlanningLine, normalizeTagsAfterPlanning, getAcceptedDateFormats, buildScheduledReplacement, getMatchingScheduledOnLine, SCHEDULED_STRIP_RE, SCHEDULED_REGEX, DEADLINE_REGEX, momentFromTimestampContent } = require("./orgTagUtils");
+const { getAllTagsFromLine, stripAllTagSyntax, parseFileTagsFromText, createInheritanceTracker, getPlanningForHeading, isPlanningLine, normalizeTagsAfterPlanning, getAcceptedDateFormats, buildScheduledReplacement, getMatchingScheduledOnLine, SCHEDULED_STRIP_RE, SCHEDULED_REGEX, DEADLINE_REGEX, momentFromTimestampContent, extractPlainTimestamps } = require("./orgTagUtils");
 const { normalizeBodyIndentation } = require("./indentUtils");
 
 function escapeRegExp(text) {
@@ -91,14 +91,50 @@ function sendTasksToCalendar(panel) {
         let content = fileText.split(/\r?\n/);
         const tracker = createInheritanceTracker(parseFileTagsFromText(fileText));
 
+        // Track current heading for plain timestamps in body text
+        let currentHeadingText = null;
+        let currentHeadingLine = 0;
+        let seenFirstHeading = false;
+
         content.forEach((line, lineIndex) => {
           const tagState = tracker.handleLine(line);
+          const startsWithSymbol = headingStartRegex.test(line.trim());
+
+          // Track current heading for plain timestamp display
+          if (startsWithSymbol) {
+            seenFirstHeading = true;
+            currentHeadingText = taskKeywordManager.cleanTaskText(stripAllTagSyntax(line.trim()));
+            currentHeadingLine = lineIndex + 1;
+          }
+
           const planning = getPlanningForHeading(content, lineIndex);
           const scheduledDate = planning && planning.scheduled ? planning.scheduled : null;
 
           const keyword = taskKeywordManager.findTaskKeyword(line);
-          const startsWithSymbol = headingStartRegex.test(line.trim());
           if (!scheduledDate || !startsWithSymbol || !keyword) {
+            // Check for plain timestamps if after first heading
+            if (seenFirstHeading) {
+              const plainTimestamps = extractPlainTimestamps(line);
+              for (const ts of plainTimestamps) {
+                // Only active timestamps <...> appear in calendar
+                if (ts.bracket !== '<') continue;
+
+                let parsedDate = moment(ts.date, getAcceptedDateFormats(dateFormat), true);
+                if (!parsedDate.isValid()) continue;
+
+                tasks.push({
+                  text: currentHeadingText || line.trim(),  // Display heading text
+                  fullText: line.trim(),
+                  date: parsedDate.format("YYYY-MM-DD"),
+                  file: file,
+                  tags: [],
+                  id: file + '#' + lineIndex,  // Timestamp line for jumping
+                  error: null,
+                  originalDate: ts.date,
+                  isPlainTimestamp: true
+                });
+              }
+            }
             return;
           }
 

@@ -117,6 +117,39 @@ const DAY_HEADING_REGEX = new RegExp(
 // - Capture groups: (1) indent, (2) asterisks, (3) open-bracket, (4) date, (5) weekday
 const DAY_HEADING_DECORATE_REGEX = /^(\s*)(\*+)\s*([<\[])(\d{2,4}-\d{2}-\d{2,4})(?:\s+([A-Za-z]{3}))?.*$/;
 
+// Plain timestamp regex - matches any timestamp <...> or [...]
+// Used for extracting timestamps from body text that aren't SCHEDULED/DEADLINE/CLOSED
+// Capture groups: (1) open-bracket, (2) date, (3) dayname, (4) time-start, (5) time-end, (6) repeater, (7) warning, (8) close-bracket
+const PLAIN_TIMESTAMP_REGEX = new RegExp(
+  '([<\\[])' + TIMESTAMP_INNER + '([>\\]])',
+  'g'
+);
+
+/**
+ * Extract plain timestamps from a single line of text.
+ * Returns empty array if line is a planning line (handled separately as SCHEDULED/DEADLINE).
+ * Note: Line number is not tracked here - caller provides it from the iteration context.
+ * @param {string} line - The line to scan for timestamps
+ * @returns {Array<{date: string, bracket: string, full: string}>} Array of timestamp objects
+ */
+function extractPlainTimestamps(line) {
+  if (!line || isPlanningLine(line)) {
+    return [];
+  }
+
+  const results = [];
+  const regex = new RegExp(PLAIN_TIMESTAMP_REGEX.source, 'g');
+  let match;
+  while ((match = regex.exec(line)) !== null) {
+    results.push({
+      date: match[2],       // DATE_PATTERN capture
+      bracket: match[1],    // < or [
+      full: match[0]
+    });
+  }
+  return results;
+}
+
 function getWorkflowStatesConfigValue() {
   try {
     // Avoid a hard dependency so unit tests can run without VS Code.
@@ -818,7 +851,9 @@ module.exports = {
   CLOSED_REGEX,
   DAY_HEADING_REGEX,
   DAY_HEADING_DECORATE_REGEX,
+  PLAIN_TIMESTAMP_REGEX,
   getTaskPrefixRegex,
+  extractPlainTimestamps,
   SCHEDULED_STRIP_RE,
   DEADLINE_STRIP_RE,
   CLOSED_STRIP_RE,
