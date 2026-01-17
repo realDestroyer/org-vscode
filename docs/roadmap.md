@@ -1,6 +1,6 @@
 ﻿# Roadmap
 
-Live version: 2.2.7
+Live version: 2.2.9
 
 These are the features that I have either already implemented, or plan to in the near future.
 
@@ -22,6 +22,9 @@ These are the features that I have either already implemented, or plan to in the
 | Agenda/Tagged Agenda click-to-reveal | Click task text (or filename) to reveal the exact source line; optional webview highlight | DONE | v2.2.2 | realDestroyer |
 | Property management commands | Set/update properties, auto-create drawers, inherited lookup (local → parents → file `#+PROPERTY`), and ID helper commands | DONE | v2.2.4 | realDestroyer |
 | Auto-indent non-heading text (Issue #76) | Optional auto-indentation of body/planning lines on Enter (configurable indentation width); see https://github.com/realDestroyer/org-vscode/issues/76 | DONE | v2.2.6 | realDestroyer |
+| Repeating tasks (Org repeaters) | Support Org repeaters on `SCHEDULED:` / `DEADLINE:` (`+`, `++`, `.+`) and optional `REPEAT_TO_STATE` reopen behavior (with inheritance). | DONE | v2.2.8 | realDestroyer |
+| LOGBOOK drawer logging | Optional Org-style state-change history entries written into a drawer (default: `LOGBOOK`) on completion transitions. | DONE | v2.2.9 | realDestroyer |
+| Agenda View performance | Improve Agenda View load times on large `.org` files (faster parsing + caching + lazy rendering). | In Progress | v2.2.9 | realDestroyer |
 | Smart TAB folding behavior | Context-aware folding across headings/lists/blocks/properties (Emacs-style feel) | Not Started | v2.3.0 | realDestroyer |
 | Insert link utilities | Insert link command + richer link editing utilities | Not Started | v2.3.0 | realDestroyer |
 | LaTeX fragment rendering (org-fragtog-style) | Render LaTeX fragments as “inline images” (full math fragment preview, not only symbol substitutions) | Not Started |  | realDestroyer |

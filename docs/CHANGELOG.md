@@ -2,6 +2,21 @@
 
 # [Unreleased]
 
+`Added / Enhanced`
+
+- (none)
+
+
+# [2.2.9] 01-16-26
+
+`Added / Enhanced`
+
+- **LOGBOOK drawer logging (Org-style history):** Optional state-change history entries written into a drawer (default `LOGBOOK`) on completion transitions.
+  - Settings: `Org-vscode.logIntoDrawer`, `Org-vscode.logDrawerName`
+  - Works from editor state changes, checkbox auto-done, Agenda View, and Tagged Agenda View.
+
+- **Agenda View performance:** Large speedup on big `.org` files by caching workflow keyword detection (avoids rebuilding task keyword regex/config for every line during scans).
+
 # [2.2.8] 01-16-26
 
 `Added / Enhanced`

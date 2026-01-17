@@ -8,6 +8,7 @@ const continuedTaskHandler = require("./continuedTaskHandler");
 const { normalizeBodyIndentation } = require("./indentUtils");
 const { stripAllTagSyntax, parseFileTagsFromText, parseTagGroupsFromText, createInheritanceTracker, matchesTagMatchString, normalizeTagMatchInput, getPlanningForHeading, isPlanningLine, parsePlanningFromText, normalizeTagsAfterPlanning, getAcceptedDateFormats, stripInlinePlanning, momentFromTimestampContent } = require("./orgTagUtils");
 const { applyRepeatersOnCompletion } = require("./repeatedTasks");
+const { computeLogbookInsertion, formatStateChangeEntry } = require("./orgLogbook");
 const { computeCheckboxStatsByHeadingLine, formatCheckboxStats, findCheckboxCookie } = require("./checkboxStats");
 const { computeCheckboxToggleEdits } = require("./checkboxToggle");
 
@@ -151,6 +152,9 @@ async function updateTaskStatusInFile(file, taskText, scheduledDate, newStatus, 
     const headingMarkerStyle = config.get("headingMarkerStyle", "unicode");
     const dateFormat = config.get("dateFormat", "YYYY-MM-DD");
 
+    const logIntoDrawer = config.get("logIntoDrawer", false);
+    const logDrawerName = config.get("logDrawerName", "LOGBOOK");
+
     const dateTag = scheduledDate ? `SCHEDULED: [${scheduledDate}]` : null;
     console.log("🛠 Updating file:", filePath);
     console.log("🔍 Looking for task text:", taskText);
@@ -231,6 +235,25 @@ async function updateTaskStatusInFile(file, taskText, scheduledDate, newStatus, 
     let effectiveStatus = newStatus;
     const completionTransition = registry.isDoneLike(newStatus) && !registry.isDoneLike(currentStatus);
     if (completionTransition) {
+      if (logIntoDrawer && registry.stampsClosed(newStatus)) {
+        const completionTimestamp = mergedPlanning.closed || moment().format(`${dateFormat} ddd HH:mm`);
+        const entry = formatStateChangeEntry({
+          fromKeyword: currentStatus,
+          toKeyword: newStatus,
+          timestamp: completionTimestamp
+        });
+        if (entry) {
+          const ins = computeLogbookInsertion(docLines, taskLineNumber, {
+            drawerName: logDrawerName,
+            bodyIndent,
+            entry
+          });
+          if (ins && ins.changed && typeof ins.lineIndex === "number" && typeof ins.text === "string") {
+            workspaceEdit.insert(uri, new vscode.Position(ins.lineIndex, 0), ins.text);
+          }
+        }
+      }
+
       const repeated = applyRepeatersOnCompletion({
         lines: docLines,
         headingLineIndex: taskLineNumber,

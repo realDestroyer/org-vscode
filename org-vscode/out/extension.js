@@ -66,6 +66,7 @@ const { insertNewElement } = require("./smartInsertNewElement");
 const { registerPropertyCommands } = require("./propertyCommands");
 const { computeDesiredIndentForNewLine } = require("./indentUtils");
 const setRepeater = require("./setRepeater");
+const taskKeywordManager = require("./taskKeywordManager");
 
 // Startup log for debugging
 console.log("📌 agenda.js has been loaded in extension.js");
@@ -209,6 +210,9 @@ function activate(ctx) {
   // Date format changes are not auto-applied to existing files because swapping
   // MM-DD and DD-MM can be ambiguous (e.g. 04-05-2026). Provide an explicit command instead.
   vscode.workspace.onDidChangeConfiguration((event) => {
+    if (event.affectsConfiguration("Org-vscode.workflowStates")) {
+      taskKeywordManager.invalidateWorkflowCache();
+    }
     if (event.affectsConfiguration("Org-vscode.dateFormat")) {
       vscode.window.showInformationMessage(
         "Org-vscode dateFormat changed. Run 'Org-vscode: Convert Dates in Current File' to rewrite existing dates."

@@ -6,6 +6,7 @@ const continuedTaskHandler = require("./continuedTaskHandler");
 const moment = require("moment");
 const { isPlanningLine, parsePlanningFromText, normalizeTagsAfterPlanning, stripInlinePlanning } = require("./orgTagUtils");
 const { applyRepeatersOnCompletion } = require("./repeatedTasks");
+const { computeLogbookInsertion, formatStateChangeEntry } = require("./orgLogbook");
 const { normalizeBodyIndentation } = require("./indentUtils");
 
 function buildPlanningBody(planning) {
@@ -26,6 +27,8 @@ module.exports = async function () {
   const headingMarkerStyle = config.get("headingMarkerStyle", "unicode");
   const dateFormat = config.get("dateFormat", "YYYY-MM-DD");
   const bodyIndent = normalizeBodyIndentation(config.get("bodyIndentation", 2), 2);
+  const logIntoDrawer = config.get("logIntoDrawer", false);
+  const logDrawerName = config.get("logDrawerName", "LOGBOOK");
   const workflowRegistry = taskKeywordManager.getWorkflowRegistry();
 
   const cycleKeywords = workflowRegistry.getCycleKeywords();
@@ -125,9 +128,11 @@ module.exports = async function () {
     const completionTransition = workflowRegistry.isDoneLike(targetKeyword) && !workflowRegistry.isDoneLike(currentKeyword);
     const completionStampsClosed = workflowRegistry.stampsClosed(targetKeyword);
 
+    const completionTimestamp = moment().format(`${dateFormat} ddd HH:mm`);
+
     // Upsert/remove CLOSED in the planning line (preferred: single planning line under the headline).
     if (completionStampsClosed) {
-      mergedPlanning.closed = moment().format(`${dateFormat} ddd HH:mm`);
+      mergedPlanning.closed = completionTimestamp;
     } else if (workflowRegistry.stampsClosed(currentKeyword)) {
       mergedPlanning.closed = null;
     }
@@ -135,6 +140,28 @@ module.exports = async function () {
     let effectiveKeyword = targetKeyword;
     if (completionTransition) {
       const lines = document.getText().split(/\r?\n/);
+
+      // Org-mode style logging into a drawer (LOGBOOK) for completion transitions.
+      if (logIntoDrawer && completionStampsClosed) {
+        const entry = formatStateChangeEntry({
+          fromKeyword: currentKeyword,
+          toKeyword: targetKeyword,
+          timestamp: completionTimestamp
+        });
+
+        if (entry) {
+          const ins = computeLogbookInsertion(lines, lineNumber, {
+            drawerName: logDrawerName,
+            bodyIndent,
+            entry
+          });
+
+          if (ins && ins.changed && typeof ins.lineIndex === "number" && typeof ins.text === "string") {
+            workspaceEdit.insert(document.uri, new vscode.Position(ins.lineIndex, 0), ins.text);
+          }
+        }
+      }
+
       const repeated = applyRepeatersOnCompletion({
         lines,
         headingLineIndex: lineNumber,
