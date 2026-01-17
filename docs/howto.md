@@ -32,6 +32,7 @@
 * [📼 Partial Demo](#partial-demo)
 * [🔤 Unicode Headings](#unicode-headings-based-on-asterisk-level)
 * [🔁 Cycle Task Statuses](#cycle-task-statuses)
+* [📒 LOGBOOK (State Change History)](#logbook)
 * [🏷 Inline Tags & Tag Filtering](#inline-tags--tag-filtering)
 * [🧮 Insert Org Table](#insert-org-table)
 * [Align Scheduled Task Tags](#align-scheduled-tasks)
@@ -451,6 +452,15 @@ The Agenda View respects `Org-vscode.workflowStates[*].agendaVisibility`.
 
 By default it shows **TODO** and **IN_PROGRESS** tasks, and hides **CONTINUED** / **DONE** / **ABANDONED**.
 
+### Performance notes (large `.org` files)
+
+Agenda View scanning is optimized to stay fast even on large Org files.
+
+If you still see slow loads, the biggest knobs are:
+
+- Reduce the number of scanned files by setting your Org-vscode folder to only the directories you use for tasks.
+- Disable click highlighting if you don’t need it: set `Org-vscode.agendaHighlightTaskOnClick` to `false`.
+
 ### Click-to-navigate (Agenda + Tagged Agenda)
 
 You can click the **task text** (or the **filename**) to jump your cursor to the exact line in the source `.org` file.
@@ -688,6 +698,35 @@ Default task states (when you do not override `workflowStates`):
 * The task line is automatically updated in the source file.
 * If switching **into a state that stamps CLOSED** (default: `DONE`), a `CLOSED:` timestamp is inserted on the next line.
 * If switching **out of a CLOSED-stamping state**, the `CLOSED:` line is removed.
+
+---
+
+## 📒 LOGBOOK (State Change History) <a id="logbook"></a>
+
+By default, Org-vscode writes a single `CLOSED:` timestamp when you enter a CLOSED-stamping state (typically `DONE`).
+If you want a *history* of completions/state changes (Org-mode-style), you can enable LOGBOOK logging.
+
+### Enable LOGBOOK logging
+
+```json
+"Org-vscode.logIntoDrawer": true,
+"Org-vscode.logDrawerName": "LOGBOOK"
+```
+
+### What it does
+
+- On a completion transition into a state that stamps `CLOSED:` (typically `DONE`), Org-vscode inserts a newest-first entry into a drawer (default `:LOGBOOK:`) under the heading.
+- Works from the editor (Set TODO State / cycle left-right), checkbox auto-done, Agenda View, and Tagged Agenda View.
+
+Example:
+
+```org
+* DONE Weekly review
+  SCHEDULED: [2026-01-15 +1w]  CLOSED: [2026-01-16 Fri 09:12]
+  :LOGBOOK:
+  - State "DONE" from "TODO" [2026-01-16 Fri 09:12]
+  :END:
+```
 
 #### ✏️ In the `.org` file directly <a id="in-the-org-file-directly"></a>
 
