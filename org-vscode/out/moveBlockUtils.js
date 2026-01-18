@@ -147,9 +147,86 @@ function computeMoveBlockResult(lines, cursorLine, direction) {
   return { updatedLines, newCursorLine, newStartLine };
 }
 
+function computeMoveBlockRangeResult(lines, selectionStartLine, selectionEndLineInclusive, direction) {
+  if (!Array.isArray(lines) || lines.length === 0) return null;
+  if (typeof selectionStartLine !== "number" || Number.isNaN(selectionStartLine)) return null;
+  if (typeof selectionEndLineInclusive !== "number" || Number.isNaN(selectionEndLineInclusive)) return null;
+  if (direction !== "up" && direction !== "down") return null;
+
+  const startLineClamped = Math.max(0, Math.min(lines.length - 1, selectionStartLine));
+  const endLineClamped = Math.max(0, Math.min(lines.length - 1, selectionEndLineInclusive));
+
+  const heading = findNearestHeadingStart(lines, startLineClamped);
+  if (!heading) return null;
+  if (heading.info.isDayHeading) return null;
+
+  const groupStartLine = heading.startLine;
+  const groupInfo = heading.info;
+
+  // Expand selection to include consecutive sibling subtrees at the same depth.
+  let groupEndExclusive = findSubtreeEndExclusive(lines, groupStartLine, groupInfo);
+  let cursor = groupEndExclusive;
+  while (true) {
+    if (cursor > endLineClamped) break;
+    const nextInfo = parseHeadingInfo(lines[cursor]);
+    if (!nextInfo) {
+      cursor++;
+      continue;
+    }
+    if (nextInfo.isDayHeading) break;
+    if (!sameDepth(nextInfo, groupInfo)) break;
+
+    const nextEnd = findSubtreeEndExclusive(lines, cursor, nextInfo);
+    groupEndExclusive = nextEnd;
+    cursor = nextEnd;
+  }
+
+  const offsetInGroup = Math.max(0, startLineClamped - groupStartLine);
+
+  if (direction === "up") {
+    const prev = findPrevSiblingStart(lines, groupStartLine, groupInfo);
+    if (!prev) return null;
+
+    const prevEndExclusive = findSubtreeEndExclusive(lines, prev.startLine, prev.info);
+    if (prevEndExclusive > groupStartLine) return null;
+
+    const before = lines.slice(0, prev.startLine);
+    const prevBlock = lines.slice(prev.startLine, prevEndExclusive);
+    const between = lines.slice(prevEndExclusive, groupStartLine);
+    const groupBlock = lines.slice(groupStartLine, groupEndExclusive);
+    const after = lines.slice(groupEndExclusive);
+
+    const updatedLines = [...before, ...groupBlock, ...between, ...prevBlock, ...after];
+    const newStartLine = prev.startLine;
+    const newCursorLine = Math.min(updatedLines.length - 1, newStartLine + offsetInGroup);
+    const newSelectionStartLine = newStartLine;
+    const newSelectionEndLineExclusive = newStartLine + groupBlock.length;
+    return { updatedLines, newCursorLine, newStartLine, newSelectionStartLine, newSelectionEndLineExclusive };
+  }
+
+  const next = findNextSiblingStart(lines, groupEndExclusive, groupInfo);
+  if (!next) return null;
+
+  const nextEndExclusive = findSubtreeEndExclusive(lines, next.startLine, next.info);
+
+  const before = lines.slice(0, groupStartLine);
+  const groupBlock = lines.slice(groupStartLine, groupEndExclusive);
+  const between = lines.slice(groupEndExclusive, next.startLine);
+  const nextBlock = lines.slice(next.startLine, nextEndExclusive);
+  const after = lines.slice(nextEndExclusive);
+
+  const updatedLines = [...before, ...nextBlock, ...between, ...groupBlock, ...after];
+  const newStartLine = groupStartLine + nextBlock.length;
+  const newCursorLine = Math.min(updatedLines.length - 1, newStartLine + offsetInGroup);
+  const newSelectionStartLine = newStartLine;
+  const newSelectionEndLineExclusive = newStartLine + groupBlock.length;
+  return { updatedLines, newCursorLine, newStartLine, newSelectionStartLine, newSelectionEndLineExclusive };
+}
+
 module.exports = {
   parseHeadingInfo,
   findNearestHeadingStart,
   findSubtreeEndExclusive,
-  computeMoveBlockResult
+  computeMoveBlockResult,
+  computeMoveBlockRangeResult
 };

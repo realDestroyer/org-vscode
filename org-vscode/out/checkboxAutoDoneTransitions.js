@@ -76,6 +76,8 @@ function computeHeadingTransitions(lines) {
   for (const heading of candidates) {
     let total = 0;
     let checked = 0;
+    let hasChildTasks = false;
+    let hasIncompleteChildTask = false;
 
     for (let j = heading.lineNumber + 1; j < safeLines.length; j++) {
       const nextLine = safeLines[j];
@@ -86,6 +88,16 @@ function computeHeadingTransitions(lines) {
           const nextLevel = getHeadingLevel(nextMatch);
           if (nextLevel <= heading.level) {
             break;
+          }
+
+          // If this is a child task heading, incorporate its completion state.
+          const asTask = String(nextLine || "").match(taskLineRegex);
+          if (asTask) {
+            hasChildTasks = true;
+            const childStatus = String(asTask[3] || "").toUpperCase();
+            if (!registry.isDoneLike(childStatus)) {
+              hasIncompleteChildTask = true;
+            }
           }
         }
       }
@@ -99,11 +111,11 @@ function computeHeadingTransitions(lines) {
     if (total === 0) continue;
 
     if (registry.isDoneLike(heading.status) && registry.stampsClosed(heading.status)) {
-      if (checked < total) {
+      if (checked < total || (hasChildTasks && hasIncompleteChildTask)) {
         toMarkInProgress.push(heading.lineNumber);
       }
     } else {
-      if (checked === total) {
+      if (checked === total && (!hasChildTasks || !hasIncompleteChildTask)) {
         toMarkDone.push(heading.lineNumber);
       }
     }

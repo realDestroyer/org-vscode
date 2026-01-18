@@ -124,6 +124,7 @@ module.exports = async function taggedAgenda() {
             lineNumber: index + 1,              // Timestamp line for jumping
             tags: effectiveTags,
             scheduledDate: ts.date,
+            deadlineDate: "",
             checkboxChecked: 0,
             checkboxTotal: 0,
             children: [],
@@ -155,15 +156,24 @@ module.exports = async function taggedAgenda() {
           // Capture indented child lines for details rendering.
           const baseIndent = line.match(/^\s*/)?.[0] || "";
           const children = [];
+          let deadlineFromChildren = null;
           for (let k = index + 1; k < lines.length; k++) {
             const nextLine = lines[k];
             const nextIndent = nextLine.match(/^\s*/)?.[0] || "";
             if (nextIndent.length > baseIndent.length) {
               children.push({ text: nextLine, lineNumber: k + 1 });
+
+              // Back-compat: allow DEADLINE to live on a child planning line.
+              if (!deadlineFromChildren) {
+                const p = parsePlanningFromText(nextLine);
+                if (p && p.deadline) deadlineFromChildren = p.deadline;
+              }
             } else {
               break;
             }
           }
+
+          const deadlineDate = (planning && planning.deadline) ? planning.deadline : (deadlineFromChildren || "");
 
           agendaItems.push({
             file,
@@ -171,6 +181,7 @@ module.exports = async function taggedAgenda() {
             lineNumber: index + 1,
             tags: taskTags,
             scheduledDate: planning && planning.scheduled ? planning.scheduled : "",
+            deadlineDate,
             checkboxChecked: cb.checked,
             checkboxTotal: cb.total,
             children
@@ -544,6 +555,7 @@ function getTaggedWebviewContent(webview, nonce, localMomentJs, tag, items, skip
       const keywordClass = getKeywordBucket(keyword, registry);
 
       const scheduledDate = item.scheduledDate || "";
+      const deadlineDate = item.deadlineDate || "";
 
       const taskTags = (item.tags && item.tags.length) ? item.tags : getAllTagsFromLine(item.line);
       const tagBubbles = taskTags.length
@@ -614,6 +626,24 @@ function getTaggedWebviewContent(webview, nonce, localMomentJs, tag, items, skip
       const lateLabel = scheduledDate && momentFromTimestampContent(scheduledDate, acceptedDateFormats, true).isBefore(moment(), "day")
         ? `<span class="late">LATE: ${scheduledDate}</span>` : "";
 
+      let deadlineBadge = "";
+      if (deadlineDate) {
+        const deadlineMoment = momentFromTimestampContent(deadlineDate, acceptedDateFormats, true);
+        if (deadlineMoment.isValid()) {
+          const today = moment().startOf("day");
+          const daysUntil = deadlineMoment.diff(today, "days");
+          if (daysUntil < 0) {
+            deadlineBadge = `<span class="deadline deadline-overdue">⚠ OVERDUE: ${deadlineMoment.format("MMM Do")}</span>`;
+          } else if (daysUntil === 0) {
+            deadlineBadge = `<span class="deadline deadline-today">⚠ DUE TODAY</span>`;
+          } else if (daysUntil <= 3) {
+            deadlineBadge = `<span class="deadline deadline-soon">⏰ Due in ${daysUntil} day${daysUntil > 1 ? 's' : ''}</span>`;
+          } else {
+            deadlineBadge = `<span class="deadline deadline-future">📅 Due: ${deadlineMoment.format("MMM Do")}</span>`;
+          }
+        }
+      }
+
       return `
         <div class="panel ${file}">
           <div class="textDiv">
@@ -622,6 +652,7 @@ function getTaggedWebviewContent(webview, nonce, localMomentJs, tag, items, skip
             <span class="taskText agenda-task-link" data-file="${file}" data-line="${item.lineNumber}">${cleanedTaskText}</span>
             ${checkboxLabel}
             ${lateLabel}
+            ${deadlineBadge}
             <span class="scheduled">SCHEDULED</span>
             ${tagBubbles}
           </div>
@@ -913,6 +944,40 @@ body{
           margin-left: 10px;
           margin-top: 10px;
           box-shadow: 0 3px 6px rgba(0,0,0,0.16), 0 3px 6px rgba(0,0,0,0.23);
+        }
+        .deadline{
+          padding-left: 10px;
+          padding-right: 10px;
+          padding-top: 5px;
+          font-weight: 700;
+          border-radius: 27px;
+          font-size: 9px;
+          height: 15px;
+          float: right;
+          margin-left: 10px;
+          margin-top: 10px;
+          box-shadow: 0 3px 6px rgba(0,0,0,0.16), 0 3px 6px rgba(0,0,0,0.23);
+        }
+        .deadline-overdue{
+          background-color: #dc3545;
+          color: #ffffff;
+          animation: pulse 1s infinite;
+        }
+        .deadline-today{
+          background-color: #ff6b35;
+          color: #ffffff;
+        }
+        .deadline-soon{
+          background-color: #ffc107;
+          color: #333333;
+        }
+        .deadline-future{
+          background-color: #6c757d;
+          color: #ffffff;
+        }
+        @keyframes pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.6; }
         }
 
         .children-block {

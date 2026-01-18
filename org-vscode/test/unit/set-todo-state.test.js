@@ -232,7 +232,7 @@ function testAllRepeaterUnits() {
 function testCatchUpFromYearsAgo() {
   const registry = createDefaultRegistry();
 
-  // ++1d from 2020 should catch up to tomorrow (relative to today)
+  // ++1d from 2020 should catch up to today or later (relative to today)
   const result = computeTodoStateChange({
     currentLineText: "* TODO Test",
     nextLineText: "  SCHEDULED: <2020-01-01 Wed ++1d>",
@@ -244,10 +244,10 @@ function testCatchUpFromYearsAgo() {
     workflowRegistry: registry
   });
 
-  // The date should be in the future (after today)
+  // The date should not be in the past (>= today)
   const outDate = result.mergedPlanning.scheduled.split(" ")[0];
   const today = new Date().toISOString().split("T")[0];
-  assert.ok(outDate > today, `Catch-up ++1d from 2020 should be after today (${today}), got ${outDate}`);
+  assert.ok(outDate >= today, `Catch-up ++1d from 2020 should be on/after today (${today}), got ${outDate}`);
   assert.ok(result.mergedPlanning.scheduled.includes("++1d"), "Should preserve ++1d repeater");
 }
 

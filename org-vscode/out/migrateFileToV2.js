@@ -73,7 +73,8 @@ function migrateTextToV2(fileText, options) {
     convertedLegacyTags: 0,
     movedInlinePlanning: 0,
     normalizedPlanningLines: 0,
-    convertedCompletedToClosed: 0
+    convertedCompletedToClosed: 0,
+    convertedPlanningBracketsToActive: 0
   };
 
   for (let i = 0; i < lines.length; i++) {
@@ -85,6 +86,20 @@ function migrateTextToV2(fileText, options) {
       if (replaced !== originalLine) {
         lines[i] = replaced;
         stats.convertedCompletedToClosed++;
+      }
+    }
+
+    // 1b) Convert legacy planning bracket style for SCHEDULED/DEADLINE:
+    // - Old extension versions used inactive [...] for planning stamps.
+    // - New style uses active <...> so items show up in agenda.
+    // Also repairs malformed cases like: SCHEDULED: [< 2026-01-10]
+    if (/\b(?:SCHEDULED|DEADLINE):\s*\[/.test(originalLine)) {
+      const replaced = originalLine.replace(/\b(SCHEDULED|DEADLINE):\s*\[\s*<?\s*([^\]>]+?)\s*\]/g, (m, which, content) => {
+        return `${which}: <${String(content || "").trim()}>`;
+      });
+      if (replaced !== originalLine) {
+        lines[i] = replaced;
+        stats.convertedPlanningBracketsToActive++;
       }
     }
 
@@ -100,7 +115,7 @@ function migrateTextToV2(fileText, options) {
     const hadLegacyTagBlock = /\[\+TAG:/i.test(normalizedForParsing);
 
     const planningFromHeadline = extractPlanningFromLine(normalizedForParsing);
-    const hadInlinePlanning = /\b(?:SCHEDULED|DEADLINE|CLOSED|COMPLETED):\s*\[/.test(normalizedForParsing);
+    const hadInlinePlanning = /\b(?:SCHEDULED|DEADLINE|CLOSED|COMPLETED):\s*[<\[]/.test(normalizedForParsing);
 
     let updatedHeadline = removeInlinePlanningFromHeadingLine(normalizedForParsing);
     updatedHeadline = setEndOfLineTags(updatedHeadline, tags);
@@ -132,14 +147,14 @@ function migrateTextToV2(fileText, options) {
     }
 
     const nextLine = lines[nextIndex];
-    const nextLooksLikePlanning = isPlanningLine(nextLine) || /^\s*(?:SCHEDULED|DEADLINE|CLOSED|COMPLETED):\s*\[/.test(String(nextLine || ""));
+    const nextLooksLikePlanning = isPlanningLine(nextLine) || /^\s*(?:SCHEDULED|DEADLINE|CLOSED|COMPLETED):\s*[<\[]/.test(String(nextLine || ""));
 
     const planningFromNext = nextLooksLikePlanning ? parsePlanningFromText(nextLine) : null;
 
     const merged = mergePlanning(planningFromHeadline, planningFromNext);
 
     // If we found planning inline on the headline, move it to the planning line.
-    const shouldEnsurePlanningLine = hadInlinePlanning || (nextLooksLikePlanning && /\bCOMPLETED:\s*\[/.test(nextLine));
+    const shouldEnsurePlanningLine = hadInlinePlanning || (nextLooksLikePlanning && /\bCOMPLETED:\s*[<\[]/.test(nextLine));
 
     if (!shouldEnsurePlanningLine) {
       continue;
@@ -165,7 +180,7 @@ function migrateTextToV2(fileText, options) {
     } else if (nextLooksLikePlanning) {
       // No planning remains after merge; if the next line is only planning content, remove it.
       const stripped = String(nextLine || "").trim();
-      const onlyPlanning = /^(?:(?:SCHEDULED|DEADLINE|CLOSED|COMPLETED):\s*\[[^\]]*\]\s*)+$/.test(stripped);
+      const onlyPlanning = /^(?:(?:SCHEDULED|DEADLINE|CLOSED|COMPLETED):\s*[<\[][^\]>]*[>\]]\s*)+$/.test(stripped);
       if (onlyPlanning) {
         lines.splice(nextIndex, 1);
         stats.normalizedPlanningLines++;
@@ -209,7 +224,8 @@ async function migrateFileToV2() {
     stats.convertedLegacyTags ? `${stats.convertedLegacyTags} tag block(s)` : null,
     stats.movedInlinePlanning ? `${stats.movedInlinePlanning} planning line(s) inserted` : null,
     stats.normalizedPlanningLines ? `${stats.normalizedPlanningLines} planning line(s) normalized` : null,
-    stats.convertedCompletedToClosed ? `${stats.convertedCompletedToClosed} COMPLETED→CLOSED` : null
+    stats.convertedCompletedToClosed ? `${stats.convertedCompletedToClosed} COMPLETED→CLOSED` : null,
+    stats.convertedPlanningBracketsToActive ? `${stats.convertedPlanningBracketsToActive} planning stamp(s) activated` : null
   ].filter(Boolean).join(", ");
 
   vscode.window.showInformationMessage(

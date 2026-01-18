@@ -5,7 +5,8 @@
 If you already use tags like:
 
 ```org
-⊙ TODO Build the new roadmap tool :EPIC:   SCHEDULED: [07-01-2025]
+⊙ TODO Build the new roadmap tool :EPIC:
+   SCHEDULED: <07-01-2025>
 ```
 
 …we can leverage the tag (e.g. `:EPIC:`) to determine what kind of JIRA object to create when a user invokes something like **Create JIRA Task from Org Task**.

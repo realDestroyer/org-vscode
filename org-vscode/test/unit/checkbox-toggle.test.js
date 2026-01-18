@@ -1,7 +1,7 @@
 const assert = require('assert');
 const path = require('path');
 
-const { computeCheckboxToggleEdits } = require(path.join(__dirname, '..', '..', 'out', 'checkboxToggle.js'));
+const { computeCheckboxToggleEdits, computeCheckboxBulkToggleEdits } = require(path.join(__dirname, '..', '..', 'out', 'checkboxToggle.js'));
 
 function applyEdits(lines, edits) {
   const out = lines.slice();
@@ -45,10 +45,40 @@ function testToggleParentTogglesDescendants() {
   assert.strictEqual(updated[4], '  - [ ] Sibling');
 }
 
+function testBulkToggleChecksWhenAnyUnchecked() {
+  const lines = [
+    '* H',
+    '  - [ ] a',
+    '  - [X] b',
+  ];
+
+  const edits = computeCheckboxBulkToggleEdits(lines, [1, 2]);
+  const updated = applyEdits(lines, edits);
+
+  assert.strictEqual(updated[1], '  - [X] a');
+  assert.strictEqual(updated[2], '  - [X] b');
+}
+
+function testBulkToggleUnchecksWhenAllChecked() {
+  const lines = [
+    '* H',
+    '  - [X] a',
+    '  - [X] b',
+  ];
+
+  const edits = computeCheckboxBulkToggleEdits(lines, [1, 2]);
+  const updated = applyEdits(lines, edits);
+
+  assert.strictEqual(updated[1], '  - [ ] a');
+  assert.strictEqual(updated[2], '  - [ ] b');
+}
+
 module.exports = {
   name: 'unit/checkbox-toggle',
   run: () => {
     testToggleLeafUpdatesAncestors();
     testToggleParentTogglesDescendants();
+    testBulkToggleChecksWhenAnyUnchecked();
+    testBulkToggleUnchecksWhenAllChecked();
   }
 };

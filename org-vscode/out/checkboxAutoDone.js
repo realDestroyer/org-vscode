@@ -10,8 +10,10 @@ const { applyRepeatersOnCompletion } = require("./repeatedTasks");
 const { computeLogbookInsertion, formatStateChangeEntry } = require("./orgLogbook");
 const { computeHeadingTransitions } = require("./checkboxAutoDoneTransitions");
 const { normalizeBodyIndentation } = require("./indentUtils");
+const { parseHeadingInfo, findSubtreeEndExclusive } = require("./moveBlockUtils");
 
 const CHECKBOX_REGEX = /^\s*[-+*]\s+\[( |x|X)\]\s+/;
+const CHECKBOX_STATE_REPLACE_REGEX = /^(\s*[-+*]\s+\[)( |x|X|-)(\]\s+)/;
 
 function buildPlanningBody(planning) {
   const parts = [];
@@ -51,6 +53,83 @@ function isCheckboxChecked(line) {
   return String(m[1]).toLowerCase() === "x";
 }
 
+function setCheckboxUncheckedLine(line) {
+  const s = String(line || "");
+  if (!CHECKBOX_STATE_REPLACE_REGEX.test(s)) return s;
+  return s.replace(CHECKBOX_STATE_REPLACE_REGEX, "$1 $3");
+}
+
+function queueResetHeadingToKeyword(workspaceEdit, document, lineNumber, targetKeyword, { headingMarkerStyle, bodyIndent } = {}) {
+  if (!workspaceEdit || !document) return;
+  if (!Number.isInteger(lineNumber) || lineNumber < 0 || lineNumber >= document.lineCount) return;
+
+  const registry = taskKeywordManager.getWorkflowRegistry();
+
+  const currentLine = document.lineAt(lineNumber);
+  const nextLine = lineNumber + 1 < document.lineCount ? document.lineAt(lineNumber + 1) : null;
+  const nextNextLine = lineNumber + 2 < document.lineCount ? document.lineAt(lineNumber + 2) : null;
+
+  // Only touch actual headings with a known keyword.
+  const currentKeyword = taskKeywordManager.findTaskKeyword(currentLine.text);
+  if (!currentKeyword) return;
+
+  // Never convert day headings like `* [YYYY-MM-DD ...] ...`.
+  if (continuedTaskHandler.DAY_HEADING_REGEX && continuedTaskHandler.DAY_HEADING_REGEX.test(currentLine.text)) {
+    return;
+  }
+
+  const leadingSpaces = currentLine.text.slice(0, currentLine.firstNonWhitespaceCharacterIndex);
+  const starPrefixMatch = currentLine.text.match(/^\s*(\*+)/);
+  const starPrefix = starPrefixMatch ? starPrefixMatch[1] : "*";
+
+  const planningFromHeadline = parsePlanningFromText(currentLine.text);
+  const planningFromNext = (nextLine && isPlanningLine(nextLine.text)) ? parsePlanningFromText(nextLine.text) : {};
+  const planningFromNextNext = (nextNextLine && isPlanningLine(nextNextLine.text)) ? parsePlanningFromText(nextNextLine.text) : {};
+
+  const mergedPlanning = {
+    scheduled: planningFromNext.scheduled || planningFromHeadline.scheduled || null,
+    deadline: planningFromNext.deadline || planningFromHeadline.deadline || null,
+    closed: planningFromNext.closed || planningFromHeadline.closed || planningFromNextNext.closed || null
+  };
+
+  // Resetting a task to an active state should remove CLOSED.
+  mergedPlanning.closed = null;
+
+  const headlineNoPlanning = stripInlinePlanning(normalizeTagsAfterPlanning(currentLine.text));
+  const cleanedText = taskKeywordManager.cleanTaskText(headlineNoPlanning);
+
+  const nextKeyword = targetKeyword || registry.getFirstNonDoneState() || pickReopenKeyword(registry);
+
+  const newLine = taskKeywordManager.buildTaskLine(leadingSpaces, nextKeyword, cleanedText, { headingMarkerStyle, starPrefix });
+  if (newLine !== currentLine.text) {
+    workspaceEdit.replace(document.uri, currentLine.range, newLine);
+  }
+
+  const planningIndent = `${leadingSpaces}${bodyIndent || "  "}`;
+  const planningBody = buildPlanningBody(mergedPlanning);
+
+  if (planningBody) {
+    if (nextLine && isPlanningLine(nextLine.text)) {
+      workspaceEdit.replace(document.uri, nextLine.range, `${planningIndent}${planningBody}`);
+      if (nextNextLine && isPlanningLine(nextNextLine.text)) {
+        workspaceEdit.delete(document.uri, nextNextLine.rangeIncludingLineBreak);
+      }
+    } else {
+      if (nextNextLine && isPlanningLine(nextNextLine.text)) {
+        workspaceEdit.delete(document.uri, nextNextLine.rangeIncludingLineBreak);
+      }
+      workspaceEdit.insert(document.uri, currentLine.range.end, `\n${planningIndent}${planningBody}`);
+    }
+  } else {
+    // Remove planning lines if they exist but will be empty after removing CLOSED.
+    if (nextLine && isPlanningLine(nextLine.text)) {
+      workspaceEdit.delete(document.uri, nextLine.rangeIncludingLineBreak);
+    } else if (nextNextLine && isPlanningLine(nextNextLine.text) && (nextNextLine.text.includes("CLOSED") || nextNextLine.text.includes("COMPLETED"))) {
+      workspaceEdit.delete(document.uri, nextNextLine.rangeIncludingLineBreak);
+    }
+  }
+}
+
 async function applyDoneToHeading(document, lineNumber) {
   const config = vscode.workspace.getConfiguration("Org-vscode");
   const headingMarkerStyle = config.get("headingMarkerStyle", "unicode");
@@ -59,6 +138,8 @@ async function applyDoneToHeading(document, lineNumber) {
   const logIntoDrawer = config.get("logIntoDrawer", false);
   const logDrawerName = config.get("logDrawerName", "LOGBOOK");
   const registry = taskKeywordManager.getWorkflowRegistry();
+
+  const workspaceEdit = new vscode.WorkspaceEdit();
 
   const currentLine = document.lineAt(lineNumber);
   const nextLine = lineNumber + 1 < document.lineCount ? document.lineAt(lineNumber + 1) : null;
@@ -136,13 +217,40 @@ async function applyDoneToHeading(document, lineNumber) {
       if (repeated.repeatToStateKeyword) {
         nextKeyword = repeated.repeatToStateKeyword;
       }
+
+      // Org-style behavior: after repeating, the task is reopened so CLOSED should be cleared.
+      mergedPlanning.closed = null;
+
+      // Reset the subtree for the new iteration: clear checkboxes and reset child task states.
+      const resetChildKeyword = repeated.repeatToStateKeyword || registry.getFirstNonDoneState() || pickReopenKeyword(registry);
+      const info = parseHeadingInfo(lines[lineNumber] || "");
+      if (info) {
+        const endExclusive = findSubtreeEndExclusive(lines, lineNumber, info);
+        for (let i = lineNumber + 1; i < endExclusive; i++) {
+          const lineText = lines[i] || "";
+
+          // Reset checkbox states in the subtree.
+          if (CHECKBOX_STATE_REPLACE_REGEX.test(lineText)) {
+            const updated = setCheckboxUncheckedLine(lineText);
+            if (updated !== lineText) {
+              workspaceEdit.replace(document.uri, document.lineAt(i).range, updated);
+            }
+            continue;
+          }
+
+          // Reset child task headings (and remove their CLOSED stamps).
+          const childInfo = parseHeadingInfo(lineText);
+          if (!childInfo || childInfo.isDayHeading) continue;
+          if (taskKeywordManager.findTaskKeyword(lineText)) {
+            queueResetHeadingToKeyword(workspaceEdit, document, i, resetChildKeyword, { headingMarkerStyle, bodyIndent });
+          }
+        }
+      }
     }
   }
 
   const headlineNoPlanning = stripInlinePlanning(normalizeTagsAfterPlanning(currentLine.text));
   const cleanedText = taskKeywordManager.cleanTaskText(headlineNoPlanning);
-
-  const workspaceEdit = new vscode.WorkspaceEdit();
 
   // Leaving forward-trigger state should remove the continuation lines.
   if (registry.triggersForward(currentKeyword)) {

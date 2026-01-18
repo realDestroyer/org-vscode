@@ -7,6 +7,21 @@
 - (none)
 
 
+# [2.2.10] 01-17-26
+
+`Fixed / Enhanced`
+
+- **Agenda View deadline parsing:** Fixed "Due: Invalid date" badges caused by legacy planning stamp parsing.
+- **Checkbox auto-DONE:** Fixed auto-done not closing tasks and improved correctness:
+  - A parent task no longer auto-completes if any child subtask heading is still TODO.
+  - Repeating tasks now complete+log, then reschedule/reopen and reset their subtree (checkboxes unchecked + child subtasks reset) for the next iteration.
+- **Checkbox toggle (multi-line):** `Ctrl+Alt+X` now supports multi-line selections and can bulk-check or bulk-uncheck.
+- **Move Block Up/Down (multi-line):** Range selections can move multiple sibling subtrees together.
+- **Set Repeater:** Fixed repeater command output that could produce malformed planning like `SCHEDULED: [< ...]`.
+- **Migration:** `Migrate File to v2` now converts legacy `SCHEDULED/DEADLINE: [...]` planning stamps to active `<...>` (and repairs malformed `[< ...]`).
+- **Tagged Agenda:** Added AgendaView-style deadline badges/icons for faster scanning.
+
+
 # [2.2.9] 01-16-26
 
 `Added / Enhanced`

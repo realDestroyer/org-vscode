@@ -69,7 +69,7 @@ After (v2 canonical planning line):
 
 ```org
 * TODO Example task :PROJECT:
-  SCHEDULED: [12-29-2025]  DEADLINE: [01-31-2026]
+  SCHEDULED: <12-29-2025>  DEADLINE: <01-31-2026>
 ```
 
 ### Completion stamp

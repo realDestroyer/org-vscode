@@ -56,18 +56,18 @@
 # 9) Planning lines live under the headline (v2 format)
 # Use Ctrl+Alt+S to toggle SCHEDULED. Use Ctrl+Alt+D to toggle DEADLINE.
 * TODO Schedule + deadline demo :PLANNING:
-  SCHEDULED: [2026-01-07]  DEADLINE: [2026-01-20]
+  SCHEDULED: <2026-01-07>  DEADLINE: <2026-01-20>
 
 # 10) Align Scheduled Tasks (Alt+Shift+A)
 # This is intentionally misaligned spacing; run Align Scheduled Tasks.
 * TODO Misaligned planning line :ALIGN:
-  SCHEDULED: [2026-01-07]   DEADLINE: [2026-01-25]
+  SCHEDULED: <2026-01-07>   DEADLINE: <2026-01-25>
 
 # 11) Date tools
 # - Smart date forward/backward (Alt+Shift+Right/Left)
 # - Deadline date forward/backward (Ctrl+Shift+Right/Left)
 * TODO Try date adjustments here :DATES:
-  SCHEDULED: [2026-01-07]  DEADLINE: [2026-01-21]
+  SCHEDULED: <2026-01-07>  DEADLINE: <2026-01-21>
 
 * [2026-01-08 Thu] Checkboxes + Statistics Cookies ----------------------------------------------
 
@@ -77,6 +77,11 @@
     - [ ] Child 1
     - [ ] Child 2
   - [ ] Standalone item
+
+# Tip: multi-line selection is supported.
+# Select multiple checkbox lines and press Ctrl+Alt+X to bulk-toggle them:
+# - if all selected are checked, they’ll all be unchecked
+# - otherwise they’ll all be checked
 
 # 13) Percent cookie (same stats, different display)
 * TODO Checkbox percent [%] :CHECKBOX:
@@ -98,7 +103,7 @@
 # - checkbox completion under the subtree
 # - TODO subtree completion (DONE/ABANDONED count as complete)
 * TODO Subtree completion overview [/] :SUBTREE:
-  SCHEDULED: [2026-01-09]  DEADLINE: [2026-01-31]
+  SCHEDULED: <2026-01-09>  DEADLINE: <2026-01-31>
 
 ** DONE Child task complete #1
   CLOSED: [2026-01-05 Mon 09:00]
@@ -118,13 +123,13 @@
 # - Tagged Agenda (filter by tags / match strings)
 # - Calendar View
 * TODO Prep demo video outline :WORK:DEMO:
-  SCHEDULED: [2026-01-10]
+  SCHEDULED: <2026-01-10>
 
 * TODO Record the demo :WORK:DEMO:
-  SCHEDULED: [2026-01-10]  DEADLINE: [2026-01-11]
+  SCHEDULED: <2026-01-10>  DEADLINE: <2026-01-11>
 
 * TODO Publish to both marketplaces :RELEASE:DEMO:
-  SCHEDULED: [2026-01-10]
+  SCHEDULED: <2026-01-10>
 
 # 16a) Open Agenda View
 # Command Palette: Org-vscode: Agenda View
@@ -148,13 +153,13 @@
 # - Click a task to reveal it in the source file.
 
 * TODO Calendar drag-drop demo :@WORK:WORK:
-  SCHEDULED: [2026-01-10]
+  SCHEDULED: <2026-01-10>
 
 * TODO Tagged Agenda group demo (matches +GTD) :@HOME:HOME:
-  SCHEDULED: [2026-01-10]
+  SCHEDULED: <2026-01-10>
 
 * CONTINUED Optional includeContinued demo :WORK:
-  SCHEDULED: [2026-01-10]
+  SCHEDULED: <2026-01-10>
   # By default, Tagged Agenda omits CONTINUED tasks to avoid duplicates.
   # To include them, set: Org-vscode.includeContinuedInTaggedAgenda = true
 
@@ -317,3 +322,44 @@
 # Command Palette:
 # - Org-vscode: Open Syntax Color Customizer
 # - Org-vscode: Open Keybinding Customizer
+
+
+* [2026-01-14 Wed] Timestamps (Active vs Inactive) ----------------------------------------------
+
+# 29) Timestamp formats
+# Org uses two timestamp bracket styles:
+# - Active:   <...> (appears in Agenda/Calendar scans)
+# - Inactive: [...] (reference only, used for CLOSED and history)
+#
+# This extension supports the full Emacs timestamp shape, including time ranges,
+# repeaters (+1w, ++1m, .+1d) and warning offsets (-2d).
+
+* TODO Timestamp parsing demo :TIMESTAMPS:
+  SCHEDULED: <2026-01-20 Tue 10:00-11:00 +1w -2d>
+  DEADLINE: <2026-01-30 Fri -3d>
+
+  This is a plain active timestamp in body text (it can show up in views):
+  <2026-01-22 Thu>
+
+  This is an inactive timestamp in body text (reference only):
+  [2026-01-22 Thu]
+
+# Optional: there is also a setting to treat only <...> as active for agenda scans.
+
+* [2026-01-15 Thu] LOGBOOK Drawer (State Change History) ----------------------------------------
+
+# 30) LOGBOOK
+# When enabled, completing tasks can record state-change history inside a drawer.
+# Settings:
+#   Org-vscode.logIntoDrawer
+#   Org-vscode.logDrawerName (default: LOGBOOK)
+
+* TODO Complete me to generate a LOGBOOK entry :LOGBOOK:
+  SCHEDULED: <2026-01-20>
+
+* DONE LOGBOOK example (pre-filled) :LOGBOOK:
+  CLOSED: [2026-01-17 Sat 19:09]
+  :LOGBOOK:
+  - State "DONE" from "TODO" [2026-01-17 Sat 19:09]
+  :END:
+  Notes under the drawer stay normal text.

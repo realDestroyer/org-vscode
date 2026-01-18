@@ -191,18 +191,19 @@ module.exports = function () {
                   if (nextIndent.length > baseIndent.length) {
                     children.push({ text: nextLine, lineNumber: k + 1 });
                     // Check for DEADLINE in child lines
-                    const dlMatch = nextLine.match(DEADLINE_REGEX);
-                    if (dlMatch && !deadlineFromChildren) {
-                      deadlineFromChildren = dlMatch[1];
+                    if (!deadlineFromChildren) {
+                      const p = parsePlanningFromText(nextLine);
+                      if (p && p.deadline) {
+                        deadlineFromChildren = p.deadline;
+                      }
                     }
                   } else {
                     break;
                   }
                 }
                 
-                // Also check for DEADLINE on the task line itself
-                const inlineDeadlineMatch = element.match(DEADLINE_REGEX);
-                const deadlineStr = inlineDeadlineMatch ? inlineDeadlineMatch[1] : deadlineFromChildren;
+                // Prefer planning-parsed deadline for the task; fallback to deadlines found in child lines.
+                const deadlineStr = (planning && planning.deadline) ? planning.deadline : deadlineFromChildren;
 
                 // Extract core task text and scheduled date
                 const taskTextMatch = element;
@@ -235,7 +236,11 @@ module.exports = function () {
                   // Build deadline warning badge if task has a deadline
                   let deadlineBadge = "";
                   if (deadlineStr) {
-                    const deadlineDate = moment(deadlineStr.split(" ")[0], acceptedDateFormats, true);
+                    const deadlineDate = momentFromTimestampContent(deadlineStr, acceptedDateFormats, true);
+                    if (!deadlineDate.isValid()) {
+                      // Avoid rendering "Invalid date" in the UI.
+                      deadlineBadge = "";
+                    } else {
                     const today = moment().startOf("day");
                     const daysUntil = deadlineDate.diff(today, "days");
                     
@@ -247,6 +252,7 @@ module.exports = function () {
                       deadlineBadge = `<span class="deadline deadline-soon">⏰ Due in ${daysUntil} day${daysUntil > 1 ? 's' : ''}</span>`;
                     } else {
                       deadlineBadge = `<span class="deadline deadline-future">📅 Due: ${deadlineDate.format("MMM Do")}</span>`;
+                    }
                     }
                   }
 
