@@ -499,16 +499,16 @@ function getWebviewContent(nonce, model) {
           </div>
         </div>
       `;
-    }).join("");
+    });
 
     const groupHeader = html`<h3 class="group-header">${g.name}</h3>`;
-    return `
+    return html`
       <div class="scope-group">
         ${groupHeader}
         ${rowsHtml}
       </div>
     `;
-  }).join("");
+  });
 
   return `<!DOCTYPE html>
 <html lang="en">

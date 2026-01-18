@@ -11,7 +11,7 @@ const { applyRepeatersOnCompletion } = require("./repeatedTasks");
 const { computeLogbookInsertion, formatStateChangeEntry } = require("./orgLogbook");
 const { computeCheckboxStatsByHeadingLine, formatCheckboxStats, findCheckboxCookie } = require("./checkboxStats");
 const { computeCheckboxToggleEdits } = require("./checkboxToggle");
-const { html, escapeText, escapeAttr } = require("./htmlUtils");
+const { html, escapeText } = require("./htmlUtils");
 
 function escapeRegExp(text) {
   return String(text).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -580,8 +580,8 @@ function getTaggedWebviewContent(webview, nonce, localMomentJs, tag, items, skip
         const m = str.match(/^(\s*)/);
         const lead = m ? m[1] : "";
         const rest = str.slice(lead.length);
-        const leadEsc = lead.replace(/ /g, "&nbsp;").replace(/\t/g, "&nbsp;&nbsp;");
-        return leadEsc + escapeText(rest);
+        const leadEsc = lead.replace(/ /g, "\u00A0").replace(/\t/g, "\u00A0\u00A0");
+        return leadEsc + rest;
       }
 
       function renderChildrenBlock(children, fileName) {
@@ -592,7 +592,7 @@ function getTaggedWebviewContent(webview, nonce, localMomentJs, tag, items, skip
           const lineNumber = c && typeof c === 'object' ? Number(c.lineNumber) : NaN;
           const m = text.match(/^(\s*)([-+*]|\d+[.)])\s+\[( |x|X|-)\]\s+(.*)$/);
           if (!m) {
-            return `<div class="detail-line">${localEscapeLeadingSpaces(text)}</div>`;
+            return html`<div class="detail-line">${localEscapeLeadingSpaces(text)}</div>`;
           }
           const indentLen = (m[1] || "").length;
           const bullet = localEscapeLeadingSpaces((m[1] || "") + (m[2] || "-"));
@@ -603,9 +603,9 @@ function getTaggedWebviewContent(webview, nonce, localMomentJs, tag, items, skip
           const safeLine = Number.isFinite(lineNumber) ? String(lineNumber) : "";
           const checkboxInput = html`<input class="org-checkbox" type="checkbox" data-file=${fileName} data-line=${safeLine} data-indent=${String(indentLen)} data-state=${isPartial ? "partial" : null} checked=${isChecked}/>`;
           const restSpan = html`<span class="checkbox-text">${rest}</span>`;
-          return `<div class="detail-line checkbox-line">${bullet} ${checkboxInput} ${restSpan}</div>`;
-        }).join("");
-        return `<details class="children-block"><summary>Show Details</summary><div class="children-lines">${linesHtml}</div></details>`;
+          return html`<div class="detail-line checkbox-line">${bullet} ${checkboxInput} ${restSpan}</div>`;
+        });
+        return html`<details class="children-block"><summary>Show Details</summary><div class="children-lines">${linesHtml}</div></details>`;
       }
 
       const childrenBlock = renderChildrenBlock(item.children, file);

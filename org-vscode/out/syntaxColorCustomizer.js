@@ -712,16 +712,16 @@ function getWebviewContent(nonce, currentColors, currentWorkflowStates) {
           </div>
         </div>
       `;
-    }).join("");
+    });
 
     const groupHeader = html`<h3 class="group-header">${groupName}</h3>`;
-    return `
+    return html`
       <div class="scope-group">
         ${groupHeader}
         ${scopesHtml}
       </div>
     `;
-  }).join("");
+  });
 
   return `<!DOCTYPE html>
 <html lang="en">

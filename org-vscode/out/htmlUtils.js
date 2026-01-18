@@ -138,6 +138,7 @@ const html = htm.bind(h);
 module.exports = {
   html,
   h,
+  SafeHtml,
   escapeText,
   escapeAttr
 };

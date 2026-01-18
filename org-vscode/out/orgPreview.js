@@ -1,7 +1,7 @@
 "use strict";
 
 const vscode = require("vscode");
-const { html, escapeText, escapeAttr } = require("./htmlUtils");
+const { html, h, SafeHtml, escapeText, escapeAttr } = require("./htmlUtils");
 
 function getNonce() {
   const possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
@@ -48,7 +48,7 @@ function renderOrgToHtml(documentText) {
     const trimmed = line.trim();
 
     // Always include a marker at each line so scroll sync is deterministic.
-    const marker = `<span class="line-marker" data-line="${lineNo}"></span>`;
+    const marker = html`<span class="line-marker" data-line=${lineNo}></span>`;
 
     // Export HTML block: include raw HTML
     if (!inSrc && !inExportHtml && /^\s*#\+BEGIN_EXPORT\s+html\s*$/i.test(line)) {
@@ -97,8 +97,8 @@ function renderOrgToHtml(documentText) {
         inTable = true;
       }
       const cells = line.trim().replace(/^\|/, "").replace(/\|$/, "").split("|");
-      const cellsHtml = cells.map((c) => html`<td>${c.trim()}</td>`).join("");
-      out.push(`<tr>${marker}${cellsHtml}</tr>`);
+      const cellsHtml = cells.map((c) => html`<td>${c.trim()}</td>`);
+      out.push(html`<tr>${marker}${cellsHtml}</tr>`);
       continue;
     } else {
       closeTable();
@@ -110,7 +110,7 @@ function renderOrgToHtml(documentText) {
       closeLists();
       const level = Math.min(6, heading[1].length);
       const title = heading[2];
-      out.push(`<h${level} class="org-heading">${marker}${escapeText(title)}</h${level}>`);
+      out.push(h("h" + level, { class: "org-heading" }, marker, title));
       continue;
     }
 
@@ -131,10 +131,9 @@ function renderOrgToHtml(documentText) {
 
       if (checkbox) {
         const checked = /x/i.test(checkbox[1]);
-        const checkboxAttr = checked ? " checked" : "";
-        out.push(`<li>${marker}<input type="checkbox" disabled${checkboxAttr} /> ${escapeText(checkbox[2])}</li>`);
+        out.push(html`<li>${marker}<input type="checkbox" disabled checked=${checked} /> ${checkbox[2]}</li>`);
       } else {
-        out.push(`<li>${marker}${escapeText(body)}</li>`);
+        out.push(html`<li>${marker}${body}</li>`);
       }
       continue;
     }
@@ -143,20 +142,20 @@ function renderOrgToHtml(documentText) {
     if (trimmed.length === 0) {
       closeLists();
       closeTable();
-      out.push(`<div class="org-blank">${marker}</div>`);
+      out.push(html`<div class="org-blank">${marker}</div>`);
       continue;
     }
 
     // Paragraph
     closeLists();
     closeTable();
-    out.push(`<p class="org-paragraph">${marker}${escapeText(line)}</p>`);
+    out.push(html`<p class="org-paragraph">${marker}${line}</p>`);
   }
 
   closeLists();
   closeTable();
 
-  return out.join("\n");
+  return new SafeHtml(out.join("\n"));
 }
 
 function getPreviewHtml(webview, nonce, bodyHtml) {

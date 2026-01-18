@@ -13,7 +13,7 @@ const { computeLogbookInsertion, formatStateChangeEntry } = require("../orgLogbo
 const { formatCheckboxStats, findCheckboxCookie, computeHierarchicalCheckboxStatsInRange } = require("../checkboxStats");
 const { computeCheckboxToggleEdits } = require("../checkboxToggle");
 const { normalizeBodyIndentation } = require("../indentUtils");
-const { html, escapeText, escapeAttr } = require("../htmlUtils");
+const { html, escapeText } = require("../htmlUtils");
 
 function escapeRegExp(text) {
   return String(text).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -77,8 +77,9 @@ module.exports = function () {
       const m = str.match(/^(\s*)/);
       const lead = m ? m[1] : "";
       const rest = str.slice(lead.length);
-      const leadEsc = lead.replace(/ /g, "&nbsp;").replace(/\t/g, "&nbsp;&nbsp;");
-      return leadEsc + escapeText(rest);
+      // Use actual non-breaking space (U+00A0) instead of &nbsp; entity
+      const leadEsc = lead.replace(/ /g, "\u00A0").replace(/\t/g, "\u00A0\u00A0");
+      return leadEsc + rest;
     }
 
     function renderChildrenBlock(children, fileName) {
@@ -90,8 +91,7 @@ module.exports = function () {
         const lineNumber = c && typeof c === 'object' ? Number(c.lineNumber) : NaN;
         const m = text.match(/^(\s*)([-+*]|\d+[.)])\s+\[( |x|X|-)\]\s+(.*)$/);
         if (!m) {
-          // escapeLeadingSpaces returns pre-escaped HTML
-          return `<div class="detail-line">${escapeLeadingSpaces(text)}</div>`;
+          return html`<div class="detail-line">${escapeLeadingSpaces(text)}</div>`;
         }
 
         const indentLen = (m[1] || "").length;
@@ -101,13 +101,12 @@ module.exports = function () {
         const isChecked = state.toLowerCase() === "x";
         const isPartial = state === "-";
         const safeLine = Number.isFinite(lineNumber) ? String(lineNumber) : "";
-        // Build the input with proper attribute escaping, then assemble with pre-escaped bullet
         const checkboxInput = html`<input class="org-checkbox" type="checkbox" data-file=${fileName} data-line=${safeLine} data-indent=${String(indentLen)} data-state=${isPartial ? "partial" : null} checked=${isChecked}/>`;
         const restSpan = html`<span class="checkbox-text">${rest}</span>`;
-        return `<div class="detail-line checkbox-line">${bullet} ${checkboxInput} ${restSpan}</div>`;
-      }).join("");
+        return html`<div class="detail-line checkbox-line">${bullet} ${checkboxInput} ${restSpan}</div>`;
+      });
 
-      return `<details class="children-block"><summary>Show Details</summary><div class="children-lines">${linesHtml}</div></details>`;
+      return html`<details class="children-block"><summary>Show Details</summary><div class="children-lines">${linesHtml}</div></details>`;
     }
 
     // Reads all .org files and builds agenda view HTML blocks grouped by scheduled date
@@ -253,9 +252,9 @@ module.exports = function () {
                   if (taskKeywordMatch) {
                     const bucket = getKeywordBucket(taskKeywordMatch, registry);
                     const keywordSpan = html`<span class=${bucket} data-filename=${items[i]} data-text=${taskText} data-date=${cleanDate}>${taskKeywordMatch}</span>`;
-                    renderedTask = `${filenameSpan} ${keywordSpan}${taskTextSpan}${checkboxBadge}<span class="scheduled">SCHEDULED</span>${deadlineBadge}`;
+                    renderedTask = html`<>${filenameSpan} ${keywordSpan}${taskTextSpan}${checkboxBadge}<span class="scheduled">SCHEDULED</span>${deadlineBadge}</>`;
                   } else {
-                    renderedTask = `${filenameSpan} ${taskTextSpan}${checkboxBadge}<span class="scheduled">SCHEDULED</span>${deadlineBadge}`;
+                    renderedTask = html`<>${filenameSpan} ${taskTextSpan}${checkboxBadge}<span class="scheduled">SCHEDULED</span>${deadlineBadge}</>`;
                   }
 
                   // Clear the current date array and group task appropriately by date
@@ -264,7 +263,7 @@ module.exports = function () {
                   // If task is today or future
                   if (scheduledMoment.isSameOrAfter(moment().startOf("day"), "day")) {
                     const dateDiv = html`<div class=${"heading" + nameOfDay + " " + cleanDate}><h4 class=${cleanDate}>${cleanDate}, ${nameOfDay.toUpperCase()}</h4></div>`;
-                    const textDiv = `<div class="${escapeAttr("panel " + cleanDate)}">${renderedTask}${childrenBlock}</div>`;
+                    const textDiv = html`<div class=${"panel " + cleanDate}>${renderedTask}${childrenBlock}</div>`;
                     convertedDateArray.push({ date: dateDiv, text: textDiv });
                   } else {
                     // If task is overdue
@@ -276,7 +275,7 @@ module.exports = function () {
                       const lateDate = momentFromTimestampContent(getDateFromTaskText[1], acceptedDateFormats, true).format(dateFormat);
                       const lateBadge = html`<span class="late">LATE: ${lateDate}</span>`;
                       const dateDiv = html`<div class=${"heading" + overdue + " " + todayClass}><h4 class=${todayClass}>${todayClass}, ${overdue.toUpperCase()}</h4></div>`;
-                      const textDiv = `<div class="${escapeAttr("panel " + todayClass)}">${renderedTask}${lateBadge}${childrenBlock}</div>`;
+                      const textDiv = html`<div class=${"panel " + todayClass}>${renderedTask}${lateBadge}${childrenBlock}</div>`;
                       convertedDateArray.push({ date: dateDiv, text: textDiv });
                     }
                   }
@@ -314,10 +313,10 @@ module.exports = function () {
 
                   const filenameSpan = html`<span class="filename" data-file=${filename} data-line=${String(timestampLineNumber)}>${filename}:</span>`;
                   const taskTextSpan = html`<span class="taskText agenda-task-link" data-file=${filename} data-line=${String(timestampLineNumber)}>${displayText}</span>`;
-                  const renderedTask = `${filenameSpan} ${taskTextSpan}<span class="timestamp-marker"></span>`;
+                  const renderedTask = html`<>${filenameSpan} ${taskTextSpan}<span class="timestamp-marker"></span></>`;
 
                   const dateKey = html`<div class=${"heading" + nameOfDay + " " + cleanDate}><h4 class=${cleanDate}>${cleanDate}, ${nameOfDay.toUpperCase()}</h4></div>`;
-                  const panelHtml = `<div class="${escapeAttr("panel " + cleanDate)}">${renderedTask}</div>`;
+                  const panelHtml = html`<div class=${"panel " + cleanDate}>${renderedTask}</div>`;
                   if (!unsortedObject[dateKey]) {
                     unsortedObject[dateKey] = "  " + panelHtml;
                   } else {
