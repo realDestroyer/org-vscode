@@ -11,7 +11,7 @@ const { applyRepeatersOnCompletion } = require("./repeatedTasks");
 const { computeLogbookInsertion, formatStateChangeEntry } = require("./orgLogbook");
 const { computeCheckboxStatsByHeadingLine, formatCheckboxStats, findCheckboxCookie } = require("./checkboxStats");
 const { computeCheckboxToggleEdits } = require("./checkboxToggle");
-const { html, escapeText } = require("./htmlUtils");
+const { html, escapeText, escapeAttr } = require("./htmlUtils");
 
 function escapeRegExp(text) {
   return String(text).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -661,7 +661,8 @@ function getTaggedWebviewContent(webview, nonce, localMomentJs, tag, items, skip
             </div>`;
   }).join("");
 
-  const csp = `default-src 'none'; img-src ${webview.cspSource} https: data:; style-src ${webview.cspSource} 'nonce-${nonce}' https:; script-src 'nonce-${nonce}' https:`;
+  // Defense-in-depth: don't allow arbitrary https scripts. Only allow cdnjs (moment fallback) + local webview.
+  const csp = `default-src 'none'; img-src ${webview.cspSource} https: data:; style-src ${webview.cspSource} 'nonce-${nonce}' https:; script-src ${webview.cspSource} 'nonce-${nonce}' https://cdnjs.cloudflare.com`;
   const cdnMomentJs = "https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js";
 
   return `

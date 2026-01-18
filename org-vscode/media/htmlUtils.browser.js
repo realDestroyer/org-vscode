@@ -55,7 +55,7 @@
       return children.flat(Infinity).map(c => {
         if (c == null) return "";
         if (typeof c === "object" && c.__raw) return c.toString();
-        return escapeText(c);
+        return escapeText(String(c));
       }).join("");
     }
 
@@ -92,10 +92,8 @@
         if (child == null || child === false) continue;
         if (typeof child === "object" && child.__raw) {
           htmlStr += child.toString();
-        } else if (typeof child === "object") {
-          htmlStr += child;
         } else {
-          htmlStr += escapeText(child);
+          htmlStr += escapeText(String(child));
         }
       }
     }
