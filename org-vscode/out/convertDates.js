@@ -84,16 +84,17 @@ function convertDatesInText({ text, sourceMode, explicitSourceFormat, targetForm
     });
   });
 
-  // 2) SCHEDULED/DEADLINE tags: preserve optional time inside []
-  // e.g. DEADLINE: [04-30-2026 10:00]
+  // 2) SCHEDULED/DEADLINE tags: match both bracket types, output with angle brackets per Emacs convention
+  // e.g. DEADLINE: <04-30-2026 10:00> (active timestamp for agenda visibility)
   const convertStamp = (stampName) => {
-    const re = new RegExp(`${stampName}:\\s*\\[(\\d{2}-\\d{2}-\\d{4})([^\\]]*)\\]`, "g");
-    text = text.replace(re, (full, dateStr, tail) => {
+    const re = new RegExp(`${stampName}:\\s*([<\\[])(\\d{2}-\\d{2}-\\d{4})([^\\]>]*)([>\\]])`, "g");
+    text = text.replace(re, (full, _openBracket, dateStr, tail, _closeBracket) => {
       return replaceBracketedDate(dateStr, (_parsed, formatted) => {
         if (!formatted) {
           return full;
         }
-        return `${stampName}: [${formatted}${tail}]`;
+        // Per Emacs convention: SCHEDULED/DEADLINE use active timestamps <...>
+        return `${stampName}: <${formatted}${tail}>`;
       });
     });
   };

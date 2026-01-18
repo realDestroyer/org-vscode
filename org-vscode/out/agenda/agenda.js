@@ -7,7 +7,7 @@ const moment = require("moment");
 const taskKeywordManager = require("../taskKeywordManager");
 const continuedTaskHandler = require("../continuedTaskHandler");
 const path = require("path");
-const { stripAllTagSyntax, getPlanningForHeading, isPlanningLine, parsePlanningFromText, normalizeTagsAfterPlanning, getAcceptedDateFormats, DEADLINE_REGEX, stripInlinePlanning, momentFromTimestampContent } = require("../orgTagUtils");
+const { stripAllTagSyntax, getPlanningForHeading, isPlanningLine, parsePlanningFromText, normalizeTagsAfterPlanning, getAcceptedDateFormats, DEADLINE_REGEX, stripInlinePlanning, momentFromTimestampContent, extractPlainTimestamps } = require("../orgTagUtils");
 const { applyRepeatersOnCompletion } = require("../repeatedTasks");
 const { computeLogbookInsertion, formatStateChangeEntry } = require("../orgLogbook");
 const { formatCheckboxStats, findCheckboxCookie, computeHierarchicalCheckboxStatsInRange } = require("../checkboxStats");
@@ -155,8 +155,22 @@ module.exports = function () {
             }
 
             // Iterate through lines to find scheduled, non-completed tasks (only TODO and IN_PROGRESS)
+            // Track current heading for plain timestamps in body text
+            let currentHeadingText = null;   // For display
+            let currentHeadingLine = 0;      // Line number of current heading
+            let seenFirstHeading = false;    // Skip timestamps before first heading
+
             for (let j = 0; j < fileText.length; j++) {
               const element = fileText[j];
+
+              // Track current heading for plain timestamp display
+              if (headingStartRegex.test(element)) {
+                seenFirstHeading = true;
+                const normalizedHeadline = stripInlinePlanning(normalizeTagsAfterPlanning(element));
+                currentHeadingText = taskKeywordManager.cleanTaskText(stripAllTagSyntax(normalizedHeadline)).trim();
+                currentHeadingLine = j + 1;
+              }
+
               // Only show TODO and IN_PROGRESS tasks - exclude DONE, CONTINUED, and ABANDONED
               const planning = getPlanningForHeading(fileText, j);
               const hasScheduled = Boolean(planning && planning.scheduled);
@@ -291,6 +305,37 @@ module.exports = function () {
 
                   // Skip past children for outer loop
                   j += children.length;
+                }
+              }
+
+              // Plain timestamps - scan all lines after first heading
+              if (seenFirstHeading) {
+                const plainTimestamps = extractPlainTimestamps(element);
+                for (const ts of plainTimestamps) {
+                  // Only active timestamps <...> appear in agenda
+                  if (ts.bracket !== '<') continue;
+
+                  const parsedDate = moment(ts.date, acceptedDateFormats, true);
+                  if (!parsedDate.isValid()) continue;
+
+                  const timestampLineNumber = j + 1;  // Click jumps to timestamp line
+                  const displayText = currentHeadingText || element.trim();
+                  const filename = items[i];
+                  const formattedDate = parsedDate.format(dateFormat);
+                  const nameOfDay = parsedDate.format("dddd");
+                  const cleanDate = `[${formattedDate}]`;
+
+                  const renderedTask =
+                    `<span class="filename" data-file="${filename}" data-line="${timestampLineNumber}">${filename}:</span> ` +
+                    `<span class="taskText agenda-task-link" data-file="${filename}" data-line="${timestampLineNumber}">${displayText}</span>` +
+                    `<span class="timestamp-marker"></span>`;
+
+                  const dateKey = `<div class="heading${nameOfDay} ${cleanDate}"><h4 class="${cleanDate}">${cleanDate}, ${nameOfDay.toUpperCase()}</h4></div>`;
+                  if (!unsortedObject[dateKey]) {
+                    unsortedObject[dateKey] = `  <div class="panel ${cleanDate}">${renderedTask}</div>`;
+                  } else {
+                    unsortedObject[dateKey] += `  <div class="panel ${cleanDate}">${renderedTask}</div>`;
+                  }
                 }
               }
             }
@@ -522,8 +567,9 @@ module.exports = function () {
 
             function buildPlanningBody(p) {
               const segs = [];
-              if (p.scheduled) segs.push(`SCHEDULED: [${p.scheduled}]`);
-              if (p.deadline) segs.push(`DEADLINE: [${p.deadline}]`);
+              // In Emacs: SCHEDULED/DEADLINE use active <...> (appear in agenda), CLOSED uses inactive [...]
+              if (p.scheduled) segs.push(`SCHEDULED: <${p.scheduled}>`);
+              if (p.deadline) segs.push(`DEADLINE: <${p.deadline}>`);
               if (p.closed) segs.push(`CLOSED: [${p.closed}]`);
               return segs.join("  ");
             }

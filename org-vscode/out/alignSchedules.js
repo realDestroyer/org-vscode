@@ -91,8 +91,9 @@ async function alignSchedules() {
                 const planningIndent = `${headlineIndent}${bodyIndent}`;
                 const planning = parsePlanningFromText(nextLine);
                 const parts = [];
-                if (planning.scheduled) parts.push(`SCHEDULED: [${planning.scheduled}]`);
-                if (planning.deadline) parts.push(`DEADLINE: [${planning.deadline}]`);
+                // In Emacs: SCHEDULED/DEADLINE use active <...> (appear in agenda), CLOSED uses inactive [...]
+                if (planning.scheduled) parts.push(`SCHEDULED: <${planning.scheduled}>`);
+                if (planning.deadline) parts.push(`DEADLINE: <${planning.deadline}>`);
                 if (planning.closed) parts.push(`CLOSED: [${planning.closed}]`);
                 const normalized = parts.join("  ");
                 if (normalized) {
@@ -136,7 +137,8 @@ async function alignSchedules() {
             ? lineReplacements.get(lineNumber)
             : document.lineAt(lineNumber).text;
 
-        let match = String(baseLine || "").match(/^(\s*)(.*?)(\s+SCHEDULED:\s*\[\d{2,4}-\d{2}-\d{2,4}(?:\s+\w{3})?(?:\s+\d{1,2}:\d{2})?\])(\s+DEADLINE:\s*\[\d{2,4}-\d{2}-\d{2,4}(?:\s+\w{3})?(?:\s+\d{1,2}:\d{2})?\])?/);
+        // Match both active <...> and inactive [...] timestamps with full Emacs format
+        let match = String(baseLine || "").match(/^(\s*)(.*?)(\s+SCHEDULED:\s*[<\[][^\]>]*[>\]])(\s+DEADLINE:\s*[<\[][^\]>]*[>\]])?/);
         if (!match) continue;
 
         const taskText = match[2].trimEnd();

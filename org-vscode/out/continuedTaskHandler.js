@@ -1,5 +1,4 @@
 // Handles auto-forwarding of forward-trigger tasks (default: CONTINUED) to the next day
-const vscode = require("vscode");
 const moment = require("moment");
 const taskKeywordManager = require("./taskKeywordManager");
 const { normalizeBodyIndentation } = require("./indentUtils");
@@ -31,14 +30,17 @@ function stripInlinePlanning(text) {
 
 function buildPlanningBody(planning) {
   const parts = [];
-  if (planning?.scheduled) parts.push(`SCHEDULED: [${planning.scheduled}]`);
-  if (planning?.deadline) parts.push(`DEADLINE: [${planning.deadline}]`);
+  // In Emacs: SCHEDULED/DEADLINE use active <...> (appear in agenda), CLOSED uses inactive [...]
+  if (planning?.scheduled) parts.push(`SCHEDULED: <${planning.scheduled}>`);
+  if (planning?.deadline) parts.push(`DEADLINE: <${planning.deadline}>`);
   if (planning?.closed) parts.push(`CLOSED: [${planning.closed}]`);
   return parts.join("  ");
 }
 
 /**
  * Find the day heading that contains a given line number
+ * DAY_HEADING_REGEX groups: (1) indent, (2) marker, (3) open-bracket, (4) date, (5) dayname,
+ *   (6) time-start, (7) time-end, (8) repeater, (9) warning, (10) close-bracket, (11) rest
  */
 function findContainingDayHeading(lines, lineNumber) {
   for (let i = lineNumber; i >= 0; i--) {
@@ -48,9 +50,15 @@ function findContainingDayHeading(lines, lineNumber) {
         lineIndex: i,
         indent: match[1] || "",
         marker: match[2],
-        date: match[3],
-        weekday: match[4],
-        suffix: match[6] || ""
+        openBracket: match[3],
+        date: match[4],
+        weekday: match[5],
+        timeStart: match[6],
+        timeEnd: match[7],
+        repeater: match[8],
+        warning: match[9],
+        closeBracket: match[10],
+        suffix: match[11] || ""
       };
     }
   }
@@ -59,6 +67,8 @@ function findContainingDayHeading(lines, lineNumber) {
 
 /**
  * Find the next day heading after a given line
+ * DAY_HEADING_REGEX groups: (1) indent, (2) marker, (3) open-bracket, (4) date, (5) dayname,
+ *   (6) time-start, (7) time-end, (8) repeater, (9) warning, (10) close-bracket, (11) rest
  */
 function findNextDayHeading(lines, afterLineIndex) {
   for (let i = afterLineIndex + 1; i < lines.length; i++) {
@@ -68,9 +78,15 @@ function findNextDayHeading(lines, afterLineIndex) {
         lineIndex: i,
         indent: match[1] || "",
         marker: match[2],
-        date: match[3],
-        weekday: match[4],
-        suffix: match[6] || ""
+        openBracket: match[3],
+        date: match[4],
+        weekday: match[5],
+        timeStart: match[6],
+        timeEnd: match[7],
+        repeater: match[8],
+        warning: match[9],
+        closeBracket: match[10],
+        suffix: match[11] || ""
       };
     }
   }
@@ -97,6 +113,7 @@ function findLastTaskLineUnderHeading(lines, headingLineIndex) {
 }
 
 function parseOrgDate(dateStr) {
+  const vscode = require("vscode");
   const config = vscode.workspace.getConfiguration("Org-vscode");
   const configuredFormat = config.get("dateFormat", "YYYY-MM-DD");
   const formatsToTry = getAcceptedDateFormats(configuredFormat);
@@ -136,16 +153,20 @@ function getNextDay(dateStr) {
 
 /**
  * Build a day heading line
+ * @param {string} openBracket - Opening bracket (< or [), defaults to [ for backwards compatibility
+ * @param {string} closeBracket - Closing bracket (> or ]), defaults to match openBracket
  */
-function buildDayHeading(date, weekday, suffix = "", indent = "", marker = "⊘") {
+function buildDayHeading(date, weekday, suffix = "", indent = "", marker = "⊘", openBracket = "[", closeBracket = null) {
   const separator = " -------------------------------------------------------------------------------------------------------------------------------";
-  return `${indent}${marker} [${date} ${weekday}]${suffix || separator}`;
+  const close = closeBracket || (openBracket === "<" ? ">" : "]");
+  return `${indent}${marker} ${openBracket}${date} ${weekday}${close}${suffix || separator}`;
 }
 
 /**
  * Build a forwarded task line (as TODO with updated schedule)
  */
 function buildForwardedTask(originalLine, newDate, indent = "  ") {
+  const vscode = require("vscode");
   // Clean the task and rebuild as the first configured workflow keyword
   const originalCleaned = taskKeywordManager.cleanTaskText(normalizeTagsAfterPlanning(originalLine));
 
@@ -215,10 +236,11 @@ function findForwardedTask(lines, nextDayHeadingIndex, taskIdentifier) {
  * Returns the edits needed to forward the task to the next day
  */
 function handleContinuedTransition(document, taskLineNumber) {
+  const vscode = require("vscode");
   const lines = document.getText().split(/\r?\n/);
   const taskLine = lines[taskLineNumber];
   const planningLine = getImmediatePlanningLine(lines, taskLineNumber);
-  
+
   // Find which day this task belongs to
   const currentDay = findContainingDayHeading(lines, taskLineNumber);
   if (!currentDay) {
@@ -275,7 +297,9 @@ function handleContinuedTransition(document, taskLineNumber) {
       nextDayInfo.weekday,
       "",
       currentDay.indent || "",
-      currentDay.marker || fallbackMarker
+      currentDay.marker || fallbackMarker,
+      currentDay.openBracket || "[",
+      currentDay.closeBracket || "]"
     );
     const insertText = `\n${newDayHeading}\n${forwardedTask}`;
     
@@ -292,6 +316,7 @@ function handleContinuedTransition(document, taskLineNumber) {
  * Returns the edits needed to remove the forwarded task from the next day
  */
 function handleContinuedRemoval(document, taskLineNumber) {
+  const vscode = require("vscode");
   const lines = document.getText().split(/\r?\n/);
   const taskLine = lines[taskLineNumber];
   
@@ -340,6 +365,12 @@ module.exports = {
   handleContinuedTransition,
   handleContinuedRemoval,
   findContainingDayHeading,
+  findNextDayHeading,
+  findLastTaskLineUnderHeading,
+  findForwardedTask,
   getTaskIdentifier,
+  getImmediatePlanningLine,
+  buildDayHeading,
+  stripInlinePlanning,
   DAY_HEADING_REGEX
 };

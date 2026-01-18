@@ -226,6 +226,10 @@ function createWorkflowRegistry(configValue) {
       const st = k ? keywordToState.get(k) : undefined;
       return !!(st && st.triggersForward);
     },
+    getFirstNonDoneState: () => {
+      const first = states.find((s) => !s.isDoneLike);
+      return first ? first.keyword : null;
+    },
 
     buildTaskHeadingRegex: (options) => buildTaskHeadingRegex(states, options)
   };

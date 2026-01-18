@@ -1,8 +1,8 @@
-const vscode = require("vscode");
-const moment = require("moment");
-const { getAcceptedDateFormats, DAY_HEADING_REGEX } = require("./orgTagUtils");
+const { getAcceptedDateFormats } = require("./orgTagUtils");
+const { transformDayHeadingDate } = require("./incrementDate");
 
 function decrementDate() {
+    const vscode = require("vscode");
     const editor = vscode.window.activeTextEditor;
     if (!editor) {
         vscode.window.showErrorMessage("No active editor detected.");
@@ -34,39 +34,19 @@ function decrementDate() {
     const dateFormat = config.get("dateFormat", "YYYY-MM-DD");
     const acceptedDateFormats = getAcceptedDateFormats(dateFormat);
 
-    // Match day heading: ⊘ [date DDD HH:MM] OR * [date DDD HH:MM] (ddd and time are optional)
-    // DAY_HEADING_REGEX groups: (1) indent, (2) marker, (3) date, (4) weekday, (5) time, (6) rest
-    const dateRegex = DAY_HEADING_REGEX;
-
     const edit = new vscode.WorkspaceEdit();
     let touched = false;
     let warnedParse = false;
 
     for (const lineNumber of sortedLines) {
         const line = document.lineAt(lineNumber);
-        const text = line.text;
-        const match = text.match(dateRegex);
-        if (!match) {
-            continue;
-        }
-        const indent = match[1] || "";
-        const marker = match[2];
-        const currentDate = match[3];
-        const hadDayAbbrev = match[4] !== undefined;
-        const timeComponent = match[5] || null;
-        const rest = match[6] || "";
-        const parsed = moment(currentDate, acceptedDateFormats, true);
-        if (!parsed.isValid()) {
+        const result = transformDayHeadingDate(line.text, false, dateFormat, acceptedDateFormats);
+        if (result.parseError) {
             warnedParse = true;
             continue;
         }
-        const newDate = parsed.subtract(1, "day");
-        const formattedDate = newDate.format(dateFormat);
-        const dayPart = hadDayAbbrev ? ` ${newDate.format("ddd")}` : "";
-        const timePart = timeComponent ? ` ${timeComponent}` : "";
-        const updatedText = `${indent}${marker} [${formattedDate}${dayPart}${timePart}]${rest}`;
-        if (updatedText !== text) {
-            edit.replace(document.uri, line.range, updatedText);
+        if (result.text !== null && result.text !== line.text) {
+            edit.replace(document.uri, line.range, result.text);
             touched = true;
         }
     }

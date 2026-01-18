@@ -5,44 +5,68 @@ const moment = require('moment');
 const { getAcceptedDateFormats, SCHEDULED_REGEX, buildScheduledReplacement, getMatchingScheduledOnLine } = require(path.join(__dirname, '..', '..', 'out', 'orgTagUtils.js'));
 
 // Test that SCHEDULED_REGEX correctly matches various formats
+// Capture groups: (1) open-bracket, (2) date, (3) dayname, (4) time-start, (5) time-end,
+//                 (6) repeater, (7) warning, (8) close-bracket
 function testScheduledRegexMatching() {
   // Basic date
   const basic = "SCHEDULED: [2026-01-10]";
   const basicMatch = basic.match(SCHEDULED_REGEX);
   assert.notStrictEqual(basicMatch, null, "Should match basic date");
-  assert.strictEqual(basicMatch[1], "2026-01-10", "Should capture date");
-  assert.strictEqual(basicMatch[2], undefined, "Should not have weekday");
-  assert.strictEqual(basicMatch[3], undefined, "Should not have time");
+  assert.strictEqual(basicMatch[1], "[", "Should capture open bracket");
+  assert.strictEqual(basicMatch[2], "2026-01-10", "Should capture date");
+  assert.strictEqual(basicMatch[3], undefined, "Should not have weekday");
+  assert.strictEqual(basicMatch[4], undefined, "Should not have time");
+  assert.strictEqual(basicMatch[8], "]", "Should capture close bracket");
 
   // Date with day abbreviation
   const withDdd = "SCHEDULED: [2026-01-10 Sat]";
   const dddMatch = withDdd.match(SCHEDULED_REGEX);
   assert.notStrictEqual(dddMatch, null, "Should match date with ddd");
-  assert.strictEqual(dddMatch[1], "2026-01-10", "Should capture date");
-  assert.strictEqual(dddMatch[2], "Sat", "Should capture weekday");
-  assert.strictEqual(dddMatch[3], undefined, "Should not have time");
+  assert.strictEqual(dddMatch[2], "2026-01-10", "Should capture date");
+  assert.strictEqual(dddMatch[3], "Sat", "Should capture weekday");
+  assert.strictEqual(dddMatch[4], undefined, "Should not have time");
 
   // Date with day and time
   const withTime = "SCHEDULED: [2026-01-10 Sat 14:30]";
   const timeMatch = withTime.match(SCHEDULED_REGEX);
   assert.notStrictEqual(timeMatch, null, "Should match date with ddd and time");
-  assert.strictEqual(timeMatch[1], "2026-01-10", "Should capture date");
-  assert.strictEqual(timeMatch[2], "Sat", "Should capture weekday");
-  assert.strictEqual(timeMatch[3], "14:30", "Should capture time");
+  assert.strictEqual(timeMatch[2], "2026-01-10", "Should capture date");
+  assert.strictEqual(timeMatch[3], "Sat", "Should capture weekday");
+  assert.strictEqual(timeMatch[4], "14:30", "Should capture time");
 
   // Date with time but no day abbreviation
   const timeNoDdd = "SCHEDULED: [2026-01-10 14:30]";
   const timeNoDddMatch = timeNoDdd.match(SCHEDULED_REGEX);
   assert.notStrictEqual(timeNoDddMatch, null, "Should match date with time but no ddd");
-  assert.strictEqual(timeNoDddMatch[1], "2026-01-10", "Should capture date");
-  assert.strictEqual(timeNoDddMatch[3], "14:30", "Should capture time");
+  assert.strictEqual(timeNoDddMatch[2], "2026-01-10", "Should capture date");
+  assert.strictEqual(timeNoDddMatch[4], "14:30", "Should capture time");
 
   // Inline with other content
   const inline = "  SCHEDULED: [2026-01-10 Sat]  DEADLINE: [2026-01-15]";
   const inlineMatch = inline.match(SCHEDULED_REGEX);
   assert.notStrictEqual(inlineMatch, null, "Should match inline SCHEDULED");
-  assert.strictEqual(inlineMatch[1], "2026-01-10", "Should capture correct date from inline");
-  assert.strictEqual(inlineMatch[2], "Sat", "Should capture weekday from inline");
+  assert.strictEqual(inlineMatch[2], "2026-01-10", "Should capture correct date from inline");
+  assert.strictEqual(inlineMatch[3], "Sat", "Should capture weekday from inline");
+
+  // Active timestamp (Emacs format)
+  const active = "SCHEDULED: <2026-01-10 Sat>";
+  const activeMatch = active.match(SCHEDULED_REGEX);
+  assert.notStrictEqual(activeMatch, null, "Should match active timestamp");
+  assert.strictEqual(activeMatch[1], "<", "Should capture active open bracket");
+  assert.strictEqual(activeMatch[2], "2026-01-10", "Should capture date from active");
+  assert.strictEqual(activeMatch[8], ">", "Should capture active close bracket");
+
+  // With repeater
+  const withRepeater = "SCHEDULED: <2026-01-10 Sat +1w>";
+  const repeaterMatch = withRepeater.match(SCHEDULED_REGEX);
+  assert.notStrictEqual(repeaterMatch, null, "Should match with repeater");
+  assert.strictEqual(repeaterMatch[6], "+1w", "Should capture repeater");
+
+  // With warning
+  const withWarning = "SCHEDULED: <2026-01-10 Sat -3d>";
+  const warningMatch = withWarning.match(SCHEDULED_REGEX);
+  assert.notStrictEqual(warningMatch, null, "Should match with warning");
+  assert.strictEqual(warningMatch[7], "-3d", "Should capture warning");
 }
 
 // Test buildScheduledReplacement (actual function from calendar.js)
@@ -74,6 +98,30 @@ function testBuildScheduledReplacement() {
   const inlineMatch = inlineLine.match(SCHEDULED_REGEX);
   const inlineResult = inlineLine.replace(SCHEDULED_REGEX, buildScheduledReplacement(inlineMatch, parsedNewDate, formattedNewDate));
   assert.strictEqual(inlineResult, "  SCHEDULED: [2026-01-11 Sun]  DEADLINE: [2026-01-15]", "Should only replace SCHEDULED, not DEADLINE");
+
+  // Test active timestamp - should preserve active bracket type
+  const activeLine = "SCHEDULED: <2026-01-10 Sat>";
+  const activeMatch = activeLine.match(SCHEDULED_REGEX);
+  const activeResult = activeLine.replace(SCHEDULED_REGEX, buildScheduledReplacement(activeMatch, parsedNewDate, formattedNewDate));
+  assert.strictEqual(activeResult, "SCHEDULED: <2026-01-11 Sun>", "Should preserve active bracket type");
+
+  // Test with repeater - should preserve repeater
+  const repeaterLine = "SCHEDULED: <2026-01-10 Sat +1w>";
+  const repeaterMatch = repeaterLine.match(SCHEDULED_REGEX);
+  const repeaterResult = repeaterLine.replace(SCHEDULED_REGEX, buildScheduledReplacement(repeaterMatch, parsedNewDate, formattedNewDate));
+  assert.strictEqual(repeaterResult, "SCHEDULED: <2026-01-11 Sun +1w>", "Should preserve repeater");
+
+  // Test with time range - should preserve time range
+  const timeRangeLine = "SCHEDULED: <2026-01-10 Sat 14:00-15:30>";
+  const timeRangeMatch = timeRangeLine.match(SCHEDULED_REGEX);
+  const timeRangeResult = timeRangeLine.replace(SCHEDULED_REGEX, buildScheduledReplacement(timeRangeMatch, parsedNewDate, formattedNewDate));
+  assert.strictEqual(timeRangeResult, "SCHEDULED: <2026-01-11 Sun 14:00-15:30>", "Should preserve time range");
+
+  // Test with warning - should preserve warning
+  const warningLine = "SCHEDULED: <2026-01-10 Sat -3d>";
+  const warningMatch = warningLine.match(SCHEDULED_REGEX);
+  const warningResult = warningLine.replace(SCHEDULED_REGEX, buildScheduledReplacement(warningMatch, parsedNewDate, formattedNewDate));
+  assert.strictEqual(warningResult, "SCHEDULED: <2026-01-11 Sun -3d>", "Should preserve warning");
 }
 
 // Test getMatchingScheduledOnLine (actual function from calendar.js)
