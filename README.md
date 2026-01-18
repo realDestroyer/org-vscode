@@ -83,7 +83,7 @@ Most editing shortcuts support multi-line selection: highlight multiple task lin
 | `Ctrl + Shift + ]`   | Unfold section                                         |
 | `Ctrl + Alt + S`     | Schedule a task (selection-aware)                      |
 | `Ctrl + Alt + D`     | Add deadline to task (selection-aware)                 |
-| `Ctrl + Alt + X`     | Toggle checkbox item on current line                   |
+| `Ctrl + Alt + X`     | Toggle checkbox item (selection-aware)                 |
 | `Alt + Shift + →`    | Smart date forward (selection-aware)                   |
 | `Alt + Shift + ←`    | Smart date backward (selection-aware)                  |
 | `Ctrl + Shift + →`   | Deadline date forward (selection-aware)                |

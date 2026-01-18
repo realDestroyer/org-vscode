@@ -168,6 +168,18 @@ const DEFAULT_COLORS = {
     background: "",
     fontStyle: ""
   },
+  "LOGBOOK Drawer": {
+    scope: "meta.drawer.logbook.content.vso",
+    foreground: "#9d9d9d",
+    background: "",
+    fontStyle: ""
+  },
+  "LOGBOOK Drawer Markers": {
+    scope: ["keyword.other.drawer.logbook.vso", "keyword.other.drawer.end.vso"],
+    foreground: "#6A9955",
+    background: "",
+    fontStyle: "bold"
+  },
   "Heading Level 1": {
     scope: "markup.heading.vso",
     foreground: "#dcdcaa",
@@ -326,7 +338,9 @@ const SCOPE_GROUPS = {
     "Heading Level 3",
     "Org Directive",
     "Property Drawer",
-    "Property Key"
+    "Property Key",
+    "LOGBOOK Drawer",
+    "LOGBOOK Drawer Markers"
   ],
   "Org Syntax": [
     "Link",
@@ -1816,6 +1830,8 @@ function getPreviewText(scopeName) {
     "Org Directive": "#+TITLE: Work",
     "Property Drawer": ":PROPERTIES: ... :END:",
     "Property Key": ":OWNER: Doug",
+    "LOGBOOK Drawer": "- State \"DONE\" from \"TODO\" [2026-01-17 Sat 19:09]",
+    "LOGBOOK Drawer Markers": ":LOGBOOK: ... :END:",
     "Heading Level 1": "* Heading",
     "Heading Level 2": "** Subheading",
     "Heading Level 3": "*** Detail",

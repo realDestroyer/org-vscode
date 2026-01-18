@@ -22,13 +22,15 @@ function stripExistingRepeaters(rest) {
 function setRepeaterInTimestampContent(content, repeaterTokenOrNull) {
   const t = String(content || "").trim();
   // date [day] [time] [rest...]
-  const m = t.match(/^(\d{2,4}-\d{2}-\d{2,4})(?:\s+([A-Za-z]{3}))?(?:\s+(\d{1,2}:\d{2}))?(?:\s+(.*))?$/);
+  const m = t.match(/^(\d{2,4}-\d{2}-\d{2,4})(?:\s+([A-Za-z]{3}))?(?:\s+(\d{1,2}:\d{2})(?:-(\d{1,2}:\d{2}))?)?(?:\s+(.*))?$/);
   if (!m) return t;
 
   const date = m[1];
   const day = m[2] || null;
-  const time = m[3] || null;
-  const rest = m[4] || "";
+  const timeStart = m[3] || null;
+  const timeEnd = m[4] || null;
+  const time = timeStart ? (timeEnd ? `${timeStart}-${timeEnd}` : timeStart) : null;
+  const rest = m[5] || "";
 
   const base = [date, day, time].filter(Boolean).join(" ");
   const restNoRepeat = stripExistingRepeaters(rest);
@@ -44,22 +46,34 @@ function setRepeaterInTimestampContent(content, repeaterTokenOrNull) {
 function replacePlanningStamp(lineText, which, repeaterTokenOrNull) {
   let text = String(lineText || "");
 
+  function buildExistingFromRegexGroups(date, weekday, timeStart, timeEnd, repeater, warning) {
+    const time = timeStart ? (timeEnd ? `${timeStart}-${timeEnd}` : timeStart) : null;
+    const restParts = [];
+    if (repeater) restParts.push(repeater);
+    if (warning) restParts.push(warning);
+    return [date, weekday, time, ...restParts].filter(Boolean).join(" ");
+  }
+
   if (which === "SCHEDULED" || which === "BOTH") {
     if (SCHEDULED_REGEX.test(text)) {
-      text = text.replace(SCHEDULED_REGEX, (full, date, weekday, time, suffix) => {
-        const existing = [date, weekday, time, suffix].filter(Boolean).join(" ");
+      // Regex groups: (1) open-bracket, (2) date, (3) dayname, (4) time-start, (5) time-end, (6) repeater, (7) warning, (8) close-bracket
+      text = text.replace(SCHEDULED_REGEX, (full, openBracket, date, weekday, timeStart, timeEnd, repeater, warning) => {
+        const existing = buildExistingFromRegexGroups(date, weekday, timeStart, timeEnd, repeater, warning);
         const updated = setRepeaterInTimestampContent(existing, repeaterTokenOrNull);
-        return `SCHEDULED: [${updated}]`;
+        // In Emacs: SCHEDULED uses active <...>
+        return `SCHEDULED: <${updated}>`;
       });
     }
   }
 
   if (which === "DEADLINE" || which === "BOTH") {
     if (DEADLINE_REGEX.test(text)) {
-      text = text.replace(DEADLINE_REGEX, (full, date, weekday, time, suffix) => {
-        const existing = [date, weekday, time, suffix].filter(Boolean).join(" ");
+      // Regex groups: (1) open-bracket, (2) date, (3) dayname, (4) time-start, (5) time-end, (6) repeater, (7) warning, (8) close-bracket
+      text = text.replace(DEADLINE_REGEX, (full, openBracket, date, weekday, timeStart, timeEnd, repeater, warning) => {
+        const existing = buildExistingFromRegexGroups(date, weekday, timeStart, timeEnd, repeater, warning);
         const updated = setRepeaterInTimestampContent(existing, repeaterTokenOrNull);
-        return `DEADLINE: [${updated}]`;
+        // In Emacs: DEADLINE uses active <...>
+        return `DEADLINE: <${updated}>`;
       });
     }
   }
@@ -218,4 +232,12 @@ module.exports = async function () {
 
   await vscode.workspace.applyEdit(edit);
   vscode.commands.executeCommand("workbench.action.files.save");
+};
+
+// Minimal test hooks
+module.exports._test = {
+  normalizeRepeaterToken,
+  stripExistingRepeaters,
+  setRepeaterInTimestampContent,
+  replacePlanningStamp
 };

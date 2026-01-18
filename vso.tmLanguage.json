@@ -50,6 +50,9 @@
       ]
     },
     {
+      "include": "#logbook_drawer"
+    },
+    {
       "name": "meta.task.in_progress.vso",
       "comment": "In Progress Task (asterisk heading)",
       "begin": "^\\s*\\*+\\s+(?=IN_PROGRESS\\b)",
@@ -211,11 +214,11 @@
     },
     {
       "name": "constant.numeric.date.vso",
-      "match": "\\[(?:\\d{4}-\\d{2}-\\d{2}|\\d{2}-\\d{2}-\\d{4})(?:\\s+\\w{3})?(?:\\s+\\d{1,2}:\\d{2})?(?:\\s+[^\\]]+)?\\]"
+      "match": "(?:\\[(?:\\d{4}-\\d{2}-\\d{2}|\\d{2}-\\d{2}-\\d{4})(?:\\s+\\w{3})?(?:\\s+\\d{1,2}:\\d{2}(?:-\\d{1,2}:\\d{2})?)?(?:\\s+[^\\]]+)?\\])|(?:<(?:\\d{4}-\\d{2}-\\d{2}|\\d{2}-\\d{2}-\\d{4})(?:\\s+\\w{3})?(?:\\s+\\d{1,2}:\\d{2}(?:-\\d{1,2}:\\d{2})?)?(?:\\s+[^>]+)?>)"
     },
     {
       "name": "constant.numeric.date.header.vso",
-      "match": "\\[(?:\\d{4}-\\d{2}-\\d{2}|\\d{2}-\\d{2}-\\d{4})\\s+\\w{3}(?:\\s+\\d{1,2}:\\d{2})?(?:\\s+[^\\]]+)?\\]"
+      "match": "(?:\\[(?:\\d{4}-\\d{2}-\\d{2}|\\d{2}-\\d{2}-\\d{4})\\s+\\w{3}(?:\\s+\\d{1,2}:\\d{2}(?:-\\d{1,2}:\\d{2})?)?(?:\\s+[^\\]]+)?\\])|(?:<(?:\\d{4}-\\d{2}-\\d{2}|\\d{2}-\\d{2}-\\d{4})\\s+\\w{3}(?:\\s+\\d{1,2}:\\d{2}(?:-\\d{1,2}:\\d{2})?)?(?:\\s+[^>]+)?>)"
     },
     {
       "name": "markup.heading.vso",
@@ -641,7 +644,13 @@
       "patterns": [
         {
           "name": "keyword.scheduled.vso",
-          "match": "SCHEDULED:\\s*\\[(?:\\d{4}-\\d{2}-\\d{2}|\\d{2}-\\d{2}-\\d{4})(?:\\s+\\w{3})?(?:\\s+\\d{1,2}:\\d{2})?(?:\\s+[^\\]]+)?\\]"
+          "match": "\\b(SCHEDULED:)(\\s*)([<\\[])((?:\\d{4}-\\d{2}-\\d{2}|\\d{2}-\\d{2}-\\d{4})(?:\\s+\\w{3})?(?:\\s+\\d{1,2}:\\d{2}(?:-\\d{1,2}:\\d{2})?)?(?:\\s+[^>\\]]+)?)([>\\]])",
+          "captures": {
+            "1": { "name": "keyword.scheduled.vso" },
+            "3": { "name": "punctuation.definition.timestamp.begin.vso" },
+            "4": { "name": "constant.numeric.date.vso" },
+            "5": { "name": "punctuation.definition.timestamp.end.vso" }
+          }
         }
       ]
     },
@@ -649,7 +658,13 @@
       "patterns": [
         {
           "name": "markup.deleted.deadline.vso",
-          "match": "DEADLINE:\\s*\\[(?:\\d{4}-\\d{2}-\\d{2}|\\d{2}-\\d{2}-\\d{4})(?:\\s+\\w{3})?(?:\\s+\\d{1,2}:\\d{2})?(?:\\s+[^\\]]+)?\\]"
+          "match": "\\b(DEADLINE:)(\\s*)([<\\[])((?:\\d{4}-\\d{2}-\\d{2}|\\d{2}-\\d{2}-\\d{4})(?:\\s+\\w{3})?(?:\\s+\\d{1,2}:\\d{2}(?:-\\d{1,2}:\\d{2})?)?(?:\\s+[^>\\]]+)?)([>\\]])",
+          "captures": {
+            "1": { "name": "markup.deleted.deadline.vso" },
+            "3": { "name": "punctuation.definition.timestamp.begin.vso" },
+            "4": { "name": "constant.numeric.date.vso" },
+            "5": { "name": "punctuation.definition.timestamp.end.vso" }
+          }
         }
       ]
     },
@@ -657,7 +672,33 @@
       "patterns": [
         {
           "name": "keyword.closed.vso",
-          "match": "^\\s*(?:CLOSED|COMPLETED):\\s*\\[(?:\\d{4}-\\d{2}-\\d{2}|\\d{2}-\\d{2}-\\d{4})(?:\\s+\\w{3})?(?:\\s+\\d{1,2}:\\d{2})?(?:\\s+[^\\]]+)?\\]"
+          "match": "^\\s*(CLOSED|COMPLETED):\\s*([<\\[])(?:\\d{4}-\\d{2}-\\d{2}|\\d{2}-\\d{2}-\\d{4})(?:\\s+\\w{3})?(?:\\s+\\d{1,2}:\\d{2}(?:-\\d{1,2}:\\d{2})?)?(?:\\s+[^>\\]]+)?([>\\]])",
+          "captures": {
+            "1": { "name": "keyword.closed.vso" },
+            "2": { "name": "punctuation.definition.timestamp.begin.vso" },
+            "3": { "name": "punctuation.definition.timestamp.end.vso" }
+          }
+        }
+      ]
+    },
+    "logbook_drawer": {
+      "patterns": [
+        {
+          "name": "meta.drawer.logbook.vso",
+          "begin": "^(\\s*)(:LOGBOOK:)\\s*$",
+          "beginCaptures": {
+            "2": { "name": "keyword.other.drawer.logbook.vso" }
+          },
+          "end": "^(\\s*)(:END:)\\s*$",
+          "endCaptures": {
+            "2": { "name": "keyword.other.drawer.end.vso" }
+          },
+          "contentName": "meta.drawer.logbook.content.vso",
+          "patterns": [
+            { "include": "#timestamp" },
+            { "name": "keyword.other.logbook.state.vso", "match": "\\bState\\b" },
+            { "name": "string.quoted.double.logbook.vso", "match": "\"[^\"]*\"" }
+          ]
         }
       ]
     },
@@ -721,7 +762,7 @@
     },
     "sched": {
       "patterns": [
-        { "name": "keyword.closed.vso", "match": "^\\s*(?:CLOSED|COMPLETED):\\s*\\[.*?\\]" }
+        { "name": "keyword.closed.vso", "match": "^\\s*(?:CLOSED|COMPLETED):\\s*[<\\[].*?[>\\]]" }
       ]
     },
     "abandoned": {
