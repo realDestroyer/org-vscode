@@ -8,39 +8,39 @@ These are the features that I have either already implemented, or plan to in the
 
 | Feature Name              | Description                                                                                | Progress    | Version  | Author        |
 | ------------------------- | ------------------------------------------------------------------------------------------ | ----------- | -------- | ------------- |
-| v2 Org-mode Alignment     | Emacs-style end-of-headline tags, FILETAGS inheritance, planning lines under headings, CLOSED stamp, and explicit migration command | DONE | v2.0.0 | realDestroyer |
-| Tagged Agenda carryover default | Tagged Agenda omits carryover (forward-trigger) tasks by default to avoid duplicates when auto-forwarding (default carryover keyword: CONTINUED) | DONE | v2.0.2 | realDestroyer |
-| Org-Indent-style indent decoration | When unicode decorations are off, indentation decorations still render with a trailing `*` (Emacs Org-Indent behavior) | DONE | v2.0.2 | realDestroyer |
-| Insert Table (Org pipe output) | Insert Table webview generates canonical Org pipe tables and functions correctly under strict CSP | DONE | v2.0.2 | realDestroyer |
-| Snippets ship in VSIX | Ensure `snippets/vso.json` is included in packaged VSIX so snippet completions work after install | DONE | v2.0.2 | realDestroyer |
-| Checkbox + subtree stats | Org-mode statistics cookies (`[/]` and `[%]`), hierarchical counting, TODO-subtree completion included on heading cookies (DONE/ABANDONED count as complete), clickable agenda details, and editor toggle shortcut | DONE | v2.1.3 | realDestroyer |
-| Org syntax + navigation helpers | Expanded Org-mode syntax highlighting plus Document Outline, clickable Org links, and `[[...]]` link completion (including workspace `id:` suggestions) | DONE | v2.1.4 | realDestroyer |
-| Syntax scopes + customizer expansion | Fix task-state scope application for Unicode markers + expand Syntax Color Customizer to cover new Org syntax scopes | DONE | v2.1.5 | realDestroyer |
-| Preview (Live HTML) + scroll sync | Webview-based live preview with automatic refresh and editor → preview scroll sync | DONE | v2.2.0 | realDestroyer |
-| Org Meta-Return insert | `Alt+Enter` context-aware insert of heading / list item / table row | DONE | v2.2.0 | realDestroyer |
-| Math symbol decorations | Render common LaTeX commands (e.g. `\alpha`) as Unicode glyphs inside `$...$` / `$$...$$` | DONE | v2.2.0 | realDestroyer |
-| Agenda/Tagged Agenda click-to-reveal | Click task text (or filename) to reveal the exact source line; optional webview highlight | DONE | v2.2.2 | realDestroyer |
-| Property management commands | Set/update properties, auto-create drawers, inherited lookup (local → parents → file `#+PROPERTY`), and ID helper commands | DONE | v2.2.4 | realDestroyer |
-| Auto-indent non-heading text (Issue #76) | Optional auto-indentation of body/planning lines on Enter (configurable indentation width); see https://github.com/realDestroyer/org-vscode/issues/76 | DONE | v2.2.6 | realDestroyer |
-| Repeating tasks (Org repeaters) | Support Org repeaters on `SCHEDULED:` / `DEADLINE:` (`+`, `++`, `.+`) and optional `REPEAT_TO_STATE` reopen behavior (with inheritance). | DONE | v2.2.8 | realDestroyer |
-| LOGBOOK drawer logging | Optional Org-style state-change history entries written into a drawer (default: `LOGBOOK`) on completion transitions. | DONE | v2.2.9 | realDestroyer |
-| Agenda View performance | Improve Agenda View load times on large `.org` files (faster parsing + caching + lazy rendering). | In Progress | v2.2.9 | realDestroyer |
-| Smart TAB folding behavior | Context-aware folding across headings/lists/blocks/properties (Emacs-style feel) | Not Started | v2.3.0 | realDestroyer |
-| Insert link utilities | Insert link command + richer link editing utilities | Not Started | v2.3.0 | realDestroyer |
 | LaTeX fragment rendering (org-fragtog-style) | Render LaTeX fragments as “inline images” (full math fragment preview, not only symbol substitutions) | Not Started |  | realDestroyer |
-| Multi-line Selection Editing | Most editor shortcuts (status, schedule, deadline, tags, headings, date adjusters) apply to all selected task lines | DONE | v1.10.8 | realDestroyer |
-| Keybinding Language-Mode Resilience | Core shortcuts keep working even when `.org` files are not in `vso` language mode | DONE | v1.10.9 | realDestroyer |
 | TODO Notifications        | Notify users of status outside VSCode (email, sms, etc.)                                   | Not Started |          | realDestroyer |
 | Make Titles Unique        | Don't allow duplicate titles                                                               | Not Started |          | realDestroyer |
 | Calendar Right-Click Menu | Right-click task to create, duplicate, or delete in calendar                              | In Progress |          | realDestroyer |
 | Bulleted Lists            | Make an ordered or unordered list                                                          | In Progress |          | realDestroyer |
 | TODO Tracking             | Show TODO completion on the up-most level                                                  | In Progress |          | realDestroyer |
 | JIRA Integration          | Allow tasks to be pushed to JIRA (Epic, Story, Issues, sub-tasks, etc.)                    | In Progress |          | realDestroyer |
+| Smart TAB folding behavior | Context-aware folding across headings/lists/blocks/properties (Emacs-style feel) | Not Started | v2.3.0 | realDestroyer |
+| Insert link utilities | Insert link command + richer link editing utilities | Not Started | v2.3.0 | realDestroyer |
+| LOGBOOK drawer logging | Optional Org-style state-change history entries written into a drawer (default: `LOGBOOK`) on completion transitions. | DONE | v2.2.9 | realDestroyer |
+| Agenda View performance | Improve Agenda View load times on large `.org` files (faster parsing + caching + lazy rendering). | In Progress | v2.2.9 | realDestroyer |
+| Repeating tasks (Org repeaters) | Support Org repeaters on `SCHEDULED:` / `DEADLINE:` (`+`, `++`, `.+`) and optional `REPEAT_TO_STATE` reopen behavior (with inheritance). | DONE | v2.2.8 | realDestroyer |
+| Auto-indent non-heading text (Issue #76) | Optional auto-indentation of body/planning lines on Enter (configurable indentation width); see https://github.com/realDestroyer/org-vscode/issues/76 | DONE | v2.2.6 | realDestroyer |
+| Property management commands | Set/update properties, auto-create drawers, inherited lookup (local → parents → file `#+PROPERTY`), and ID helper commands | DONE | v2.2.4 | realDestroyer |
+| Agenda/Tagged Agenda click-to-reveal | Click task text (or filename) to reveal the exact source line; optional webview highlight | DONE | v2.2.2 | realDestroyer |
+| Preview (Live HTML) + scroll sync | Webview-based live preview with automatic refresh and editor → preview scroll sync | DONE | v2.2.0 | realDestroyer |
+| Org Meta-Return insert | `Alt+Enter` context-aware insert of heading / list item / table row | DONE | v2.2.0 | realDestroyer |
+| Math symbol decorations | Render common LaTeX commands (e.g. `\alpha`) as Unicode glyphs inside `$...$` / `$$...$$` | DONE | v2.2.0 | realDestroyer |
+| Syntax scopes + customizer expansion | Fix task-state scope application for Unicode markers + expand Syntax Color Customizer to cover new Org syntax scopes | DONE | v2.1.5 | realDestroyer |
+| Org syntax + navigation helpers | Expanded Org-mode syntax highlighting plus Document Outline, clickable Org links, and `[[...]]` link completion (including workspace `id:` suggestions) | DONE | v2.1.4 | realDestroyer |
+| Checkbox + subtree stats | Org-mode statistics cookies (`[/]` and `[%]`), hierarchical counting, TODO-subtree completion included on heading cookies (DONE/ABANDONED count as complete), clickable agenda details, and editor toggle shortcut | DONE | v2.1.3 | realDestroyer |
+| Tagged Agenda carryover default | Tagged Agenda omits carryover (forward-trigger) tasks by default to avoid duplicates when auto-forwarding (default carryover keyword: CONTINUED) | DONE | v2.0.2 | realDestroyer |
+| Org-Indent-style indent decoration | When unicode decorations are off, indentation decorations still render with a trailing `*` (Emacs Org-Indent behavior) | DONE | v2.0.2 | realDestroyer |
+| Insert Table (Org pipe output) | Insert Table webview generates canonical Org pipe tables and functions correctly under strict CSP | DONE | v2.0.2 | realDestroyer |
+| Snippets ship in VSIX | Ensure `snippets/vso.json` is included in packaged VSIX so snippet completions work after install | DONE | v2.0.2 | realDestroyer |
+| v2 Org-mode Alignment     | Emacs-style end-of-headline tags, FILETAGS inheritance, planning lines under headings, CLOSED stamp, and explicit migration command | DONE | v2.0.0 | realDestroyer |
+| Keybinding Language-Mode Resilience | Core shortcuts keep working even when `.org` files are not in `vso` language mode | DONE | v1.10.9 | realDestroyer |
+| Multi-line Selection Editing | Most editor shortcuts (status, schedule, deadline, tags, headings, date adjusters) apply to all selected task lines | DONE | v1.10.8 | realDestroyer |
 | Agenda View Date Sorting  | Ensure Agenda View date groups render in chronological order                               | DONE        | v1.10.7  | realDestroyer |
 | Cross-platform Paths      | Use `path.join(...)` for file open/read/create paths so commands work on Linux/macOS/Windows | DONE      | v1.10.7  | realDestroyer |
-| Preserve Org `*` Headings | Optional marker style toggle (`headingMarkerStyle`) to keep `* TODO` headings for Emacs/org-mode compatibility | DONE | v1.10.5 | realDestroyer |
 | Decorative Unicode Headings | Render Unicode markers via editor decorations while keeping `*` headings as the source of truth | DONE | v1.10.6 | realDestroyer |
 | Configurable Date Format  | Ensure all date parsing/writing respects `Org-vscode.dateFormat` across commands/views     | DONE | v1.10.6 | realDestroyer |
+| Preserve Org `*` Headings | Optional marker style toggle (`headingMarkerStyle`) to keep `* TODO` headings for Emacs/org-mode compatibility | DONE | v1.10.5 | realDestroyer |
 | Syntax Color Customizer   | Webview UI with color pickers for all task states, live preview, save/reset to defaults   | DONE        | v1.10.0  | realDestroyer |
 | Default Syntax Colors     | Extension provides out-of-box syntax highlighting via configurationDefaults               | DONE        | v1.10.0  | realDestroyer |
 | Carryover Auto-Forwarding | When toggling into the forward-trigger state (default: CONTINUED), auto-copy task to next day as the first workflow state (default: TODO); remove on toggle-away | DONE | v1.9.0 | realDestroyer |
@@ -55,10 +55,10 @@ These are the features that I have either already implemented, or plan to in the
 | Calendar Palette Sync     | Match calendar event colors to their tag chips for unified visuals                        | DONE        | v1.7.5   | realDestroyer |
 | Calendar Status Bar       | Add calendar status strip + density tweaks for quick context                              | DONE        | v1.7.4   | realDestroyer |
 | Calendar Tag Bubble Refresh| Restore bubbly tag chips scoped to current view with multi-select filtering              | DONE        | v1.7.3   | realDestroyer |
-| Centralized Task Keyword/Symbol Manager | Refactored all keyword/symbol logic into a single manager file (`taskKeywordManager.js`) for consistency and maintainability across all commands and views. | DONE        | v1.7.1   | realDestroyer |
+| Centralized Task Keyword/Symbol Manager | Refactored all keyword/symbol logic into a single manager file (`taskKeywordManager.js`) for consistency and maintainability across all commands and views. | DONE | v1.7.1   | realDestroyer |
 | Calendar Tag Filtering    | Filter calendar tasks by tag                                                              | DONE | v1.7.0 | realDestroyer |
 | Hide Tags in Calendar     | Display only task content in calendar view (remove visible tag syntax from entry)        | DONE | v1.7.0 | realDestroyer |
-| Calendar Filtering        | Filter tasks by status, date range, or deadline                                           | DONE | v1.7.0 | realDestroyer |
+| Calendar Filtering        | Filter tasks by status, date range, or deadline                                           | DONE | v1.7.0   | realDestroyer |
 | Unicode Overhaul + Message Popup | Updated all status cycling + file syncing for âŠ™ âŠ˜ âŠœ âŠ– âŠ—; Ctrl+Alt+M message popup added    | DONE | v1.6.9   | realDestroyer |
 | Bug Fixes                   | See CHANGELOG.md for full details                                                          | DONE | v1.6.8   | realDestroyer |
 | Smart Tag Insertion         | Adds new tags inline and to #+TAGS header if missing                                       | DONE | v1.6.7   | realDestroyer |
@@ -88,6 +88,8 @@ These are the features that I have either already implemented, or plan to in the
 | View Tag List             | Open a file from the list of tags in the command prompt (`ctrl+shift+p`, `cmd+shift+p(mac)`) | DONE        | v0.0.2   | BobyBoyd      |
 | View Title List           | Open a file from the list of titles in the command prompt (`ctrl+shift+p`, `cmd+shift+p(mac)`) | DONE        | v0.0.2   | BobyBoyd      |
 | Create new .org file      | Create a .org file from the command prompt (`ctrl+shift+p`, `cmd+shift+p(mac)`)          | DONE        | v0.0.2   | BobyBoyd      |
+
+
 
 
 
