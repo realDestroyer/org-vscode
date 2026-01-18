@@ -152,7 +152,7 @@ function getWebviewContent(webview, nonce) {
       const rows = parseInt(document.getElementById('rows').value);
       const cols = parseInt(document.getElementById('cols').value);
       const container = document.getElementById('tableContainer');
-      container.innerHTML = '';
+      container.replaceChildren();
       const table = document.createElement('table');
       for (let r = 0; r < rows; r++) {
         const row = document.createElement('tr');

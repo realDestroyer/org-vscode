@@ -462,21 +462,25 @@ function getCalendarWebviewContent({ webview, nonce }) {
       const sorted=[...files].sort((a,b)=>String(a).toLowerCase().localeCompare(String(b).toLowerCase()));
       if(activeFile && !files.has(activeFile)) activeFile='';
       if(sorted.length===0){
-        container.innerHTML='<div class="no-tags">No files in view</div>';
+        const noFiles=document.createElement('div');
+        noFiles.className='no-tags';
+        noFiles.textContent='No files in view';
+        container.replaceChildren(noFiles);
         return;
       }
-      container.innerHTML=sorted.map(f=>{
-        let cls='file-chip';
-        if(activeFile){ cls+= (activeFile===f)?' selected':' inactive'; }
-        return '<span class="'+cls+'" data-file="'+String(f).replace(/"/g,'&quot;')+'" title="'+String(f).replace(/"/g,'&quot;')+'">'+String(f)+'</span>';
-      }).join('');
-      container.querySelectorAll('.file-chip').forEach(el=>{
-        el.addEventListener('click',()=>{
-          const f=el.dataset.file;
+      container.replaceChildren(...sorted.map(f=>{
+        const span=document.createElement('span');
+        span.className='file-chip';
+        if(activeFile){ span.classList.add(activeFile===f?'selected':'inactive'); }
+        span.dataset.file=f;
+        span.title=f;
+        span.textContent=f;
+        span.addEventListener('click',()=>{
           activeFile = (activeFile===f) ? '' : f;
           renderCurrentRange(lastRange);
         });
-      });
+        return span;
+      }));
     }
 
     function renderTagChips(tasks){
@@ -484,28 +488,31 @@ function getCalendarWebviewContent({ webview, nonce }) {
       const tags=new Set(); tasks.forEach(t=>(t.tags||[]).forEach(tag=>tags.add(tag)));
       const sorted=[...tags].sort((a,b)=>a.toLowerCase().localeCompare(b.toLowerCase()));
       if(sorted.length===0){
-        container.innerHTML='<div class="no-tags">No tags in view</div>';
+        const noTags=document.createElement('div');
+        noTags.className='no-tags';
+        noTags.textContent='No tags in view';
+        container.replaceChildren(noTags);
         return;
       }
-      container.innerHTML=sorted.map(tag=>{
-        const colorClass=ensureTagColor(tag);
-        let cls='tag-chip '+colorClass;
-        if(activeTags.length){cls+=activeTags.includes(tag)?' selected':' inactive';}
-        return '<span class="'+cls+'" data-tag="'+tag+'" title="'+tag+'">'+tag+'</span>';
-      }).join('');
-      container.querySelectorAll('.tag-chip').forEach(el=>{
-        el.addEventListener('click',e=>{
-          const tg=el.dataset.tag;
+      container.replaceChildren(...sorted.map(tag=>{
+        const span=document.createElement('span');
+        span.className='tag-chip '+ensureTagColor(tag);
+        if(activeTags.length){ span.classList.add(activeTags.includes(tag)?'selected':'inactive'); }
+        span.dataset.tag=tag;
+        span.title=tag;
+        span.textContent=tag;
+        span.addEventListener('click',e=>{
           if(e.ctrlKey||e.metaKey){
-            activeTags = activeTags.includes(tg)
-              ? activeTags.filter(x=>x!==tg)
-              : [...activeTags,tg];
+            activeTags = activeTags.includes(tag)
+              ? activeTags.filter(x=>x!==tag)
+              : [...activeTags,tag];
           } else {
-            activeTags = activeTags.includes(tg) ? [] : [tg];
+            activeTags = activeTags.includes(tag) ? [] : [tag];
           }
           renderCurrentRange(lastRange);
         });
-      });
+        return span;
+      }));
     }
 
     function syncEvents(visible){
