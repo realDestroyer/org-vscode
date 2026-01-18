@@ -24,9 +24,23 @@ function testTransitionsMarkDoneAndRevertToInProgress() {
   assert.deepStrictEqual(toMarkInProgress, [4], 'Expected Task B to revert to IN_PROGRESS');
 }
 
+function testDoesNotAutoDoneWhenChildSubtaskIncomplete() {
+  const lines = [
+    '* IN_PROGRESS Parent',
+    '  - [X] one',
+    '  - [X] two',
+    '  ** TODO Child still todo',
+  ];
+
+  const { toMarkDone } = computeHeadingTransitions(lines);
+
+  assert.deepStrictEqual(toMarkDone, [], 'Expected Parent to NOT be marked DONE while a child task is still TODO');
+}
+
 module.exports = {
   name: 'unit/checkbox-auto-done',
   run: () => {
     testTransitionsMarkDoneAndRevertToInProgress();
+    testDoesNotAutoDoneWhenChildSubtaskIncomplete();
   }
 };

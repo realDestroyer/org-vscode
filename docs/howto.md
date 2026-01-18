@@ -253,7 +253,7 @@ Just type the prefix and hit `Tab` to expand the snippet inside a `.org` file.
 
 ```org
 * TODO Task description
-  SCHEDULED: [04-21-2025]
+  SCHEDULED: <04-21-2025>
 ```
 
 ---
@@ -381,7 +381,7 @@ IDs are used for cross-file link navigation and completion via `[[id:...]]`.
 
 ```org
 * TODO Task Name
-  SCHEDULED: [04-21-2025]
+  SCHEDULED: <04-21-2025>
   CLOSED: []
 
 - Description:
@@ -490,6 +490,19 @@ Place the cursor anywhere on a checkbox line (you do not need to put the cursor 
 
 This toggles the current checkbox and updates parent/child `[-]` / `[X]` / `[ ]` states.
 
+Multi-line selection support:
+
+- If you select multiple checkbox lines and press `Ctrl + Alt + X`, Org-vscode bulk-toggles the selection:
+  - if **all** selected checkbox items are checked, it **unchecks** them all
+  - otherwise it **checks** them all
+
+Auto-DONE behavior:
+
+- If `Org-vscode.autoDoneWhenAllCheckboxesChecked` is enabled, a task only auto-completes when:
+  - all checkboxes in its subtree are checked, and
+  - there are no incomplete child task headings (e.g. `** TODO ...`) in that subtree
+- For repeating tasks, completing the last checkbox will reschedule/reopen the task and reset the subtree (checkboxes unchecked, child subtasks reset) for the next iteration.
+
 ### Toggle checkboxes from Agenda / Tagged Agenda
 
 In both Agenda View and Tagged Agenda View:
@@ -522,7 +535,7 @@ Add deadline dates to tasks to track when they're due. Deadlines appear in the A
 
 ```org
 * TODO Complete documentation :PROJECT:
-  SCHEDULED: [12-10-2025]  DEADLINE: [12-15-2025]
+  SCHEDULED: <12-10-2025>  DEADLINE: <12-15-2025>
 ```
 
 Date formatting is controlled by `Org-vscode.dateFormat` (default: `MM-DD-YYYY`).
@@ -556,7 +569,7 @@ Add a repeater token inside the timestamp:
 
 ```org
 * TODO Pay rent
-  SCHEDULED: [01-01-2026 +1m]
+  SCHEDULED: <01-01-2026 +1m>
 ```
 
 Supported repeater styles:
@@ -583,7 +596,7 @@ To reopen to a specific state, set `REPEAT_TO_STATE` in a property drawer (suppo
   :END:
 
 ** TODO Weekly review
-   SCHEDULED: [01-15-2026 +1w]
+  SCHEDULED: <01-15-2026 +1w>
 ```
 
 ### Command: Set Repeater
@@ -618,16 +631,16 @@ This works both from the editor hotkeys and when you click the keyword in Agenda
 **Before toggling to CONTINUED:**
 ```org
 * [12-10-2025 Wed] -------
-** TODO : Review pull request    SCHEDULED: [12-10-2025]
+** TODO : Review pull request    SCHEDULED: <12-10-2025>
 ```
 
 **After toggling to CONTINUED:**
 ```org
 * [12-10-2025 Wed] -------
-** CONTINUED : Review pull request    SCHEDULED: [12-10-2025]
+** CONTINUED : Review pull request    SCHEDULED: <12-10-2025>
 
 * [12-11-2025 Thu] -------
-** TODO : Review pull request    SCHEDULED: [12-11-2025]
+** TODO : Review pull request    SCHEDULED: <12-11-2025>
 ```
 
 This feature ensures tasks that roll over to the next day are automatically tracked without manual copying.
@@ -722,7 +735,7 @@ Example:
 
 ```org
 * DONE Weekly review
-  SCHEDULED: [2026-01-15 +1w]  CLOSED: [2026-01-16 Fri 09:12]
+  SCHEDULED: <2026-01-15 +1w>  CLOSED: [2026-01-16 Fri 09:12]
   :LOGBOOK:
   - State "DONE" from "TODO" [2026-01-16 Fri 09:12]
   :END:
@@ -790,7 +803,7 @@ In v2 format, planning metadata lives on the indented line directly under the he
 
 ### 🛠 What It Does <a id="what-it-does"></a>
 
-* Scans the file for `SCHEDULED: [<date>]` (format controlled by `Org-vscode.dateFormat`)
+* Scans the file for `SCHEDULED: <date>` (format controlled by `Org-vscode.dateFormat`)
 * Determines the longest task description in the file
 * Pads shorter lines so timestamps and/or end-of-line tags line up cleanly
 * Preserves original indentation
@@ -813,26 +826,26 @@ Optional configuration (tags-only mode):
 
 ```org
 * TODO Review meeting notes :TEST_TAG:
-  SCHEDULED: [06-21-2025] DEADLINE: [06-25-2025]
+  SCHEDULED: <06-21-2025> DEADLINE: <06-25-2025>
 
 * DONE Email client :TEST_TAG:
-  SCHEDULED: [06-20-2025]  DEADLINE: [06-22-2025]
+  SCHEDULED: <06-20-2025>  DEADLINE: <06-22-2025>
 
 * IN_PROGRESS Fix bug :TEST_TAG:
-  SCHEDULED: [06-22-2025] DEADLINE: [06-30-2025]
+  SCHEDULED: <06-22-2025> DEADLINE: <06-30-2025>
 ```
 
 **After Running Align:**
 
 ```org
 * TODO Review meeting notes        :TEST_TAG:
-  SCHEDULED: [06-21-2025]  DEADLINE: [06-25-2025]
+  SCHEDULED: <06-21-2025>  DEADLINE: <06-25-2025>
 
 * DONE Email client                :TEST_TAG:
-  SCHEDULED: [06-20-2025]  DEADLINE: [06-22-2025]
+  SCHEDULED: <06-20-2025>  DEADLINE: <06-22-2025>
 
 * IN_PROGRESS Fix bug              :TEST_TAG:
-  SCHEDULED: [06-22-2025]  DEADLINE: [06-30-2025]
+  SCHEDULED: <06-22-2025>  DEADLINE: <06-30-2025>
 ```
 
 ---
@@ -842,17 +855,17 @@ Optional configuration (tags-only mode):
 **Before:**
 
 ```org
-* TODO Review meeting notes           SCHEDULED: [06-21-2025]
-* DONE Email client      SCHEDULED: [06-20-2025]
-* IN_PROGRESS Fix bug             SCHEDULED: [06-22-2025]
+* TODO Review meeting notes           SCHEDULED: <06-21-2025>
+* DONE Email client      SCHEDULED: <06-20-2025>
+* IN_PROGRESS Fix bug             SCHEDULED: <06-22-2025>
 ```
 
 **After Running Align:**
 
 ```org
-* TODO Review meeting notes           SCHEDULED: [06-21-2025]
-* DONE Email client                   SCHEDULED: [06-20-2025]
-* IN_PROGRESS Fix bug                 SCHEDULED: [06-22-2025]
+* TODO Review meeting notes           SCHEDULED: <06-21-2025>
+* DONE Email client                   SCHEDULED: <06-20-2025>
+* IN_PROGRESS Fix bug                 SCHEDULED: <06-22-2025>
 ```
 
 ---
@@ -950,7 +963,7 @@ Use the command:
 
 #### ✅ Displays Scheduled Tasks <a id="displays-scheduled-tasks"></a>
 
-* Tasks with `SCHEDULED: [<date>]` are shown as calendar events (format controlled by `Org-vscode.dateFormat`).
+* Tasks with `SCHEDULED: <date>` are shown as calendar events (format controlled by `Org-vscode.dateFormat`).
 * Supports both marker styles (`unicode` and `asterisks`).
 * Automatically parses `.org` files in your main directory (excluding `CurrentTasks.org`).
 

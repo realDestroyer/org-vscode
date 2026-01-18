@@ -1,5 +1,5 @@
 const vscode = require("vscode");
-const { computeMoveBlockResult } = require("./moveBlockUtils");
+const { computeMoveBlockResult, computeMoveBlockRangeResult } = require("./moveBlockUtils");
 
 module.exports = async function () {
   const editor = vscode.window.activeTextEditor;
@@ -10,7 +10,15 @@ module.exports = async function () {
   const cursorChar = editor.selection.active.character;
   const lines = document.getText().split(/\r?\n/);
 
-  const result = computeMoveBlockResult(lines, cursorLine, "down");
+  const sel = editor.selection;
+  const hasRange = sel && !sel.isEmpty;
+  const selectionStartLine = hasRange ? Math.min(sel.start.line, sel.end.line) : cursorLine;
+  let selectionEndLine = hasRange ? Math.max(sel.start.line, sel.end.line) : cursorLine;
+  if (hasRange && sel.end.character === 0 && selectionEndLine > selectionStartLine) selectionEndLine -= 1;
+
+  const result = hasRange
+    ? computeMoveBlockRangeResult(lines, selectionStartLine, selectionEndLine, "down")
+    : computeMoveBlockResult(lines, cursorLine, "down");
   if (!result) return;
 
   const fullText = result.updatedLines.join("\n");
@@ -29,6 +37,18 @@ module.exports = async function () {
   const newLineText = result.updatedLines[newLine] || "";
   const newChar = Math.max(0, Math.min(cursorChar, newLineText.length));
   const newPos = new vscode.Position(newLine, newChar);
-  editor.selection = new vscode.Selection(newPos, newPos);
+
+  if (hasRange && typeof result.newSelectionStartLine === "number" && typeof result.newSelectionEndLineExclusive === "number") {
+    const startLine = Math.max(0, Math.min(result.updatedLines.length - 1, result.newSelectionStartLine));
+    const endLine = Math.max(0, Math.min(result.updatedLines.length, result.newSelectionEndLineExclusive));
+    const endLineInclusive = Math.max(0, endLine - 1);
+    const endChar = (result.updatedLines[endLineInclusive] || "").length;
+    editor.selection = new vscode.Selection(
+      new vscode.Position(startLine, 0),
+      new vscode.Position(endLineInclusive, endChar)
+    );
+  } else {
+    editor.selection = new vscode.Selection(newPos, newPos);
+  }
   editor.revealRange(new vscode.Range(newPos, newPos), vscode.TextEditorRevealType.InCenter);
 };

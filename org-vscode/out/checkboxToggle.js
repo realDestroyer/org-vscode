@@ -181,6 +181,155 @@ function computeCheckboxToggleEdits(lines, lineIndex0) {
     .map(([lineIndex, newText]) => ({ lineIndex, newText }));
 }
 
+function applyCheckboxStateAtLine(safeLines, idx, desiredStateChar, edits) {
+  if (!Array.isArray(safeLines)) return;
+  if (!Number.isInteger(idx) || idx < 0 || idx >= safeLines.length) return;
+
+  const parsed = parseCheckboxItem(safeLines[idx]);
+  if (!parsed) return;
+
+  const subtreeEnd = getListItemSubtreeEndExclusive(safeLines, idx, parsed.indentLen);
+  let hasDescendantCheckboxes = false;
+  for (let i = idx + 1; i < subtreeEnd; i++) {
+    const child = parseCheckboxItem(safeLines[i]);
+    if (child && child.indentLen > parsed.indentLen) {
+      hasDescendantCheckboxes = true;
+      break;
+    }
+  }
+
+  // Set self (and descendants, if any).
+  if (hasDescendantCheckboxes) {
+    for (let i = idx; i < subtreeEnd; i++) {
+      const item = parseCheckboxItem(safeLines[i]);
+      if (!item) continue;
+      if (i !== idx && item.indentLen <= parsed.indentLen) continue;
+      const updated = setCheckboxState(safeLines[i], desiredStateChar);
+      if (updated !== safeLines[i]) {
+        safeLines[i] = updated;
+        edits.set(i, updated);
+      }
+    }
+  } else {
+    const updated = setCheckboxState(safeLines[idx], desiredStateChar);
+    if (updated !== safeLines[idx]) {
+      safeLines[idx] = updated;
+      edits.set(idx, updated);
+    }
+  }
+
+  // Update ancestors until heading boundary.
+  let childIndex = idx;
+  let childIndent = parsed.indentLen;
+
+  while (true) {
+    let parentIndex = null;
+    for (let i = childIndex - 1; i >= 0; i--) {
+      const line = safeLines[i];
+      if (isHeadingLine(line)) {
+        parentIndex = null;
+        break;
+      }
+      if (!isListItemLine(line)) {
+        continue;
+      }
+      const indent = getIndentLength(line);
+      if (indent < childIndent) {
+        parentIndex = i;
+        break;
+      }
+    }
+
+    if (parentIndex == null) {
+      break;
+    }
+
+    const parentParsed = parseCheckboxItem(safeLines[parentIndex]);
+    if (!parentParsed) {
+      childIndex = parentIndex;
+      childIndent = getIndentLength(safeLines[parentIndex]);
+      continue;
+    }
+
+    const parentEnd = getListItemSubtreeEndExclusive(safeLines, parentIndex, parentParsed.indentLen);
+    const stats = computeHierarchicalCheckboxStatsInRange(
+      safeLines,
+      parentIndex + 1,
+      parentEnd,
+      parentParsed.indentLen
+    );
+
+    if (stats.total > 0) {
+      let nextState = " ";
+      if (stats.checked === 0) nextState = " ";
+      else if (stats.checked === stats.total) nextState = "X";
+      else nextState = "-";
+      const parentUpdated = setCheckboxState(safeLines[parentIndex], nextState);
+      if (parentUpdated !== safeLines[parentIndex]) {
+        safeLines[parentIndex] = parentUpdated;
+        edits.set(parentIndex, parentUpdated);
+      }
+    }
+
+    childIndex = parentIndex;
+    childIndent = parentParsed.indentLen;
+  }
+}
+
+/**
+ * Computes line edits to set multiple checkbox items to a desired state.
+ * For each targeted line, if it is a checkbox list item, its subtree is set (Emacs-ish),
+ * and ancestor cookies/markers are updated.
+ */
+function computeCheckboxSetEdits(lines, lineIndices0, desiredStateChar) {
+  const safeLines = Array.isArray(lines) ? lines.slice() : [];
+  const indices = Array.isArray(lineIndices0) ? Array.from(new Set(lineIndices0.filter(Number.isInteger))) : [];
+  if (!indices.length) return [];
+
+  // Apply in ascending order so ancestor calculations see earlier mutations.
+  indices.sort((a, b) => a - b);
+
+  /** @type {Map<number, string>} */
+  const edits = new Map();
+  for (const idx of indices) {
+    applyCheckboxStateAtLine(safeLines, idx, desiredStateChar, edits);
+  }
+
+  return Array.from(edits.entries())
+    .sort((a, b) => a[0] - b[0])
+    .map(([lineIndex, newText]) => ({ lineIndex, newText }));
+}
+
+/**
+ * Computes line edits to bulk-toggle checkbox items across multiple line indices.
+ *
+ * Rule:
+ * - If all targeted checkbox items are currently checked, set them all to unchecked.
+ * - Otherwise, set them all to checked.
+ */
+function computeCheckboxBulkToggleEdits(lines, lineIndices0) {
+  const safeLines = Array.isArray(lines) ? lines.slice() : [];
+  const indices = Array.isArray(lineIndices0) ? Array.from(new Set(lineIndices0.filter(Number.isInteger))) : [];
+  if (!indices.length) return [];
+
+  const checkboxLineIndices = indices
+    .filter((idx) => idx >= 0 && idx < safeLines.length)
+    .filter((idx) => !!parseCheckboxItem(safeLines[idx]));
+
+  if (!checkboxLineIndices.length) return [];
+
+  const allChecked = checkboxLineIndices.every((idx) => {
+    const parsed = parseCheckboxItem(safeLines[idx]);
+    if (!parsed) return false;
+    return String(parsed.state || " ").toLowerCase() === "x";
+  });
+
+  const desiredStateChar = allChecked ? " " : "X";
+  return computeCheckboxSetEdits(safeLines, checkboxLineIndices, desiredStateChar);
+}
+
 module.exports = {
-  computeCheckboxToggleEdits
+  computeCheckboxToggleEdits,
+  computeCheckboxSetEdits,
+  computeCheckboxBulkToggleEdits
 };
