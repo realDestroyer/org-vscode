@@ -157,7 +157,8 @@ module.exports = function () {
 
                 const headlineIndent = headlineText.match(/^\s*/)?.[0] || "";
                 const planningIndent = `${headlineIndent}${bodyIndent}`;
-                const deadlineTag = `DEADLINE: [${formattedDate}]`;
+                // Active timestamp for agenda visibility
+                const deadlineTag = `DEADLINE: <${formattedDate}>`;
 
                 const hasNext = (lineNumber + 1 < document.lineCount);
                 const nextLine = hasNext ? document.lineAt(lineNumber + 1) : null;

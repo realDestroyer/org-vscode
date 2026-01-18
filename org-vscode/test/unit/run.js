@@ -19,7 +19,12 @@ const tests = [
   require(path.join(__dirname, 'math-decorations-map.test.js')),
   require(path.join(__dirname, 'date-parsing.test.js')),
   require(path.join(__dirname, 'repeated-tasks.test.js')),
-  require(path.join(__dirname, 'calendar-reschedule.test.js'))
+  require(path.join(__dirname, 'calendar-reschedule.test.js')),
+  require(path.join(__dirname, 'timestamp-regex.test.js')),
+  require(path.join(__dirname, 'date-mutations.test.js')),
+  require(path.join(__dirname, 'timestamp-repeater.test.js')),
+  require(path.join(__dirname, 'set-todo-state.test.js')),
+  require(path.join(__dirname, 'continued-task-handler.test.js'))
 ];
 
 async function main() {

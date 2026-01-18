@@ -15,8 +15,9 @@ const CHECKBOX_REGEX = /^\s*[-+*]\s+\[( |x|X)\]\s+/;
 
 function buildPlanningBody(planning) {
   const parts = [];
-  if (planning?.scheduled) parts.push(`SCHEDULED: [${planning.scheduled}]`);
-  if (planning?.deadline) parts.push(`DEADLINE: [${planning.deadline}]`);
+  // In Emacs: SCHEDULED/DEADLINE use active <...> (appear in agenda), CLOSED uses inactive [...]
+  if (planning?.scheduled) parts.push(`SCHEDULED: <${planning.scheduled}>`);
+  if (planning?.deadline) parts.push(`DEADLINE: <${planning.deadline}>`);
   if (planning?.closed) parts.push(`CLOSED: [${planning.closed}]`);
   return parts.join("  ");
 }

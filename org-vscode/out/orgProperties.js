@@ -352,7 +352,6 @@ module.exports = {
   findNearestHeadingLine,
   findParentHeadingLineIndices,
   parseFileProperties,
-  findPropertyDrawerRange,
   parsePropertyDrawer,
   setPropertyInLines,
   deletePropertyInLines,

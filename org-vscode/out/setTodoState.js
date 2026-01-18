@@ -1,23 +1,101 @@
-const vscode = require("vscode");
 const fs = require("fs");
 const path = require("path");
 const taskKeywordManager = require("./taskKeywordManager");
 const continuedTaskHandler = require("./continuedTaskHandler");
 const moment = require("moment");
-const { isPlanningLine, parsePlanningFromText, normalizeTagsAfterPlanning, stripInlinePlanning } = require("./orgTagUtils");
-const { applyRepeatersOnCompletion } = require("./repeatedTasks");
-const { computeLogbookInsertion, formatStateChangeEntry } = require("./orgLogbook");
+const { isPlanningLine, parsePlanningFromText, normalizeTagsAfterPlanning, stripInlinePlanning, getAcceptedDateFormats, processRepeaterOnDone } = require("./orgTagUtils");
 const { normalizeBodyIndentation } = require("./indentUtils");
 
 function buildPlanningBody(planning) {
   const parts = [];
-  if (planning?.scheduled) parts.push(`SCHEDULED: [${planning.scheduled}]`);
-  if (planning?.deadline) parts.push(`DEADLINE: [${planning.deadline}]`);
+  if (planning?.scheduled) parts.push(`SCHEDULED: <${planning.scheduled}>`);
+  if (planning?.deadline) parts.push(`DEADLINE: <${planning.deadline}>`);
   if (planning?.closed) parts.push(`CLOSED: [${planning.closed}]`);
   return parts.join("  ");
 }
 
-module.exports = async function () {
+/**
+ * Pure function to compute the state change for a single task line.
+ * @param {object} params
+ * @param {string} params.currentLineText - The current headline text
+ * @param {string|null} params.nextLineText - The next line text (or null)
+ * @param {string|null} params.nextNextLineText - The line after next (or null)
+ * @param {string} params.targetKeyword - The keyword to transition to
+ * @param {string} params.dateFormat - Date format string
+ * @param {string} params.bodyIndent - Body indentation string
+ * @param {string} params.headingMarkerStyle - "unicode" or "asterisk"
+ * @param {object} params.workflowRegistry - The workflow registry
+ * @returns {object} { effectiveKeyword, newLineText, planningBody, mergedPlanning }
+ */
+function computeTodoStateChange(params) {
+  const {
+    currentLineText,
+    nextLineText,
+    nextNextLineText,
+    targetKeyword,
+    dateFormat,
+    bodyIndent,
+    headingMarkerStyle,
+    workflowRegistry
+  } = params;
+
+  const currentKeyword = taskKeywordManager.findTaskKeyword(currentLineText);
+
+  const leadingSpaces = currentLineText.slice(0, currentLineText.search(/\S|$/));
+  const starPrefixMatch = currentLineText.match(/^\s*(\*+)/);
+  const starPrefix = starPrefixMatch ? starPrefixMatch[1] : "*";
+
+  const planningFromHeadline = parsePlanningFromText(currentLineText);
+  const planningFromNext = (nextLineText && isPlanningLine(nextLineText)) ? parsePlanningFromText(nextLineText) : {};
+  const planningFromNextNext = (nextNextLineText && isPlanningLine(nextNextLineText)) ? parsePlanningFromText(nextNextLineText) : {};
+
+  const mergedPlanning = {
+    scheduled: planningFromNext.scheduled || planningFromHeadline.scheduled || null,
+    deadline: planningFromNext.deadline || planningFromHeadline.deadline || null,
+    closed: planningFromNext.closed || planningFromHeadline.closed || planningFromNextNext.closed || null
+  };
+
+  const headlineNoPlanning = stripInlinePlanning(normalizeTagsAfterPlanning(currentLineText));
+  const cleanedText = taskKeywordManager.cleanTaskText(headlineNoPlanning);
+
+  let effectiveKeyword = targetKeyword;
+  const acceptedDateFormats = getAcceptedDateFormats(dateFormat);
+
+  if (workflowRegistry.isDoneLike(targetKeyword) && !workflowRegistry.isDoneLike(currentKeyword)) {
+    const repeaterResult = processRepeaterOnDone(mergedPlanning, dateFormat, acceptedDateFormats);
+    if (repeaterResult && repeaterResult.hadRepeater) {
+      mergedPlanning.scheduled = repeaterResult.newPlanning.scheduled;
+      mergedPlanning.deadline = repeaterResult.newPlanning.deadline;
+      mergedPlanning.closed = null;
+      effectiveKeyword = workflowRegistry.getFirstNonDoneState() || targetKeyword;
+    }
+  }
+
+  if (effectiveKeyword === targetKeyword) {
+    if (workflowRegistry.stampsClosed(targetKeyword)) {
+      mergedPlanning.closed = moment().format(`${dateFormat} ddd HH:mm`);
+    } else if (workflowRegistry.stampsClosed(currentKeyword)) {
+      mergedPlanning.closed = null;
+    }
+  }
+
+  const newLineText = taskKeywordManager.buildTaskLine(leadingSpaces, effectiveKeyword, cleanedText, { headingMarkerStyle, starPrefix });
+  const planningIndent = `${leadingSpaces}${bodyIndent}`;
+  const planningBody = buildPlanningBody(mergedPlanning);
+
+  return {
+    effectiveKeyword,
+    currentKeyword,
+    newLineText,
+    planningBody,
+    planningIndent,
+    mergedPlanning,
+    cleanedText
+  };
+}
+
+async function setTodoState() {
+  const vscode = require("vscode");
   await vscode.commands.executeCommand("workbench.action.files.save");
 
   const { activeTextEditor } = vscode.window;
@@ -105,81 +183,20 @@ module.exports = async function () {
       }
     }
 
-    const leadingSpaces = currentLine.text.slice(0, currentLine.firstNonWhitespaceCharacterIndex);
-    const starPrefixMatch = currentLine.text.match(/^\s*(\*+)/);
-    const starPrefix = starPrefixMatch ? starPrefixMatch[1] : "*";
+    const stateChange = computeTodoStateChange({
+      currentLineText: currentLine.text,
+      nextLineText: nextLine?.text || null,
+      nextNextLineText: nextNextLine?.text || null,
+      targetKeyword,
+      dateFormat,
+      bodyIndent,
+      headingMarkerStyle,
+      workflowRegistry
+    });
 
-    const planningFromHeadline = parsePlanningFromText(currentLine.text);
-    const planningFromNext = (nextLine && isPlanningLine(nextLine.text)) ? parsePlanningFromText(nextLine.text) : {};
-    const planningFromNextNext = (nextNextLine && isPlanningLine(nextNextLine.text)) ? parsePlanningFromText(nextNextLine.text) : {};
-
-    const mergedPlanning = {
-      scheduled: planningFromNext.scheduled || planningFromHeadline.scheduled || null,
-      deadline: planningFromNext.deadline || planningFromHeadline.deadline || null,
-      // Prefer CLOSED; accept legacy COMPLETED from any parsed source.
-      closed: planningFromNext.closed || planningFromHeadline.closed || planningFromNextNext.closed || null
-    };
-
-    const headlineNoPlanning = stripInlinePlanning(normalizeTagsAfterPlanning(currentLine.text));
-    const cleanedText = taskKeywordManager.cleanTaskText(headlineNoPlanning);
+    const { effectiveKeyword, newLineText, planningBody, planningIndent, mergedPlanning, cleanedText } = stateChange;
 
     const workspaceEdit = new vscode.WorkspaceEdit();
-
-    const completionTransition = workflowRegistry.isDoneLike(targetKeyword) && !workflowRegistry.isDoneLike(currentKeyword);
-    const completionStampsClosed = workflowRegistry.stampsClosed(targetKeyword);
-
-    const completionTimestamp = moment().format(`${dateFormat} ddd HH:mm`);
-
-    // Upsert/remove CLOSED in the planning line (preferred: single planning line under the headline).
-    if (completionStampsClosed) {
-      mergedPlanning.closed = completionTimestamp;
-    } else if (workflowRegistry.stampsClosed(currentKeyword)) {
-      mergedPlanning.closed = null;
-    }
-
-    let effectiveKeyword = targetKeyword;
-    if (completionTransition) {
-      const lines = document.getText().split(/\r?\n/);
-
-      // Org-mode style logging into a drawer (LOGBOOK) for completion transitions.
-      if (logIntoDrawer && completionStampsClosed) {
-        const entry = formatStateChangeEntry({
-          fromKeyword: currentKeyword,
-          toKeyword: targetKeyword,
-          timestamp: completionTimestamp
-        });
-
-        if (entry) {
-          const ins = computeLogbookInsertion(lines, lineNumber, {
-            drawerName: logDrawerName,
-            bodyIndent,
-            entry
-          });
-
-          if (ins && ins.changed && typeof ins.lineIndex === "number" && typeof ins.text === "string") {
-            workspaceEdit.insert(document.uri, new vscode.Position(ins.lineIndex, 0), ins.text);
-          }
-        }
-      }
-
-      const repeated = applyRepeatersOnCompletion({
-        lines,
-        headingLineIndex: lineNumber,
-        planning: mergedPlanning,
-        workflowRegistry,
-        dateFormat,
-        now: moment()
-      });
-
-      if (repeated && repeated.didRepeat) {
-        mergedPlanning.scheduled = repeated.planning.scheduled;
-        mergedPlanning.deadline = repeated.planning.deadline;
-
-        if (repeated.repeatToStateKeyword) {
-          effectiveKeyword = repeated.repeatToStateKeyword;
-        }
-      }
-    }
 
     // Handle forward-trigger transitions (default: CONTINUED)
     if (workflowRegistry.triggersForward(effectiveKeyword) && !workflowRegistry.triggersForward(currentKeyword)) {
@@ -194,11 +211,7 @@ module.exports = async function () {
       }
     }
 
-    const newLine = taskKeywordManager.buildTaskLine(leadingSpaces, effectiveKeyword, cleanedText, { headingMarkerStyle, starPrefix });
-    workspaceEdit.replace(document.uri, currentLine.range, newLine);
-
-    const planningIndent = `${leadingSpaces}${bodyIndent}`;
-    const planningBody = buildPlanningBody(mergedPlanning);
+    workspaceEdit.replace(document.uri, currentLine.range, newLineText);
 
     // Normalize planning line placement immediately after the headline.
     if (planningBody) {
@@ -240,7 +253,7 @@ module.exports = async function () {
           originalFile,
           cleanedText,
           nextKeyword: effectiveKeyword,
-          stampsClosed: completionStampsClosed,
+          stampsClosed: workflowRegistry.stampsClosed(effectiveKeyword),
           headingMarkerStyle
         });
       }
@@ -288,4 +301,8 @@ module.exports = async function () {
       }
     }
   }
-};
+}
+
+module.exports = setTodoState;
+module.exports.computeTodoStateChange = computeTodoStateChange;
+module.exports.buildPlanningBody = buildPlanningBody;

@@ -144,7 +144,8 @@ module.exports = function () {
             }
 
             const formattedDate = moment(`${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`, "YYYY-MM-DD", true).format(dateFormat);
-            const scheduledTag = `SCHEDULED: [${formattedDate}]`;
+            // Active timestamp for agenda visibility
+            const scheduledTag = `SCHEDULED: <${formattedDate}>`;
 
             for (const lineNumber of linesToAdd) {
                 const currentLine = document.lineAt(lineNumber);

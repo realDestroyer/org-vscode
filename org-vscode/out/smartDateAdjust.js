@@ -1,14 +1,17 @@
-const vscode = require("vscode");
-const moment = require("moment");
-const { isPlanningLine, getAcceptedDateFormats, DAY_HEADING_REGEX, SCHEDULED_REGEX } = require("./orgTagUtils");
+const { isPlanningLine, getAcceptedDateFormats } = require("./orgTagUtils");
+const { transformDayHeadingDate } = require("./incrementDate");
+const { transformScheduledDate } = require("./rescheduleTask");
 
 /**
  * Smart date adjustment - detects what type of date is on the current line
  * and adjusts it accordingly:
- * - Day heading (⊘ [MM-DD-YYYY DDD]) → adjusts the day date
- * - Task with SCHEDULED: [MM-DD-YYYY] → adjusts the scheduled date
+ * - Day heading (⊘ <YYYY-MM-DD DDD>) → adjusts the day date
+ * - Task with SCHEDULED: <YYYY-MM-DD> → adjusts the scheduled date
+ *
+ * Uses transformDayHeadingDate and transformScheduledDate for the actual transformations.
  */
 function smartDateAdjust(forward = true) {
+    const vscode = require("vscode");
     const editor = vscode.window.activeTextEditor;
     if (!editor) {
         vscode.window.showErrorMessage("No active editor detected.");
@@ -40,9 +43,6 @@ function smartDateAdjust(forward = true) {
     }
     const sortedLines = Array.from(targetLines).sort((a, b) => b - a);
 
-    const dayHeadingRegex = DAY_HEADING_REGEX;
-    const scheduledRegex = SCHEDULED_REGEX;
-
     const edit = new vscode.WorkspaceEdit();
     let touched = false;
     let warnedParse = false;
@@ -54,78 +54,44 @@ function smartDateAdjust(forward = true) {
             ? document.lineAt(lineNumber + 1).text
             : "";
 
-        const dayMatch = text.match(dayHeadingRegex);
-        if (dayMatch) {
-            const indent = dayMatch[1] || "";
-            const marker = dayMatch[2];
-            const currentDate = dayMatch[3];
-            const hadDayAbbrev = dayMatch[4] !== undefined;
-            const timeComponent = dayMatch[5] || null;
-            const parsed = moment(currentDate, acceptedDateFormats, true);
-            if (!parsed.isValid()) {
-                warnedParse = true;
-                continue;
-            }
-            const newDate = parsed.add(forward ? 1 : -1, "days");
-            const formattedDate = newDate.format(dateFormat);
-            const dayPart = hadDayAbbrev ? ` ${newDate.format("ddd")}` : "";
-            const timePart = timeComponent ? ` ${timeComponent}` : "";
-            const suffix = dayMatch[6] || "";
-            const newFormattedDate = `${indent}${marker} [${formattedDate}${dayPart}${timePart}]${suffix}`;
-            const updatedText = text.replace(dayHeadingRegex, newFormattedDate);
-            if (updatedText !== text) {
-                edit.replace(document.uri, line.range, updatedText);
+        // Try day heading first
+        const dayResult = transformDayHeadingDate(text, forward, dateFormat, acceptedDateFormats);
+        if (dayResult.parseError) {
+            warnedParse = true;
+            continue;
+        }
+        if (dayResult.text !== null) {
+            if (dayResult.text !== text) {
+                edit.replace(document.uri, line.range, dayResult.text);
                 touched = true;
             }
             continue;
         }
 
-        const scheduledMatch = text.match(scheduledRegex);
-        if (scheduledMatch) {
-            const currentDate = scheduledMatch[1];
-            const hadDayAbbrev = scheduledMatch[2] !== undefined;
-            const timeComponent = scheduledMatch[3] || null;
-            const suffix = scheduledMatch[4] ? ` ${scheduledMatch[4]}` : "";
-            const parsed = moment(currentDate, acceptedDateFormats, true);
-            if (!parsed.isValid()) {
-                warnedParse = true;
-                continue;
-            }
-            const newDate = parsed.add(forward ? 1 : -1, "day");
-            const formattedDate = newDate.format(dateFormat);
-            const dayPart = hadDayAbbrev ? ` ${newDate.format("ddd")}` : "";
-            const timePart = timeComponent ? ` ${timeComponent}` : "";
-            const updatedText = text.replace(scheduledRegex, `SCHEDULED: [${formattedDate}${dayPart}${timePart}${suffix}]`);
-            if (updatedText !== text) {
-                edit.replace(document.uri, line.range, updatedText);
+        // Try SCHEDULED on current line
+        const schedResult = transformScheduledDate(text, forward, dateFormat, acceptedDateFormats);
+        if (schedResult.parseError) {
+            warnedParse = true;
+            continue;
+        }
+        if (schedResult.text !== null) {
+            if (schedResult.text !== text) {
+                edit.replace(document.uri, line.range, schedResult.text);
                 touched = true;
             }
             continue;
         }
 
-        // Emacs-style: scheduled stamp on the immediate planning line.
-        if (!scheduledMatch && isPlanningLine(nextLineText) && nextLineText.match(scheduledRegex)) {
-            const planningLine = document.lineAt(lineNumber + 1);
-            const pm = planningLine.text.match(scheduledRegex);
-            if (!pm) {
-                continue;
-            }
-            const currentDate = pm[1];
-            const hadDayAbbrev = pm[2] !== undefined;
-            const timeComponent = pm[3] || null;
-            const suffix = pm[4] ? ` ${pm[4]}` : "";
-            const parsed = moment(currentDate, acceptedDateFormats, true);
-            if (!parsed.isValid()) {
+        // Emacs-style: scheduled stamp on the immediate planning line
+        if (isPlanningLine(nextLineText)) {
+            const planningResult = transformScheduledDate(nextLineText, forward, dateFormat, acceptedDateFormats);
+            if (planningResult.parseError) {
                 warnedParse = true;
                 continue;
             }
-            const newDate = parsed.add(forward ? 1 : -1, "day");
-            const formattedDate = newDate.format(dateFormat);
-            const dayPart = hadDayAbbrev ? ` ${newDate.format("ddd")}` : "";
-            const timePart = timeComponent ? ` ${timeComponent}` : "";
-            const updatedPlanning = planningLine.text.replace(scheduledRegex, `SCHEDULED: [${formattedDate}${dayPart}${timePart}${suffix}]`);
-            if (updatedPlanning !== planningLine.text) {
-                edit.replace(document.uri, planningLine.range, updatedPlanning);
+            if (planningResult.text !== null && planningResult.text !== nextLineText) {
+                const planningLine = document.lineAt(lineNumber + 1);
+                edit.replace(document.uri, planningLine.range, planningResult.text);
                 touched = true;
             }
         }

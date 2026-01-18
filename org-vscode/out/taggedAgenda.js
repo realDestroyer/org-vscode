@@ -6,7 +6,7 @@ const moment = require("moment");
 const taskKeywordManager = require("./taskKeywordManager");
 const continuedTaskHandler = require("./continuedTaskHandler");
 const { normalizeBodyIndentation } = require("./indentUtils");
-const { stripAllTagSyntax, parseFileTagsFromText, parseTagGroupsFromText, createInheritanceTracker, matchesTagMatchString, normalizeTagMatchInput, getPlanningForHeading, isPlanningLine, parsePlanningFromText, normalizeTagsAfterPlanning, getAcceptedDateFormats, stripInlinePlanning, momentFromTimestampContent } = require("./orgTagUtils");
+const { stripAllTagSyntax, parseFileTagsFromText, parseTagGroupsFromText, createInheritanceTracker, matchesTagMatchString, normalizeTagMatchInput, getPlanningForHeading, isPlanningLine, parsePlanningFromText, normalizeTagsAfterPlanning, getAcceptedDateFormats, stripInlinePlanning, momentFromTimestampContent, extractPlainTimestamps } = require("./orgTagUtils");
 const { applyRepeatersOnCompletion } = require("./repeatedTasks");
 const { computeLogbookInsertion, formatStateChangeEntry } = require("./orgLogbook");
 const { computeCheckboxStatsByHeadingLine, formatCheckboxStats, findCheckboxCookie } = require("./checkboxStats");
@@ -82,11 +82,56 @@ module.exports = async function taggedAgenda() {
     const checkboxStatsByLine = computeCheckboxStatsByHeadingLine(lines);
     const tracker = createInheritanceTracker(parseFileTagsFromText(fileText));
     const groups = parseTagGroupsFromText(fileText);
+    const dateFormat = config.get("dateFormat", "YYYY-MM-DD");
+
+    // Track current heading for plain timestamps in body text
+    let currentHeadingText = null;
+    let currentHeadingLine = 0;
+    let currentHeadingTags = [];
+    let seenFirstHeading = false;
 
     lines.forEach((line, index) => {
       const tagState = tracker.handleLine(line);
       const status = taskKeywordManager.findTaskKeyword(line);
       const startsWithSymbol = headingStartRegex.test(line);
+
+      // Track current heading for plain timestamp display
+      if (tagState.isHeading && startsWithSymbol) {
+        seenFirstHeading = true;
+        currentHeadingText = line;
+        currentHeadingLine = index + 1;
+        currentHeadingTags = tagState.inheritedTags;
+      }
+
+      // Check for plain timestamps in all lines (after first heading)
+      if (seenFirstHeading) {
+        const plainTimestamps = extractPlainTimestamps(line);
+        for (const ts of plainTimestamps) {
+          // Only active timestamps <...> appear in agenda
+          if (ts.bracket !== '<') continue;
+
+          const parsedDate = moment(ts.date, getAcceptedDateFormats(dateFormat), true);
+          if (!parsedDate.isValid()) continue;
+
+          // Use parent heading's tags for body lines
+          const effectiveTags = tagState.isHeading ? tagState.inheritedTags : currentHeadingTags;
+          if (effectiveTags.length === 0) continue;
+          if (!matchesTagMatchString(matchExpr, effectiveTags, { groups })) continue;
+
+          agendaItems.push({
+            file,
+            line: currentHeadingText || line,  // Display heading
+            lineNumber: index + 1,              // Timestamp line for jumping
+            tags: effectiveTags,
+            scheduledDate: ts.date,
+            checkboxChecked: 0,
+            checkboxTotal: 0,
+            children: [],
+            isPlainTimestamp: true
+          });
+        }
+      }
+
       if (!tagState.isHeading || !status || !startsWithSymbol) {
         return;
       }
@@ -155,7 +200,7 @@ async function updateTaskStatusInFile(file, taskText, scheduledDate, newStatus, 
     const logIntoDrawer = config.get("logIntoDrawer", false);
     const logDrawerName = config.get("logDrawerName", "LOGBOOK");
 
-    const dateTag = scheduledDate ? `SCHEDULED: [${scheduledDate}]` : null;
+    const dateTag = scheduledDate ? `SCHEDULED: <${scheduledDate}>` : null;
     console.log("🛠 Updating file:", filePath);
     console.log("🔍 Looking for task text:", taskText);
     if (dateTag) console.log("🔍 With scheduled date tag:", dateTag);
@@ -185,7 +230,7 @@ async function updateTaskStatusInFile(file, taskText, scheduledDate, newStatus, 
 
       if (dateTag) {
         const planning = getPlanningForHeading(docLines, i);
-        const matchesDate = planning && planning.scheduled ? (`SCHEDULED: [${planning.scheduled}]` === dateTag) : false;
+        const matchesDate = planning && planning.scheduled ? (`SCHEDULED: <${planning.scheduled}>` === dateTag) : false;
         if (!matchesDate) {
           continue;
         }
@@ -279,8 +324,9 @@ async function updateTaskStatusInFile(file, taskText, scheduledDate, newStatus, 
 
   function buildPlanningBody(p) {
     const parts = [];
-    if (p.scheduled) parts.push(`SCHEDULED: [${p.scheduled}]`);
-    if (p.deadline) parts.push(`DEADLINE: [${p.deadline}]`);
+    // In Emacs: SCHEDULED/DEADLINE use active <...> (appear in agenda), CLOSED uses inactive [...]
+    if (p.scheduled) parts.push(`SCHEDULED: <${p.scheduled}>`);
+    if (p.deadline) parts.push(`DEADLINE: <${p.deadline}>`);
     if (p.closed) parts.push(`CLOSED: [${p.closed}]`);
     return parts.join("  ");
   }

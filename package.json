@@ -487,6 +487,12 @@
 					"order": 10.5,
 					"default": true,
 					"description": "Render common LaTeX commands (e.g. \\alpha, \\sum) inside $...$ and $$...$$ math using editor decorations."
+				},
+				"Org-vscode.strictActiveTimestamps": {
+					"type": "boolean",
+					"order": 11,
+					"default": false,
+					"description": "When enabled, only active timestamps <YYYY-MM-DD...> appear in agenda and calendar views (standard Org behavior where inactive [...] timestamps are reference-only). When disabled (default), both <...> and [...] timestamps appear in agenda views for backward compatibility with older org-vscode files."
 				}
 			}
 		},
