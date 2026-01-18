@@ -144,14 +144,14 @@ suite('Asterisk-mode functional behavior', function () {
 
     await vscode.commands.executeCommand('extension.toggleStatusRight');
     await waitFor(() => doc.getText().includes('*** CONTINUED I like chicken'));
-    await waitFor(() => doc.getText().includes('    SCHEDULED: [12-14-2025]'));
+    await waitFor(() => doc.getText().includes('    SCHEDULED: <12-14-2025>'));
     await waitFor(() => doc.getText().includes('*** TODO I like chicken'));
-    await waitFor(() => doc.getText().includes('    SCHEDULED: [12-15-2025]'));
+    await waitFor(() => doc.getText().includes('    SCHEDULED: <12-15-2025>'));
 
     await vscode.commands.executeCommand('extension.toggleStatusRight');
     await waitFor(() => doc.getText().includes('*** DONE I like chicken'));
-    await waitFor(() => doc.getText().includes('    SCHEDULED: [12-14-2025]'));
-    await waitFor(() => !doc.getText().includes('    SCHEDULED: [12-15-2025]'));
+    await waitFor(() => doc.getText().includes('    SCHEDULED: <12-14-2025>'));
+    await waitFor(() => !doc.getText().includes('    SCHEDULED: <12-15-2025>'));
   });
 
   test('CONTINUED→DONE does not remove sibling planning lines', async () => {
@@ -185,8 +185,8 @@ suite('Asterisk-mode functional behavior', function () {
     // Sibling task planning must remain intact.
     const text = doc.getText();
     assert.ok(text.includes('*** TODO Sibling task'), text);
-    assert.ok(text.includes('SCHEDULED: [12-14-2025]'), text);
-    assert.ok(text.includes('DEADLINE: [12-15-2025]'), text);
+    assert.ok(/\bSCHEDULED:\s*[<\[]12-14-2025[>\]]/.test(text), text);
+    assert.ok(/\bDEADLINE:\s*[<\[]12-15-2025[>\]]/.test(text), text);
   });
 
   test('Selection toggles status for multiple task lines', async () => {
@@ -304,9 +304,9 @@ suite('Asterisk-mode functional behavior', function () {
 
       await vscode.commands.executeCommand('extension.scheduling');
 
-      await waitFor(() => doc.getText().includes('  *** TODO Task A\n    SCHEDULED: [2025-12-31]'));
-      await waitFor(() => doc.getText().includes('  *** TODO Task B\n    SCHEDULED: [2025-12-31]'));
-      await waitFor(() => doc.getText().includes('  *** TODO Task C\n    SCHEDULED: [2025-12-31]'));
+      await waitFor(() => doc.getText().includes('  *** TODO Task A\n    SCHEDULED: <2025-12-31>'));
+      await waitFor(() => doc.getText().includes('  *** TODO Task B\n    SCHEDULED: <2025-12-31>'));
+      await waitFor(() => doc.getText().includes('  *** TODO Task C\n    SCHEDULED: <2025-12-31>'));
       assert.ok(doc.getText().includes(`* [12-14-2025 Sun]${separator}`));
     } finally {
       vscode.window.showInputBox = originalShowInputBox;
@@ -335,9 +335,9 @@ suite('Asterisk-mode functional behavior', function () {
       editor.selection = new vscode.Selection(new vscode.Position(0, 0), new vscode.Position(3, doc.lineAt(3).text.length));
       await vscode.commands.executeCommand('extension.scheduling');
 
-      await waitFor(() => doc.getText().includes('  *** TODO Task A\n    SCHEDULED: [2025-12-31]'));
-      await waitFor(() => doc.getText().includes('  *** TODO Task B\n    SCHEDULED: [2025-12-31]'));
-      await waitFor(() => doc.getText().includes('  *** TODO Task C\n    SCHEDULED: [2025-12-31]'));
+      await waitFor(() => doc.getText().includes('  *** TODO Task A\n    SCHEDULED: <2025-12-31>'));
+      await waitFor(() => doc.getText().includes('  *** TODO Task B\n    SCHEDULED: <2025-12-31>'));
+      await waitFor(() => doc.getText().includes('  *** TODO Task C\n    SCHEDULED: <2025-12-31>'));
 
       // Second run: select the same *headline* lines again (this range now includes planning lines).
       const taskCLine = findLine(doc, (t) => t.includes('*** TODO Task C'));
@@ -345,7 +345,7 @@ suite('Asterisk-mode functional behavior', function () {
       editor.selection = new vscode.Selection(new vscode.Position(0, 0), new vscode.Position(taskCLine, doc.lineAt(taskCLine).text.length));
 
       await vscode.commands.executeCommand('extension.scheduling');
-      await waitFor(() => !doc.getText().includes('SCHEDULED: ['));
+      await waitFor(() => !doc.getText().includes('SCHEDULED: <'));
       assert.ok(doc.getText().includes(`* [12-14-2025 Sun]${separator}`));
       assert.ok(doc.getText().includes('*** TODO Task A'));
       assert.ok(doc.getText().includes('*** TODO Task B'));
@@ -379,9 +379,9 @@ suite('Asterisk-mode functional behavior', function () {
 
       await vscode.commands.executeCommand('extension.deadline');
 
-      await waitFor(() => doc.getText().includes('  *** TODO Task A\n    DEADLINE: [2025-12-31]'));
-      await waitFor(() => doc.getText().includes('  *** TODO Task B\n    DEADLINE: [2025-12-31]'));
-      await waitFor(() => doc.getText().includes('  *** TODO Task C\n    DEADLINE: [2025-12-31]'));
+      await waitFor(() => doc.getText().includes('  *** TODO Task A\n    DEADLINE: <2025-12-31>'));
+      await waitFor(() => doc.getText().includes('  *** TODO Task B\n    DEADLINE: <2025-12-31>'));
+      await waitFor(() => doc.getText().includes('  *** TODO Task C\n    DEADLINE: <2025-12-31>'));
       assert.ok(doc.getText().includes(`* [12-14-2025 Sun]${separator}`));
     } finally {
       vscode.window.showInputBox = originalShowInputBox;
@@ -410,9 +410,9 @@ suite('Asterisk-mode functional behavior', function () {
       editor.selection = new vscode.Selection(new vscode.Position(0, 0), new vscode.Position(3, doc.lineAt(3).text.length));
       await vscode.commands.executeCommand('extension.deadline');
 
-      await waitFor(() => doc.getText().includes('  *** TODO Task A\n    DEADLINE: [2025-12-31]'));
-      await waitFor(() => doc.getText().includes('  *** TODO Task B\n    DEADLINE: [2025-12-31]'));
-      await waitFor(() => doc.getText().includes('  *** TODO Task C\n    DEADLINE: [2025-12-31]'));
+      await waitFor(() => doc.getText().includes('  *** TODO Task A\n    DEADLINE: <2025-12-31>'));
+      await waitFor(() => doc.getText().includes('  *** TODO Task B\n    DEADLINE: <2025-12-31>'));
+      await waitFor(() => doc.getText().includes('  *** TODO Task C\n    DEADLINE: <2025-12-31>'));
 
       // Second run: select the same *headline* lines again (this range now includes planning lines).
       const taskCLine = findLine(doc, (t) => t.includes('*** TODO Task C'));
@@ -420,7 +420,7 @@ suite('Asterisk-mode functional behavior', function () {
       editor.selection = new vscode.Selection(new vscode.Position(0, 0), new vscode.Position(taskCLine, doc.lineAt(taskCLine).text.length));
 
       await vscode.commands.executeCommand('extension.deadline');
-      await waitFor(() => !doc.getText().includes('DEADLINE: ['));
+      await waitFor(() => !doc.getText().includes('DEADLINE: <'));
       assert.ok(doc.getText().includes(`* [12-14-2025 Sun]${separator}`));
       assert.ok(doc.getText().includes('*** TODO Task A'));
       assert.ok(doc.getText().includes('*** TODO Task B'));
@@ -459,17 +459,17 @@ suite('Asterisk-mode functional behavior', function () {
       vscode.window.showInputBox = async () => answers.shift();
       selectThroughTaskB();
       await vscode.commands.executeCommand('extension.scheduling');
-      await waitFor(() => doc.getText().includes('SCHEDULED: [2025-12-31]'));
+      await waitFor(() => doc.getText().includes('SCHEDULED: <2025-12-31>'));
 
       // 2) Add DEADLINE (answers consumed here)
       answers = ['12', '31', '2025'];
       vscode.window.showInputBox = async () => answers.shift();
       selectThroughTaskB();
       await vscode.commands.executeCommand('extension.deadline');
-      await waitFor(() => doc.getText().includes('DEADLINE: [2025-12-31]'));
+      await waitFor(() => doc.getText().includes('DEADLINE: <2025-12-31>'));
 
       // Sanity: both stamps should live on a planning line with indentation.
-      const planningLine = findLine(doc, (t) => t.includes('SCHEDULED: [2025-12-31]') && t.includes('DEADLINE: [2025-12-31]'));
+      const planningLine = findLine(doc, (t) => t.includes('SCHEDULED: <2025-12-31>') && t.includes('DEADLINE: <2025-12-31>'));
       assert.ok(planningLine >= 0, 'Expected SCHEDULED and DEADLINE on the same planning line');
 
       // 3) Remove SCHEDULED (should leave DEADLINE as a valid planning line)
@@ -478,8 +478,8 @@ suite('Asterisk-mode functional behavior', function () {
       };
       selectThroughTaskB();
       await vscode.commands.executeCommand('extension.scheduling');
-      await waitFor(() => !doc.getText().includes('SCHEDULED: ['));
-      await waitFor(() => doc.getText().includes('DEADLINE: [2025-12-31]'));
+      await waitFor(() => !doc.getText().includes('SCHEDULED: <'));
+      await waitFor(() => doc.getText().includes('DEADLINE: <2025-12-31>'));
 
       // 4) Remove DEADLINE (should not prompt; previously it did because indentation got broken)
       vscode.window.showInputBox = async () => {
@@ -487,7 +487,7 @@ suite('Asterisk-mode functional behavior', function () {
       };
       selectThroughTaskB();
       await vscode.commands.executeCommand('extension.deadline');
-      await waitFor(() => !doc.getText().includes('DEADLINE: ['));
+      await waitFor(() => !doc.getText().includes('DEADLINE: <'));
     } finally {
       vscode.window.showInputBox = originalShowInputBox;
     }
@@ -657,13 +657,13 @@ suite('Asterisk-mode functional behavior', function () {
       await vscode.commands.executeCommand('extension.scheduling');
 
       try {
-        await waitFor(() => doc.getText().includes('SCHEDULED: [2025-12-31]'));
+        await waitFor(() => doc.getText().includes('SCHEDULED: <2025-12-31>'));
       } catch (e) {
         throw new Error(`Expected SCHEDULED to be inserted for NEXT tasks. Document was:\n${doc.getText()}`);
       }
 
       const afterScheduling = doc.getText();
-      const scheduledCount = (afterScheduling.match(/SCHEDULED: \[2025-12-31\]/g) || []).length;
+      const scheduledCount = (afterScheduling.match(/SCHEDULED: <2025-12-31>/g) || []).length;
       assert.strictEqual(scheduledCount, 2, afterScheduling);
 
       // Re-select the full document so DEADLINE targets both headings after inserts.
@@ -677,7 +677,7 @@ suite('Asterisk-mode functional behavior', function () {
       vscode.window.showInputBox = async () => answers2.shift();
       await vscode.commands.executeCommand('extension.deadline');
 
-      await waitFor(() => doc.getText().includes('DEADLINE: [2025-12-31]'));
+      await waitFor(() => doc.getText().includes('DEADLINE: <2025-12-31>'));
     } finally {
       vscode.window.showInputBox = originalShowInputBox;
       await cfg.update('workflowStates', oldGlobalWorkflowStates, vscode.ConfigurationTarget.Global);

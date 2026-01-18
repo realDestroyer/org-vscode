@@ -61,7 +61,7 @@ suite('Command registration', function () {
     const doc = await vscode.workspace.openTextDocument({ language: 'vso', content: input });
     const editor = await vscode.window.showTextDocument(doc);
 
-    await vscode.commands.executeCommand('extension.migrateFileToV2');
+      await vscode.commands.executeCommand('extension.migrateFileToV2');
 
     const out = editor.document.getText();
 
@@ -69,14 +69,15 @@ suite('Command registration', function () {
     assert.ok(/\* DONE .*:WORK:PROJ:\s*$/.test(out.split(/\r?\n/)[0]), 'Legacy inline tags should become end-of-headline tags');
 
     // Inline planning moved to planning line under the heading.
-    assert.ok(/\n\s{2,}SCHEDULED: \[2025-01-02\]/.test(out), 'SCHEDULED should be moved to an indented planning line');
+    // In Org-mode, SCHEDULED/DEADLINE use active timestamps (<...>).
+      assert.ok(/\n\s{2,}SCHEDULED: <2025-01-02>/.test(out), 'SCHEDULED should be moved to an indented planning line');
 
     // COMPLETED converted to CLOSED (even when it was already on the planning line).
     assert.ok(!/\bCOMPLETED:\s*\[/.test(out), 'COMPLETED should not remain after migration');
     assert.ok(/\bCLOSED:\s*\[2nd January 2025, 9:42:00 am\]/.test(out), 'COMPLETED should migrate to CLOSED');
 
     // DEADLINE should be moved off the headline into planning line.
-    assert.ok(/\n\s{2,}DEADLINE: \[2025-02-03\]/.test(out), 'DEADLINE should be moved to an indented planning line');
+      assert.ok(/\n\s{2,}DEADLINE: <2025-02-03>/.test(out), 'DEADLINE should be moved to an indented planning line');
 
     // Hyphenated tags should not be dropped during migration.
     assert.ok(/^\* TODO .*:TEST_TAG:\s*$/m.test(out), 'Hyphenated legacy tags should become end-of-headline tags (normalized to underscores)');
@@ -95,7 +96,7 @@ suite('Command registration', function () {
     const doc = await vscode.workspace.openTextDocument({ language: 'vso', content: input });
     const editor = await vscode.window.showTextDocument(doc);
 
-    await vscode.commands.executeCommand('extension.alignSchedules');
+      await vscode.commands.executeCommand('extension.alignSchedules');
 
     const lines = editor.document.getText().split(/\r?\n/);
     const idx1 = lines[0].indexOf('SCHEDULED:');
