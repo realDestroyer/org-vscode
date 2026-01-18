@@ -1,5 +1,6 @@
 const path = require("path");
 const moment = require("moment");
+const { html, escapeText } = require("./htmlUtils");
 
 const ORG_SYMBOL_REGEX = /\s*[⊙⊖⊘⊜⊗]\s*/g;
 
@@ -226,41 +227,41 @@ function renderTaskListMarkdown(title, tasks, emptyMessage) {
 
 function renderStatusHtml(entries) {
   if (!entries.length) {
-    return '<h2>Status Breakdown</h2><p class="muted">No task statuses recorded.</p>';
+    return `<h2>Status Breakdown</h2><p class="muted">No task statuses recorded.</p>`;
   }
-  const list = entries.map(entry => `<li><strong>${escapeHtml(entry.label)}</strong>: ${entry.count}</li>`).join("");
+  const list = entries.map(entry => `<li><strong>${escapeText(entry.label)}</strong>: ${escapeText(String(entry.count))}</li>`).join("");
   return `<h2>Status Breakdown</h2><ul>${list}</ul>`;
 }
 
 function renderTagHtml(entries) {
   if (!entries.length) {
-    return '<h2>Tag Leaderboard</h2><p class="muted">No tags were captured in this file.</p>';
+    return `<h2>Tag Leaderboard</h2><p class="muted">No tags were captured in this file.</p>`;
   }
-  const list = entries.map(entry => `<li>${escapeHtml(entry.label)}: ${entry.count} tasks</li>`).join("");
+  const list = entries.map(entry => `<li>${escapeText(entry.label)}: ${escapeText(String(entry.count))} tasks</li>`).join("");
   return `<h2>Tag Leaderboard</h2><ul>${list}</ul>`;
 }
 
 function renderTimelineHtml(entries) {
   if (!entries.length) {
-    return '<h2>Monthly Timeline</h2><p class="muted">No scheduled activity was detected.</p>';
+    return `<h2>Monthly Timeline</h2><p class="muted">No scheduled activity was detected.</p>`;
   }
   const rows = entries
-    .map(entry => `<tr><td>${escapeHtml(entry.label)}</td><td class="count">${entry.count}</td></tr>`)
+    .map(entry => `<tr><td>${escapeText(entry.label)}</td><td class="count">${escapeText(String(entry.count))}</td></tr>`)
     .join("");
   return `<h2>Monthly Timeline</h2><table><thead><tr><th>Month</th><th>Tasks</th></tr></thead><tbody>${rows}</tbody></table>`;
 }
 
 function renderTaskSectionHtml(title, tasks) {
   if (!tasks.length) {
-    return `<h2>${escapeHtml(title)}</h2><p class="muted">No items to show.</p>`;
+    return `<h2>${escapeText(title)}</h2><p class="muted">No items to show.</p>`;
   }
   const items = tasks
     .map(task => {
-      const tagSuffix = task.tags.length ? ` <span class="muted">(tags: ${escapeHtml(task.tags.join(", "))})</span>` : "";
-      return `<li><strong>${escapeHtml(task.date)}</strong>: ${escapeHtml(task.title)}${tagSuffix}</li>`;
+      const tagSuffix = task.tags.length ? ` <span class="muted">(tags: ${escapeText(task.tags.join(", "))})</span>` : "";
+      return `<li><strong>${escapeText(task.date)}</strong>: ${escapeText(task.title)}${tagSuffix}</li>`;
     })
     .join("");
-  return `<h2>${escapeHtml(title)}</h2><ul>${items}</ul>`;
+  return `<h2>${escapeText(title)}</h2><ul>${items}</ul>`;
 }
 
 function sanitizeText(value) {
@@ -393,15 +394,6 @@ function formatDisplayDate(date, weekday) {
   }
   const label = parsed.format("MMM DD");
   return weekday ? `${label} · ${weekday}` : label;
-}
-
-function escapeHtml(value) {
-  return String(value)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
 }
 
 module.exports = {

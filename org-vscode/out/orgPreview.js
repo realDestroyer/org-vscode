@@ -1,15 +1,7 @@
 "use strict";
 
 const vscode = require("vscode");
-
-function escapeHtml(s) {
-  return String(s)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/\"/g, "&quot;")
-    .replace(/'/g, "&#39;");
-}
+const { html, escapeText, escapeAttr } = require("./htmlUtils");
 
 function getNonce() {
   const possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
@@ -51,15 +43,15 @@ function renderOrgToHtml(documentText) {
   }
 
   for (let i = 0; i < lines.length; i++) {
-    const raw = lines[i];
+    const line = lines[i];
     const lineNo = i + 1;
-    const trimmed = raw.trim();
+    const trimmed = line.trim();
 
     // Always include a marker at each line so scroll sync is deterministic.
     const marker = `<span class="line-marker" data-line="${lineNo}"></span>`;
 
     // Export HTML block: include raw HTML
-    if (!inSrc && !inExportHtml && /^\s*#\+BEGIN_EXPORT\s+html\s*$/i.test(raw)) {
+    if (!inSrc && !inExportHtml && /^\s*#\+BEGIN_EXPORT\s+html\s*$/i.test(line)) {
       closeLists();
       closeTable();
       inExportHtml = true;
@@ -67,63 +59,64 @@ function renderOrgToHtml(documentText) {
       continue;
     }
     if (inExportHtml) {
-      if (/^\s*#\+END_EXPORT\s*$/i.test(raw)) {
+      if (/^\s*#\+END_EXPORT\s*$/i.test(line)) {
         out.push(`${marker}</div>`);
         inExportHtml = false;
       } else {
-        out.push(`${marker}${raw}`);
+        out.push(marker + line); // Raw HTML intentionally unescaped
       }
       continue;
     }
 
     // Src blocks
-    const beginSrc = raw.match(/^\s*#\+BEGIN_SRC\s*(\S+)?\s*$/i);
+    const beginSrc = line.match(/^\s*#\+BEGIN_SRC\s*(\S+)?\s*$/i);
     if (!inSrc && beginSrc) {
       closeLists();
       closeTable();
       inSrc = true;
       srcLang = (beginSrc[1] || "").toLowerCase();
-      out.push(`<pre class="org-src"><code data-lang="${escapeHtml(srcLang)}">${marker}`);
+      out.push(`<pre class="org-src"><code data-lang="${escapeAttr(srcLang)}">${marker}`);
       continue;
     }
     if (inSrc) {
-      if (/^\s*#\+END_SRC\s*$/i.test(raw)) {
+      if (/^\s*#\+END_SRC\s*$/i.test(line)) {
         out.push(`${marker}</code></pre>`);
         inSrc = false;
         srcLang = "";
       } else {
-        out.push(`${marker}${escapeHtml(raw)}\n`);
+        out.push(marker + escapeText(line) + "\n");
       }
       continue;
     }
 
     // Tables (very minimal)
-    if (/^\s*\|.*\|\s*$/.test(raw)) {
+    if (/^\s*\|.*\|\s*$/.test(line)) {
       closeLists();
       if (!inTable) {
         out.push(`<table class="org-table"><tbody>`);
         inTable = true;
       }
-      const cells = raw.trim().replace(/^\|/, "").replace(/\|$/, "").split("|");
-      out.push(`<tr>${marker}${cells.map((c) => `<td>${escapeHtml(c.trim())}</td>`).join("")}</tr>`);
+      const cells = line.trim().replace(/^\|/, "").replace(/\|$/, "").split("|");
+      const cellsHtml = cells.map((c) => html`<td>${c.trim()}</td>`).join("");
+      out.push(`<tr>${marker}${cellsHtml}</tr>`);
       continue;
     } else {
       closeTable();
     }
 
     // Headings
-    const heading = raw.match(/^\s*(\*+)\s+(.*)$/);
+    const heading = line.match(/^\s*(\*+)\s+(.*)$/);
     if (heading) {
       closeLists();
       const level = Math.min(6, heading[1].length);
-      const title = escapeHtml(heading[2]);
-      out.push(`<h${level} class="org-heading">${marker}${title}</h${level}>`);
+      const title = heading[2];
+      out.push(`<h${level} class="org-heading">${marker}${escapeText(title)}</h${level}>`);
       continue;
     }
 
     // Lists (simple; no nesting by indentation yet)
-    const ordered = raw.match(/^\s*(\d+)\.\s+(.*)$/);
-    const unordered = raw.match(/^\s*([-+])\s+(.*)$/);
+    const ordered = line.match(/^\s*(\d+)\.\s+(.*)$/);
+    const unordered = line.match(/^\s*([-+])\s+(.*)$/);
     if (ordered || unordered) {
       closeTable();
       const type = ordered ? "ol" : "ul";
@@ -138,11 +131,10 @@ function renderOrgToHtml(documentText) {
 
       if (checkbox) {
         const checked = /x/i.test(checkbox[1]);
-        out.push(
-          `<li>${marker}<input type="checkbox" disabled ${checked ? "checked" : ""} /> ${escapeHtml(checkbox[2])}</li>`
-        );
+        const checkboxAttr = checked ? " checked" : "";
+        out.push(`<li>${marker}<input type="checkbox" disabled${checkboxAttr} /> ${escapeText(checkbox[2])}</li>`);
       } else {
-        out.push(`<li>${marker}${escapeHtml(body)}</li>`);
+        out.push(`<li>${marker}${escapeText(body)}</li>`);
       }
       continue;
     }
@@ -158,7 +150,7 @@ function renderOrgToHtml(documentText) {
     // Paragraph
     closeLists();
     closeTable();
-    out.push(`<p class="org-paragraph">${marker}${escapeHtml(raw)}</p>`);
+    out.push(`<p class="org-paragraph">${marker}${escapeText(line)}</p>`);
   }
 
   closeLists();

@@ -84,7 +84,10 @@
 					},
 					{
 						"name": "IN_PROGRESS Keyword",
-						"scope": ["keyword.control.in_progress.vso", "support.constant.in_progress.vso"],
+						"scope": [
+							"keyword.control.in_progress.vso",
+							"support.constant.in_progress.vso"
+						],
 						"settings": {
 							"foreground": "#33BFFF",
 							"fontStyle": "italic"
@@ -107,7 +110,10 @@
 					},
 					{
 						"name": "CONTINUED Keyword",
-						"scope": ["keyword.control.continued.vso", "markup.quote.continued.vso"],
+						"scope": [
+							"keyword.control.continued.vso",
+							"markup.quote.continued.vso"
+						],
 						"settings": {
 							"foreground": "#888888",
 							"fontStyle": "italic"
@@ -130,7 +136,10 @@
 					},
 					{
 						"name": "DONE Keyword",
-						"scope": ["keyword.control.done.vso", "entity.name.function.vso"],
+						"scope": [
+							"keyword.control.done.vso",
+							"entity.name.function.vso"
+						],
 						"settings": {
 							"foreground": "#3AF605",
 							"fontStyle": "bold"
@@ -200,7 +209,10 @@
 					},
 					{
 						"name": "DEADLINE Stamp",
-						"scope": ["keyword.deadline.vso", "markup.deleted.deadline.vso"],
+						"scope": [
+							"keyword.deadline.vso",
+							"markup.deleted.deadline.vso"
+						],
 						"settings": {
 							"foreground": "#ff6b35",
 							"fontStyle": "bold"
@@ -423,7 +435,9 @@
 					],
 					"items": {
 						"type": "object",
-						"required": ["keyword"],
+						"required": [
+							"keyword"
+						],
 						"properties": {
 							"keyword": {
 								"type": "string",
@@ -450,13 +464,19 @@
 							},
 							"agendaVisibility": {
 								"type": "string",
-								"enum": ["show", "hide"],
+								"enum": [
+									"show",
+									"hide"
+								],
 								"default": "show",
 								"description": "Whether tasks in this state appear in Agenda View by default."
 							},
 							"taggedAgendaVisibility": {
 								"type": "string",
-								"enum": ["show", "hide"],
+								"enum": [
+									"show",
+									"hide"
+								],
 								"default": "show",
 								"description": "Whether tasks in this state appear in Tagged Agenda by default."
 							}
@@ -939,13 +959,14 @@
 		"@types/node": "^18.0.0",
 		"@types/vscode": "^1.70.0",
 		"@vscode/test-electron": "^2.3.8",
-		"typescript": "^5.5.4",
 		"@vscode/vsce": "^3.7.1",
-		"esbuild": "^0.27.1"
+		"esbuild": "^0.27.1",
+		"typescript": "^5.5.4"
 	},
 	"dependencies": {
 		"fs-extra": "^7.0.0",
 		"gray-matter": "^4.0.1",
+		"htm": "^3.1.1",
 		"jsonc-parser": "^3.3.1",
 		"klaw": "^3.0.0",
 		"moment": "^2.29.4"

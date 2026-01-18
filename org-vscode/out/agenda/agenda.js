@@ -13,6 +13,7 @@ const { computeLogbookInsertion, formatStateChangeEntry } = require("../orgLogbo
 const { formatCheckboxStats, findCheckboxCookie, computeHierarchicalCheckboxStatsInRange } = require("../checkboxStats");
 const { computeCheckboxToggleEdits } = require("../checkboxToggle");
 const { normalizeBodyIndentation } = require("../indentUtils");
+const { html, escapeText, escapeAttr } = require("../htmlUtils");
 
 function escapeRegExp(text) {
   return String(text).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -71,22 +72,13 @@ module.exports = function () {
       return { total: stats.total, checked: stats.checked };
     }
 
-    function escapeHtml(s) {
-      return String(s || "")
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/\"/g, "&quot;")
-        .replace(/'/g, "&#39;");
-    }
-
     function escapeLeadingSpaces(s) {
       const str = String(s || "");
       const m = str.match(/^(\s*)/);
       const lead = m ? m[1] : "";
       const rest = str.slice(lead.length);
       const leadEsc = lead.replace(/ /g, "&nbsp;").replace(/\t/g, "&nbsp;&nbsp;");
-      return leadEsc + escapeHtml(rest);
+      return leadEsc + escapeText(rest);
     }
 
     function renderChildrenBlock(children, fileName) {
@@ -98,24 +90,21 @@ module.exports = function () {
         const lineNumber = c && typeof c === 'object' ? Number(c.lineNumber) : NaN;
         const m = text.match(/^(\s*)([-+*]|\d+[.)])\s+\[( |x|X|-)\]\s+(.*)$/);
         if (!m) {
+          // escapeLeadingSpaces returns pre-escaped HTML
           return `<div class="detail-line">${escapeLeadingSpaces(text)}</div>`;
         }
 
         const indentLen = (m[1] || "").length;
         const bullet = escapeLeadingSpaces((m[1] || "") + (m[2] || "-"));
         const state = String(m[3] || " ");
-        const rest = escapeHtml(m[4] || "");
+        const rest = m[4] || "";
         const isChecked = state.toLowerCase() === "x";
         const isPartial = state === "-";
-        const checkedAttr = isChecked ? "checked" : "";
-        const partialAttr = isPartial ? "data-state=\"partial\"" : "";
-        const safeFile = escapeHtml(fileName);
         const safeLine = Number.isFinite(lineNumber) ? String(lineNumber) : "";
-        return (
-          `<div class="detail-line checkbox-line">${bullet} ` +
-          `<input class="org-checkbox" type="checkbox" data-file="${safeFile}" data-line="${safeLine}" data-indent="${indentLen}" ${partialAttr} ${checkedAttr}/> ` +
-          `<span class="checkbox-text">${rest}</span></div>`
-        );
+        // Build the input with proper attribute escaping, then assemble with pre-escaped bullet
+        const checkboxInput = html`<input class="org-checkbox" type="checkbox" data-file=${fileName} data-line=${safeLine} data-indent=${String(indentLen)} data-state=${isPartial ? "partial" : null} checked=${isChecked}/>`;
+        const restSpan = html`<span class="checkbox-text">${rest}</span>`;
+        return `<div class="detail-line checkbox-line">${bullet} ${checkboxInput} ${restSpan}</div>`;
       }).join("");
 
       return `<details class="children-block"><summary>Show Details</summary><div class="children-lines">${linesHtml}</div></details>`;
@@ -230,7 +219,7 @@ module.exports = function () {
                   const checkboxStats = computeCheckboxStatsFromLines(children);
                   const cookie = findCheckboxCookie(element);
                   const checkboxBadge = (cookie && checkboxStats.total >= 0)
-                    ? `<span class=\"checkbox-stats\">${formatCheckboxStats({ checked: checkboxStats.checked, total: checkboxStats.total }, cookie.mode)}</span>`
+                    ? html`<span class="checkbox-stats">${formatCheckboxStats({ checked: checkboxStats.checked, total: checkboxStats.total }, cookie.mode)}</span>`
                     : "";
 
                   // Build deadline warning badge if task has a deadline
@@ -243,39 +232,30 @@ module.exports = function () {
                     } else {
                     const today = moment().startOf("day");
                     const daysUntil = deadlineDate.diff(today, "days");
-                    
+
                     if (daysUntil < 0) {
-                      deadlineBadge = `<span class="deadline deadline-overdue">⚠ OVERDUE: ${deadlineDate.format("MMM Do")}</span>`;
+                      deadlineBadge = html`<span class="deadline deadline-overdue">⚠ OVERDUE: ${deadlineDate.format("MMM Do")}</span>`;
                     } else if (daysUntil === 0) {
-                      deadlineBadge = `<span class="deadline deadline-today">⚠ DUE TODAY</span>`;
+                      deadlineBadge = html`<span class="deadline deadline-today">⚠ DUE TODAY</span>`;
                     } else if (daysUntil <= 3) {
-                      deadlineBadge = `<span class="deadline deadline-soon">⏰ Due in ${daysUntil} day${daysUntil > 1 ? 's' : ''}</span>`;
+                      deadlineBadge = html`<span class="deadline deadline-soon">⏰ Due in ${daysUntil} day${daysUntil > 1 ? 's' : ''}</span>`;
                     } else {
-                      deadlineBadge = `<span class="deadline deadline-future">📅 Due: ${deadlineDate.format("MMM Do")}</span>`;
+                      deadlineBadge = html`<span class="deadline deadline-future">📅 Due: ${deadlineDate.format("MMM Do")}</span>`;
                     }
                     }
                   }
 
                   // Build HTML task entry
                   let renderedTask = "";
+                  const taskLineNumber = j + 1;
+                  const filenameSpan = html`<span class="filename" data-file=${items[i]} data-line=${String(taskLineNumber)}>${items[i]}:</span>`;
+                  const taskTextSpan = html`<span class="taskText agenda-task-link" data-file=${items[i]} data-line=${String(taskLineNumber)}>${taskText}</span>`;
                   if (taskKeywordMatch) {
-                    const taskLineNumber = j + 1;
                     const bucket = getKeywordBucket(taskKeywordMatch, registry);
-                    renderedTask =
-                      `<span class="filename" data-file="${items[i]}" data-line="${taskLineNumber}">${items[i]}:</span> ` +
-                      `<span class="${bucket}" data-filename="${items[i]}" data-text="${taskText}" data-date="${cleanDate}">${taskKeywordMatch}</span>` +
-                      `<span class="taskText agenda-task-link" data-file="${items[i]}" data-line="${taskLineNumber}">${taskText}</span>` +
-                      checkboxBadge +
-                      `<span class="scheduled">SCHEDULED</span>` +
-                      deadlineBadge;
+                    const keywordSpan = html`<span class=${bucket} data-filename=${items[i]} data-text=${taskText} data-date=${cleanDate}>${taskKeywordMatch}</span>`;
+                    renderedTask = `${filenameSpan} ${keywordSpan}${taskTextSpan}${checkboxBadge}<span class="scheduled">SCHEDULED</span>${deadlineBadge}`;
                   } else {
-                    const taskLineNumber = j + 1;
-                    renderedTask =
-                      `<span class="filename" data-file="${items[i]}" data-line="${taskLineNumber}">${items[i]}:</span> ` +
-                      `<span class="taskText agenda-task-link" data-file="${items[i]}" data-line="${taskLineNumber}">${taskText}</span>` +
-                      checkboxBadge +
-                      `<span class="scheduled">SCHEDULED</span>` +
-                      deadlineBadge;
+                    renderedTask = `${filenameSpan} ${taskTextSpan}${checkboxBadge}<span class="scheduled">SCHEDULED</span>${deadlineBadge}`;
                   }
 
                   // Clear the current date array and group task appropriately by date
@@ -283,20 +263,21 @@ module.exports = function () {
 
                   // If task is today or future
                   if (scheduledMoment.isSameOrAfter(moment().startOf("day"), "day")) {
-                    convertedDateArray.push({
-                      date: `<div class=\"heading${nameOfDay} ${cleanDate}\"><h4 class=\"${cleanDate}\">${cleanDate}, ${nameOfDay.toUpperCase()}</h4></div>`,
-                      text: `<div class=\"panel ${cleanDate}\">${renderedTask}${childrenBlock}</div>`
-                    });
+                    const dateDiv = html`<div class=${"heading" + nameOfDay + " " + cleanDate}><h4 class=${cleanDate}>${cleanDate}, ${nameOfDay.toUpperCase()}</h4></div>`;
+                    const textDiv = `<div class="${escapeAttr("panel " + cleanDate)}">${renderedTask}${childrenBlock}</div>`;
+                    convertedDateArray.push({ date: dateDiv, text: textDiv });
                   } else {
                     // If task is overdue
                     let today = moment().format(dateFormat);
                     let overdue = moment().format("dddd");
 
                     if (scheduledMoment.isBefore(moment().startOf("day"), "day")) {
-                      convertedDateArray.push({
-                        date: `<div class=\"heading${overdue} [${today}]\"><h4 class=\"[${today}]\">[${today}], ${overdue.toUpperCase()}</h4></div>`,
-                        text: `<div class=\"panel [${today}]\">${renderedTask}<span class=\"late\">LATE: ${momentFromTimestampContent(getDateFromTaskText[1], acceptedDateFormats, true).format(dateFormat)}</span>${childrenBlock}</div>`
-                      });
+                      const todayClass = "[" + today + "]";
+                      const lateDate = momentFromTimestampContent(getDateFromTaskText[1], acceptedDateFormats, true).format(dateFormat);
+                      const lateBadge = html`<span class="late">LATE: ${lateDate}</span>`;
+                      const dateDiv = html`<div class=${"heading" + overdue + " " + todayClass}><h4 class=${todayClass}>${todayClass}, ${overdue.toUpperCase()}</h4></div>`;
+                      const textDiv = `<div class="${escapeAttr("panel " + todayClass)}">${renderedTask}${lateBadge}${childrenBlock}</div>`;
+                      convertedDateArray.push({ date: dateDiv, text: textDiv });
                     }
                   }
 
@@ -329,18 +310,18 @@ module.exports = function () {
                   const filename = items[i];
                   const formattedDate = parsedDate.format(dateFormat);
                   const nameOfDay = parsedDate.format("dddd");
-                  const cleanDate = `[${formattedDate}]`;
+                  const cleanDate = "[" + formattedDate + "]";
 
-                  const renderedTask =
-                    `<span class="filename" data-file="${filename}" data-line="${timestampLineNumber}">${filename}:</span> ` +
-                    `<span class="taskText agenda-task-link" data-file="${filename}" data-line="${timestampLineNumber}">${displayText}</span>` +
-                    `<span class="timestamp-marker"></span>`;
+                  const filenameSpan = html`<span class="filename" data-file=${filename} data-line=${String(timestampLineNumber)}>${filename}:</span>`;
+                  const taskTextSpan = html`<span class="taskText agenda-task-link" data-file=${filename} data-line=${String(timestampLineNumber)}>${displayText}</span>`;
+                  const renderedTask = `${filenameSpan} ${taskTextSpan}<span class="timestamp-marker"></span>`;
 
-                  const dateKey = `<div class="heading${nameOfDay} ${cleanDate}"><h4 class="${cleanDate}">${cleanDate}, ${nameOfDay.toUpperCase()}</h4></div>`;
+                  const dateKey = html`<div class=${"heading" + nameOfDay + " " + cleanDate}><h4 class=${cleanDate}>${cleanDate}, ${nameOfDay.toUpperCase()}</h4></div>`;
+                  const panelHtml = `<div class="${escapeAttr("panel " + cleanDate)}">${renderedTask}</div>`;
                   if (!unsortedObject[dateKey]) {
-                    unsortedObject[dateKey] = `  <div class="panel ${cleanDate}">${renderedTask}</div>`;
+                    unsortedObject[dateKey] = "  " + panelHtml;
                   } else {
-                    unsortedObject[dateKey] += `  <div class="panel ${cleanDate}">${renderedTask}</div>`;
+                    unsortedObject[dateKey] += "  " + panelHtml;
                   }
                 }
               }
@@ -667,7 +648,7 @@ module.exports = function () {
     }
         function getWebviewContent(task, skippedFiles) {
             const errorBannerContent = (skippedFiles && skippedFiles.length > 0)
-              ? skippedFiles.map(s => `${s.file} (${s.reason})`).join("; ")
+              ? escapeText(skippedFiles.map(s => `${s.file} (${s.reason})`).join("; "))
               : "";
             const errorBannerClass = errorBannerContent ? "visible" : "";
             return `<!DOCTYPE html>
@@ -1063,7 +1044,7 @@ module.exports = function () {
           const container = document.getElementById('file-bubbles');
           if (!container) return;
 
-          container.innerHTML = '';
+          container.replaceChildren();
 
           const state = vscode.getState && vscode.getState();
           const initial = state && typeof state.selectedFile === 'string' ? state.selectedFile : '';

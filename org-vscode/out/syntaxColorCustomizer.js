@@ -8,6 +8,7 @@
 
 const vscode = require("vscode");
 const workflowStates = require("./workflowStates");
+const { html, escapeText } = require("./htmlUtils");
 
 // Default color definitions matching the extension's configurationDefaults.
 // Note: "Body / Notes Text" uses theme default unless the user explicitly saves a value.
@@ -647,9 +648,12 @@ function getWebviewContent(nonce, currentColors, currentWorkflowStates) {
       ].filter(Boolean).join(" ");
 
       previewCss += `${previewSelector} { ${previewRule} }\n`;
-      
-      return `
-        <div class="scope-row" data-scope="${name}">
+
+      const isBold = settings.fontStyle && settings.fontStyle.includes('bold');
+      const isItalic = settings.fontStyle && settings.fontStyle.includes('italic');
+
+      return html`
+        <div class="scope-row" data-scope=${name}>
           <div class="scope-info">
             <span class="scope-name">${name}</span>
             <span class="scope-technical">${technicalScope}</span>
@@ -657,52 +661,52 @@ function getWebviewContent(nonce, currentColors, currentWorkflowStates) {
           <div class="scope-controls">
             <div class="color-picker-wrapper">
             <span class="control-heading">Foreground</span>
-              <input type="color" 
-                     class="color-picker" 
-                     data-scope="${name}" 
-                     value="${settings.foreground}"
-                     title="Pick color">
-              <input type="text" 
-                     class="color-text" 
-                     data-scope="${name}" 
-                     value="${settings.foreground}"
+              <input type="color"
+                     class="color-picker"
+                     data-scope=${name}
+                     value=${settings.foreground}
+                     title="Pick color" />
+              <input type="text"
+                     class="color-text"
+                     data-scope=${name}
+                     value=${settings.foreground}
                      pattern="^#[0-9A-Fa-f]{6}$"
-                     title="Hex color code">
+                     title="Hex color code" />
             </div>
-            ${supportsBackground ? `
+            ${supportsBackground ? html`
             <div class="color-picker-wrapper" title="Keyword background">
             <span class="control-heading">Background</span>
-              <input type="color" 
-              class="color-picker bg-color-picker" 
-                     data-scope="${name}" 
-                     value="${settings.background || '#000000'}"
-                     title="Pick background">
-              <input type="text" 
-              class="color-text bg-color-text" 
-                     data-scope="${name}" 
-                     value="${settings.background || ''}"
+              <input type="color"
+              class="color-picker bg-color-picker"
+                     data-scope=${name}
+                     value=${settings.background || '#000000'}
+                     title="Pick background" />
+              <input type="text"
+              class="color-text bg-color-text"
+                     data-scope=${name}
+                     value=${settings.background || ''}
                      placeholder="(none)"
               pattern="^(#[0-9A-Fa-f]{6})?$"
-                     title="Hex background color (leave blank for none)">
+                     title="Hex background color (leave blank for none)" />
             </div>
             ` : ''}
             <div class="font-style-wrapper">
               <label class="checkbox-label">
-                <input type="checkbox" 
-                       class="font-bold" 
-                       data-scope="${name}"
-                       ${settings.fontStyle && settings.fontStyle.includes('bold') ? 'checked' : ''}>
+                <input type="checkbox"
+                       class="font-bold"
+                       data-scope=${name}
+                       checked=${isBold} />
                 <span>Bold</span>
               </label>
               <label class="checkbox-label">
-                <input type="checkbox" 
-                       class="font-italic" 
-                       data-scope="${name}"
-                       ${settings.fontStyle && settings.fontStyle.includes('italic') ? 'checked' : ''}>
+                <input type="checkbox"
+                       class="font-italic"
+                       data-scope=${name}
+                       checked=${isItalic} />
                 <span>Italic</span>
               </label>
             </div>
-            <div class="preview" data-scope="${name}">
+            <div class="preview" data-scope=${name}>
               ${getPreviewText(name)}
             </div>
           </div>
@@ -710,9 +714,10 @@ function getWebviewContent(nonce, currentColors, currentWorkflowStates) {
       `;
     }).join("");
 
+    const groupHeader = html`<h3 class="group-header">${groupName}</h3>`;
     return `
       <div class="scope-group">
-        <h3 class="group-header">${groupName}</h3>
+        ${groupHeader}
         ${scopesHtml}
       </div>
     `;
@@ -1391,7 +1396,7 @@ function getWebviewContent(nonce, currentColors, currentWorkflowStates) {
       function renderWorkflowTable() {
         const tbody = document.getElementById('workflow-tbody');
         if (!tbody) return;
-        tbody.innerHTML = '';
+        tbody.replaceChildren();
 
         updateWorkflowMeta();
 

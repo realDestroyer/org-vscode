@@ -1,5 +1,6 @@
 (() => {
   const vscode = acquireVsCodeApi();
+  const { html, raw } = window.htmlUtils || {};
   const DEFAULT_COLUMN_WIDTH = 160;
   const state = {
     payload: null,
@@ -129,7 +130,7 @@
       { label: "Active Months", value: formatNumber(model.totals.activeMonths), hint: "Scheduled activity" }
     ];
     elements.statGrid.innerHTML = cards
-      .map(card => `<div class="stat"><span class="stat-label">${card.label}</span><span class="stat-value">${card.value}</span><span class="stat-hint">${card.hint}</span></div>`)
+      .map(card => html`<div class="stat"><span class="stat-label">${card.label}</span><span class="stat-value">${card.value}</span><span class="stat-hint">${card.hint}</span></div>`)
       .join("");
   }
 
@@ -142,7 +143,7 @@
     });
     const current = state.filters.status;
     elements.statusFilter.innerHTML = Array.from(statuses)
-      .map(status => `<option value="${status}">${status === "ALL" ? "All statuses" : status}</option>`)
+      .map(status => html`<option value="${status}">${status === "ALL" ? "All statuses" : status}</option>`)
       .join("");
     elements.statusFilter.value = current && statuses.has(current) ? current : "ALL";
     state.filters.status = elements.statusFilter.value;
@@ -190,9 +191,9 @@
   function renderHeatmap() {
     const { model } = state.payload;
     const months = model.monthOrder || [];
-    elements.heatmapHeader.innerHTML = ["<span></span>", ...months.map(month => `<span>${month.label}</span>`)].join("");
+    elements.heatmapHeader.innerHTML = [html`<span></span>`, ...months.map(month => html`<span>${month.label}</span>`)].join("");
     if (!model.tagMatrix?.length) {
-      elements.heatmap.innerHTML = '<p class="empty-state">No tag data captured.</p>';
+      elements.heatmap.innerHTML = html`<p class="empty-state">No tag data captured.</p>`;
       return;
     }
     const max = Math.max(...model.tagMatrix.flatMap(row => row.monthly.map(cell => cell.count)), 1);
@@ -201,10 +202,10 @@
         const cells = row.monthly
           .map(cell => {
             const intensity = cell.count / max;
-            return `<span class="heat-cell" data-tag="${row.tag}" data-month="${cell.key}" style="--intensity:${intensity}">${cell.count || ""}</span>`;
+            return html`<span class="heat-cell" data-tag=${row.tag} data-month=${cell.key} style="--intensity:${intensity}">${cell.count || ""}</span>`;
           })
           .join("");
-        return `<div class="heatmap-row"><span class="tag">${row.tag}</span>${cells}</div>`;
+        return html`<div class="heatmap-row"><span class="tag">${row.tag}</span>${raw(cells)}</div>`;
       })
       .join("");
     elements.heatmap.querySelectorAll(".heat-cell").forEach(cell => {
@@ -239,13 +240,13 @@
     const { model } = state.payload;
     const filtered = applyTaskFilters(model.taskFeed || []);
     if (!filtered.length) {
-      elements.taskList.innerHTML = '<div class="empty-state">No tasks match the current filters.</div>';
+      elements.taskList.innerHTML = html`<div class="empty-state">No tasks match the current filters.</div>`;
       return;
     }
     elements.taskList.innerHTML = filtered
       .map(task => {
-        const tags = (task.tags || []).map(tag => `<span class="tag-chip">${tag}</span>`).join(" ");
-        return `<button class="task-item" data-line="${task.lineNumber}"><span class="task-title">${task.title}</span><div class="task-meta"><span>${task.displayDate || task.date}</span><span>${task.status}</span><span>${task.monthLabel}</span></div><div>${tags}</div></button>`;
+        const tags = (task.tags || []).map(tag => html`<span class="tag-chip">${tag}</span>`).join(" ");
+        return html`<button class="task-item" data-line="${String(task.lineNumber)}"><span class="task-title">${task.title}</span><div class="task-meta"><span>${task.displayDate || task.date}</span><span>${task.status}</span><span>${task.monthLabel}</span></div><div>${raw(tags)}</div></button>`;
       })
       .join("");
     elements.taskList.querySelectorAll(".task-item").forEach(item => {
@@ -285,7 +286,7 @@
         renderTasks();
       }));
     }
-    elements.activeFilters.innerHTML = chips.length ? chips.join("") : '<span class="muted">No filters active.</span>';
+    elements.activeFilters.innerHTML = chips.length ? chips.join("") : html`<span class="muted">No filters active.</span>`;
   }
 
   function filterChip(label, onRemove) {
@@ -296,7 +297,7 @@
         node.addEventListener("click", onRemove);
       }
     }, 0);
-    return `<span class="filter-chip" id="${id}">${label}<svg viewBox="0 0 10 10"><path fill="currentColor" d="M1 1 L9 9 M9 1 L1 9" stroke="currentColor" stroke-width="1.2"/></svg></span>`;
+    return html`<span class="filter-chip" id="${id}">${label}<svg viewBox="0 0 10 10"><path fill="currentColor" d="M1 1 L9 9 M9 1 L1 9" stroke="currentColor" stroke-width="1.2"/></svg></span>`;
   }
 
   function toggleDownloads() {
@@ -361,16 +362,16 @@
         }
       : null;
     if (state.csvError) {
-      elements.csvHead.innerHTML = "";
-      elements.csvBody.innerHTML = '<tr><td class="empty" colspan="1">' + escapeHtml(state.csvError) + "</td></tr>";
+      elements.csvHead.replaceChildren();
+      elements.csvBody.innerHTML = html`<tr><td class="empty" colspan="1">${state.csvError}</td></tr>`;
       elements.csvNote.textContent = "CSV export unavailable.";
       updateCsvColgroup(0);
       return;
     }
     const { header, rows } = getFilteredCsvRows();
     if (!header.length) {
-      elements.csvHead.innerHTML = "";
-      elements.csvBody.innerHTML = '<tr><td class="empty" colspan="1">No rows were parsed from the CSV.</td></tr>';
+      elements.csvHead.replaceChildren();
+      elements.csvBody.innerHTML = html`<tr><td class="empty" colspan="1">No rows were parsed from the CSV.</td></tr>`;
       elements.csvNote.textContent = "CSV export contains no data.";
       updateCsvColgroup(0);
       return;
@@ -379,10 +380,10 @@
     updateCsvColgroup(colCount);
     elements.csvHead.innerHTML = buildCsvHeaderHtml(header);
     if (!rows.length) {
-      elements.csvBody.innerHTML = `<tr><td class="empty" colspan="${colCount}">No tasks match the current column filters.</td></tr>`;
+      elements.csvBody.innerHTML = html`<tr><td class="empty" colspan="${colCount}">No tasks match the current column filters.</td></tr>`;
     } else {
       elements.csvBody.innerHTML = rows
-        .map(row => `<tr>${header.map((_, index) => `<td>${escapeHtml(row[index] || "")}</td>`).join("")}</tr>`)
+        .map(row => html`<tr>${raw(header.map((_, index) => html`<td>${row[index] || ""}</td>`).join(""))}</tr>`)
         .join("");
     }
     wireCsvHeaderEvents();
@@ -412,7 +413,7 @@
       state.csvColumnWidths.length = columnCount;
     }
     if (columnCount <= 0) {
-      elements.csvColgroup.innerHTML = "";
+      elements.csvColgroup.replaceChildren();
       applyCsvTableWidth(null);
       return;
     }
@@ -421,7 +422,7 @@
       return Math.max(70, typeof width === "number" ? width : DEFAULT_COLUMN_WIDTH);
     });
     const cols = widths
-      .map((size, index) => `<col data-col="${index}" style="width:${size}px">`)
+      .map((size, index) => html`<col data-col="${index}" style="width:${size}px">`)
       .join("");
     elements.csvColgroup.innerHTML = cols;
     const totalWidth = widths.reduce((sum, value) => sum + value, 0);
@@ -445,16 +446,16 @@
       .map((col, index) => {
         const isActive = sort.column === index;
         const indicator = isActive ? (sort.direction === "asc" ? "↑" : "↓") : "";
-        return `<th data-col="${index}"><button class="header-button" data-col="${index}">${escapeHtml(col)}<span class="sort-indicator">${indicator}</span></button><span class="column-resizer" data-resize="${index}" title="Drag to resize"></span></th>`;
+        return html`<th data-col="${String(index)}"><button class="header-button" data-col="${String(index)}">${col}<span class="sort-indicator">${indicator}</span></button><span class="column-resizer" data-resize="${String(index)}" title="Drag to resize"></span></th>`;
       })
       .join("");
     const filterRow = header
       .map((_, index) => {
         const value = state.csvFilters[index] || "";
-        return `<th><input type="text" class="filter-input" data-filter="${index}" value="${escapeHtml(value)}" placeholder="Filter" /></th>`;
+        return html`<th><input type="text" class="filter-input" data-filter="${String(index)}" value="${value}" placeholder="Filter" /></th>`;
       })
       .join("");
-    return `<tr>${headerRow}</tr><tr class="filter-row">${filterRow}</tr>`;
+    return html`<tr>${raw(headerRow)}</tr><tr class="filter-row">${raw(filterRow)}</tr>`;
   }
 
   function initializeCsvColumnWidthsIfNeeded() {
@@ -641,12 +642,4 @@
     return rows.filter(entry => entry.length);
   }
 
-  function escapeHtml(value) {
-    return String(value ?? "")
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;")
-      .replace(/'/g, "&#39;");
-  }
 })();
