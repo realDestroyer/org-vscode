@@ -6,7 +6,11 @@ const { generateExecutiveReportForFile } = require("./yearExecutiveReport");
 const { buildDashboardModel } = require("./yearReportBuilder");
 
 const dashboardScriptPath = path.join(__dirname, "..", "media", "yearDashboardView.js");
+const htmlUtilsScriptPath = path.join(__dirname, "..", "media", "htmlUtils.browser.js");
+const htmScriptPath = path.join(__dirname, "..", "media", "htm.js");
 let cachedDashboardScript = null;
+let cachedHtmlUtilsScript = null;
+let cachedHtmScript = null;
 
 let dashboardPanel = null;
 let dashboardState = null;
@@ -714,9 +718,41 @@ function getDashboardHtml(webview, nonce) {
     </section>
   </div>
 
+  <script nonce="${nonce}">${loadHtmScript()}</script>
+  <script nonce="${nonce}">${loadHtmlUtilsScript()}</script>
   <script nonce="${nonce}">${scriptSource}</script>
 </body>
 </html>`;
+}
+
+function loadHtmScript() {
+  if (cachedHtmScript !== null) {
+    return cachedHtmScript;
+  }
+
+  try {
+    cachedHtmScript = fs.readFileSync(htmScriptPath, "utf-8");
+  } catch (error) {
+    console.error("org-vscode: unable to load htm.js", error);
+    cachedHtmScript = "";
+  }
+
+  return cachedHtmScript;
+}
+
+function loadHtmlUtilsScript() {
+  if (cachedHtmlUtilsScript !== null) {
+    return cachedHtmlUtilsScript;
+  }
+
+  try {
+    cachedHtmlUtilsScript = fs.readFileSync(htmlUtilsScriptPath, "utf-8");
+  } catch (error) {
+    console.error("org-vscode: unable to load htmlUtils.browser.js", error);
+    cachedHtmlUtilsScript = "";
+  }
+
+  return cachedHtmlUtilsScript;
 }
 
 function loadDashboardScript() {
@@ -733,7 +769,10 @@ function loadDashboardScript() {
       if (!shell) {
         return;
       }
-      shell.innerHTML = '<p style="color:#f87171;font-family:Segoe UI,sans-serif">Year-in-Review assets were missing when the extension activated. Please reinstall org-vscode or run the build so that media/yearDashboardView.js is included.</p>';
+      const errP = document.createElement('p');
+      errP.style.cssText = 'color:#f87171;font-family:Segoe UI,sans-serif';
+      errP.textContent = 'Year-in-Review assets were missing when the extension activated. Please reinstall org-vscode or run the build so that media/yearDashboardView.js is included.';
+      shell.replaceChildren(errP);
     });`;
   }
 

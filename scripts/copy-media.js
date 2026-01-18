@@ -22,6 +22,17 @@ function main() {
   const mediaSourceDir = path.join(repoRoot, "org-vscode", "media");
   const mediaDestDir = path.join(repoRoot, "media");
 
+  // Copy htm library from node_modules
+  const htmSource = path.join(repoRoot, "node_modules", "htm", "dist", "htm.umd.js");
+  const htmDest = path.join(mediaDestDir, "htm.js");
+  fs.mkdirSync(mediaDestDir, { recursive: true });
+  if (fs.existsSync(htmSource)) {
+    fs.copyFileSync(htmSource, htmDest);
+    console.log(`[copy-media] Copied htm.js to: ${htmDest}`);
+  } else {
+    console.warn(`[copy-media] htm not found: ${htmSource}`);
+  }
+
   if (!fs.existsSync(mediaSourceDir)) {
     console.warn(`[copy-media] Source media folder not found: ${mediaSourceDir}`);
     console.warn("[copy-media] Skipping media copy.");

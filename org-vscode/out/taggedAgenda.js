@@ -11,6 +11,7 @@ const { applyRepeatersOnCompletion } = require("./repeatedTasks");
 const { computeLogbookInsertion, formatStateChangeEntry } = require("./orgLogbook");
 const { computeCheckboxStatsByHeadingLine, formatCheckboxStats, findCheckboxCookie } = require("./checkboxStats");
 const { computeCheckboxToggleEdits } = require("./checkboxToggle");
+const { html, escapeText, escapeAttr } = require("./htmlUtils");
 
 function escapeRegExp(text) {
   return String(text).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -533,7 +534,7 @@ function getTaggedWebviewContent(webview, nonce, localMomentJs, tag, items, skip
   const bucketClasses = ["todo", "in_progress", "continued", "done", "abandoned"];
   const stampsClosedKeywords = cycleKeywords.filter((k) => registry.stampsClosed(k));
   const errorBannerContent = (skippedFiles && skippedFiles.length > 0)
-    ? skippedFiles.map(s => `${s.file} (${s.reason})`).join("; ")
+    ? escapeText(skippedFiles.map(s => `${s.file} (${s.reason})`).join("; "))
     : "";
   const errorBannerClass = errorBannerContent ? "visible" : "";
   const grouped = {};
@@ -546,7 +547,7 @@ function getTaggedWebviewContent(webview, nonce, localMomentJs, tag, items, skip
   }
 
   const fileButtons = Object.keys(grouped).map(file =>
-    `<button class="file-tab" data-target="${file}">${file}</button>`
+    html`<button class="file-tab" data-target=${file}>${file}</button>`
   ).join(" ");
 
   const filePanels = Object.entries(grouped).map(([file, tasks]) => {
@@ -559,7 +560,7 @@ function getTaggedWebviewContent(webview, nonce, localMomentJs, tag, items, skip
 
       const taskTags = (item.tags && item.tags.length) ? item.tags : getAllTagsFromLine(item.line);
       const tagBubbles = taskTags.length
-        ? taskTags.map(t => `<span class="tag-badge">${t}</span>`).join("")
+        ? taskTags.map(t => html`<span class="tag-badge">${t}</span>`).join("")
         : "";
 
       const taskText = stripAllTagSyntax(item.line)
@@ -571,25 +572,16 @@ function getTaggedWebviewContent(webview, nonce, localMomentJs, tag, items, skip
 
       const cookie = findCheckboxCookie(item.line);
       const checkboxLabel = cookie
-        ? `<span class="checkbox-stats">${formatCheckboxStats({ checked: item.checkboxChecked, total: item.checkboxTotal }, cookie.mode)}</span>`
+        ? html`<span class="checkbox-stats">${formatCheckboxStats({ checked: item.checkboxChecked, total: item.checkboxTotal }, cookie.mode)}</span>`
         : "";
 
-      function escapeHtml(s) {
-        return String(s || "")
-          .replace(/&/g, "&amp;")
-          .replace(/</g, "&lt;")
-          .replace(/>/g, "&gt;")
-          .replace(/\"/g, "&quot;")
-          .replace(/'/g, "&#39;");
-      }
-
-      function escapeLeadingSpaces(s) {
+      function localEscapeLeadingSpaces(s) {
         const str = String(s || "");
         const m = str.match(/^(\s*)/);
         const lead = m ? m[1] : "";
         const rest = str.slice(lead.length);
-        const leadEsc = lead.replace(/ /g, "&nbsp;").replace(/\t/g, "&nbsp;&nbsp;");
-        return leadEsc + escapeHtml(rest);
+        const leadEsc = lead.replace(/ /g, "\u00A0").replace(/\t/g, "\u00A0\u00A0");
+        return leadEsc + rest;
       }
 
       function renderChildrenBlock(children, fileName) {
@@ -600,31 +592,26 @@ function getTaggedWebviewContent(webview, nonce, localMomentJs, tag, items, skip
           const lineNumber = c && typeof c === 'object' ? Number(c.lineNumber) : NaN;
           const m = text.match(/^(\s*)([-+*]|\d+[.)])\s+\[( |x|X|-)\]\s+(.*)$/);
           if (!m) {
-            return `<div class=\"detail-line\">${escapeLeadingSpaces(text)}</div>`;
+            return html`<div class="detail-line">${localEscapeLeadingSpaces(text)}</div>`;
           }
           const indentLen = (m[1] || "").length;
-          const bullet = escapeLeadingSpaces((m[1] || "") + (m[2] || "-"));
+          const bullet = localEscapeLeadingSpaces((m[1] || "") + (m[2] || "-"));
           const state = String(m[3] || " ");
-          const rest = escapeHtml(m[4] || "");
+          const rest = m[4] || "";
           const isChecked = state.toLowerCase() === "x";
           const isPartial = state === "-";
-          const checkedAttr = isChecked ? "checked" : "";
-          const partialAttr = isPartial ? "data-state=\\\"partial\\\"" : "";
-          const safeFile = escapeHtml(fileName);
           const safeLine = Number.isFinite(lineNumber) ? String(lineNumber) : "";
-          return (
-            `<div class=\"detail-line checkbox-line\">${bullet} ` +
-            `<input class=\"org-checkbox\" type=\"checkbox\" data-file=\"${safeFile}\" data-line=\"${safeLine}\" data-indent=\"${indentLen}\" ${partialAttr} ${checkedAttr}/> ` +
-            `<span class=\"checkbox-text\">${rest}</span></div>`
-          );
-        }).join("");
-        return `<details class=\"children-block\"><summary>Show Details</summary><div class=\"children-lines\">${linesHtml}</div></details>`;
+          const checkboxInput = html`<input class="org-checkbox" type="checkbox" data-file=${fileName} data-line=${safeLine} data-indent=${String(indentLen)} data-state=${isPartial ? "partial" : null} checked=${isChecked}/>`;
+          const restSpan = html`<span class="checkbox-text">${rest}</span>`;
+          return html`<div class="detail-line checkbox-line">${bullet} ${checkboxInput} ${restSpan}</div>`;
+        });
+        return html`<details class="children-block"><summary>Show Details</summary><div class="children-lines">${linesHtml}</div></details>`;
       }
 
       const childrenBlock = renderChildrenBlock(item.children, file);
 
       const lateLabel = scheduledDate && momentFromTimestampContent(scheduledDate, acceptedDateFormats, true).isBefore(moment(), "day")
-        ? `<span class="late">LATE: ${scheduledDate}</span>` : "";
+        ? html`<span class="late">LATE: ${scheduledDate}</span>` : "";
 
       let deadlineBadge = "";
       if (deadlineDate) {
@@ -633,23 +620,29 @@ function getTaggedWebviewContent(webview, nonce, localMomentJs, tag, items, skip
           const today = moment().startOf("day");
           const daysUntil = deadlineMoment.diff(today, "days");
           if (daysUntil < 0) {
-            deadlineBadge = `<span class="deadline deadline-overdue">⚠ OVERDUE: ${deadlineMoment.format("MMM Do")}</span>`;
+            deadlineBadge = html`<span class="deadline deadline-overdue">⚠ OVERDUE: ${deadlineMoment.format("MMM Do")}</span>`;
           } else if (daysUntil === 0) {
-            deadlineBadge = `<span class="deadline deadline-today">⚠ DUE TODAY</span>`;
+            deadlineBadge = html`<span class="deadline deadline-today">⚠ DUE TODAY</span>`;
           } else if (daysUntil <= 3) {
-            deadlineBadge = `<span class="deadline deadline-soon">⏰ Due in ${daysUntil} day${daysUntil > 1 ? 's' : ''}</span>`;
+            deadlineBadge = html`<span class="deadline deadline-soon">⏰ Due in ${daysUntil} day${daysUntil > 1 ? 's' : ''}</span>`;
           } else {
-            deadlineBadge = `<span class="deadline deadline-future">📅 Due: ${deadlineMoment.format("MMM Do")}</span>`;
+            deadlineBadge = html`<span class="deadline deadline-future">📅 Due: ${deadlineMoment.format("MMM Do")}</span>`;
           }
         }
       }
 
+      // Build individual elements with proper escaping
+      const filenameSpan = html`<span class="filename" data-file=${file} data-line=${String(item.lineNumber)}>${file}:</span>`;
+      const keywordSpan = html`<span class=${keywordClass} data-filename=${file} data-text=${cleanedTaskText} data-date=${scheduledDate}>${keyword}</span>`;
+      const taskTextSpan = html`<span class="taskText agenda-task-link" data-file=${file} data-line=${String(item.lineNumber)}>${cleanedTaskText}</span>`;
+
+      // Assemble using plain template literals since all parts are pre-built HTML
       return `
-        <div class="panel ${file}">
+        <div class="${escapeAttr("panel " + file)}">
           <div class="textDiv">
-            <span class="filename" data-file="${file}" data-line="${item.lineNumber}">${file}:</span>
-            <span class="${keywordClass}" data-filename="${file}" data-text="${cleanedTaskText}" data-date="${scheduledDate}">${keyword}</span>
-            <span class="taskText agenda-task-link" data-file="${file}" data-line="${item.lineNumber}">${cleanedTaskText}</span>
+            ${filenameSpan}
+            ${keywordSpan}
+            ${taskTextSpan}
             ${checkboxLabel}
             ${lateLabel}
             ${deadlineBadge}
@@ -660,14 +653,16 @@ function getTaggedWebviewContent(webview, nonce, localMomentJs, tag, items, skip
         </div>`;
     }).join("");
 
+    const fileHeading = html`<h3>${file}:</h3>`;
     return `
-        <div class="file-group" id="${file}" style="display: none;">
-              <h3>${file}:</h3>
+        <div class="file-group" id="${escapeAttr(file)}" style="display: none;">
+              ${fileHeading}
               ${taskPanels}
             </div>`;
   }).join("");
 
-  const csp = `default-src 'none'; img-src ${webview.cspSource} https: data:; style-src ${webview.cspSource} 'nonce-${nonce}' https:; script-src 'nonce-${nonce}' https:`;
+  // Defense-in-depth: don't allow arbitrary https scripts. Only allow cdnjs (moment fallback) + local webview.
+  const csp = `default-src 'none'; img-src ${webview.cspSource} https: data:; style-src ${webview.cspSource} 'nonce-${nonce}' https:; script-src ${webview.cspSource} 'nonce-${nonce}' https://cdnjs.cloudflare.com`;
   const cdnMomentJs = "https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js";
 
   return `

@@ -16,6 +16,7 @@ const vscode = require("vscode");
 const fs = require("fs");
 const path = require("path");
 const jsonc = require("jsonc-parser");
+const { html, escapeText, escapeAttr } = require("./htmlUtils");
 
 let keybindingCustomizerPanel = null;
 
@@ -465,31 +466,20 @@ function getNonce() {
   return text;
 }
 
-function escapeHtml(s) {
-  return String(s)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/\"/g, "&quot;")
-    .replace(/'/g, "&#39;");
-}
-
 function getWebviewContent(nonce, model) {
   const groupsHtml = (model.groups || []).map((g) => {
     const rowsHtml = (g.items || []).map((row) => {
-      const title = escapeHtml(row.title);
-      const summary = escapeHtml(row.summary || "");
-      const cmd = escapeHtml(row.command);
-      const defKey = escapeHtml(row.defaultKey || "");
-      const when = escapeHtml(row.when || "");
-      const currentKey = escapeHtml(row.currentKey || "");
+      const summary = row.summary || "";
+      const defKey = row.defaultKey || "";
+      const currentKey = row.currentKey || "";
+      const displayKey = currentKey ? currentKey : (defKey ? defKey : "(unbound)");
 
-      return `
-        <div class="scope-row" data-command="${cmd}">
+      return html`
+        <div class="scope-row" data-command=${row.command}>
           <div class="scope-info">
-            <span class="scope-name">${title}</span>
-            ${summary ? `<span class="scope-summary">${summary}</span>` : ""}
-            <span class="scope-technical">${cmd}</span>
+            <span class="scope-name">${row.title}</span>
+            ${summary ? html`<span class="scope-summary">${summary}</span>` : ""}
+            <span class="scope-technical">${row.command}</span>
             <span class="scope-technical">default: ${defKey || "(none)"}</span>
           </div>
           <div class="scope-controls">
@@ -497,27 +487,28 @@ function getWebviewContent(nonce, model) {
               <span class="control-heading">Key</span>
               <input type="text"
                      class="key-text"
-                     data-command="${cmd}"
-                     value="${currentKey}"
+                     data-command=${row.command}
+                     value=${currentKey}
                      placeholder="(use default)"
                      spellcheck="false"
-                     autocomplete="off">
+                     autocomplete="off" />
             </div>
-            <div class="preview" data-command="${cmd}">
-              ${currentKey ? currentKey : (defKey ? defKey : "(unbound)")}
+            <div class="preview" data-command=${row.command}>
+              ${displayKey}
             </div>
           </div>
         </div>
       `;
-    }).join("");
+    });
 
-    return `
+    const groupHeader = html`<h3 class="group-header">${g.name}</h3>`;
+    return html`
       <div class="scope-group">
-        <h3 class="group-header">${escapeHtml(g.name)}</h3>
+        ${groupHeader}
         ${rowsHtml}
       </div>
     `;
-  }).join("");
+  });
 
   return `<!DOCTYPE html>
 <html lang="en">

@@ -1,5 +1,6 @@
 const path = require("path");
 const moment = require("moment");
+const { html, SafeHtml, escapeText } = require("./htmlUtils");
 
 const ORG_SYMBOL_REGEX = /\s*[⊙⊖⊘⊜⊗]\s*/g;
 
@@ -121,28 +122,9 @@ function renderMarkdown(model) {
 }
 
 function renderHtml(model) {
-  const escape = escapeHtml;
-  return `<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8" />
-<title>${escape(model.year)} Year-in-Review</title>
-<style>
-  body { font-family: "Fira Sans", "Segoe UI", sans-serif; margin: 32px; color: #1f2328; }
-  h1 { font-size: 1.9rem; margin-bottom: 0.2rem; }
-  h2 { margin-top: 2rem; font-size: 1.3rem; }
-  ul { padding-left: 1.25rem; }
-  table { border-collapse: collapse; width: 100%; margin-top: 0.5rem; }
-  th, td { border: 1px solid #d0d7de; padding: 0.35rem 0.5rem; }
-  th { text-align: left; background: #f6f8fa; }
-  td.count { text-align: right; }
-  .muted { color: #57606a; font-style: italic; }
-  .lede { margin-bottom: 1.5rem; color: #4b5563; }
-</style>
-</head>
-<body>
-  <h1>${escape(model.year)} Year-in-Review</h1>
-  <p class="lede">Generated ${escape(model.generatedAt.toLocaleString())} from ${escape(model.sourceName)}.</p>
+  const body = html`<>
+  <h1>${model.year} Year-in-Review</h1>
+  <p class="lede">Generated ${model.generatedAt.toLocaleString()} from ${model.sourceName}.</p>
 
   <h2>Highlights</h2>
   <ul>
@@ -158,8 +140,30 @@ function renderHtml(model) {
   ${renderTaskSectionHtml("Notable Wins", model.wins)}
   ${renderTaskSectionHtml("Carryover Watch", model.carryover)}
   ${renderTaskSectionHtml("In-Progress Focus", model.inProgress)}
+</>`;
+
+  return new SafeHtml(`<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>${escapeText(model.year)} Year-in-Review</title>
+<style>
+  body { font-family: "Fira Sans", "Segoe UI", sans-serif; margin: 32px; color: #1f2328; }
+  h1 { font-size: 1.9rem; margin-bottom: 0.2rem; }
+  h2 { margin-top: 2rem; font-size: 1.3rem; }
+  ul { padding-left: 1.25rem; }
+  table { border-collapse: collapse; width: 100%; margin-top: 0.5rem; }
+  th, td { border: 1px solid #d0d7de; padding: 0.35rem 0.5rem; }
+  th { text-align: left; background: #f6f8fa; }
+  td.count { text-align: right; }
+  .muted { color: #57606a; font-style: italic; }
+  .lede { margin-bottom: 1.5rem; color: #4b5563; }
+</style>
+</head>
+<body>
+  ${body}
 </body>
-</html>`;
+</html>`);
 }
 
 function rankMap(map = {}, limit = Infinity) {
@@ -226,41 +230,37 @@ function renderTaskListMarkdown(title, tasks, emptyMessage) {
 
 function renderStatusHtml(entries) {
   if (!entries.length) {
-    return '<h2>Status Breakdown</h2><p class="muted">No task statuses recorded.</p>';
+    return html`<h2>Status Breakdown</h2><p class="muted">No task statuses recorded.</p>`;
   }
-  const list = entries.map(entry => `<li><strong>${escapeHtml(entry.label)}</strong>: ${entry.count}</li>`).join("");
-  return `<h2>Status Breakdown</h2><ul>${list}</ul>`;
+  const list = entries.map(entry => html`<li><strong>${entry.label}</strong>: ${entry.count}</li>`);
+  return html`<h2>Status Breakdown</h2><ul>${list}</ul>`;
 }
 
 function renderTagHtml(entries) {
   if (!entries.length) {
-    return '<h2>Tag Leaderboard</h2><p class="muted">No tags were captured in this file.</p>';
+    return html`<h2>Tag Leaderboard</h2><p class="muted">No tags were captured in this file.</p>`;
   }
-  const list = entries.map(entry => `<li>${escapeHtml(entry.label)}: ${entry.count} tasks</li>`).join("");
-  return `<h2>Tag Leaderboard</h2><ul>${list}</ul>`;
+  const list = entries.map(entry => html`<li>${entry.label}: ${entry.count} tasks</li>`);
+  return html`<h2>Tag Leaderboard</h2><ul>${list}</ul>`;
 }
 
 function renderTimelineHtml(entries) {
   if (!entries.length) {
-    return '<h2>Monthly Timeline</h2><p class="muted">No scheduled activity was detected.</p>';
+    return html`<h2>Monthly Timeline</h2><p class="muted">No scheduled activity was detected.</p>`;
   }
-  const rows = entries
-    .map(entry => `<tr><td>${escapeHtml(entry.label)}</td><td class="count">${entry.count}</td></tr>`)
-    .join("");
-  return `<h2>Monthly Timeline</h2><table><thead><tr><th>Month</th><th>Tasks</th></tr></thead><tbody>${rows}</tbody></table>`;
+  const rows = entries.map(entry => html`<tr><td>${entry.label}</td><td class="count">${entry.count}</td></tr>`);
+  return html`<h2>Monthly Timeline</h2><table><thead><tr><th>Month</th><th>Tasks</th></tr></thead><tbody>${rows}</tbody></table>`;
 }
 
 function renderTaskSectionHtml(title, tasks) {
   if (!tasks.length) {
-    return `<h2>${escapeHtml(title)}</h2><p class="muted">No items to show.</p>`;
+    return html`<h2>${title}</h2><p class="muted">No items to show.</p>`;
   }
-  const items = tasks
-    .map(task => {
-      const tagSuffix = task.tags.length ? ` <span class="muted">(tags: ${escapeHtml(task.tags.join(", "))})</span>` : "";
-      return `<li><strong>${escapeHtml(task.date)}</strong>: ${escapeHtml(task.title)}${tagSuffix}</li>`;
-    })
-    .join("");
-  return `<h2>${escapeHtml(title)}</h2><ul>${items}</ul>`;
+  const items = tasks.map(task => {
+    const tagSuffix = task.tags.length ? html` <span class="muted">(tags: ${task.tags.join(", ")})</span>` : "";
+    return html`<li><strong>${task.date}</strong>: ${task.title}${tagSuffix}</li>`;
+  });
+  return html`<h2>${title}</h2><ul>${items}</ul>`;
 }
 
 function sanitizeText(value) {
@@ -393,15 +393,6 @@ function formatDisplayDate(date, weekday) {
   }
   const label = parsed.format("MMM DD");
   return weekday ? `${label} · ${weekday}` : label;
-}
-
-function escapeHtml(value) {
-  return String(value)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
 }
 
 module.exports = {
