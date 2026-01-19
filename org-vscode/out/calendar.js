@@ -5,7 +5,7 @@ const fs = require("fs");           // File system module to read/write org file
 const path = require("path");       // For cross-platform path handling
 const moment = require("moment");   // Date formatting library
 const taskKeywordManager = require("./taskKeywordManager");
-const { getAllTagsFromLine, stripAllTagSyntax, parseFileTagsFromText, createInheritanceTracker, getPlanningForHeading, isPlanningLine, normalizeTagsAfterPlanning, getAcceptedDateFormats, buildScheduledReplacement, getMatchingScheduledOnLine, SCHEDULED_STRIP_RE, SCHEDULED_REGEX, DEADLINE_REGEX, momentFromTimestampContent, extractPlainTimestamps } = require("./orgTagUtils");
+const { getAllTagsFromLine, stripAllTagSyntax, parseFileTagsFromText, createInheritanceTracker, getPlanningForHeading, isPlanningLine, normalizeTagsAfterPlanning, getAcceptedDateFormats, buildScheduledReplacement, getMatchingScheduledOnLine, rescheduleScheduledForHeadingByIndex, SCHEDULED_STRIP_RE, SCHEDULED_REGEX, DEADLINE_REGEX, momentFromTimestampContent, extractPlainTimestamps } = require("./orgTagUtils");
 const { normalizeBodyIndentation } = require("./indentUtils");
 
 function escapeRegExp(text) {
@@ -129,6 +129,7 @@ function sendTasksToCalendar(panel) {
                   file: file,
                   tags: [],
                   id: file + '#' + lineIndex,  // Timestamp line for jumping
+                  line: lineIndex + 1,
                   error: null,
                   originalDate: ts.date,
                   isPlainTimestamp: true
@@ -176,6 +177,7 @@ function sendTasksToCalendar(panel) {
               file: file,
               tags: tags,
               id: file + '#' + lineIndex, // stable id for rescheduling
+              line: lineIndex + 1,
               error: parseError,
               originalDate: scheduledDate
             });
@@ -308,45 +310,21 @@ function rescheduleTaskById(taskId, newDate) {
 
   const config = vscode.workspace.getConfiguration("Org-vscode");
   const dateFormat = config.get("dateFormat", "YYYY-MM-DD");
+  const bodyIndent = normalizeBodyIndentation(config.get("bodyIndentation", 2), 2);
 
   let parsedNewDate = moment(newDate, ["YYYY-MM-DD", dateFormat, "MM-DD-YYYY", "DD-MM-YYYY"], true);
   if (!parsedNewDate.isValid()) {
     vscode.window.showErrorMessage('Invalid date format for reschedule.');
     return;
   }
-  const formattedNewDate = parsedNewDate.format(dateFormat);
-
-  // Replace or insert SCHEDULED: <MM-DD-YYYY> on that line (active timestamp for agenda)
-  const headlineText = normalizeTagsAfterPlanning(lines[lineIndex])
-    .replace(SCHEDULED_STRIP_RE, "")
-    .trimRight();
-  lines[lineIndex] = headlineText;
-
-  const headlineIndent = headlineText.match(/^\s*/)?.[0] || "";
-  const planningIndent = `${headlineIndent}${bodyIndent}`;
-  const scheduledTag = `SCHEDULED: <${formattedNewDate}>`;
-
-  const nextLine = (lineIndex + 1 < lines.length) ? lines[lineIndex + 1] : "";
-  if (isPlanningLine(nextLine)) {
-    const indent = nextLine.match(/^\s*/)?.[0] || planningIndent;
-    let body = String(nextLine).trim()
-      .replace(SCHEDULED_STRIP_RE, "")
-      .replace(/\s{2,}/g, " ")
-      .trim();
-
-    if (DEADLINE_REGEX.test(body)) {
-      body = body.replace(DEADLINE_REGEX, `${scheduledTag}  $&`);
-    } else {
-      body = body ? `${body}  ${scheduledTag}` : scheduledTag;
-    }
-
-    lines[lineIndex + 1] = `${indent}${body}`;
-  } else {
-    lines.splice(lineIndex + 1, 0, `${planningIndent}${scheduledTag}`);
+  const result = rescheduleScheduledForHeadingByIndex(lines, lineIndex, parsedNewDate, dateFormat, bodyIndent);
+  if (!result.updated) {
+    vscode.window.showErrorMessage('Could not find task to reschedule.');
+    return;
   }
 
-  fs.writeFileSync(filePath, lines.join('\n'), 'utf-8');
-  vscode.window.showInformationMessage(`Task rescheduled to ${formattedNewDate} in ${file}`);
+  fs.writeFileSync(filePath, result.lines.join('\n'), 'utf-8');
+  vscode.window.showInformationMessage(`Task rescheduled to ${result.formattedNewDate} in ${file}`);
   refreshCalendarView();
 }
 
@@ -393,7 +371,22 @@ function openCalendarView() {
       // Open a specific org file in the editor
       let filePath = path.join(setMainDir(), message.file);
       vscode.workspace.openTextDocument(vscode.Uri.file(filePath)).then(doc => {
-        vscode.window.showTextDocument(doc, vscode.ViewColumn.One, false);
+        vscode.window.showTextDocument(doc, {
+          viewColumn: vscode.ViewColumn.One,
+          preserveFocus: false,
+          selection: (typeof message.line === 'number' && Number.isFinite(message.line))
+            ? new vscode.Range(
+              new vscode.Position(Math.max(0, Math.floor(message.line) - 1), 0),
+              new vscode.Position(Math.max(0, Math.floor(message.line) - 1), 0)
+            )
+            : undefined
+        }).then(editor => {
+          if (!editor) return;
+          if (typeof message.line !== 'number' || !Number.isFinite(message.line)) return;
+          const line = Math.max(0, Math.floor(message.line) - 1);
+          const pos = new vscode.Position(line, 0);
+          editor.revealRange(new vscode.Range(pos, pos), vscode.TextEditorRevealType.InCenter);
+        });
       });
 
     } else if (message.command === "rescheduleTask") {
@@ -539,7 +532,7 @@ function getCalendarWebviewContent({ webview, nonce }) {
           borderColor:t.error?'':color,
           textColor:'#ffffff',
           classNames:t.error?['event-error']:[],
-          extendedProps:{file:t.file,originalDate:t.originalDate||t.date,fullText:t.fullText,error:t.error||null,isError:!!t.error}
+          extendedProps:{file:t.file,line:t.line||null,originalDate:t.originalDate||t.date,fullText:t.fullText,error:t.error||null,isError:!!t.error}
         };
       }));
       const status=document.getElementById('status');
@@ -573,7 +566,7 @@ function getCalendarWebviewContent({ webview, nonce }) {
         headerToolbar:{left:'prev,next today',center:'title',right:'dayGridMonth,timeGridWeek,timeGridDay'},
         editable:true,
         datesSet:info=>renderCurrentRange({start:info.start,end:info.end}),
-        eventClick:i=>vscode.postMessage({command:'openFile',file:i.event.extendedProps.file}),
+        eventClick:i=>vscode.postMessage({command:'openFile',file:i.event.extendedProps.file,line:i.event.extendedProps.line}),
         eventDrop:i=>{
           const nd=moment(i.event.start).format(orgDateFormat);
           vscode.postMessage({command:'rescheduleTask',id:i.event.id,file:i.event.extendedProps.file,oldDate:i.event.extendedProps.originalDate,newDate:nd,text:i.event.extendedProps.fullText});

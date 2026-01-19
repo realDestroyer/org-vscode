@@ -2,7 +2,7 @@ const assert = require('assert');
 const path = require('path');
 const moment = require('moment');
 
-const { getAcceptedDateFormats, SCHEDULED_REGEX, buildScheduledReplacement, getMatchingScheduledOnLine } = require(path.join(__dirname, '..', '..', 'out', 'orgTagUtils.js'));
+const { getAcceptedDateFormats, SCHEDULED_REGEX, buildScheduledReplacement, getMatchingScheduledOnLine, rescheduleScheduledForHeadingByIndex } = require(path.join(__dirname, '..', '..', 'out', 'orgTagUtils.js'));
 
 // Test that SCHEDULED_REGEX correctly matches various formats
 // Capture groups: (1) open-bracket, (2) date, (3) dayname, (4) time-start, (5) time-end,
@@ -176,6 +176,47 @@ function testTimeWithoutDayAbbrev() {
   assert.strictEqual(timeResult, "SCHEDULED: [2026-01-11 14:30]", "Should preserve time without adding ddd");
 }
 
+function testRescheduleByHeadingIndex_PreservesRepeaterOnPlanningLine() {
+  const dateFormat = "YYYY-MM-DD";
+  const parsedNewDate = moment("2026-01-11", "YYYY-MM-DD", true);
+  const bodyIndent = "  ";
+
+  const lines = [
+    "* TODO Pay rent",
+    "  SCHEDULED: <2026-01-10 Sat +1m>  DEADLINE: <2026-01-15 Thu>",
+    "  Some body text"
+  ];
+
+  const result = rescheduleScheduledForHeadingByIndex(lines, 0, parsedNewDate, dateFormat, bodyIndent);
+  assert.strictEqual(result.updated, true, "Should update/insert scheduled stamp");
+  assert.strictEqual(result.inserted, false, "Should update existing planning-line stamp, not insert a new line");
+  assert.strictEqual(
+    result.lines[1],
+    "  SCHEDULED: <2026-01-11 Sun +1m>  DEADLINE: <2026-01-15 Thu>",
+    "Should update date and weekday, preserving repeater and keeping DEADLINE"
+  );
+}
+
+function testRescheduleByHeadingIndex_UpdatesRegularScheduledOnHeadingLine() {
+  const dateFormat = "YYYY-MM-DD";
+  const parsedNewDate = moment("2026-01-11", "YYYY-MM-DD", true);
+  const bodyIndent = "  ";
+
+  const lines = [
+    "* TODO Submit report  SCHEDULED: <2026-01-10 Sat>",
+    "  Notes"
+  ];
+
+  const result = rescheduleScheduledForHeadingByIndex(lines, 0, parsedNewDate, dateFormat, bodyIndent);
+  assert.strictEqual(result.updated, true, "Should update inline scheduled stamp");
+  assert.strictEqual(result.inserted, false, "Should update inline stamp, not insert planning line");
+  assert.strictEqual(
+    result.lines[0],
+    "* TODO Submit report  SCHEDULED: <2026-01-11 Sun>",
+    "Should update date and weekday on heading line"
+  );
+}
+
 module.exports = {
   name: 'unit/calendar-reschedule',
   run: () => {
@@ -184,5 +225,7 @@ module.exports = {
     testGetMatchingScheduledOnLine();
     testMMDDYYYYFormat();
     testTimeWithoutDayAbbrev();
+    testRescheduleByHeadingIndex_PreservesRepeaterOnPlanningLine();
+    testRescheduleByHeadingIndex_UpdatesRegularScheduledOnHeadingLine();
   }
 };
