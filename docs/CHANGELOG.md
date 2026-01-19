@@ -7,6 +7,15 @@
 - (none)
 
 
+# [2.2.11] 01-18-26
+
+`Fixed`
+
+- **Calendar View drag/drop reschedule:** Fixed a regression where dragging events did not update the source file's `SCHEDULED:` stamp under the newer timestamp syntax.
+  - Preserves existing timestamp style (brackets, weekday/time) and repeater/warning cookies.
+  - Added unit coverage to prevent future regressions, including repeater cases.
+
+
 # [2.2.10] 01-17-26
 
 `Fixed / Enhanced`

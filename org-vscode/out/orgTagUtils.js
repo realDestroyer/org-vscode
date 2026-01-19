@@ -652,6 +652,78 @@ function getMatchingScheduledOnLine(line, targetDate, acceptedDateFormats) {
 }
 
 /**
+ * Reschedule (or insert) a SCHEDULED timestamp for a heading at a known line index.
+ *
+ * Used by Calendar drag/drop, where we know the heading line but not the original date.
+ * Preserves bracket type, weekday/time/range, repeater, and warning when updating an existing stamp.
+ *
+ * @param {string[]} lines
+ * @param {number} headingLineIndex - 0-based index of the heading line
+ * @param {moment.Moment} parsedNewDate
+ * @param {string} dateFormat
+ * @param {string} bodyIndent - indentation string to use for inserted planning lines (e.g. "  ")
+ * @returns {{lines: string[], updated: boolean, inserted: boolean, formattedNewDate: string, updatedLineIndex: number|null}}
+ */
+function rescheduleScheduledForHeadingByIndex(lines, headingLineIndex, parsedNewDate, dateFormat, bodyIndent) {
+  const src = Array.isArray(lines) ? lines : [];
+  const out = src.slice();
+  if (headingLineIndex < 0 || headingLineIndex >= out.length) {
+    return { lines: out, updated: false, inserted: false, formattedNewDate: '', updatedLineIndex: null };
+  }
+
+  const formattedNewDate = parsedNewDate.format(dateFormat);
+
+  const tryUpdateOnLine = (idx) => {
+    const line = out[idx];
+    const match = String(line).match(SCHEDULED_REGEX);
+    if (!match) return false;
+    out[idx] = String(line).replace(SCHEDULED_REGEX, buildScheduledReplacement(match, parsedNewDate, formattedNewDate));
+    return true;
+  };
+
+  // Prefer updating an existing stamp (headline line first, then planning line).
+  if (tryUpdateOnLine(headingLineIndex)) {
+    return { lines: out, updated: true, inserted: false, formattedNewDate, updatedLineIndex: headingLineIndex };
+  }
+  if (headingLineIndex + 1 < out.length && isPlanningLine(out[headingLineIndex + 1])) {
+    if (tryUpdateOnLine(headingLineIndex + 1)) {
+      return { lines: out, updated: true, inserted: false, formattedNewDate, updatedLineIndex: headingLineIndex + 1 };
+    }
+  }
+
+  // No existing stamp found: insert/augment a planning line below the heading.
+  const headlineText = normalizeTagsAfterPlanning(out[headingLineIndex])
+    .replace(SCHEDULED_STRIP_RE, "")
+    .trimRight();
+  out[headingLineIndex] = headlineText;
+
+  const headlineIndent = headlineText.match(/^\s*/)?.[0] || "";
+  const planningIndent = `${headlineIndent}${bodyIndent || ""}`;
+  const scheduledTag = `SCHEDULED: <${formattedNewDate}>`;
+
+  const nextLine = (headingLineIndex + 1 < out.length) ? out[headingLineIndex + 1] : "";
+  if (isPlanningLine(nextLine)) {
+    const indent = String(nextLine).match(/^\s*/)?.[0] || planningIndent;
+    let body = String(nextLine).trim()
+      .replace(SCHEDULED_STRIP_RE, "")
+      .replace(/\s{2,}/g, " ")
+      .trim();
+
+    if (DEADLINE_REGEX.test(body)) {
+      body = body.replace(DEADLINE_REGEX, `${scheduledTag}  $&`);
+    } else {
+      body = body ? `${body}  ${scheduledTag}` : scheduledTag;
+    }
+
+    out[headingLineIndex + 1] = `${indent}${body}`;
+    return { lines: out, updated: true, inserted: true, formattedNewDate, updatedLineIndex: headingLineIndex + 1 };
+  }
+
+  out.splice(headingLineIndex + 1, 0, `${planningIndent}${scheduledTag}`);
+  return { lines: out, updated: true, inserted: true, formattedNewDate, updatedLineIndex: headingLineIndex + 1 };
+}
+
+/**
  * Parse a repeater string like "+1d", "++1w", ".+1m"
  * @param {string} repeaterStr - The repeater string
  * @returns {object|null} { type: '+' | '++' | '.+', value: number, unit: 'h'|'d'|'w'|'m'|'y' } or null
@@ -885,6 +957,7 @@ module.exports = {
   momentFromTimestampContent,
   buildScheduledReplacement,
   getMatchingScheduledOnLine,
+  rescheduleScheduledForHeadingByIndex,
   parseRepeater,
   getRepeaterFromTimestamp,
   advanceDateByRepeater,
