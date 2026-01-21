@@ -38,6 +38,7 @@ Org-vscode helps you manage tasks, notes, and projects in plain text `.org` file
 - Subtree completion stats on headings (TODO subtree completion + checkbox completion)
 - Emphasis rendering for `*bold*`, `/italic/`, `_underline_`, `+strike+`
 - Org-mode syntax highlighting for common constructs: lists, code blocks, links, priorities (`[#A]`), property drawers, directives (`#+...`), and basic math fragments
+- Execute `#+BEGIN_SRC` code blocks (Org-babel-style MVP) and insert/update `#+RESULTS:` immediately (CodeLens + right-click + command palette)
 - Live Preview (HTML) with editor → preview scroll sync
 - Math symbol decorations (experimental): renders common LaTeX commands (e.g. `\alpha`) as Unicode glyphs while editing
 - Smart navigation helpers: Document Outline (headings) + clickable Org links (including `[[*heading]]`, `[[id:...]]`, `[[#target]]`, `file:`, `http(s)`, `mailto:`)
@@ -97,6 +98,8 @@ Most editing shortcuts support multi-line selection: highlight multiple task lin
 | `Ctrl + Alt + P`     | Open Live Preview to the side                          |
 | `Ctrl + Shift + E`   | Export all active (non-DONE) tasks to CurrentTasks.org |
 | `Ctrl + Alt + M`     | Show popup message (GitHub link)                       |
+
+Src block execution currently has no default keybinding (use CodeLens, right-click, or Command Palette: **Org-vscode: Execute Src Block**).
 
 ---
 

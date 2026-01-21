@@ -2,7 +2,7 @@
 	"name": "org-vscode",
 	"displayName": "org-vscode",
 	"description": "Quickly create todo lists, take notes, plan projects and organize your thoughts.",
-	"version": "2.2.11",
+	"version": "2.2.12",
 	"repository": "https://www.github.com/realDestroyer/org-vscode",
 	"icon": "Images/org-vscode-logo.png",
 	"publisher": "realDestroyer",
@@ -31,7 +31,8 @@
 		"onCommand:orgMode.generateExecutiveReport",
 		"onCommand:orgMode.openYearInReview",
 		"onCommand:org-vscode.insertNewElement",
-		"onCommand:org-vscode.setRepeater"
+		"onCommand:org-vscode.setRepeater",
+		"onCommand:org-vscode.executeSrcBlock"
 	],
 	"keywords": [
 		"todo",
@@ -513,6 +514,43 @@
 					"order": 11,
 					"default": false,
 					"description": "When enabled, only active timestamps <YYYY-MM-DD...> appear in agenda and calendar views (standard Org behavior where inactive [...] timestamps are reference-only). When disabled (default), both <...> and [...] timestamps appear in agenda views for backward compatibility with older org-vscode files."
+				},
+				"Org-vscode.srcExecution.pythonCommand": {
+					"type": "string",
+					"order": 20,
+					"default": "",
+					"description": "Executable used to run #+BEGIN_SRC python blocks. Leave blank to auto-detect (python, python3)."
+				},
+				"Org-vscode.srcExecution.powershellCommand": {
+					"type": "string",
+					"order": 20.1,
+					"default": "",
+					"description": "Executable used to run #+BEGIN_SRC powershell blocks. Leave blank to auto-detect (pwsh, powershell)."
+				},
+				"Org-vscode.srcExecution.bashCommand": {
+					"type": "string",
+					"order": 20.2,
+					"default": "",
+					"description": "Executable used to run #+BEGIN_SRC bash blocks. Leave blank to auto-detect (bash)."
+				},
+				"Org-vscode.srcExecution.javascriptCommand": {
+					"type": "string",
+					"order": 20.3,
+					"default": "",
+					"description": "Executable used to run #+BEGIN_SRC javascript blocks. Leave blank to auto-detect (node)."
+				},
+				"Org-vscode.srcExecution.cppCompiler": {
+					"type": "string",
+					"order": 20.4,
+					"default": "",
+					"description": "C++ compiler executable for #+BEGIN_SRC cpp blocks (e.g. g++, clang++, cl). Leave blank to auto-detect."
+				},
+				"Org-vscode.srcExecution.cppCompilerStyle": {
+					"type": "string",
+					"order": 20.5,
+					"enum": ["auto", "gcc", "msvc"],
+					"default": "auto",
+					"description": "How to invoke the configured C++ compiler: auto (guess based on compiler), gcc (g++/clang++ flags), or msvc (cl.exe flags)."
 				}
 			}
 		},
@@ -526,6 +564,11 @@
 				"command": "org-vscode.openPreview",
 				"category": "Org-vscode",
 				"title": "Open Preview"
+			},
+			{
+				"command": "org-vscode.executeSrcBlock",
+				"category": "Org-vscode",
+				"title": "Execute Src Block"
 			},
 			{
 				"command": "org-vscode.openPreviewToSide",
@@ -911,6 +954,15 @@
 				"when": "editorTextFocus"
 			}
 		],
+		"menus": {
+			"editor/context": [
+				{
+					"command": "org-vscode.executeSrcBlock",
+					"group": "org-vscode@10",
+					"when": "(editorLangId == 'vso' || editorLangId == 'org' || editorLangId == 'vsorg' || editorLangId == 'org-vscode') && editorTextFocus"
+				}
+			]
+		},
 		"languages": [
 			{
 				"id": "vso",

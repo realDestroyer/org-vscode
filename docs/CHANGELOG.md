@@ -7,6 +7,17 @@
 - (none)
 
 
+# [2.2.12] 01-20-26
+
+`Added / Enhanced`
+
+- **Src block execution (Org-babel-style MVP):** Execute `#+BEGIN_SRC <language> ... #+END_SRC` blocks and insert/update `#+RESULTS:` immediately after the block.
+  - Supported (MVP): Python, PowerShell, Bash, JavaScript (Node), C++.
+  - UX: CodeLens above `#+BEGIN_SRC`, editor right-click menu, and command palette command: `Org-vscode: Execute Src Block`.
+  - **Settings UI:** Added per-language executable settings (`Org-vscode.srcExecution.*`) and C++ compiler style (`Org-vscode.srcExecution.cppCompilerStyle`).
+  - Safety: disabled in untrusted workspaces (VS Code Workspace Trust).
+
+
 # [2.2.11] 01-18-26
 
 `Fixed`
