@@ -263,12 +263,51 @@
 
 # 24) Blocks: SRC blocks and other BEGIN/END blocks
 * TODO Block syntax demo :BLOCKS:
+  # 24a) SRC block execution (Org-babel-style MVP)
+  # Put your cursor anywhere inside a SRC block and execute it:
+  # - Click the CodeLens above #+BEGIN_SRC: “Execute src block”
+  # - OR right-click → “Execute Src Block”
+  # - OR run from Command Palette: Org-vscode: Execute Src Block
+  #
+  # After execution, Org-vscode will insert/update a #+RESULTS: block immediately after #+END_SRC.
+  # Notes:
+  # - Execution is disabled in untrusted workspaces (VS Code Workspace Trust).
+  # - Some languages require external tools on PATH (e.g., C++ needs a compiler).
+  # - You can configure per-language executables in Settings: Org-vscode.srcExecution.*
+
   #+BEGIN_SRC javascript
-  function greet(name) {
-    console.log(`Hello, ${name}`);
-  }
-  greet("Org-vscode");
+  console.log("Hello from JavaScript");
   #+END_SRC
+  #+RESULTS:
+  : Hello from JavaScript
+
+  #+BEGIN_SRC python
+  print("Hello from Python")
+  #+END_SRC
+  #+RESULTS:
+  : Hello from Python
+
+  #+BEGIN_SRC powershell
+  Write-Output "Hello from PowerShell"
+  #+END_SRC
+  #+RESULTS:
+  : Hello from PowerShell
+
+  #+BEGIN_SRC bash
+  echo "Hello from Bash"
+  #+END_SRC
+  #+RESULTS:
+  : Hello from Bash
+
+  #+BEGIN_SRC cpp
+  #include <iostream>
+  int main() {
+    std::cout << "Hello from C++" << std::endl;
+    return 0;
+  }
+  #+END_SRC
+  #+RESULTS:
+  : Hello from C++
 
   #+BEGIN_QUOTE
   Quoted block text.

@@ -65,6 +65,8 @@ const { toggleCheckboxItemAtCursor } = require("./toggleCheckboxItem");
 const { insertNewElement } = require("./smartInsertNewElement");
 const { registerPropertyCommands } = require("./propertyCommands");
 const { computeDesiredIndentForNewLine } = require("./indentUtils");
+const { executeSrcBlock } = require("./srcBlockExecution");
+const { registerSrcBlockCodeLens } = require("./srcBlockCodeLens");
 const setRepeater = require("./setRepeater");
 const taskKeywordManager = require("./taskKeywordManager");
 
@@ -282,9 +284,13 @@ function activate(ctx) {
   ctx.subscriptions.push(vscode.commands.registerCommand("extension.toggleCheckboxCookie", toggleCheckboxCookie));
   ctx.subscriptions.push(vscode.commands.registerCommand("extension.toggleCheckboxItem", toggleCheckboxItemAtCursor));
   ctx.subscriptions.push(vscode.commands.registerCommand("org-vscode.insertNewElement", insertNewElement));
+  ctx.subscriptions.push(vscode.commands.registerCommand("org-vscode.executeSrcBlock", executeSrcBlock));
 
   // org-vscode.insertTable is registered inside insertTable.activate()
   insertTable.activate(ctx);
+
+  // CodeLens for executing #+BEGIN_SRC blocks
+  registerSrcBlockCodeLens(ctx);
 
   // Register real-time formatter for " " after typing an asterisk heading
   ctx.subscriptions.push(

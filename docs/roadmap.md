@@ -1,6 +1,6 @@
 ﻿# Roadmap
 
-Live version: 2.2.10
+Live version: 2.2.12
 
 These are the features that I have either already implemented, or plan to in the near future.
 
@@ -9,6 +9,7 @@ These are the features that I have either already implemented, or plan to in the
 | Feature Name              | Description                                                                                | Progress    | Version  | Author        |
 | ------------------------- | ------------------------------------------------------------------------------------------ | ----------- | -------- | ------------- |
 | LaTeX fragment rendering (org-fragtog-style) | Render LaTeX fragments as “inline images” (full math fragment preview, not only symbol substitutions) | Not Started |  | realDestroyer |
+| Src block execution (Org-babel-style) | Execute `#+BEGIN_SRC` blocks and insert/update `#+RESULTS:` immediately (Python/PowerShell/Bash/JS/C++), with CodeLens + context menu | DONE | v2.2.12 | realDestroyer |
 | TODO Notifications        | Notify users of status outside VSCode (email, sms, etc.)                                   | Not Started |          | realDestroyer |
 | Make Titles Unique        | Don't allow duplicate titles                                                               | Not Started |          | realDestroyer |
 | Calendar Right-Click Menu | Right-click task to create, duplicate, or delete in calendar                              | In Progress |          | realDestroyer |

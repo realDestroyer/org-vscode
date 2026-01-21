@@ -30,6 +30,7 @@ function createVscodeMock() {
 
     languages: {
       registerOnTypeFormattingEditProvider: () => disposable(),
+      registerCodeLensProvider: () => disposable(),
       registerDocumentLinkProvider: () => disposable(),
       registerDocumentSymbolProvider: () => disposable(),
       registerCompletionItemProvider: () => disposable()
@@ -56,6 +57,10 @@ function createVscodeMock() {
 
     Position: function () {},
     Range: function () {},
+    CodeLens: function () {
+      // allow `new vscode.CodeLens(range, command)` in activation
+      return {};
+    },
     TextEdit: {
       replace: () => ({}),
       insert: () => ({}),

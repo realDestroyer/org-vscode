@@ -272,6 +272,55 @@ console.log('hello')
 #+END_SRC
 ```
 
+### ▶️ Src block execution (Org-babel-style MVP) <a id="src-block-execution"></a>
+
+Org-vscode can execute `#+BEGIN_SRC <language> ... #+END_SRC` blocks and immediately insert (or update) a `#+RESULTS:` block right after the `#+END_SRC`.
+
+**How to run a block:**
+
+- Click the CodeLens above `#+BEGIN_SRC` (**Execute src block**)
+- Or right-click in the editor → **Execute Src Block**
+- Or run from Command Palette: **Org-vscode: Execute Src Block**
+
+**Supported languages (MVP):** Python, PowerShell, Bash, JavaScript (Node), C++.
+
+**Results format (MVP):** results are inserted as:
+
+```org
+#+RESULTS:
+: <line 1>
+: <line 2>
+```
+
+Example:
+
+```org
+#+BEGIN_SRC python
+print("Hello")
+#+END_SRC
+#+RESULTS:
+: Hello
+```
+
+**Security / trust:** execution is disabled when the workspace is not trusted (VS Code Workspace Trust).
+
+**Tooling requirements:**
+
+- Python requires a Python executable (`python`/`python3` or your configured command)
+- PowerShell uses `pwsh` (preferred) or `powershell`
+- JavaScript uses `node`
+- Bash uses `bash` (typically via WSL, Git Bash, or MSYS on Windows)
+- C++ requires a compiler (`g++`, `clang++`, or `cl` from Visual Studio Build Tools)
+
+**Configuration (Settings UI):**
+
+- `Org-vscode.srcExecution.pythonCommand`
+- `Org-vscode.srcExecution.powershellCommand`
+- `Org-vscode.srcExecution.bashCommand`
+- `Org-vscode.srcExecution.javascriptCommand`
+- `Org-vscode.srcExecution.cppCompiler`
+- `Org-vscode.srcExecution.cppCompilerStyle` (`auto`, `gcc`, `msvc`)
+
 - Inline fragments:
 
 ```org
