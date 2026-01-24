@@ -7,6 +7,14 @@
 - (none)
 
 
+# [2.2.13] 01-23-26
+
+`Fixed`
+
+- **Reopening tasks no longer stamps CLOSED:** Transitions from done-like states (e.g. `DONE`) back to non-done states (e.g. `TODO`) no longer insert a `CLOSED: [...]` timestamp.
+  - `CLOSED` stamping is now gated on both `isDoneLike` and `stampsClosed` for consistent behavior across state cycling and Set TODO State.
+
+
 # [2.2.12] 01-20-26
 
 `Added / Enhanced`
