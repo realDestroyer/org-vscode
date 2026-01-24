@@ -100,7 +100,7 @@ module.exports = async function () {
     const cleanedText = taskKeywordManager.cleanTaskText(headlineNoPlanning);
     const { keyword: rotatedKeyword } = taskKeywordManager.rotateKeyword(currentKeyword, "left");
     const completionTransition = workflowRegistry.isDoneLike(rotatedKeyword) && !workflowRegistry.isDoneLike(currentKeyword);
-    const completionStampsClosed = workflowRegistry.stampsClosed(rotatedKeyword);
+    const completionStampsClosed = workflowRegistry.isDoneLike(rotatedKeyword) && workflowRegistry.stampsClosed(rotatedKeyword);
 
     const completionTimestamp = moment().format(`${dateFormat} ddd HH:mm`);
 

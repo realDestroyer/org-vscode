@@ -72,7 +72,7 @@ function computeTodoStateChange(params) {
   }
 
   if (effectiveKeyword === targetKeyword) {
-    if (workflowRegistry.stampsClosed(targetKeyword)) {
+    if (workflowRegistry.isDoneLike(targetKeyword) && workflowRegistry.stampsClosed(targetKeyword)) {
       mergedPlanning.closed = moment().format(`${dateFormat} ddd HH:mm`);
     } else if (workflowRegistry.stampsClosed(currentKeyword)) {
       mergedPlanning.closed = null;
@@ -253,7 +253,7 @@ async function setTodoState() {
           originalFile,
           cleanedText,
           nextKeyword: effectiveKeyword,
-          stampsClosed: workflowRegistry.stampsClosed(effectiveKeyword),
+          stampsClosed: workflowRegistry.isDoneLike(effectiveKeyword) && workflowRegistry.stampsClosed(effectiveKeyword),
           headingMarkerStyle
         });
       }

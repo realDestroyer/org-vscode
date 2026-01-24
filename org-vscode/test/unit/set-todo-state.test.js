@@ -160,6 +160,46 @@ function testAlreadyDoneNoChange() {
   assert.strictEqual(result.mergedPlanning.scheduled, "2026-01-15 Thu +1d", "Should NOT advance (already done)");
 }
 
+function testReopenDoneToTodoClearsClosed() {
+  const registry = createDefaultRegistry();
+  const result = computeTodoStateChange({
+    currentLineText: "* DONE Finished task",
+    nextLineText: "  CLOSED: [2026-01-22 Thu 14:34]",
+    nextNextLineText: "  :LOGBOOK:",
+    targetKeyword: "TODO",
+    dateFormat: "YYYY-MM-DD",
+    bodyIndent: "  ",
+    headingMarkerStyle: "asterisk",
+    workflowRegistry: registry
+  });
+
+  assert.strictEqual(result.effectiveKeyword, "TODO", "Should transition to TODO");
+  assert.strictEqual(result.mergedPlanning.closed, null, "Should clear CLOSED timestamp when reopening");
+  assert.strictEqual(result.planningBody, "", "Should not emit a planning line when only CLOSED existed");
+}
+
+function testNonDoneStateNeverStampsClosedEvenIfConfigured() {
+  // Misconfiguration guard: stampsClosed=true on a non-done-like state should not produce CLOSED.
+  const registry = createWorkflowRegistry([
+    { keyword: "TODO", isDoneLike: false, stampsClosed: true, triggersForward: false },
+    { keyword: "DONE", isDoneLike: true, stampsClosed: true, triggersForward: false }
+  ]);
+
+  const result = computeTodoStateChange({
+    currentLineText: "* DONE Was done",
+    nextLineText: "  CLOSED: [2026-01-22 Thu 14:34]",
+    nextNextLineText: null,
+    targetKeyword: "TODO",
+    dateFormat: "YYYY-MM-DD",
+    bodyIndent: "  ",
+    headingMarkerStyle: "asterisk",
+    workflowRegistry: registry
+  });
+
+  assert.strictEqual(result.effectiveKeyword, "TODO", "Should transition to TODO");
+  assert.strictEqual(result.mergedPlanning.closed, null, "Should not stamp CLOSED on non-done-like state");
+}
+
 function testAllRepeaterUnits() {
   const registry = createDefaultRegistry();
 
@@ -266,6 +306,8 @@ module.exports = {
     testDeadlineWithRepeater();
     testBuildPlanningBody();
     testAlreadyDoneNoChange();
+    testReopenDoneToTodoClearsClosed();
+    testNonDoneStateNeverStampsClosedEvenIfConfigured();
     testAllRepeaterUnits();
     testCatchUpFromYearsAgo();
   }
