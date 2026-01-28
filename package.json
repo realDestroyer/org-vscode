@@ -2,7 +2,7 @@
 	"name": "org-vscode",
 	"displayName": "org-vscode",
 	"description": "Quickly create todo lists, take notes, plan projects and organize your thoughts.",
-	"version": "2.2.13",
+	"version": "2.2.14",
 	"repository": "https://www.github.com/realDestroyer/org-vscode",
 	"icon": "Images/org-vscode-logo.png",
 	"publisher": "realDestroyer",
@@ -359,11 +359,29 @@
 					],
 					"description": "org file date format (YYYY-MM-DD is the Emacs Org-mode standard)"
 				},
+				"Org-vscode.agendaIncludeDeadlines": {
+					"type": "boolean",
+					"order": 6.9,
+					"default": true,
+					"description": "When enabled, the Agenda View includes tasks with DEADLINE dates even if they have no SCHEDULED date."
+				},
+				"Org-vscode.agendaIncludeUndated": {
+					"type": "boolean",
+					"order": 6.91,
+					"default": true,
+					"description": "When enabled, the Agenda View includes an [UNDATED] section for tasks that have no SCHEDULED/DEADLINE date."
+				},
 				"Org-vscode.includeContinuedInTaggedAgenda": {
 					"type": "boolean",
 					"order": 7,
 					"default": false,
 					"description": "When enabled, Tagged Agenda results will include CONTINUED tasks. By default they are omitted since CONTINUED is intended as a historical breadcrumb when a task moved forward."
+				},
+				"Org-vscode.taggedAgendaIncludeAllStatuses": {
+					"type": "boolean",
+					"order": 7.001,
+					"default": true,
+					"description": "When enabled, Tagged Agenda results will include tasks of all statuses (DONE/ABANDONED/etc.) for reporting and analytics. When disabled, states marked as hidden from Tagged Agenda are omitted (except CONTINUED when includeContinuedInTaggedAgenda is enabled)."
 				},
 				"Org-vscode.alignSchedulesAlignTags": {
 					"type": "boolean",

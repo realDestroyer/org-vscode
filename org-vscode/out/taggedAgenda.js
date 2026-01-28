@@ -44,6 +44,7 @@ module.exports = async function taggedAgenda() {
   const config = vscode.workspace.getConfiguration("Org-vscode");
   const bodyIndent = normalizeBodyIndentation(config.get("bodyIndentation", 2), 2);
   const includeContinuedInTaggedAgenda = config.get("includeContinuedInTaggedAgenda", false);
+  const taggedAgendaIncludeAllStatuses = config.get("taggedAgendaIncludeAllStatuses", true);
   const registry = taskKeywordManager.getWorkflowRegistry();
   const headingStartRegex = buildHeadingStartRegex(registry);
 
@@ -139,10 +140,13 @@ module.exports = async function taggedAgenda() {
       }
 
       // Default: hide states marked as hidden from tagged agenda.
-      const state = (registry.states || []).find((s) => s.keyword === status);
-      const taggedVis = state && state.taggedAgendaVisibility ? state.taggedAgendaVisibility : "show";
-      if (taggedVis === "hide" && !includeContinuedInTaggedAgenda) {
-        return;
+      // Optionally include *all* statuses for reporting/analytics.
+      if (!taggedAgendaIncludeAllStatuses) {
+        const state = (registry.states || []).find((s) => s.keyword === status);
+        const taggedVis = state && state.taggedAgendaVisibility ? state.taggedAgendaVisibility : "show";
+        if (taggedVis === "hide" && !includeContinuedInTaggedAgenda) {
+          return;
+        }
       }
 
       const taskTags = tagState.inheritedTags;
@@ -195,7 +199,7 @@ module.exports = async function taggedAgenda() {
   showTaggedAgendaView(matchExpr, agendaItems, skippedFiles);
 };
 
-async function updateTaskStatusInFile(file, taskText, scheduledDate, newStatus, removeCompleted) {
+async function updateTaskStatusInFile(file, taskText, scheduledDate, newStatus, removeCompleted, requestedLineNumber) {
   try {
     const registry = taskKeywordManager.getWorkflowRegistry();
     const headingStartRegex = buildHeadingStartRegex(registry);
@@ -226,6 +230,27 @@ async function updateTaskStatusInFile(file, taskText, scheduledDate, newStatus, 
 
     let taskLineNumber = -1;
     const docLines = document.getText().split(/\r?\n/);
+
+    const requestedIdx = Number.isFinite(requestedLineNumber) ? (requestedLineNumber - 1) : -1;
+    if (requestedIdx >= 0 && requestedIdx < document.lineCount) {
+      const lineText = document.lineAt(requestedIdx).text;
+      const keyword = taskKeywordManager.findTaskKeyword(lineText);
+      const startsWithSymbol = headingStartRegex.test(lineText);
+      if (keyword && startsWithSymbol) {
+        const normalizedHeadlineText = normalizeTaskTextFromHeadline(lineText);
+        const matchesTask = normalizedHeadlineText === String(taskText || "").trim();
+        let matchesDate = true;
+        if (dateTag) {
+          const planning = getPlanningForHeading(docLines, requestedIdx);
+          matchesDate = planning && planning.scheduled ? (`SCHEDULED: <${planning.scheduled}>` === dateTag) : false;
+        }
+        if (matchesTask && matchesDate) {
+          taskLineNumber = requestedIdx;
+        }
+      }
+    }
+
+    if (taskLineNumber === -1) {
     for (let i = 0; i < document.lineCount; i++) {
       const lineText = document.lineAt(i).text;
       const keyword = taskKeywordManager.findTaskKeyword(lineText);
@@ -250,6 +275,7 @@ async function updateTaskStatusInFile(file, taskText, scheduledDate, newStatus, 
 
       taskLineNumber = i;
       break;
+    }
     }
 
     if (taskLineNumber === -1) {
@@ -483,10 +509,11 @@ function showTaggedAgendaView(tag, items, skippedFiles) {
       const file = parts[1];
       const taskText = (parts[2] || "").replaceAll("&#44;", ",").trim();
       const scheduledDate = parts[3];
+      const lineNumber = Number(parts[4]);
       const removeCompleted = message.text.includes("REMOVE_CLOSED") || message.text.includes("REMOVE_COMPLETED");
-      console.log("🔄 Changing status:", newStatus, "in file:", file, "for task:", taskText, "with scheduled date:", scheduledDate);
+      console.log("🔄 Changing status:", newStatus, "in file:", file, "for task:", taskText, "with scheduled date:", scheduledDate, "line:", lineNumber);
 
-      updateTaskStatusInFile(file, taskText, scheduledDate, newStatus, removeCompleted);
+      updateTaskStatusInFile(file, taskText, scheduledDate, newStatus, removeCompleted, Number.isFinite(lineNumber) ? lineNumber : null);
     } else if (message.command === "toggleCheckbox") {
       const file = String(message.file || "");
       const lineNumber = Number(message.lineNumber);
@@ -551,12 +578,32 @@ function getTaggedWebviewContent(webview, nonce, localMomentJs, tag, items, skip
   ).join(" ");
 
   const filePanels = Object.entries(grouped).map(([file, tasks]) => {
-    const taskPanels = tasks.map(item => {
+    const datedTasks = [];
+    const undatedTasks = [];
+    for (const t of tasks) {
+      if (t && (t.scheduledDate || t.deadlineDate)) datedTasks.push(t);
+      else undatedTasks.push(t);
+    }
+
+    const renderTaskPanel = (item) => {
       const keyword = taskKeywordManager.findTaskKeyword(item.line) || (cycleKeywords[0] || "TODO");
       const keywordClass = getKeywordBucket(keyword, registry);
 
       const scheduledDate = item.scheduledDate || "";
       const deadlineDate = item.deadlineDate || "";
+
+      let datePillClass = "scheduled scheduledTag";
+      let datePillText = "";
+      if (scheduledDate) {
+        datePillClass = "scheduled scheduledTag";
+        datePillText = `SCHEDULED ${scheduledDate}`;
+      } else if (deadlineDate) {
+        datePillClass = "scheduled deadlineTag";
+        datePillText = `DEADLINE ${deadlineDate}`;
+      } else {
+        datePillClass = "scheduled undatedTag";
+        datePillText = "UNDATED";
+      }
 
       const taskTags = (item.tags && item.tags.length) ? item.tags : getAllTagsFromLine(item.line);
       const tagBubbles = taskTags.length
@@ -633,7 +680,7 @@ function getTaggedWebviewContent(webview, nonce, localMomentJs, tag, items, skip
 
       // Build individual elements with proper escaping
       const filenameSpan = html`<span class="filename" data-file=${file} data-line=${String(item.lineNumber)}>${file}:</span>`;
-      const keywordSpan = html`<span class=${keywordClass} data-filename=${file} data-text=${cleanedTaskText} data-date=${scheduledDate}>${keyword}</span>`;
+      const keywordSpan = html`<span class=${keywordClass} data-filename=${file} data-text=${cleanedTaskText} data-date=${scheduledDate} data-line=${String(item.lineNumber)}>${keyword}</span>`;
       const taskTextSpan = html`<span class="taskText agenda-task-link" data-file=${file} data-line=${String(item.lineNumber)}>${cleanedTaskText}</span>`;
 
       // Assemble using plain template literals since all parts are pre-built HTML
@@ -646,12 +693,17 @@ function getTaggedWebviewContent(webview, nonce, localMomentJs, tag, items, skip
             ${checkboxLabel}
             ${lateLabel}
             ${deadlineBadge}
-            <span class="scheduled">SCHEDULED</span>
+            <span class="${escapeAttr(datePillClass)}">${escapeText(datePillText)}</span>
             ${tagBubbles}
           </div>
           ${childrenBlock}
         </div>`;
-    }).join("");
+    };
+
+    const datedPanels = datedTasks.map(renderTaskPanel).join("");
+    const undatedPanels = undatedTasks.map(renderTaskPanel).join("");
+    const undatedHeader = undatedPanels ? `<div class="section-header">UNDATED</div>` : "";
+    const taskPanels = `${datedPanels}${undatedHeader}${undatedPanels}`;
 
     const fileHeading = html`<h3>${file}:</h3>`;
     return `
@@ -879,6 +931,20 @@ body{
           margin-left: 10px;
           margin-top: 10px;
           box-shadow: 0 3px 6px rgba(0,0,0,0.16), 0 3px 6px rgba(0,0,0,0.23);
+        }
+
+        .scheduled.deadlineTag{
+          background-color: #ffb3b3;
+        }
+
+        .scheduled.undatedTag{
+          background-color: #d1d1d1;
+        }
+
+        .section-header{
+          margin: 12px 0 6px;
+          font-weight: 700;
+          opacity: 0.85;
         }
 
         .textDiv{
@@ -1222,7 +1288,8 @@ body{
 
               let safeText = event.target.dataset.text.replaceAll(",", "&#44;");
               let safeDate = event.target.dataset.date.replaceAll(",", "&#44;");
-              let messageText = nextStatus + "," + event.target.dataset.filename + "," + safeText + "," + safeDate;
+              const safeLine = String(event.target.dataset.line || "").replaceAll(",", "&#44;");
+              let messageText = nextStatus + "," + event.target.dataset.filename + "," + safeText + "," + safeDate + "," + safeLine;
 
                 if (stampsClosed.includes(nextStatus)) {
                   let completedDate = moment();
