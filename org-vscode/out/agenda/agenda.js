@@ -47,6 +47,8 @@ module.exports = function () {
   let config = vscode.workspace.getConfiguration("Org-vscode");
     let folderPath = config.get("folderPath");
     let dateFormat = config.get("dateFormat", "YYYY-MM-DD");
+    const agendaIncludeDeadlines = config.get("agendaIncludeDeadlines", true);
+    const agendaIncludeUndated = config.get("agendaIncludeUndated", true);
     let acceptedDateFormats = getAcceptedDateFormats(dateFormat);
     const registry = taskKeywordManager.getWorkflowRegistry();
     const headingStartRegex = buildHeadingStartRegex(registry);
@@ -159,15 +161,14 @@ module.exports = function () {
                 currentHeadingLine = j + 1;
               }
 
-              // Only show TODO and IN_PROGRESS tasks - exclude DONE, CONTINUED, and ABANDONED
+              // Only show visible agenda tasks (filtering is per-workflow state)
               const planning = getPlanningForHeading(fileText, j);
-              const hasScheduled = Boolean(planning && planning.scheduled);
               const status = taskKeywordManager.findTaskKeyword(element);
               const state = status ? (registry.states || []).find((s) => s.keyword === status) : null;
               const agendaVis = state && state.agendaVisibility ? state.agendaVisibility : "show";
               const isVisibleAgendaTask = Boolean(status && agendaVis === "show" && headingStartRegex.test(element));
               
-              if (hasScheduled && isVisibleAgendaTask) {
+              if (isVisibleAgendaTask) {
 
                 // Capture indented child lines that belong to the current task
                 const baseIndent = element.match(/^\s*/)?.[0] || "";
@@ -193,24 +194,37 @@ module.exports = function () {
                 // Prefer planning-parsed deadline for the task; fallback to deadlines found in child lines.
                 const deadlineStr = (planning && planning.deadline) ? planning.deadline : deadlineFromChildren;
 
-                // Extract core task text and scheduled date
-                const taskTextMatch = element;
-                getDateFromTaskText = planning && planning.scheduled ? [null, planning.scheduled] : null;
+                const hasScheduled = Boolean(planning && planning.scheduled);
+                const hasDeadline = Boolean(deadlineStr);
+                const isUndated = !hasScheduled && !hasDeadline;
+                const shouldInclude = hasScheduled || (agendaIncludeDeadlines && hasDeadline) || (agendaIncludeUndated && isUndated);
 
-                if (taskTextMatch && getDateFromTaskText) {
+                // Extract core task text and agenda date (scheduled preferred; else deadline)
+                const taskTextMatch = element;
+                const agendaDateContent = hasScheduled ? planning.scheduled : (hasDeadline ? deadlineStr : null);
+                getDateFromTaskText = agendaDateContent ? [null, agendaDateContent] : null;
+
+                if (shouldInclude && taskTextMatch) {
                   taskKeywordMatch = status;
 
                   const normalizedHeadline = stripInlinePlanning(normalizeTagsAfterPlanning(taskTextMatch));
                   taskText = taskKeywordManager.cleanTaskText(stripAllTagSyntax(normalizedHeadline)).trim();
 
-                  // Format the task's scheduled date for grouping and display
-                  const scheduledMoment = momentFromTimestampContent(getDateFromTaskText[1], acceptedDateFormats, true);
-                  if (!scheduledMoment.isValid()) {
-                    continue;
+                  const undatedClass = "[UNDATED]";
+                  let scheduledMoment = null;
+                  let formattedDate = "";
+                  let nameOfDay = "";
+                  let cleanDate = "";
+                  if (getDateFromTaskText) {
+                    // Format the task's agenda date for grouping and display
+                    scheduledMoment = momentFromTimestampContent(getDateFromTaskText[1], acceptedDateFormats, true);
+                    if (!scheduledMoment.isValid()) {
+                      continue;
+                    }
+                    formattedDate = scheduledMoment.format(dateFormat);
+                    nameOfDay = scheduledMoment.format("dddd");
+                    cleanDate = `[${formattedDate}]`;
                   }
-                  let formattedDate = scheduledMoment.format(dateFormat);
-                  let nameOfDay = scheduledMoment.format("dddd");
-                  let cleanDate = `[${formattedDate}]`;
 
                   // Create collapsible child block (if child lines exist)
                   let childrenBlock = renderChildrenBlock(children, items[i]);
@@ -249,34 +263,46 @@ module.exports = function () {
                   const taskLineNumber = j + 1;
                   const filenameSpan = html`<span class="filename" data-file=${items[i]} data-line=${String(taskLineNumber)}>${items[i]}:</span>`;
                   const taskTextSpan = html`<span class="taskText agenda-task-link" data-file=${items[i]} data-line=${String(taskLineNumber)}>${taskText}</span>`;
+                  const planningLabelSpan = hasScheduled
+                    ? html`<span class="scheduled">SCHEDULED</span>`
+                    : (hasDeadline ? html`<span class="deadlineTag">DEADLINE</span>` : html`<span class="undatedTag">UNDATED</span>`);
                   if (taskKeywordMatch) {
                     const bucket = getKeywordBucket(taskKeywordMatch, registry);
-                    const keywordSpan = html`<span class=${bucket} data-filename=${items[i]} data-text=${taskText} data-date=${cleanDate}>${taskKeywordMatch}</span>`;
-                    renderedTask = html`<>${filenameSpan} ${keywordSpan}${taskTextSpan}${checkboxBadge}<span class="scheduled">SCHEDULED</span>${deadlineBadge}</>`;
+                    const dateAttr = getDateFromTaskText ? cleanDate : "";
+                    const keywordSpan = html`<span class=${bucket} data-filename=${items[i]} data-text=${taskText} data-date=${dateAttr} data-line=${String(taskLineNumber)}>${taskKeywordMatch}</span>`;
+                    renderedTask = html`<>${filenameSpan} ${keywordSpan}${taskTextSpan}${checkboxBadge}${planningLabelSpan}${deadlineBadge}</>`;
                   } else {
-                    renderedTask = html`<>${filenameSpan} ${taskTextSpan}${checkboxBadge}<span class="scheduled">SCHEDULED</span>${deadlineBadge}</>`;
+                    renderedTask = html`<>${filenameSpan} ${taskTextSpan}${checkboxBadge}${planningLabelSpan}${deadlineBadge}</>`;
                   }
 
                   // Clear the current date array and group task appropriately by date
                   convertedDateArray = [];
 
-                  // If task is today or future
-                  if (scheduledMoment.isSameOrAfter(moment().startOf("day"), "day")) {
-                    const dateDiv = html`<div class=${"heading" + nameOfDay + " " + cleanDate}><h4 class=${cleanDate}>${cleanDate}, ${nameOfDay.toUpperCase()}</h4></div>`;
-                    const textDiv = html`<div class=${"panel " + cleanDate}>${renderedTask}${childrenBlock}</div>`;
+                  if (!getDateFromTaskText) {
+                    const dateDiv = html`<div class=${"headingUndated " + undatedClass}><h4 class=${undatedClass}>${undatedClass}, UNDATED</h4></div>`;
+                    const textDiv = html`<div class=${"panel " + undatedClass}>${renderedTask}${childrenBlock}</div>`;
                     convertedDateArray.push({ date: dateDiv, text: textDiv });
                   } else {
-                    // If task is overdue
-                    let today = moment().format(dateFormat);
-                    let overdue = moment().format("dddd");
-
-                    if (scheduledMoment.isBefore(moment().startOf("day"), "day")) {
-                      const todayClass = "[" + today + "]";
-                      const lateDate = momentFromTimestampContent(getDateFromTaskText[1], acceptedDateFormats, true).format(dateFormat);
-                      const lateBadge = html`<span class="late">LATE: ${lateDate}</span>`;
-                      const dateDiv = html`<div class=${"heading" + overdue + " " + todayClass}><h4 class=${todayClass}>${todayClass}, ${overdue.toUpperCase()}</h4></div>`;
-                      const textDiv = html`<div class=${"panel " + todayClass}>${renderedTask}${lateBadge}${childrenBlock}</div>`;
+                    // If task is today or future
+                    if (scheduledMoment.isSameOrAfter(moment().startOf("day"), "day")) {
+                      const dateDiv = html`<div class=${"heading" + nameOfDay + " " + cleanDate}><h4 class=${cleanDate}>${cleanDate}, ${nameOfDay.toUpperCase()}</h4></div>`;
+                      const textDiv = html`<div class=${"panel " + cleanDate}>${renderedTask}${childrenBlock}</div>`;
                       convertedDateArray.push({ date: dateDiv, text: textDiv });
+                    } else {
+                      // If task is overdue
+                      let today = moment().format(dateFormat);
+                      let overdue = moment().format("dddd");
+
+                      if (scheduledMoment.isBefore(moment().startOf("day"), "day")) {
+                        const todayClass = "[" + today + "]";
+                        const lateDate = momentFromTimestampContent(getDateFromTaskText[1], acceptedDateFormats, true).format(dateFormat);
+                        const lateBadge = hasScheduled
+                          ? html`<span class="late">LATE: ${lateDate}</span>`
+                          : html`<span class="late">DEADLINE: ${lateDate}</span>`;
+                        const dateDiv = html`<div class=${"heading" + overdue + " " + todayClass}><h4 class=${todayClass}>${todayClass}, ${overdue.toUpperCase()}</h4></div>`;
+                        const textDiv = html`<div class=${"panel " + todayClass}>${renderedTask}${lateBadge}${childrenBlock}</div>`;
+                        convertedDateArray.push({ date: dateDiv, text: textDiv });
+                      }
                     }
                   }
 
@@ -418,7 +444,10 @@ module.exports = function () {
           const fileName = parts[1];
           const taskText = (parts[2] || "").replaceAll("&#44;", ",");
           const date = (parts[3] || "").replaceAll("&#44;", ",");
-          const flags = parts.slice(4);
+          const maybeLine = parts[4];
+          const hasLine = typeof maybeLine === "string" && /^\d+$/.test(maybeLine);
+          const requestedLineNumber = hasLine ? Number(maybeLine) : null;
+          const flags = parts.slice(hasLine ? 5 : 4);
           const removeClosed = flags.includes("REMOVE_CLOSED") || flags.includes("REMOVE_COMPLETED");
           let filePath = path.join(setMainDir(), fileName);
           const uri = vscode.Uri.file(filePath);
@@ -434,6 +463,22 @@ module.exports = function () {
 
             const dateOnly = String(date || "").replace(/^\[|\]$/g, "");
             let taskLineNumber = -1;
+
+            // Prefer an exact line match when provided by the webview.
+            if (requestedLineNumber && Number.isFinite(requestedLineNumber) && requestedLineNumber > 0) {
+              const idx = requestedLineNumber - 1;
+              if (idx >= 0 && idx < document.lineCount) {
+                const candidateText = document.lineAt(idx).text;
+                const candidateKeyword = taskKeywordManager.findTaskKeyword(candidateText);
+                const candidateIsHeading = headingStartRegex.test(candidateText);
+                const candidateNorm = normalizeHeadlineToTitle(candidateText);
+                if (candidateKeyword && candidateIsHeading && candidateNorm === String(taskText || "").trim()) {
+                  taskLineNumber = idx;
+                }
+              }
+            }
+
+            if (taskLineNumber === -1) {
             for (let i = 0; i < document.lineCount; i++) {
               const lineText = document.lineAt(i).text;
               const keyword = taskKeywordManager.findTaskKeyword(lineText);
@@ -450,20 +495,51 @@ module.exports = function () {
               if (dateOnly) {
                 const planning = getPlanningForHeading(lines, i);
                 const scheduled = planning && planning.scheduled ? planning.scheduled : null;
-                if (!scheduled) {
-                  continue;
+                let deadline = planning && planning.deadline ? planning.deadline : null;
+
+                // Back-compat: allow DEADLINE to live on a child planning line.
+                if (!deadline) {
+                  const baseIndent = lineText.match(/^\s*/)?.[0] || "";
+                  for (let k = i + 1; k < lines.length; k++) {
+                    const nextLine = lines[k];
+                    const nextIndent = nextLine.match(/^\s*/)?.[0] || "";
+                    if (nextIndent.length > baseIndent.length) {
+                      const p = parsePlanningFromText(nextLine);
+                      if (p && p.deadline) {
+                        deadline = p.deadline;
+                        break;
+                      }
+                    } else {
+                      break;
+                    }
+                  }
                 }
-                const scheduledMoment = momentFromTimestampContent(scheduled, acceptedDateFormats, true);
-                if (!scheduledMoment.isValid()) {
-                  continue;
-                }
-                if (scheduledMoment.format(dateFormat) !== dateOnly) {
+
+                // Prefer matching scheduled date when present; else match deadline.
+                if (scheduled) {
+                  const scheduledMoment = momentFromTimestampContent(scheduled, acceptedDateFormats, true);
+                  if (!scheduledMoment.isValid()) {
+                    continue;
+                  }
+                  if (scheduledMoment.format(dateFormat) !== dateOnly) {
+                    continue;
+                  }
+                } else if (deadline) {
+                  const deadlineMoment = momentFromTimestampContent(deadline, acceptedDateFormats, true);
+                  if (!deadlineMoment.isValid()) {
+                    continue;
+                  }
+                  if (deadlineMoment.format(dateFormat) !== dateOnly) {
+                    continue;
+                  }
+                } else {
                   continue;
                 }
               }
 
               taskLineNumber = i;
               break;
+            }
             }
 
             if (taskLineNumber === -1) {
@@ -672,6 +748,17 @@ module.exports = function () {
           text-align: left;
           outline: none;          
         }
+
+        .headingUndated {
+          background-color: #5d5d5d;
+          color: #ffffff;
+          cursor: pointer;
+          padding: 1px;
+          padding-left: 10px;
+          border: none;
+          text-align: left;
+          outline: none;
+        }
         .headingMonday {
           background-color: #2f996e;
           cursor: pointer;
@@ -831,6 +918,38 @@ module.exports = function () {
           border-radius: 27px;
           font-size: 9px;
           /* margin-left: auto; */
+          height: 15px;
+          float: right;
+          margin-left: 10px;
+          margin-top: 10px;
+          box-shadow: 0 3px 6px rgba(0,0,0,0.16), 0 3px 6px rgba(0,0,0,0.23);
+        }
+
+        .deadlineTag{
+          background-color: #ffb0b0;
+          padding-left: 10px;
+          padding-right: 10px;
+          padding-top: 5px;
+          color: #5d5d5d;
+          font-weight: 700;
+          border-radius: 27px;
+          font-size: 9px;
+          height: 15px;
+          float: right;
+          margin-left: 10px;
+          margin-top: 10px;
+          box-shadow: 0 3px 6px rgba(0,0,0,0.16), 0 3px 6px rgba(0,0,0,0.23);
+        }
+
+        .undatedTag{
+          background-color: #d1d1d1;
+          padding-left: 10px;
+          padding-right: 10px;
+          padding-top: 5px;
+          color: #5d5d5d;
+          font-weight: 700;
+          border-radius: 27px;
+          font-size: 9px;
           height: 15px;
           float: right;
           margin-left: 10px;
@@ -1292,7 +1411,8 @@ module.exports = function () {
 
               let safeText = (event.target.dataset.text || "").replaceAll(",", "&#44;");
               let safeDate = (event.target.dataset.date || "").replaceAll(",", "&#44;");
-              let messageText = nextStatus + "," + event.target.dataset.filename + "," + safeText + "," + safeDate;
+              let safeLine = (event.target.dataset.line || "").replaceAll(",", "");
+              let messageText = nextStatus + "," + event.target.dataset.filename + "," + safeText + "," + safeDate + "," + safeLine;
 
               if (stampsClosed.includes(nextStatus)) {
                 let completedDate = moment();
