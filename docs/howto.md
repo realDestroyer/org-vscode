@@ -495,11 +495,17 @@ You can open a file using either:
 ## 📅 Agenda View & Scheduling <a id="agenda-view-scheduling"></a>
 
 * **Schedule an item** → Use `Ctrl + Alt + S`.
-* **View all scheduled items** → Use **`Org-vscode: Agenda View`**.
+* **View your agenda** → Use **`Org-vscode: Agenda View`**.
 
 The Agenda View respects `Org-vscode.workflowStates[*].agendaVisibility`.
 
 By default it shows **TODO** and **IN_PROGRESS** tasks, and hides **CONTINUED** / **DONE** / **ABANDONED**.
+
+Agenda View sections (Emacs-inspired):
+
+- **Dated items**: tasks with `SCHEDULED: <...>`.
+- **Deadline items**: tasks with `DEADLINE: <...>` even if they have no schedule (setting: `Org-vscode.agendaIncludeDeadlines`, default: `true`).
+- **Undated items**: tasks with no `SCHEDULED` and no `DEADLINE` appear under an **`[UNDATED]`** section (setting: `Org-vscode.agendaIncludeUndated`, default: `true`).
 
 ### Performance notes (large `.org` files)
 

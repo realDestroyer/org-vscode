@@ -7,6 +7,16 @@
 - (none)
 
 
+# [2.2.14] 01-27-26
+
+`Added / Enhanced`
+
+- **Agenda View now shows more than scheduled tasks:**
+  - Includes **DEADLINE-only** tasks (setting: `Org-vscode.agendaIncludeDeadlines`, default: `true`).
+  - Includes an **`[UNDATED]`** section for tasks with no `SCHEDULED` and no `DEADLINE` (setting: `Org-vscode.agendaIncludeUndated`, default: `true`).
+  - Both settings are exposed in the VS Code Settings UI.
+
+
 # [2.2.13] 01-23-26
 
 `Fixed`

@@ -33,6 +33,7 @@ Org-vscode helps you manage tasks, notes, and projects in plain text `.org` file
 - Optional LOGBOOK drawer logging for completion history (`Org-vscode.logIntoDrawer`, `Org-vscode.logDrawerName`)
 - Faster Agenda scanning on large `.org` files (performance improvements for big task files)
 - Agenda View + Tagged Agenda View (Emacs-style match strings) + Calendar View (click task text to jump to the exact source line)
+	- Agenda View includes scheduled tasks, deadline-only tasks, and an optional (default-on) `[UNDATED]` section for tasks with no dates
 - Checklists with hierarchical parent/child checkbox states
 - Org-mode statistics cookies: `[/]` (fraction) and `[%]` (percent)
 - Subtree completion stats on headings (TODO subtree completion + checkbox completion)
