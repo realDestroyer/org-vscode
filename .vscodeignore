@@ -11,11 +11,17 @@ src/**
 # Repo-only content
 Test Org Files/**
 Test Files/**
+Issues/**
+Pull Requests/**
 Roadmap/**
 examples/**
 Images/**
 !Images/org-vscode-logo.png
 org-vscode/**
+
+# Local tooling / exports
+tools/**
+copilot_exports/**
 
 # Build helpers
 scripts/**
