@@ -961,10 +961,11 @@ This lets you filter tasks across all files by tag(s). Two modes are supported:
 #### 📁 Features: <a id="features"></a>
 
 * Groups results by file
-* Shows each task with its current status, schedule date, and tags
+* Shows each task with its current status, and whether it's **SCHEDULED**, **DEADLINE**, or **UNDATED**
 * Clickable filenames open the source (or reveal the exact task line)
 * Clickable task text reveals the exact task line
 * Clickable status cycles through keywords
+* Default: includes tasks of **all statuses** for reporting/analytics (`Org-vscode.taggedAgendaIncludeAllStatuses`)
 * Use `[Expand All]` / `[Collapse All]` buttons to show/hide groups
 
 #### 🔍 Example: <a id="example-2"></a>

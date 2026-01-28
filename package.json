@@ -377,6 +377,12 @@
 					"default": false,
 					"description": "When enabled, Tagged Agenda results will include CONTINUED tasks. By default they are omitted since CONTINUED is intended as a historical breadcrumb when a task moved forward."
 				},
+				"Org-vscode.taggedAgendaIncludeAllStatuses": {
+					"type": "boolean",
+					"order": 7.001,
+					"default": true,
+					"description": "When enabled, Tagged Agenda results will include tasks of all statuses (DONE/ABANDONED/etc.) for reporting and analytics. When disabled, states marked as hidden from Tagged Agenda are omitted (except CONTINUED when includeContinuedInTaggedAgenda is enabled)."
+				},
 				"Org-vscode.alignSchedulesAlignTags": {
 					"type": "boolean",
 					"order": 7.01,

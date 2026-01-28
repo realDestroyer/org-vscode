@@ -16,6 +16,11 @@
   - Includes an **`[UNDATED]`** section for tasks with no `SCHEDULED` and no `DEADLINE` (setting: `Org-vscode.agendaIncludeUndated`, default: `true`).
   - Both settings are exposed in the VS Code Settings UI.
 
+- **Tagged Agenda improvements:**
+  - Correctly labels tasks as **SCHEDULED**, **DEADLINE**, or **UNDATED**.
+  - Adds an **UNDATED** section per file when applicable.
+  - New setting: `Org-vscode.taggedAgendaIncludeAllStatuses` (default: `true`) to include tasks of all statuses for reporting/analytics.
+
 
 # [2.2.13] 01-23-26
 
