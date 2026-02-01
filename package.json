@@ -221,6 +221,22 @@
 						}
 					},
 					{
+						"name": "Heading SCHEDULED Decoration",
+						"scope": "meta.decoration.heading.scheduled.vso",
+						"settings": {
+							"foreground": "#d1e800",
+							"fontStyle": "italic"
+						}
+					},
+					{
+						"name": "Heading DEADLINE Decoration",
+						"scope": "meta.decoration.heading.deadline.vso",
+						"settings": {
+							"foreground": "#ff6b35",
+							"fontStyle": "italic"
+						}
+					},
+					{
 						"name": "CLOSED Stamp",
 						"scope": "keyword.closed.vso",
 						"settings": {
@@ -515,6 +531,12 @@
 					"order": 8.25,
 					"default": false,
 					"description": "Append a task's SCHEDULED date to its heading line using editor decorations (useful when planning is on a folded child line)."
+				},
+				"Org-vscode.decorateHeadingDeadlineDates": {
+					"type": "boolean",
+					"order": 8.26,
+					"default": false,
+					"description": "Append a task's DEADLINE date to its heading line using editor decorations (useful when planning is on a folded child line)."
 				},
 				"Org-vscode.sortClosedTasksToTop": {
 					"type": "boolean",
