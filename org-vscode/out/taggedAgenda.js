@@ -4,6 +4,7 @@ const path = require("path");
 const os = require("os");
 const moment = require("moment");
 const taskKeywordManager = require("./taskKeywordManager");
+const { applyAutoMoveDone } = require("./doneTaskAutoMove");
 const continuedTaskHandler = require("./continuedTaskHandler");
 const { normalizeBodyIndentation } = require("./indentUtils");
 const { stripAllTagSyntax, parseFileTagsFromText, parseTagGroupsFromText, createInheritanceTracker, matchesTagMatchString, normalizeTagMatchInput, getPlanningForHeading, isPlanningLine, parsePlanningFromText, normalizeTagsAfterPlanning, getAcceptedDateFormats, stripInlinePlanning, momentFromTimestampContent, extractPlainTimestamps } = require("./orgTagUtils");
@@ -415,6 +416,13 @@ async function updateTaskStatusInFile(file, taskText, scheduledDate, newStatus, 
       return;
     }
     await document.save();
+
+    // Auto-move newly completed tasks under the last done-like sibling.
+    const becameDoneLike = (!registry.isDoneLike(currentStatus) && registry.isDoneLike(effectiveStatus));
+    if (becameDoneLike) {
+      await applyAutoMoveDone(document, taskLineNumber, newHeadlineOnly);
+      await document.save();
+    }
   } catch (err) {
     const msg = err && err.message ? err.message : String(err);
     console.error("❌ TaggedAgenda changeStatus failed:", err);

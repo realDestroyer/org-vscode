@@ -44,15 +44,17 @@ function parseHeadingLevel(lineText, config) {
   return effective > 0 ? effective : null;
 }
 
-function isTaskClosedLike(lineText, planning) {
+function isTaskDoneLikeKeyword(lineText) {
   const registry = taskKeywordManager.getWorkflowRegistry();
   const keyword = taskKeywordManager.findTaskKeyword(lineText);
   const k = String(keyword || "").toUpperCase();
 
+  // IMPORTANT:
+  // We intentionally do NOT treat the mere presence of CLOSED: as done-like.
+  // Repeaters can add CLOSED and immediately reopen to TODO, and users generally
+  // want those to continue sorting with active tasks.
   if (registry && registry.stampsClosed && registry.stampsClosed(k)) return true;
   if (registry && registry.isDoneLike && registry.isDoneLike(k)) return true;
-  if (planning && planning.closed) return true;
-
   return false;
 }
 
@@ -94,7 +96,7 @@ function findSubtreeEndExclusive(lines, startLine, startLevel, config, hardStopE
   return stop;
 }
 
-function computeBlocksForHeadingStarts({ document, lines, headingStarts, scopeEndExclusive, acceptedDateFormats, config }) {
+function computeBlocksForHeadingStarts({ document, lines, headingStarts, scopeEndExclusive, acceptedDateFormats, config, closedToTop }) {
   const blocks = headingStarts.map((entry, index) => {
     const { line, level } = entry;
 
@@ -111,7 +113,16 @@ function computeBlocksForHeadingStarts({ document, lines, headingStarts, scopeEn
       }
     }
 
-    const closedLike = isTaskClosedLike(headingText, planning);
+    const doneLike = isTaskDoneLikeKeyword(headingText);
+
+    // CLOSED timestamps include time-of-day; newer closes should sort earlier.
+    let closedKey = Number.NEGATIVE_INFINITY;
+    if (planning && planning.closed) {
+      const m = momentFromTimestampContent(planning.closed, acceptedDateFormats, true);
+      if (m && m.isValid()) {
+        closedKey = m.valueOf();
+      }
+    }
 
     const startPos = new vscode.Position(line, 0);
     const endPos = new vscode.Position(endExclusive, 0);
@@ -123,14 +134,23 @@ function computeBlocksForHeadingStarts({ document, lines, headingStarts, scopeEn
       startLine: line,
       endExclusive,
       scheduledKey,
-      closedLike,
+      doneLike,
+      closedKey,
       blockText
     };
   });
 
   blocks.sort((a, b) => {
-    if (closedToTop && a.closedLike !== b.closedLike) {
-      return a.closedLike ? -1 : 1;
+    if (closedToTop && a.doneLike !== b.doneLike) {
+      return a.doneLike ? -1 : 1;
+    }
+
+    // When closedToTop is enabled, sort DONE-like tasks by CLOSED timestamp (newest first).
+    if (closedToTop && a.doneLike && b.doneLike) {
+      if (a.closedKey !== b.closedKey) {
+        return a.closedKey > b.closedKey ? -1 : 1;
+      }
+      return a.index - b.index;
     }
 
     if (a.scheduledKey !== b.scheduledKey) {
@@ -150,9 +170,17 @@ function sortHeadingsByScheduledDate() {
 
   const document = editor.document;
   const config = vscode.workspace.getConfiguration("Org-vscode");
+  // Back-compat / user-typo resilience: some users may set `org-vscode.*` in settings.
+  // Prefer the canonical section, but fall back to lowercase.
+  const configLower = vscode.workspace.getConfiguration("org-vscode");
   const dateFormat = config.get("dateFormat", "YYYY-MM-DD");
   const acceptedDateFormats = getAcceptedDateFormats(dateFormat);
-  const closedToTop = Boolean(config.get("sortClosedTasksToTop", false));
+  const closedToTop = Boolean(
+    config.get(
+      "sortClosedTasksToTop",
+      configLower.get("sortClosedTasksToTop", false)
+    )
+  );
 
   const text = document.getText();
   getEolString(document);
@@ -215,7 +243,8 @@ function sortHeadingsByScheduledDate() {
     headingStarts,
     scopeEndExclusive,
     acceptedDateFormats,
-    config
+    config,
+    closedToTop
   });
 
   const replaceStartLine = Math.min(...blocks.map((b) => b.startLine));
@@ -236,7 +265,9 @@ function sortHeadingsByScheduledDate() {
     }
 
     // If the document didn't end with a newline but our split/join logic introduced one, normalize is handled by VS Code.
-    vscode.window.setStatusBarMessage("Org-vscode: Sorted headings by SCHEDULED date.", 2500);
+    const doneCount = blocks.reduce((n, b) => (b.doneLike ? n + 1 : n), 0);
+    const suffix = closedToTop ? ` (closed-to-top on; done-like: ${doneCount})` : "";
+    vscode.window.setStatusBarMessage(`Org-vscode: Sorted headings by SCHEDULED date.${suffix}`, 2500);
   });
 }
 

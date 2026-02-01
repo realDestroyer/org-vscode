@@ -5,6 +5,7 @@ const fs = require("fs");
 const os = require("os");
 const moment = require("moment");
 const taskKeywordManager = require("../taskKeywordManager");
+const { applyAutoMoveDone } = require("../doneTaskAutoMove");
 const continuedTaskHandler = require("../continuedTaskHandler");
 const path = require("path");
 const { stripAllTagSyntax, getPlanningForHeading, isPlanningLine, parsePlanningFromText, normalizeTagsAfterPlanning, getAcceptedDateFormats, DEADLINE_REGEX, stripInlinePlanning, momentFromTimestampContent, extractPlainTimestamps } = require("../orgTagUtils");
@@ -674,15 +675,24 @@ module.exports = function () {
               }
             }
 
-            vscode.workspace.applyEdit(workspaceEdit).then(applied => {
+            const becameDoneLike = (!registry.isDoneLike(currentStatus) && registry.isDoneLike(effectiveStatus));
+
+            vscode.workspace.applyEdit(workspaceEdit).then(async (applied) => {
               if (!applied) {
                 vscode.window.showErrorMessage("Unable to apply task update.");
                 return;
               }
               suppressReloadForFsPath = uri.fsPath;
-              document.save().then(() => {
-                vscode.window.showInformationMessage(`Updated: ${taskText} -> ${newStatus}`);
-              });
+
+              await document.save();
+
+              if (becameDoneLike) {
+                await applyAutoMoveDone(document, taskLineNumber, newHeadlineOnly);
+                suppressReloadForFsPath = uri.fsPath;
+                await document.save();
+              }
+
+              vscode.window.showInformationMessage(`Updated: ${taskText} -> ${newStatus}`);
             });
           });
         } else if (message.command === "toggleCheckbox") {

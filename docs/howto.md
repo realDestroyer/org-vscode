@@ -98,6 +98,44 @@ If you prefer plain `*` headings but still want visual indentation, turn unicode
 "Org-vscode.decorateHeadingIndentation": true
 ```
 
+### Scheduled dates on folded headings
+
+If you keep planning stamps on the child planning line (v2 format) and fold subtrees, you can optionally append the scheduled date to the heading line via decorations:
+
+```json
+"Org-vscode.decorateHeadingScheduledDates": true
+```
+
+Notes:
+
+- Only task headings (headings with a TODO keyword) are decorated.
+- The displayed date follows your `Org-vscode.dateFormat`.
+
+### Sort headings by SCHEDULED date
+
+Run **Org-vscode: Sort Headings by Scheduled Date** to reorder headings by their `SCHEDULED:` timestamp.
+
+Behavior:
+
+- If your cursor is on (or inside) a heading that has 2+ **direct child headings**, the command sorts those children.
+- Otherwise, it sorts the heading’s **siblings** at the current level (or the file’s **top-level** headings if there is no parent heading).
+- Unscheduled headings sort last.
+
+Optional setting:
+
+```json
+"Org-vscode.sortClosedTasksToTop": true
+```
+
+When enabled, done-like/closed tasks are placed at the top of the sorted region.
+
+Additionally, when enabled, any command that transitions a task into a **done-like** TODO state will automatically move that task directly under the last done-like sibling (so your “DONE section” stays grouped as you complete items).
+
+Notes:
+
+- This setting uses the TODO keyword to detect done-like tasks (not just the presence of a `CLOSED:` stamp) so repeating tasks that reopen to `TODO` keep sorting with active items.
+- Done-like tasks are ordered by `CLOSED:` timestamp (most recent first).
+
 ### Settings screenshots <a id="settings-screenshots"></a>
 
 Extensions → org-vscode → Settings:

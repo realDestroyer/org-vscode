@@ -54,6 +54,7 @@ const { registerCheckboxStatsDecorations } = require("./checkboxStatsDecorations
 const { registerMarkupCommands } = require("./markupCommands");
 const { registerOrgEmphasisDecorations } = require("./orgEmphasisDecorations");
 const { registerMathDecorations } = require("./mathDecorations");
+const { registerHeadingScheduledDecorations } = require("./headingScheduledDecorations");
 const { registerOrgLinkProvider } = require("./orgLinkProvider");
 const { registerOrgSymbolProvider } = require("./orgSymbolProvider");
 const { registerOrgCompletionProvider } = require("./orgCompletionProvider");
@@ -69,6 +70,7 @@ const { executeSrcBlock } = require("./srcBlockExecution");
 const { registerSrcBlockCodeLens } = require("./srcBlockCodeLens");
 const setRepeater = require("./setRepeater");
 const taskKeywordManager = require("./taskKeywordManager");
+const { sortHeadingsByScheduledDate } = require("./sortHeadingsByScheduledDate");
 
 // Startup log for debugging
 console.log("📌 agenda.js has been loaded in extension.js");
@@ -203,6 +205,9 @@ function activate(ctx) {
   // Render common LaTeX commands inside math as Unicode glyphs (decorations only)
   registerMathDecorations(ctx);
 
+  // Append scheduled dates to task headings via decorations (useful when folded)
+  registerHeadingScheduledDecorations(ctx);
+
   // Live preview webview (MVP) + editor -> preview scroll sync
   registerOrgPreview(ctx);
 
@@ -285,6 +290,7 @@ function activate(ctx) {
   ctx.subscriptions.push(vscode.commands.registerCommand("extension.toggleCheckboxItem", toggleCheckboxItemAtCursor));
   ctx.subscriptions.push(vscode.commands.registerCommand("org-vscode.insertNewElement", insertNewElement));
   ctx.subscriptions.push(vscode.commands.registerCommand("org-vscode.executeSrcBlock", executeSrcBlock));
+  ctx.subscriptions.push(vscode.commands.registerCommand("org-vscode.sortHeadingsByScheduledDate", sortHeadingsByScheduledDate));
 
   // org-vscode.insertTable is registered inside insertTable.activate()
   insertTable.activate(ctx);
