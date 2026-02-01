@@ -1121,6 +1121,8 @@ Use the Command Palette (`Ctrl + Shift + P`) and run:
 * See exactly how each element will appear
 * Previews update in real-time as you adjust colors and styles
 
+Note: the preview is instantaneous, but some in-editor visuals (like heading date suffixes) are VS Code decorations rendered by the extension. Those update when you save your colors and may take a moment to refresh.
+
 #### 📂 Organized by Task Type <a id="organized-by-task-type"></a>
 
 Elements are grouped for easy navigation:
@@ -1129,7 +1131,8 @@ Elements are grouped for easy navigation:
 * **CONTINUED Tasks** - Symbol, keyword, and task text
 * **DONE Tasks** - Symbol, keyword, and task text
 * **ABANDONED Tasks** - Symbol, keyword, and task text
-* **Other Elements** - SCHEDULED stamp, inline tags, agenda dates, property drawers
+* **Heading Decorations** - Heading SCHEDULED / DEADLINE suffix styling
+* **Other Elements** - SCHEDULED/DEADLINE/CLOSED stamps, inline tags, agenda dates, property drawers
 
 #### 💾 Save & Reset <a id="save-and-reset"></a>
 

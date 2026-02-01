@@ -30,16 +30,16 @@ function normalizeScopes(scope) {
 }
 
 function createTokenStyleResolver() {
-  const config = vscode.workspace.getConfiguration();
-  const customizations = config.get("editor.tokenColorCustomizations") || {};
-  const rules = Array.isArray(customizations.textMateRules) ? customizations.textMateRules : [];
-
   const cache = new Map();
 
   return {
     getStyleForScope(scope) {
       if (!scope) return {};
       if (cache.has(scope)) return cache.get(scope);
+
+      const config = vscode.workspace.getConfiguration();
+      const customizations = config.get("editor.tokenColorCustomizations") || {};
+      const rules = Array.isArray(customizations.textMateRules) ? customizations.textMateRules : [];
 
       for (const rule of rules) {
         const scopes = normalizeScopes(rule && rule.scope);
@@ -59,6 +59,10 @@ function createTokenStyleResolver() {
       const empty = { foreground: "", background: "", fontStyle: "" };
       cache.set(scope, empty);
       return empty;
+    },
+
+    clear() {
+      cache.clear();
     }
   };
 }
@@ -314,6 +318,7 @@ function registerHeadingScheduledDecorations(ctx) {
         // Force recreation on tokenColorCustomizations change.
         if (event.affectsConfiguration("editor.tokenColorCustomizations")) {
           scheduledDecorationKey = "";
+          styleResolver.clear();
         }
         scheduleApply(vscode.window.activeTextEditor);
       }
@@ -408,6 +413,7 @@ function registerHeadingDeadlineDecorations(ctx) {
       ) {
         if (event.affectsConfiguration("editor.tokenColorCustomizations")) {
           deadlineDecorationKey = "";
+          styleResolver.clear();
         }
         scheduleApply(vscode.window.activeTextEditor);
       }
