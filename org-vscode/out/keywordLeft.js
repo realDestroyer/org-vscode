@@ -8,6 +8,7 @@ const { isPlanningLine, parsePlanningFromText, normalizeTagsAfterPlanning, strip
 const { applyRepeatersOnCompletion } = require("./repeatedTasks");
 const { computeLogbookInsertion, formatStateChangeEntry } = require("./orgLogbook");
 const { normalizeBodyIndentation } = require("./indentUtils");
+const { applyAutoMoveDone } = require("./doneTaskAutoMove");
 
 function buildPlanningBody(planning) {
   const parts = [];
@@ -60,6 +61,7 @@ module.exports = async function () {
 
   const sortedLines = Array.from(targetLines).sort((a, b) => b - a);
   const changesForCurrentTasks = [];
+  const completionMoveRequests = [];
 
   for (const lineNumber of sortedLines) {
     const currentLine = document.lineAt(lineNumber);
@@ -222,9 +224,25 @@ module.exports = async function () {
     }
 
     await vscode.workspace.applyEdit(workspaceEdit);
+
+    // If the task actually ended in a done-like state (repeaters may reopen),
+    // queue an auto-move to place it directly under the last done-like sibling.
+    const becameDoneLike = (!workflowRegistry.isDoneLike(currentKeyword) && workflowRegistry.isDoneLike(nextKeyword));
+    if (becameDoneLike) {
+      completionMoveRequests.push({ approxLineIndex: lineNumber, expectedHeadingLineText: newLine });
+    }
   }
 
   await vscode.commands.executeCommand("workbench.action.files.save");
+
+  // Apply auto-moves after all state edits, so multi-line selections stay stable.
+  for (const req of completionMoveRequests) {
+    await applyAutoMoveDone(document, req.approxLineIndex, req.expectedHeadingLineText);
+  }
+
+  if (completionMoveRequests.length) {
+    await vscode.commands.executeCommand("workbench.action.files.save");
+  }
 
   // If inside CurrentTasks.org, update original file(s)
   if (document.fileName.includes("CurrentTasks.org") && changesForCurrentTasks.length) {
