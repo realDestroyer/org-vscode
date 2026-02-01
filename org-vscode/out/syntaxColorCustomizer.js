@@ -1330,23 +1330,61 @@ function getWebviewContent(nonce, currentColors, currentWorkflowStates) {
         });
       });
 
+      function getScopedEl(selector, scopeName) {
+        const els = Array.from(document.querySelectorAll(selector));
+        return els.find(el => el && el.dataset && el.dataset.scope === scopeName) || null;
+      }
+
+      function readPreviewSettingsFromControls(scopeName) {
+        const state = colors[scopeName] || {};
+        const fgText = getScopedEl('.color-text:not(.bg-color-text)', scopeName);
+        const bgText = getScopedEl('.bg-color-text', scopeName);
+        const bold = getScopedEl('.font-bold', scopeName);
+        const italic = getScopedEl('.font-italic', scopeName);
+
+        const foreground = (fgText && fgText.value) ? fgText.value : state.foreground;
+        const background = (bgText && bgText.value != null) ? bgText.value : (state.background || '');
+        const isBold = !!(bold && bold.checked);
+        const isItalic = !!(italic && italic.checked);
+
+        let fontStyle = '';
+        if (isBold && isItalic) fontStyle = 'bold italic';
+        else if (isBold) fontStyle = 'bold';
+        else if (isItalic) fontStyle = 'italic';
+
+        return { foreground, background, fontStyle };
+      }
+
       // Update preview for a specific scope
       function updatePreview(scopeName) {
         const settings = colors[scopeName];
+        if (!settings) return;
+        const current = readPreviewSettingsFromControls(scopeName);
         const preview = document.querySelector('.preview[data-scope="' + scopeName + '"]');
         if (preview) {
-          let style = 'color: ' + settings.foreground + ';';
-          if ((/\\bKeyword\\b/.test(scopeName) || /\\bDecoration\\b/.test(scopeName) || scopeName === 'Property Drawer') && settings.background) {
-            style += ' background-color: ' + settings.background + ';';
+          let style = 'color: ' + current.foreground + ';';
+
+          const supportsBackground = (/\\bKeyword\\b/.test(scopeName) || /\\bDecoration\\b/.test(scopeName) || scopeName === 'Property Drawer');
+          if (supportsBackground) {
+            if (current.background) style += ' background-color: ' + current.background + ';';
+            else style += ' background-color: transparent;';
+          } else {
+            // Clear any prior background coming from static CSS rules.
+            style += ' background-color: transparent;';
           }
-          if (settings.fontStyle) {
-            if (settings.fontStyle.includes('italic')) style += ' font-style: italic;';
-            if (settings.fontStyle.includes('bold')) style += ' font-weight: bold;';
+
+          if (current.fontStyle) {
+            if (current.fontStyle.includes('italic')) style += ' font-style: italic;';
+            if (current.fontStyle.includes('bold')) style += ' font-weight: bold;';
           } else {
             style += ' font-style: normal; font-weight: normal;';
           }
           preview.setAttribute('style', style);
         }
+      }
+
+      function updateAllPreviews() {
+        Object.keys(colors).forEach(name => updatePreview(name));
       }
 
       function setWorkflowBanner(text, visible) {
@@ -1562,7 +1600,7 @@ function getWebviewContent(nonce, currentColors, currentWorkflowStates) {
 
       // Background picker handlers (keyword entries only)
       document.querySelectorAll('.bg-color-picker').forEach(picker => {
-        picker.addEventListener('input', function() {
+        const handle = function() {
           const scope = this.dataset.scope;
           const color = this.value;
           if (!colors[scope]) return;
@@ -1573,7 +1611,10 @@ function getWebviewContent(nonce, currentColors, currentWorkflowStates) {
 
           updatePreview(scope);
           markUnsaved();
-        });
+        };
+
+        picker.addEventListener('input', handle);
+        picker.addEventListener('change', handle);
       });
 
       document.querySelectorAll('.bg-color-text').forEach(input => {
@@ -1607,18 +1648,22 @@ function getWebviewContent(nonce, currentColors, currentWorkflowStates) {
 
       // Color picker change handler
       document.querySelectorAll('.color-picker:not(.bg-color-picker)').forEach(picker => {
-        picker.addEventListener('input', function() {
+        const handle = function() {
           const scope = this.dataset.scope;
           const color = this.value;
+          if (!colors[scope]) return;
           colors[scope].foreground = color;
-          
+
           // Sync text input
           const textInput = document.querySelector('.color-text:not(.bg-color-text)[data-scope="' + scope + '"]');
           if (textInput) textInput.value = color;
-          
+
           updatePreview(scope);
           markUnsaved();
-        });
+        };
+
+        picker.addEventListener('input', handle);
+        picker.addEventListener('change', handle);
       });
 
       // Color text input change handler
@@ -1700,11 +1745,15 @@ function getWebviewContent(nonce, currentColors, currentWorkflowStates) {
           vscode.postMessage({ command: 'saveColors', colors: colorsToSave });
           hasUnsavedChanges = false;
           updateUnsavedIndicator();
+          updateAllPreviews();
         } catch (err) {
           const msg = (err && err.message) ? err.message : String(err);
           vscode.postMessage({ command: 'webviewError', error: msg });
         }
       });
+
+      // Ensure previews are always in sync on first render.
+      updateAllPreviews();
 
       // Workflow: add row
       const addWorkflowBtn = document.getElementById('add-workflow-row');
