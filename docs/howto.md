@@ -111,6 +111,31 @@ Notes:
 - Only task headings (headings with a TODO keyword) are decorated.
 - The displayed date follows your `Org-vscode.dateFormat`.
 
+### Deadline dates on folded headings
+
+Similarly, you can append a task's `DEADLINE:` date to the heading line:
+
+```json
+"Org-vscode.decorateHeadingDeadlineDates": true
+```
+
+Notes:
+
+- This is implemented via editor decorations (virtual text). It does not modify the file.
+
+### Closed dates on folded headings
+
+You can also append a task's `CLOSED:` date to the heading line:
+
+```json
+"Org-vscode.decorateHeadingClosedDates": true
+```
+
+Notes:
+
+- For repeated tasks (multiple `CLOSED:` stamps in a LOGBOOK), Org-vscode prefers the *last* `CLOSED:` timestamp.
+- These decorations are inline; VS Code does not support truly pinning them to the right edge of the editor window.
+
 ### Sort headings by SCHEDULED date
 
 Run **Org-vscode: Sort Headings by Scheduled Date** to reorder headings by their `SCHEDULED:` timestamp.
