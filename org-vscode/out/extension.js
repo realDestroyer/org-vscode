@@ -54,7 +54,7 @@ const { registerCheckboxStatsDecorations } = require("./checkboxStatsDecorations
 const { registerMarkupCommands } = require("./markupCommands");
 const { registerOrgEmphasisDecorations } = require("./orgEmphasisDecorations");
 const { registerMathDecorations } = require("./mathDecorations");
-const { registerHeadingScheduledDecorations } = require("./headingScheduledDecorations");
+const { registerHeadingScheduledDecorations, registerHeadingDeadlineDecorations } = require("./headingScheduledDecorations");
 const { registerOrgLinkProvider } = require("./orgLinkProvider");
 const { registerOrgSymbolProvider } = require("./orgSymbolProvider");
 const { registerOrgCompletionProvider } = require("./orgCompletionProvider");
@@ -207,6 +207,9 @@ function activate(ctx) {
 
   // Append scheduled dates to task headings via decorations (useful when folded)
   registerHeadingScheduledDecorations(ctx);
+
+  // Append deadline dates to task headings via decorations (useful when folded)
+  registerHeadingDeadlineDecorations(ctx);
 
   // Live preview webview (MVP) + editor -> preview scroll sync
   registerOrgPreview(ctx);

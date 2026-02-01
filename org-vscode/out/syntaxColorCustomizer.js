@@ -121,6 +121,18 @@ const DEFAULT_COLORS = {
     background: "",
     fontStyle: "bold"
   },
+  "Heading SCHEDULED Decoration": {
+    scope: "meta.decoration.heading.scheduled.vso",
+    foreground: "#d1e800",
+    background: "",
+    fontStyle: "italic"
+  },
+  "Heading DEADLINE Decoration": {
+    scope: "meta.decoration.heading.deadline.vso",
+    foreground: "#ff6b35",
+    background: "",
+    fontStyle: "italic"
+  },
   "CLOSED Stamp": {
     scope: "keyword.closed.vso",
     foreground: "#6c757d",
@@ -324,6 +336,10 @@ const SCOPE_GROUPS = {
   "CONTINUED Tasks": ["CONTINUED Symbol", "CONTINUED Keyword", "CONTINUED Task Text"],
   "DONE Tasks": ["DONE Symbol", "DONE Keyword", "DONE Task Text"],
   "ABANDONED Tasks": ["ABANDONED Symbol", "ABANDONED Keyword", "ABANDONED Task Text"],
+  "Heading Decorations": [
+    "Heading SCHEDULED Decoration",
+    "Heading DEADLINE Decoration"
+  ],
   "Dates & Stamps": [
     "SCHEDULED Stamp",
     "DEADLINE Stamp",
@@ -637,7 +653,7 @@ function getWebviewContent(nonce, currentColors, currentWorkflowStates) {
     const scopesHtml = scopeNames.map(name => {
       const settings = currentColors[name];
       const technicalScope = Array.isArray(settings.scope) ? settings.scope.join(", ") : settings.scope;
-      const supportsBackground = /\bKeyword\b/.test(name) || name === "Property Drawer";
+      const supportsBackground = /\bKeyword\b/.test(name) || name === "Property Drawer" || /\bDecoration\b/.test(name);
 
       const previewSelector = `.preview[data-scope="${escapeCssAttrValue(name)}"]`;
       const previewRule = [
@@ -1320,7 +1336,7 @@ function getWebviewContent(nonce, currentColors, currentWorkflowStates) {
         const preview = document.querySelector('.preview[data-scope="' + scopeName + '"]');
         if (preview) {
           let style = 'color: ' + settings.foreground + ';';
-          if (/\\bKeyword\\b/.test(scopeName) && settings.background) {
+          if ((/\\bKeyword\\b/.test(scopeName) || /\\bDecoration\\b/.test(scopeName) || scopeName === 'Property Drawer') && settings.background) {
             style += ' background-color: ' + settings.background + ';';
           }
           if (settings.fontStyle) {
@@ -1827,6 +1843,8 @@ function getPreviewText(scopeName) {
     "ABANDONED Task Text": "No longer needed",
     "SCHEDULED Stamp": "SCHEDULED: <12-11-2025>",
     "DEADLINE Stamp": "DEADLINE: <12-15-2025>",
+    "Heading SCHEDULED Decoration": "(S: 2025-12-11)",
+    "Heading DEADLINE Decoration": "(D: 2025-12-15)",
     "CLOSED Stamp": "CLOSED: [12-11-2025 09:00]",
     "Timestamp": "<2025-12-11 Thu 09:00>",
     "Tags": ":WORK:PROJECT:",
