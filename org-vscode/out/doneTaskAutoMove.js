@@ -107,26 +107,21 @@ function getBlockText(document, vscode, startLine, endExclusive) {
   return { range, text: document.getText(range) };
 }
 
-/**
- * Apply a minimal move (delete + insert) for a newly-completed task.
- * This tends to preserve folding better than replacing the entire sibling region.
- *
- * @param {import('vscode').TextDocument} document
- * @param {number} approxLineIndex 0-based
- * @param {string|null} expectedHeadingLineText exact heading line text after completion (optional)
- * @returns {Promise<boolean>} true if an edit was applied
- */
-async function applyAutoMoveDone(document, approxLineIndex, expectedHeadingLineText = null) {
+async function applyAutoMoveDoneInternal(document, approxLineIndex, expectedHeadingLineText = null, returnNewLineNumber = false) {
   let vscode;
   try {
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     vscode = require("vscode");
   } catch {
-    return false;
+    return returnNewLineNumber ? { applied: false, newLineNumber: null } : false;
   }
 
-  if (!document || document.languageId !== "vso") return false;
-  if (!isClosedToTopEnabled(vscode)) return false;
+  if (!document || document.languageId !== "vso") {
+    return returnNewLineNumber ? { applied: false, newLineNumber: null } : false;
+  }
+  if (!isClosedToTopEnabled(vscode)) {
+    return returnNewLineNumber ? { applied: false, newLineNumber: null } : false;
+  }
 
   const registry = taskKeywordManager.getWorkflowRegistry();
   const config = vscode.workspace.getConfiguration("Org-vscode");
@@ -143,8 +138,12 @@ async function applyAutoMoveDone(document, approxLineIndex, expectedHeadingLineT
     ? { line: headingLineIndex, level: parseHeadingLevel(lines[headingLineIndex], config) }
     : findNearestHeadingAtOrAbove(lines, approxLineIndex, config);
 
-  if (!heading || heading.level === null) return false;
-  if (!isDoneLikeHeadingLine(lines[heading.line], registry)) return false;
+  if (!heading || heading.level === null) {
+    return returnNewLineNumber ? { applied: false, newLineNumber: null } : false;
+  }
+  if (!isDoneLikeHeadingLine(lines[heading.line], registry)) {
+    return returnNewLineNumber ? { applied: false, newLineNumber: null } : false;
+  }
 
   const parent = findParentHeadingAbove(lines, heading.line, heading.level, config);
   const parentHeadingText = parent ? getHeadingLineText(lines, parent.line) : null;
@@ -159,7 +158,9 @@ async function applyAutoMoveDone(document, approxLineIndex, expectedHeadingLineT
     if (lvl === null) continue;
     if (lvl === heading.level) siblingStarts.push(i);
   }
-  if (siblingStarts.length <= 1) return false;
+  if (siblingStarts.length <= 1) {
+    return returnNewLineNumber ? { applied: false, newLineNumber: null } : false;
+  }
 
   const blocks = siblingStarts.map((startLine) => {
     const endExclusive = findSubtreeEndExclusive(lines, startLine, heading.level, config, scopeEndExclusive);
@@ -172,11 +173,15 @@ async function applyAutoMoveDone(document, approxLineIndex, expectedHeadingLineT
   });
 
   const movingIndex = blocks.findIndex((b) => b.startLine === heading.line);
-  if (movingIndex === -1) return false;
+  if (movingIndex === -1) {
+    return returnNewLineNumber ? { applied: false, newLineNumber: null } : false;
+  }
 
   // Determine the done-like prefix among siblings, excluding the moving block.
   const nonMoving = blocks.filter((b) => b.startLine !== heading.line);
-  if (!nonMoving.length) return false;
+  if (!nonMoving.length) {
+    return returnNewLineNumber ? { applied: false, newLineNumber: null } : false;
+  }
 
   let donePrefixLen = 0;
   for (const b of nonMoving) {
@@ -187,7 +192,9 @@ async function applyAutoMoveDone(document, approxLineIndex, expectedHeadingLineT
   // If the moving block is already within the prefix and at its end, do nothing.
   // We aim to position it at the end of the done-like prefix.
   const movingIsDoneLike = blocks[movingIndex].doneLike;
-  if (!movingIsDoneLike) return false;
+  if (!movingIsDoneLike) {
+    return returnNewLineNumber ? { applied: false, newLineNumber: null } : false;
+  }
 
   const currentInNonMovingOrder = (() => {
     // Compute the moving block's index if we remove it.
@@ -212,7 +219,7 @@ async function applyAutoMoveDone(document, approxLineIndex, expectedHeadingLineT
     const delEdit = new vscode.WorkspaceEdit();
     delEdit.delete(document.uri, movingBlock.range);
     const ok = await vscode.workspace.applyEdit(delEdit);
-    if (!ok) return false;
+    if (!ok) return returnNewLineNumber ? { applied: false, newLineNumber: null } : false;
   }
 
   // Re-read after deletion.
@@ -264,8 +271,38 @@ async function applyAutoMoveDone(document, approxLineIndex, expectedHeadingLineT
     const insEdit = new vscode.WorkspaceEdit();
     insEdit.insert(document.uri, insertPos, movingBlock.text);
     const ok = await vscode.workspace.applyEdit(insEdit);
-    return !!ok;
+    if (!ok) {
+      return returnNewLineNumber ? { applied: false, newLineNumber: null } : false;
+    }
+    const newLineNumber = (insertPos && Number.isFinite(insertPos.line)) ? (insertPos.line + 1) : null;
+    return returnNewLineNumber ? { applied: true, newLineNumber } : true;
   }
+}
+
+/**
+ * Apply a minimal move (delete + insert) for a newly-completed task.
+ * This tends to preserve folding better than replacing the entire sibling region.
+ *
+ * @param {import('vscode').TextDocument} document
+ * @param {number} approxLineIndex 0-based
+ * @param {string|null} expectedHeadingLineText exact heading line text after completion (optional)
+ * @returns {Promise<boolean>} true if an edit was applied
+ */
+async function applyAutoMoveDone(document, approxLineIndex, expectedHeadingLineText = null) {
+  return await applyAutoMoveDoneInternal(document, approxLineIndex, expectedHeadingLineText, false);
+}
+
+/**
+ * Like applyAutoMoveDone(), but also returns the new 1-based line number of the moved heading.
+ *
+ * @param {import('vscode').TextDocument} document
+ * @param {number} approxLineIndex 0-based
+ * @param {string|null} expectedHeadingLineText exact heading line text after completion (optional)
+ * @returns {Promise<{ applied: boolean, newLineNumber: number | null }>} result
+ */
+async function applyAutoMoveDoneWithResult(document, approxLineIndex, expectedHeadingLineText = null) {
+  const res = await applyAutoMoveDoneInternal(document, approxLineIndex, expectedHeadingLineText, true);
+  return res && typeof res === 'object' ? res : { applied: false, newLineNumber: null };
 }
 
 /**
@@ -380,5 +417,6 @@ function computeAutoMoveDoneEdit(document, approxLineIndex, expectedHeadingLineT
 
 module.exports = {
   applyAutoMoveDone,
+  applyAutoMoveDoneWithResult,
   computeAutoMoveDoneEdit
 };
