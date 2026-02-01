@@ -1355,36 +1355,70 @@ function getWebviewContent(nonce, currentColors, currentWorkflowStates) {
         return { foreground, background, fontStyle };
       }
 
+      const LIVE_PREVIEW_STYLE_ID = 'live-preview-style';
+      const LIVE_PREVIEW_STYLE_NONCE = "${nonce}";
+
+      function getLivePreviewStyleEl() {
+        let el = document.getElementById(LIVE_PREVIEW_STYLE_ID);
+        if (el) return el;
+
+        el = document.createElement('style');
+        el.id = LIVE_PREVIEW_STYLE_ID;
+        el.setAttribute('nonce', LIVE_PREVIEW_STYLE_NONCE);
+        document.head.appendChild(el);
+        return el;
+      }
+
+      function escapeCssAttrValue(value) {
+        return String(value || '')
+          .replace(/\\/g, '\\\\')
+          .replace(/\"/g, '\\"')
+          .replace(/\n/g, ' ')
+          .replace(/\r/g, ' ');
+      }
+
+      function buildPreviewCssRule(scopeName, current) {
+        const selector = '.preview[data-scope="' + escapeCssAttrValue(scopeName) + '"]';
+        const supportsBackground = (/\\bKeyword\\b/.test(scopeName) || /\\bDecoration\\b/.test(scopeName) || scopeName === 'Property Drawer');
+
+        const parts = [];
+        parts.push('color: ' + current.foreground + ';');
+        if (supportsBackground) {
+          parts.push(current.background ? ('background-color: ' + current.background + ';') : 'background-color: transparent;');
+        } else {
+          parts.push('background-color: transparent;');
+        }
+
+        if (current.fontStyle) {
+          parts.push(current.fontStyle.includes('italic') ? 'font-style: italic;' : 'font-style: normal;');
+          parts.push(current.fontStyle.includes('bold') ? 'font-weight: bold;' : 'font-weight: normal;');
+        } else {
+          parts.push('font-style: normal;');
+          parts.push('font-weight: normal;');
+        }
+
+        return selector + ' { ' + parts.join(' ') + ' }';
+      }
+
+      function renderLivePreviewCss() {
+        const el = getLivePreviewStyleEl();
+        const rules = Object.keys(colors).map(name => {
+          if (!colors[name]) return '';
+          const current = readPreviewSettingsFromControls(name);
+          return buildPreviewCssRule(name, current);
+        }).filter(Boolean);
+        el.textContent = rules.join('\n');
+      }
+
       // Update preview for a specific scope
       function updatePreview(scopeName) {
-        const settings = colors[scopeName];
-        if (!settings) return;
-        const current = readPreviewSettingsFromControls(scopeName);
-        const preview = document.querySelector('.preview[data-scope="' + scopeName + '"]');
-        if (preview) {
-          let style = 'color: ' + current.foreground + ';';
-
-          const supportsBackground = (/\\bKeyword\\b/.test(scopeName) || /\\bDecoration\\b/.test(scopeName) || scopeName === 'Property Drawer');
-          if (supportsBackground) {
-            if (current.background) style += ' background-color: ' + current.background + ';';
-            else style += ' background-color: transparent;';
-          } else {
-            // Clear any prior background coming from static CSS rules.
-            style += ' background-color: transparent;';
-          }
-
-          if (current.fontStyle) {
-            if (current.fontStyle.includes('italic')) style += ' font-style: italic;';
-            if (current.fontStyle.includes('bold')) style += ' font-weight: bold;';
-          } else {
-            style += ' font-style: normal; font-weight: normal;';
-          }
-          preview.setAttribute('style', style);
-        }
+        if (!colors[scopeName]) return;
+        // Avoid inline style attributes; update a nonce'd <style> tag instead.
+        renderLivePreviewCss();
       }
 
       function updateAllPreviews() {
-        Object.keys(colors).forEach(name => updatePreview(name));
+        renderLivePreviewCss();
       }
 
       function setWorkflowBanner(text, visible) {
