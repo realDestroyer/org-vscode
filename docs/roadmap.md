@@ -1,6 +1,6 @@
 ﻿# Roadmap
 
-Live version: 2.2.14
+Live version: 2.2.15
 
 These are the features that I have either already implemented, or plan to in the near future.
 
@@ -9,6 +9,7 @@ These are the features that I have either already implemented, or plan to in the
 | Feature Name              | Description                                                                                | Progress    | Version  | Author        |
 | ------------------------- | ------------------------------------------------------------------------------------------ | ----------- | -------- | ------------- |
 | Agenda View: deadlines + undated | Agenda View includes DEADLINE-only tasks and an optional (default-on) `[UNDATED]` section for tasks with no dates. | DONE | v2.2.14 | realDestroyer |
+| Right-edge planning display | Show SCHEDULED/DEADLINE/CLOSED in a right-aligned “column” without horizontal scrolling. Note: not possible with plain editor decorations; likely needs an alternative UI approach (e.g., hover/inset/codelens/status surface). | Not Started |  | realDestroyer |
 | LaTeX fragment rendering (org-fragtog-style) | Render LaTeX fragments as “inline images” (full math fragment preview, not only symbol substitutions) | Not Started |  | realDestroyer |
 | Src block execution (Org-babel-style) | Execute `#+BEGIN_SRC` blocks and insert/update `#+RESULTS:` immediately (Python/PowerShell/Bash/JS/C++), with CodeLens + context menu | DONE | v2.2.12 | realDestroyer |
 | TODO Notifications        | Notify users of status outside VSCode (email, sms, etc.)                                   | Not Started |          | realDestroyer |

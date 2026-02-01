@@ -26,6 +26,8 @@ Org-vscode helps you manage tasks, notes, and projects in plain text `.org` file
 
 - Selection-aware editing across multiple lines (status, schedule, deadline, tags, indentation)
 - Optional auto-indent of body/planning lines on Enter (`Org-vscode.autoIndentNonHeaderText` + `Org-vscode.bodyIndentation`)
+- Optional scheduled-date suffix on task headlines via decorations (`Org-vscode.decorateHeadingScheduledDates`)
+- Optional deadline-date suffix on task headlines via decorations (`Org-vscode.decorateHeadingDeadlineDates`)
 - v2 Org-mode alignment: `:TAGS:` at end of headline, planning lines under headings, `CLOSED:` stamp
 - Align Schedules behavior is configurable (and won’t align `:PROPERTIES:` drawers)
 - Configurable TODO workflow states (`Org-vscode.workflowStates`) with per-state semantics (done-like, CLOSED stamping, carryover/forward-trigger, agenda visibility)
@@ -48,6 +50,7 @@ Org-vscode helps you manage tasks, notes, and projects in plain text `.org` file
 - Org table generator (command + snippets)
 - Reports/tools: Export Current Tasks, Export Yearly Summary, Executive Report, Year-In-Review Dashboard
 - Customization: Syntax Color Customizer (colors + Workflow States editor) + settings for heading markers / indentation / decorations
+- Commands: Sort Headings by Scheduled Date (`Org-vscode.sortClosedTasksToTop` optional)
 
 See every feature in one file:
 

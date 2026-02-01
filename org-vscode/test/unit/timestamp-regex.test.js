@@ -410,6 +410,12 @@ function testParsePlanningFromTextClosed() {
   assert.strictEqual(planning.closed, "2026-01-15 Thu 14:30", "Should parse CLOSED with time");
 }
 
+function testParsePlanningFromTextClosedPrefersLast() {
+  const text = "CLOSED: [2026-01-01] CLOSED: [2026-02-01]";
+  const planning = parsePlanningFromText(text);
+  assert.strictEqual(planning.closed, "2026-02-01", "Should prefer last CLOSED when multiple exist");
+}
+
 function testParsePlanningFromTextCombined() {
   const text = "SCHEDULED: <2026-01-15 Thu>  DEADLINE: <2026-01-20>";
   const planning = parsePlanningFromText(text);
@@ -638,6 +644,7 @@ module.exports = {
     testParsePlanningFromTextScheduled();
     testParsePlanningFromTextDeadline();
     testParsePlanningFromTextClosed();
+    testParsePlanningFromTextClosedPrefersLast();
     testParsePlanningFromTextCombined();
     testParsePlanningFromTextBothBracketTypes();
 
