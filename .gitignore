@@ -17,3 +17,5 @@ org-vscode/tsconfig.json
 org-vscode/package-lock.json
 org-vscode/Logo.png
 org-vscode/.vscodeignore
+org-vscode/Logs/*
+Logs/debug-logs.log
