@@ -7,6 +7,26 @@
 - (none)
 
 
+# [2.2.15] 02-01-26
+
+`Added / Enhanced`
+
+- **Heading planning decorations now support `CLOSED`:** Optional heading-line decoration appends ` (C: YYYY-MM-DD)` when the planning line is folded.
+  - Setting: `Org-vscode.decorateHeadingClosedDates` (default: `false`).
+  - Repeating tasks: prefers the **last** `CLOSED:` stamp when multiple are present.
+- **Syntax Color Customizer:** Added styling entry for **Heading CLOSED Decoration** (scope: `meta.decoration.heading.closed.vso`).
+
+`Fixed / Hardened`
+
+- **Syntax Color Customizer webview reliability:** Fixed a packaged/webview load-time script parsing failure that could cause the UI to appear unresponsive.
+- **CSP-safe live preview:** Live preview updates are applied via a nonce'd `<style>` element (no inline style mutation).
+- **Hostile settings hardening:** Sanitizes config-derived token colors / fontStyle to avoid malformed user settings breaking the customizer.
+
+`Changed`
+
+- Removed experimental heading planning decoration alignment UI/setting; VS Code decorations are inline and cannot be truly right-aligned to the editor window edge.
+
+
 # [2.2.14] 01-27-26
 
 `Added / Enhanced`

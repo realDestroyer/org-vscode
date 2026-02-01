@@ -23,6 +23,9 @@ org-vscode/**
 tools/**
 copilot_exports/**
 
+# Local logs
+Logs/**
+
 # Build helpers
 scripts/**
 

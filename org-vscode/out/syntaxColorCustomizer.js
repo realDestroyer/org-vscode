@@ -133,6 +133,12 @@ const DEFAULT_COLORS = {
     background: "",
     fontStyle: "italic"
   },
+  "Heading CLOSED Decoration": {
+    scope: "meta.decoration.heading.closed.vso",
+    foreground: "#6c757d",
+    background: "",
+    fontStyle: "italic"
+  },
   "CLOSED Stamp": {
     scope: "keyword.closed.vso",
     foreground: "#6c757d",
@@ -338,7 +344,8 @@ const SCOPE_GROUPS = {
   "ABANDONED Tasks": ["ABANDONED Symbol", "ABANDONED Keyword", "ABANDONED Task Text"],
   "Heading Decorations": [
     "Heading SCHEDULED Decoration",
-    "Heading DEADLINE Decoration"
+    "Heading DEADLINE Decoration",
+    "Heading CLOSED Decoration"
   ],
   "Dates & Stamps": [
     "SCHEDULED Stamp",
@@ -472,6 +479,36 @@ function getCurrentColors() {
   // Start with defaults, overlay user customizations
   const colors = JSON.parse(JSON.stringify(DEFAULT_COLORS));
 
+  const normalizeHex6 = (value) => {
+    if (value === undefined || value === null) return "";
+    const raw = String(value).trim();
+    if (!raw) return "";
+    if (/^#[0-9A-Fa-f]{6}$/.test(raw)) return raw;
+    if (/^#[0-9A-Fa-f]{3}$/.test(raw)) {
+      return (
+        "#" +
+        raw[1] + raw[1] +
+        raw[2] + raw[2] +
+        raw[3] + raw[3]
+      );
+    }
+    return "";
+  };
+
+  const normalizeFontStyle = (value) => {
+    if (value === undefined || value === null) return "";
+    const tokens = String(value)
+      .trim()
+      .toLowerCase()
+      .split(/\s+/)
+      .filter(Boolean);
+    const out = [];
+    if (tokens.includes("bold")) out.push("bold");
+    if (tokens.includes("italic")) out.push("italic");
+    if (tokens.includes("underline")) out.push("underline");
+    return out.join(" ");
+  };
+
   const normalizeScopes = (value) => {
     if (!value) return [];
     return Array.isArray(value) ? value : [value];
@@ -487,13 +524,15 @@ function getCurrentColors() {
         colors[name]._isUserCustomized = true;
         if (rule.settings) {
           if (rule.settings.foreground) {
-            colors[name].foreground = rule.settings.foreground;
+            const fg = normalizeHex6(rule.settings.foreground);
+            if (fg) colors[name].foreground = fg;
           }
           if (rule.settings.background !== undefined) {
-            colors[name].background = rule.settings.background;
+            const bg = normalizeHex6(rule.settings.background);
+            colors[name].background = bg;
           }
           if (rule.settings.fontStyle !== undefined) {
-            colors[name].fontStyle = rule.settings.fontStyle;
+            colors[name].fontStyle = normalizeFontStyle(rule.settings.fontStyle);
           }
         }
         break;
@@ -530,6 +569,36 @@ async function saveColors(colors) {
     throw new Error("No color payload received from webview");
   }
   
+  const normalizeHex6 = (value) => {
+    if (value === undefined || value === null) return "";
+    const raw = String(value).trim();
+    if (!raw) return "";
+    if (/^#[0-9A-Fa-f]{6}$/.test(raw)) return raw;
+    if (/^#[0-9A-Fa-f]{3}$/.test(raw)) {
+      return (
+        "#" +
+        raw[1] + raw[1] +
+        raw[2] + raw[2] +
+        raw[3] + raw[3]
+      );
+    }
+    return "";
+  };
+
+  const normalizeFontStyle = (value) => {
+    if (value === undefined || value === null) return "";
+    const tokens = String(value)
+      .trim()
+      .toLowerCase()
+      .split(/\s+/)
+      .filter(Boolean);
+    const out = [];
+    if (tokens.includes("bold")) out.push("bold");
+    if (tokens.includes("italic")) out.push("italic");
+    if (tokens.includes("underline")) out.push("underline");
+    return out.join(" ");
+  };
+
   // Build textMateRules array
   const textMateRules = Object.entries(colors)
     .filter(([_, settings]) => settings && settings.scope)
@@ -537,9 +606,9 @@ async function saveColors(colors) {
       name: name,
       scope: settings.scope,
       settings: {
-        foreground: settings.foreground,
-        ...(settings.background ? { background: settings.background } : {}),
-        ...(settings.fontStyle ? { fontStyle: settings.fontStyle } : {})
+        foreground: normalizeHex6(settings.foreground) || DEFAULT_COLORS[name]?.foreground || "#cccccc",
+        ...(normalizeHex6(settings.background) ? { background: normalizeHex6(settings.background) } : {}),
+        ...(normalizeFontStyle(settings.fontStyle) ? { fontStyle: normalizeFontStyle(settings.fontStyle) } : {})
       }
     }));
 
@@ -645,6 +714,16 @@ function getNonce() {
 function getWebviewContent(nonce, currentColors, currentWorkflowStates) {
   function escapeCssAttrValue(value) {
     return String(value || "").replace(/\\/g, "\\\\").replace(/\"/g, "\\\"");
+  }
+
+  function safeJsonForInlineScript(value) {
+    // Prevent webview script parsing issues:
+    // - Escape '<' so '</script>' can never appear in the HTML source.
+    // - Escape U+2028/U+2029 which are valid in JSON but break JS parsing in some contexts.
+    return JSON.stringify(value)
+      .replace(/</g, "\\u003c")
+      .replace(/\u2028/g, "\\u2028")
+      .replace(/\u2029/g, "\\u2029");
   }
 
   let previewCss = "";
@@ -1033,6 +1112,15 @@ function getWebviewContent(nonce, currentColors, currentWorkflowStates) {
       display: block;
     }
 
+    .is-hidden {
+      display: none !important;
+    }
+
+    .workflow-scroll {
+      overflow: auto;
+      max-height: 55vh;
+    }
+
     .panel {
       background: var(--bg-secondary);
       border-radius: 8px;
@@ -1091,6 +1179,11 @@ function getWebviewContent(nonce, currentColors, currentWorkflowStates) {
       z-index: 1;
     }
 
+    .workflow-empty {
+      color: var(--text-secondary);
+      padding: 12px 8px;
+    }
+
     .workflow input[type="text"],
     .workflow select {
       width: 100%;
@@ -1131,6 +1224,22 @@ function getWebviewContent(nonce, currentColors, currentWorkflowStates) {
       background: var(--border);
     }
 
+    .inline-panel {
+      margin: 12px 0;
+    }
+
+    .inline-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .help-inline {
+      opacity: 0.8;
+      font-size: 12px;
+    }
+
     .danger {
       border-color: rgba(255,0,0,0.35);
     }
@@ -1158,7 +1267,7 @@ function getWebviewContent(nonce, currentColors, currentWorkflowStates) {
       <button class="btn-secondary" id="reset-btn">Reset Colors</button>
       <button class="btn-primary" id="save-btn">💾 Save Colors</button>
     </div>
-    <div class="header-actions" id="actions-workflow" style="display:none;">
+    <div class="header-actions is-hidden" id="actions-workflow">
       <button class="btn-secondary" id="reset-workflow-btn">Reset Workflow</button>
       <button class="btn-primary" id="save-workflow-btn">💾 Save Workflow</button>
     </div>
@@ -1202,7 +1311,7 @@ function getWebviewContent(nonce, currentColors, currentWorkflowStates) {
         <span class="workflow-meta" id="workflow-meta"></span>
       </div>
 
-      <div style="overflow:auto; max-height: 55vh;">
+      <div class="workflow-scroll">
         <table class="workflow" aria-label="Workflow States">
           <thead>
             <tr>
@@ -1230,10 +1339,12 @@ function getWebviewContent(nonce, currentColors, currentWorkflowStates) {
       let activeTab = 'colors';
       
       // Store current colors state
-      const colors = ${JSON.stringify(currentColors)};
+      const colors = ${safeJsonForInlineScript(currentColors)};
+
+      
 
       // Store current workflow states payload
-      let workflowPayload = ${JSON.stringify(currentWorkflowStates)};
+      let workflowPayload = ${safeJsonForInlineScript(currentWorkflowStates)};
 
       const BODY_NOTES_KEY = 'Body / Notes Text';
 
@@ -1317,8 +1428,8 @@ function getWebviewContent(nonce, currentColors, currentWorkflowStates) {
 
         const actionsColors = document.getElementById('actions-colors');
         const actionsWorkflow = document.getElementById('actions-workflow');
-        if (actionsColors) actionsColors.style.display = tab === 'colors' ? 'flex' : 'none';
-        if (actionsWorkflow) actionsWorkflow.style.display = tab === 'workflow' ? 'flex' : 'none';
+        if (actionsColors) actionsColors.classList.toggle('is-hidden', tab !== 'colors');
+        if (actionsWorkflow) actionsWorkflow.classList.toggle('is-hidden', tab !== 'workflow');
 
         updateUnsavedIndicator();
       }
@@ -1369,17 +1480,11 @@ function getWebviewContent(nonce, currentColors, currentWorkflowStates) {
         return el;
       }
 
-      function escapeCssAttrValue(value) {
-        return String(value || '')
-          .replace(/\\/g, '\\\\')
-          .replace(/\"/g, '\\"')
-          .replace(/\n/g, ' ')
-          .replace(/\r/g, ' ');
-      }
-
       function buildPreviewCssRule(scopeName, current) {
-        const selector = '.preview[data-scope="' + escapeCssAttrValue(scopeName) + '"]';
-        const supportsBackground = (/\\bKeyword\\b/.test(scopeName) || /\\bDecoration\\b/.test(scopeName) || scopeName === 'Property Drawer');
+        // scopeName comes from our fixed set of UI labels (keys of colors).
+          // Avoid brittle escaping logic inside the template literal.
+        const selector = '.preview[data-scope="' + scopeName + '"]';
+        const supportsBackground = (scopeName.includes('Keyword') || scopeName.includes('Decoration') || scopeName === 'Property Drawer');
 
         const parts = [];
         parts.push('color: ' + current.foreground + ';');
@@ -1407,7 +1512,7 @@ function getWebviewContent(nonce, currentColors, currentWorkflowStates) {
           const current = readPreviewSettingsFromControls(name);
           return buildPreviewCssRule(name, current);
         }).filter(Boolean);
-        el.textContent = rules.join('\n');
+        el.textContent = rules.join('\\n');
       }
 
       // Update preview for a specific scope
@@ -1600,8 +1705,7 @@ function getWebviewContent(nonce, currentColors, currentWorkflowStates) {
           const td = document.createElement('td');
           td.colSpan = 8;
           td.textContent = 'No workflow states configured.';
-          td.style.color = 'var(--text-secondary)';
-          td.style.padding = '12px 8px';
+          td.classList.add('workflow-empty');
           tr.appendChild(td);
           tbody.appendChild(tr);
         }
@@ -1928,6 +2032,7 @@ function getPreviewText(scopeName) {
     "DEADLINE Stamp": "DEADLINE: <12-15-2025>",
     "Heading SCHEDULED Decoration": "(S: 2025-12-11)",
     "Heading DEADLINE Decoration": "(D: 2025-12-15)",
+    "Heading CLOSED Decoration": "(C: 2025-12-11)",
     "CLOSED Stamp": "CLOSED: [12-11-2025 09:00]",
     "Timestamp": "<2025-12-11 Thu 09:00>",
     "Tags": ":WORK:PROJECT:",

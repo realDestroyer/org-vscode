@@ -2,7 +2,7 @@
 	"name": "org-vscode",
 	"displayName": "org-vscode",
 	"description": "Quickly create todo lists, take notes, plan projects and organize your thoughts.",
-	"version": "2.2.14",
+	"version": "2.2.15",
 	"repository": "https://www.github.com/realDestroyer/org-vscode",
 	"icon": "Images/org-vscode-logo.png",
 	"publisher": "realDestroyer",
@@ -537,6 +537,12 @@
 					"order": 8.26,
 					"default": false,
 					"description": "Append a task's DEADLINE date to its heading line using editor decorations (useful when planning is on a folded child line)."
+				},
+				"Org-vscode.decorateHeadingClosedDates": {
+					"type": "boolean",
+					"order": 8.27,
+					"default": false,
+					"description": "Append a task's CLOSED date to its heading line using editor decorations (useful when planning is on a folded child line, and for repeated tasks this prefers the last CLOSED stamp)."
 				},
 				"Org-vscode.sortClosedTasksToTop": {
 					"type": "boolean",
