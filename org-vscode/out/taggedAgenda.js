@@ -4,6 +4,7 @@ const path = require("path");
 const os = require("os");
 const moment = require("moment");
 const taskKeywordManager = require("./taskKeywordManager");
+const { applyAutoMoveDoneWithResult } = require("./doneTaskAutoMove");
 const continuedTaskHandler = require("./continuedTaskHandler");
 const { normalizeBodyIndentation } = require("./indentUtils");
 const { stripAllTagSyntax, parseFileTagsFromText, parseTagGroupsFromText, createInheritanceTracker, matchesTagMatchString, normalizeTagMatchInput, getPlanningForHeading, isPlanningLine, parsePlanningFromText, normalizeTagsAfterPlanning, getAcceptedDateFormats, stripInlinePlanning, momentFromTimestampContent, extractPlainTimestamps } = require("./orgTagUtils");
@@ -284,6 +285,8 @@ async function updateTaskStatusInFile(file, taskText, scheduledDate, newStatus, 
       return;
     }
 
+    const oldLineNumber1Based = (requestedIdx >= 0) ? (requestedIdx + 1) : (taskLineNumber + 1);
+
     const workspaceEdit = new vscode.WorkspaceEdit();
     const currentLine = document.lineAt(taskLineNumber);
     const nextLine = taskLineNumber + 1 < document.lineCount ? document.lineAt(taskLineNumber + 1) : null;
@@ -412,13 +415,27 @@ async function updateTaskStatusInFile(file, taskText, scheduledDate, newStatus, 
     const applied = await vscode.workspace.applyEdit(workspaceEdit);
     if (!applied) {
       vscode.window.showErrorMessage("Unable to apply task update.");
-      return;
+      return { oldLineNumber: oldLineNumber1Based, newLineNumber: null };
     }
     await document.save();
+
+    // Auto-move newly completed tasks under the last done-like sibling.
+    const becameDoneLike = (!registry.isDoneLike(currentStatus) && registry.isDoneLike(effectiveStatus));
+    if (becameDoneLike) {
+      const moveRes = await applyAutoMoveDoneWithResult(document, taskLineNumber, newHeadlineOnly);
+      await document.save();
+
+      if (moveRes && moveRes.applied && Number.isFinite(moveRes.newLineNumber) && moveRes.newLineNumber > 0) {
+        return { oldLineNumber: oldLineNumber1Based, newLineNumber: moveRes.newLineNumber };
+      }
+    }
+
+    return { oldLineNumber: oldLineNumber1Based, newLineNumber: oldLineNumber1Based };
   } catch (err) {
     const msg = err && err.message ? err.message : String(err);
     console.error("❌ TaggedAgenda changeStatus failed:", err);
     vscode.window.showErrorMessage(`Tagged Agenda: failed to update task: ${msg}`);
+    return { oldLineNumber: null, newLineNumber: null };
   }
 }
 
@@ -448,7 +465,7 @@ function showTaggedAgendaView(tag, items, skippedFiles) {
 
   panel.webview.html = getTaggedWebviewContent(panel.webview, nonce, String(localMoment), tag, items, skippedFiles);
 
-  panel.webview.onDidReceiveMessage(message => {
+  panel.webview.onDidReceiveMessage(async (message) => {
     console.log("📩 Received message from webview:", message);
     if (message.command === "openFile") {
       const fileName = String(message.file || "");
@@ -474,6 +491,8 @@ function showTaggedAgendaView(tag, items, skippedFiles) {
     } else if (message.command === "revealTask") {
       const fileName = String(message.file || "");
       const lineNumber = Number(message.lineNumber);
+      const taskTextForReveal = String(message.taskText || "").trim();
+      const dateForReveal = String(message.date || "").trim();
       if (!fileName || !Number.isFinite(lineNumber) || lineNumber < 1) {
         return;
       }
@@ -484,7 +503,60 @@ function showTaggedAgendaView(tag, items, skippedFiles) {
 
       const revealInEditor = (doc, editor) => {
         if (!editor) return;
-        const targetLine = Math.min(Math.max(0, lineNumber - 1), Math.max(0, doc.lineCount - 1));
+        const lines = doc.getText().split(/\r?\n/);
+
+        function normalizeHeadlineToTitle(headline) {
+          return taskKeywordManager.cleanTaskText(
+            stripAllTagSyntax(normalizeTagsAfterPlanning(headline))
+          ).trim();
+        }
+
+        function normalizeDateOnly(s) {
+          const str = String(s || "");
+          const m = str.match(/(\d{4}-\d{2}-\d{2})/);
+          return m ? m[1] : "";
+        }
+
+        const dateOnly = normalizeDateOnly(dateForReveal);
+
+        function matchesDateAtHeading(idx) {
+          if (!dateOnly) return true;
+          const planning = getPlanningForHeading(lines, idx);
+          const scheduled = planning && planning.scheduled ? normalizeDateOnly(planning.scheduled) : "";
+          const deadline = planning && planning.deadline ? normalizeDateOnly(planning.deadline) : "";
+          return scheduled === dateOnly || deadline === dateOnly;
+        }
+
+        let resolvedLine = null;
+        const requestedIdx = Number.isFinite(lineNumber) ? (lineNumber - 1) : -1;
+        if (requestedIdx >= 0 && requestedIdx < doc.lineCount) {
+          const candidateText = doc.lineAt(requestedIdx).text;
+          const candidateKeyword = taskKeywordManager.findTaskKeyword(candidateText);
+          const candidateIsHeading = buildHeadingStartRegex(taskKeywordManager.getWorkflowRegistry()).test(candidateText);
+          const candidateNorm = normalizeHeadlineToTitle(candidateText);
+          if (candidateKeyword && candidateIsHeading && (!taskTextForReveal || candidateNorm === taskTextForReveal) && matchesDateAtHeading(requestedIdx)) {
+            resolvedLine = requestedIdx;
+          }
+        }
+
+        if (resolvedLine === null && taskTextForReveal) {
+          const headingStartRegex = buildHeadingStartRegex(taskKeywordManager.getWorkflowRegistry());
+          for (let i = 0; i < doc.lineCount; i++) {
+            const lineText = doc.lineAt(i).text;
+            const keyword = taskKeywordManager.findTaskKeyword(lineText);
+            const isHeading = headingStartRegex.test(lineText);
+            if (!keyword || !isHeading) continue;
+            const norm = normalizeHeadlineToTitle(lineText);
+            if (norm !== taskTextForReveal) continue;
+            if (!matchesDateAtHeading(i)) continue;
+            resolvedLine = i;
+            break;
+          }
+        }
+
+        const targetLine = (resolvedLine !== null)
+          ? resolvedLine
+          : Math.min(Math.max(0, lineNumber - 1), Math.max(0, doc.lineCount - 1));
         const pos = new vscode.Position(targetLine, 0);
         editor.selection = new vscode.Selection(pos, pos);
         editor.revealRange(new vscode.Range(pos, pos), vscode.TextEditorRevealType.InCenter);
@@ -513,7 +585,19 @@ function showTaggedAgendaView(tag, items, skippedFiles) {
       const removeCompleted = message.text.includes("REMOVE_CLOSED") || message.text.includes("REMOVE_COMPLETED");
       console.log("🔄 Changing status:", newStatus, "in file:", file, "for task:", taskText, "with scheduled date:", scheduledDate, "line:", lineNumber);
 
-      updateTaskStatusInFile(file, taskText, scheduledDate, newStatus, removeCompleted, Number.isFinite(lineNumber) ? lineNumber : null);
+      const res = await updateTaskStatusInFile(file, taskText, scheduledDate, newStatus, removeCompleted, Number.isFinite(lineNumber) ? lineNumber : null);
+      if (res && Number.isFinite(res.oldLineNumber) && Number.isFinite(res.newLineNumber) && res.oldLineNumber > 0 && res.newLineNumber > 0 && res.oldLineNumber !== res.newLineNumber) {
+        try {
+          panel.webview.postMessage({
+            command: 'updateLineNumber',
+            file,
+            oldLineNumber: res.oldLineNumber,
+            newLineNumber: res.newLineNumber
+          });
+        } catch {
+          // best-effort
+        }
+      }
     } else if (message.command === "toggleCheckbox") {
       const file = String(message.file || "");
       const lineNumber = Number(message.lineNumber);
@@ -631,7 +715,7 @@ function getTaggedWebviewContent(webview, nonce, localMomentJs, tag, items, skip
         return leadEsc + rest;
       }
 
-      function renderChildrenBlock(children, fileName) {
+      function renderChildrenBlock(children, fileName, headingLineNumber) {
         const arr = Array.isArray(children) ? children : [];
         if (!arr.length) return "";
         const linesHtml = arr.map((c) => {
@@ -652,10 +736,12 @@ function getTaggedWebviewContent(webview, nonce, localMomentJs, tag, items, skip
           const restSpan = html`<span class="checkbox-text">${rest}</span>`;
           return html`<div class="detail-line checkbox-line">${bullet} ${checkboxInput} ${restSpan}</div>`;
         });
-        return html`<details class="children-block"><summary>Show Details</summary><div class="children-lines">${linesHtml}</div></details>`;
+        const keyLine = Number.isFinite(Number(headingLineNumber)) ? String(Number(headingLineNumber)) : "";
+        const detailsKey = keyLine ? `${fileName}:${keyLine}` : "";
+        return html`<details class="children-block" data-details-key=${detailsKey}><summary>Show Details</summary><div class="children-lines">${linesHtml}</div></details>`;
       }
 
-      const childrenBlock = renderChildrenBlock(item.children, file);
+      const childrenBlock = renderChildrenBlock(item.children, file, item.lineNumber);
 
       const lateLabel = scheduledDate && momentFromTimestampContent(scheduledDate, acceptedDateFormats, true).isBefore(moment(), "day")
         ? html`<span class="late">LATE: ${scheduledDate}</span>` : "";
@@ -679,9 +765,11 @@ function getTaggedWebviewContent(webview, nonce, localMomentJs, tag, items, skip
       }
 
       // Build individual elements with proper escaping
-      const filenameSpan = html`<span class="filename" data-file=${file} data-line=${String(item.lineNumber)}>${file}:</span>`;
+      const dateForReveal = scheduledDate || deadlineDate || "";
+      const filenameSpan = html`<span class="filename" data-file=${file} data-line=${String(item.lineNumber)} data-text=${cleanedTaskText} data-date=${scheduledDate} data-reveal-date=${dateForReveal}>${file}:</span>`;
+      // Keep data-date on the status span as scheduled-only for back-compat with changeStatus message parsing.
       const keywordSpan = html`<span class=${keywordClass} data-filename=${file} data-text=${cleanedTaskText} data-date=${scheduledDate} data-line=${String(item.lineNumber)}>${keyword}</span>`;
-      const taskTextSpan = html`<span class="taskText agenda-task-link" data-file=${file} data-line=${String(item.lineNumber)}>${cleanedTaskText}</span>`;
+      const taskTextSpan = html`<span class="taskText agenda-task-link" data-file=${file} data-line=${String(item.lineNumber)} data-text=${cleanedTaskText} data-date=${scheduledDate} data-reveal-date=${dateForReveal}>${cleanedTaskText}</span>`;
 
       // Assemble using plain template literals since all parts are pre-built HTML
       return `
@@ -1113,9 +1201,136 @@ body{
       const revealTaskOnClick = ${config.get("agendaRevealTaskOnClick", true) ? "true" : "false"};
       const highlightTaskOnClick = ${config.get("agendaHighlightTaskOnClick", true) ? "true" : "false"};
 
+      const LS_GROUP_STATE_KEY = 'org-vscode.taggedAgenda.groupState:' + ${JSON.stringify(tag)};
+      const LS_OPEN_DETAILS_KEY = 'org-vscode.taggedAgenda.openDetails:' + ${JSON.stringify(tag)};
+
+      function loadJsonFromLocalStorage(key, fallback) {
+        try {
+          const raw = localStorage.getItem(key);
+          if (!raw) return fallback;
+          const v = JSON.parse(raw);
+          return v === undefined ? fallback : v;
+        } catch {
+          return fallback;
+        }
+      }
+
+      function saveJsonToLocalStorage(key, value) {
+        try {
+          localStorage.setItem(key, JSON.stringify(value));
+        } catch {
+          // ignore
+        }
+      }
+
+      function getVisibleGroupIds() {
+        const groups = Array.from(document.getElementsByClassName('file-group'));
+        return groups.filter(g => g && g.style && g.style.display === 'block').map(g => g.id);
+      }
+
+      function restoreGroupVisibility() {
+        const state = loadJsonFromLocalStorage(LS_GROUP_STATE_KEY, null);
+        const groups = Array.from(document.getElementsByClassName('file-group'));
+        if (!groups.length) return;
+
+        if (state && state.mode === 'all') {
+          groups.forEach(g => { g.style.display = 'block'; });
+          return;
+        }
+        if (state && state.mode === 'single' && typeof state.id === 'string' && state.id) {
+          groups.forEach(g => { g.style.display = (g.id === state.id) ? 'block' : 'none'; });
+          return;
+        }
+        // Default: keep existing (usually none visible).
+      }
+
+      function persistGroupVisibility() {
+        const visible = getVisibleGroupIds();
+        if (visible.length === 0) {
+          saveJsonToLocalStorage(LS_GROUP_STATE_KEY, { mode: 'none' });
+        } else if (visible.length === 1) {
+          saveJsonToLocalStorage(LS_GROUP_STATE_KEY, { mode: 'single', id: visible[0] });
+        } else {
+          saveJsonToLocalStorage(LS_GROUP_STATE_KEY, { mode: 'all' });
+        }
+      }
+
+      function restoreOpenDetails() {
+        const openKeys = loadJsonFromLocalStorage(LS_OPEN_DETAILS_KEY, []);
+        if (!Array.isArray(openKeys) || !openKeys.length) return;
+        const set = new Set(openKeys.map(String));
+        Array.from(document.querySelectorAll('details.children-block[data-details-key]')).forEach(d => {
+          const k = String(d.dataset.detailsKey || '');
+          if (k && set.has(k)) d.open = true;
+        });
+      }
+
+      function persistOpenDetails() {
+        const open = Array.from(document.querySelectorAll('details.children-block[data-details-key]'))
+          .filter(d => !!d.open)
+          .map(d => String(d.dataset.detailsKey || ''))
+          .filter(Boolean);
+        saveJsonToLocalStorage(LS_OPEN_DETAILS_KEY, open);
+      }
+
+      function rekeyOpenDetails(oldKey, newKey) {
+        if (!oldKey || !newKey || oldKey === newKey) return;
+        const arr = loadJsonFromLocalStorage(LS_OPEN_DETAILS_KEY, []);
+        if (!Array.isArray(arr) || !arr.length) return;
+        let changed = false;
+        const next = arr.map(k => {
+          if (String(k) === String(oldKey)) { changed = true; return String(newKey); }
+          return k;
+        });
+        if (changed) saveJsonToLocalStorage(LS_OPEN_DETAILS_KEY, next);
+      }
+
+      window.addEventListener('message', event => {
+        const msg = event && event.data ? event.data : null;
+        if (!msg || msg.command !== 'updateLineNumber') return;
+        const file = String(msg.file || '');
+        const oldLine = Number(msg.oldLineNumber);
+        const newLine = Number(msg.newLineNumber);
+        if (!file || !Number.isFinite(oldLine) || !Number.isFinite(newLine) || oldLine < 1 || newLine < 1) return;
+        const delta = newLine - oldLine;
+        if (delta === 0) return;
+
+        const link = document.querySelector('.agenda-task-link[data-file="' + CSS.escape(file) + '"][data-line="' + String(oldLine) + '"]');
+        const panel = link ? link.closest('.panel') : null;
+        if (!panel) return;
+
+        const els = Array.from(panel.querySelectorAll('[data-line]'));
+        for (const el of els) {
+          const lineRaw = el.getAttribute('data-line');
+          const lineNum = lineRaw ? parseInt(lineRaw, 10) : NaN;
+          if (!Number.isFinite(lineNum)) continue;
+          const next = lineNum + delta;
+          if (next > 0) el.setAttribute('data-line', String(next));
+        }
+
+        const detailsEls = Array.from(panel.querySelectorAll('details.children-block[data-details-key]'));
+        for (const d of detailsEls) {
+          const oldKey = String(d.dataset.detailsKey || '');
+          const m = oldKey.match(/^(.*?):(\d+)$/);
+          if (!m) continue;
+          const keyFile = m[1];
+          const keyLine = parseInt(m[2], 10);
+          if (keyFile !== file || !Number.isFinite(keyLine)) continue;
+          const newKey = keyFile + ':' + String(keyLine + delta);
+          d.dataset.detailsKey = newKey;
+          rekeyOpenDetails(oldKey, newKey);
+        }
+      });
+
     // Initialize indeterminate display for partial checkboxes.
     Array.from(document.querySelectorAll('input.org-checkbox[data-state="partial"]'))
       .forEach(i => { try { i.indeterminate = true; } catch (e) {} });
+
+      restoreGroupVisibility();
+      restoreOpenDetails();
+      Array.from(document.querySelectorAll('details.children-block[data-details-key]')).forEach(d => {
+        d.addEventListener('toggle', () => { persistOpenDetails(); });
+      });
 
       // Toggle file groups on file-tab click
       document.addEventListener('click', function(event) {
@@ -1127,8 +1342,10 @@ body{
             const file = revealEl.getAttribute('data-file');
             const lineRaw = revealEl.getAttribute('data-line');
             const lineNumber = lineRaw ? parseInt(lineRaw, 10) : NaN;
+            const taskText = String(revealEl.getAttribute('data-text') || '').trim();
+            const date = String(revealEl.getAttribute('data-reveal-date') || revealEl.getAttribute('data-date') || '').trim();
             if (file && Number.isFinite(lineNumber)) {
-              vscode.postMessage({ command: 'revealTask', file, lineNumber });
+              vscode.postMessage({ command: 'revealTask', file, lineNumber, taskText, date });
               if (highlightTaskOnClick) {
                 document.querySelectorAll('.panel.agenda-selected').forEach(p => p.classList.remove('agenda-selected'));
                 const panel = revealEl.closest('.panel');
@@ -1248,6 +1465,7 @@ body{
               for (let i = 0; i < groups.length; i++) {
                   groups[i].style.display = groups[i].id === targetId ? "block" : "none";
               }
+              persistGroupVisibility();
           }
           // Expand All / Collapse All
           if (event.target.id === "expand-all") {
@@ -1255,6 +1473,7 @@ body{
               for (let i = 0; i < groups.length; i++) {
                   groups[i].style.display = "block";
               }
+              persistGroupVisibility();
           }
 
           if (event.target.id === "collapse-all") {
@@ -1262,6 +1481,7 @@ body{
               for (let i = 0; i < groups.length; i++) {
                   groups[i].style.display = "none";
               }
+              persistGroupVisibility();
           }
 
           if (event.target.classList.contains("filename")) {

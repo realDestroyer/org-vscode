@@ -5,6 +5,7 @@ const fs = require("fs");
 const os = require("os");
 const moment = require("moment");
 const taskKeywordManager = require("../taskKeywordManager");
+const { applyAutoMoveDoneWithResult } = require("../doneTaskAutoMove");
 const continuedTaskHandler = require("../continuedTaskHandler");
 const path = require("path");
 const { stripAllTagSyntax, getPlanningForHeading, isPlanningLine, parsePlanningFromText, normalizeTagsAfterPlanning, getAcceptedDateFormats, DEADLINE_REGEX, stripInlinePlanning, momentFromTimestampContent, extractPlainTimestamps } = require("../orgTagUtils");
@@ -84,7 +85,7 @@ module.exports = function () {
       return leadEsc + rest;
     }
 
-    function renderChildrenBlock(children, fileName) {
+    function renderChildrenBlock(children, fileName, headingLineNumber) {
       const arr = Array.isArray(children) ? children : [];
       if (!arr.length) return "";
 
@@ -108,7 +109,9 @@ module.exports = function () {
         return html`<div class="detail-line checkbox-line">${bullet} ${checkboxInput} ${restSpan}</div>`;
       });
 
-      return html`<details class="children-block"><summary>Show Details</summary><div class="children-lines">${linesHtml}</div></details>`;
+      const keyLine = Number.isFinite(Number(headingLineNumber)) ? String(Number(headingLineNumber)) : "";
+      const detailsKey = keyLine ? `${fileName}:${keyLine}` : "";
+      return html`<details class="children-block" data-details-key=${detailsKey}><summary>Show Details</summary><div class="children-lines">${linesHtml}</div></details>`;
     }
 
     // Reads all .org files and builds agenda view HTML blocks grouped by scheduled date
@@ -227,7 +230,7 @@ module.exports = function () {
                   }
 
                   // Create collapsible child block (if child lines exist)
-                  let childrenBlock = renderChildrenBlock(children, items[i]);
+                  // NOTE: computed after taskLineNumber so we can attach a stable details key.
 
                   const checkboxStats = computeCheckboxStatsFromLines(children);
                   const cookie = findCheckboxCookie(element);
@@ -261,8 +264,10 @@ module.exports = function () {
                   // Build HTML task entry
                   let renderedTask = "";
                   const taskLineNumber = j + 1;
-                  const filenameSpan = html`<span class="filename" data-file=${items[i]} data-line=${String(taskLineNumber)}>${items[i]}:</span>`;
-                  const taskTextSpan = html`<span class="taskText agenda-task-link" data-file=${items[i]} data-line=${String(taskLineNumber)}>${taskText}</span>`;
+                  let childrenBlock = renderChildrenBlock(children, items[i], taskLineNumber);
+                  const dateAttrForReveal = getDateFromTaskText ? cleanDate : undatedClass;
+                  const filenameSpan = html`<span class="filename" data-file=${items[i]} data-line=${String(taskLineNumber)} data-text=${taskText} data-date=${dateAttrForReveal}>${items[i]}:</span>`;
+                  const taskTextSpan = html`<span class="taskText agenda-task-link" data-file=${items[i]} data-line=${String(taskLineNumber)} data-text=${taskText} data-date=${dateAttrForReveal}>${taskText}</span>`;
                   const planningLabelSpan = hasScheduled
                     ? html`<span class="scheduled">SCHEDULED</span>`
                     : (hasDeadline ? html`<span class="deadlineTag">DEADLINE</span>` : html`<span class="undatedTag">UNDATED</span>`);
@@ -337,8 +342,8 @@ module.exports = function () {
                   const nameOfDay = parsedDate.format("dddd");
                   const cleanDate = "[" + formattedDate + "]";
 
-                  const filenameSpan = html`<span class="filename" data-file=${filename} data-line=${String(timestampLineNumber)}>${filename}:</span>`;
-                  const taskTextSpan = html`<span class="taskText agenda-task-link" data-file=${filename} data-line=${String(timestampLineNumber)}>${displayText}</span>`;
+                  const filenameSpan = html`<span class="filename" data-file=${filename} data-line=${String(timestampLineNumber)} data-text=${displayText} data-date=${cleanDate}>${filename}:</span>`;
+                  const taskTextSpan = html`<span class="taskText agenda-task-link" data-file=${filename} data-line=${String(timestampLineNumber)} data-text=${displayText} data-date=${cleanDate}>${displayText}</span>`;
                   const renderedTask = html`<>${filenameSpan} ${taskTextSpan}<span class="timestamp-marker"></span></>`;
 
                   const dateKey = html`<div class=${"heading" + nameOfDay + " " + cleanDate}><h4 class=${cleanDate}>${cleanDate}, ${nameOfDay.toUpperCase()}</h4></div>`;
@@ -423,6 +428,8 @@ module.exports = function () {
         } else if (message.command === "revealTask") {
           const fileName = String(message.file || "");
           const lineNumber = Number(message.lineNumber);
+          const taskTextForReveal = String(message.taskText || "").trim();
+          const dateForReveal = String(message.date || "").trim();
           if (!fileName || !Number.isFinite(lineNumber) || lineNumber < 1) {
             return;
           }
@@ -430,9 +437,62 @@ module.exports = function () {
           const fullPath = path.join(setMainDir(), fileName);
           const uri = vscode.Uri.file(fullPath);
           vscode.workspace.openTextDocument(uri).then(doc => {
+            const lines = doc.getText().split(/\r?\n/);
+
+            function normalizeHeadlineToTitle(headline) {
+              return taskKeywordManager.cleanTaskText(
+                stripAllTagSyntax(normalizeTagsAfterPlanning(headline))
+              ).trim();
+            }
+
+            function normalizeDateOnly(s) {
+              const str = String(s || "");
+              const m = str.match(/(\d{4}-\d{2}-\d{2})/);
+              return m ? m[1] : "";
+            }
+
+            const dateOnly = normalizeDateOnly(dateForReveal);
+
+            function matchesDateAtHeading(idx) {
+              if (!dateOnly) return true;
+              const planning = getPlanningForHeading(lines, idx);
+              const scheduled = planning && planning.scheduled ? normalizeDateOnly(planning.scheduled) : "";
+              const deadline = planning && planning.deadline ? normalizeDateOnly(planning.deadline) : "";
+              return scheduled === dateOnly || deadline === dateOnly;
+            }
+
+            let resolvedLine = null;
+            const requestedIdx = Number.isFinite(lineNumber) ? (lineNumber - 1) : -1;
+            if (requestedIdx >= 0 && requestedIdx < doc.lineCount) {
+              const candidateText = doc.lineAt(requestedIdx).text;
+              const candidateKeyword = taskKeywordManager.findTaskKeyword(candidateText);
+              const candidateIsHeading = headingStartRegex.test(candidateText);
+              const candidateNorm = normalizeHeadlineToTitle(candidateText);
+              if (candidateKeyword && candidateIsHeading && (!taskTextForReveal || candidateNorm === taskTextForReveal) && matchesDateAtHeading(requestedIdx)) {
+                resolvedLine = requestedIdx;
+              }
+            }
+
+            if (resolvedLine === null && taskTextForReveal) {
+              for (let i = 0; i < doc.lineCount; i++) {
+                const lineText = doc.lineAt(i).text;
+                const keyword = taskKeywordManager.findTaskKeyword(lineText);
+                const isHeading = headingStartRegex.test(lineText);
+                if (!keyword || !isHeading) continue;
+                const norm = normalizeHeadlineToTitle(lineText);
+                if (norm !== taskTextForReveal) continue;
+                if (!matchesDateAtHeading(i)) continue;
+                resolvedLine = i;
+                break;
+              }
+            }
+
+            const targetLine = (resolvedLine !== null)
+              ? resolvedLine
+              : Math.min(Math.max(0, lineNumber - 1), Math.max(0, doc.lineCount - 1));
+
             vscode.window.showTextDocument(doc, vscode.ViewColumn.One, false).then(editor => {
               if (!editor) return;
-              const targetLine = Math.min(Math.max(0, lineNumber - 1), Math.max(0, doc.lineCount - 1));
               const pos = new vscode.Position(targetLine, 0);
               editor.selection = new vscode.Selection(pos, pos);
               editor.revealRange(new vscode.Range(pos, pos), vscode.TextEditorRevealType.InCenter);
@@ -674,15 +734,41 @@ module.exports = function () {
               }
             }
 
-            vscode.workspace.applyEdit(workspaceEdit).then(applied => {
+            const becameDoneLike = (!registry.isDoneLike(currentStatus) && registry.isDoneLike(effectiveStatus));
+
+            vscode.workspace.applyEdit(workspaceEdit).then(async (applied) => {
               if (!applied) {
                 vscode.window.showErrorMessage("Unable to apply task update.");
                 return;
               }
               suppressReloadForFsPath = uri.fsPath;
-              document.save().then(() => {
-                vscode.window.showInformationMessage(`Updated: ${taskText} -> ${newStatus}`);
-              });
+
+              await document.save();
+
+              if (becameDoneLike) {
+                const oldLineNumber1Based = (requestedLineNumber && Number.isFinite(requestedLineNumber) && requestedLineNumber > 0)
+                  ? requestedLineNumber
+                  : (taskLineNumber + 1);
+
+                const moveRes = await applyAutoMoveDoneWithResult(document, taskLineNumber, newHeadlineOnly);
+                suppressReloadForFsPath = uri.fsPath;
+                await document.save();
+
+                if (moveRes && moveRes.applied && Number.isFinite(moveRes.newLineNumber) && moveRes.newLineNumber > 0) {
+                  try {
+                    fullAgendaView.webview.postMessage({
+                      command: 'updateLineNumber',
+                      file: fileName,
+                      oldLineNumber: oldLineNumber1Based,
+                      newLineNumber: moveRes.newLineNumber
+                    });
+                  } catch {
+                    // best-effort
+                  }
+                }
+              }
+
+              vscode.window.showInformationMessage(`Updated: ${taskText} -> ${newStatus}`);
             });
           });
         } else if (message.command === "toggleCheckbox") {
@@ -1151,6 +1237,127 @@ module.exports = function () {
         const revealTaskOnClick = ${config.get("agendaRevealTaskOnClick", true) ? "true" : "false"};
         const highlightTaskOnClick = ${config.get("agendaHighlightTaskOnClick", true) ? "true" : "false"};
 
+        const LS_EXPANDED_DATES_KEY = 'org-vscode.agenda.expandedDates';
+        const LS_OPEN_DETAILS_KEY = 'org-vscode.agenda.openDetails';
+        const LS_SELECTED_FILE_KEY = 'org-vscode.agenda.selectedFile';
+
+        function loadJsonFromLocalStorage(key, fallback) {
+          try {
+            const raw = localStorage.getItem(key);
+            if (!raw) return fallback;
+            const v = JSON.parse(raw);
+            return v === undefined ? fallback : v;
+          } catch {
+            return fallback;
+          }
+        }
+
+        function saveJsonToLocalStorage(key, value) {
+          try {
+            localStorage.setItem(key, JSON.stringify(value));
+          } catch {
+            // ignore
+          }
+        }
+
+        function getExpandedDateClasses() {
+          const panels = Array.from(document.querySelectorAll('.panel'));
+          const expanded = new Set();
+          for (const p of panels) {
+            if (p.style && p.style.display === 'block') {
+              const dateClass = Array.from(p.classList).find(c => c && c.startsWith('[') && c.endsWith(']'));
+              if (dateClass) expanded.add(dateClass);
+            }
+          }
+          return Array.from(expanded);
+        }
+
+        function restoreExpandedDates() {
+          const expanded = loadJsonFromLocalStorage(LS_EXPANDED_DATES_KEY, []);
+          if (!Array.isArray(expanded) || !expanded.length) return;
+          const set = new Set(expanded.map(String));
+          const panels = Array.from(document.querySelectorAll('.panel'));
+          for (const p of panels) {
+            const dateClass = Array.from(p.classList).find(c => c && c.startsWith('[') && c.endsWith(']'));
+            if (dateClass && set.has(dateClass) && !p.classList.contains('filtered-out')) {
+              p.style.display = 'block';
+            }
+          }
+        }
+
+        function saveExpandedDates() {
+          saveJsonToLocalStorage(LS_EXPANDED_DATES_KEY, getExpandedDateClasses());
+        }
+
+        function restoreOpenDetails() {
+          const openKeys = loadJsonFromLocalStorage(LS_OPEN_DETAILS_KEY, []);
+          if (!Array.isArray(openKeys) || !openKeys.length) return;
+          const set = new Set(openKeys.map(String));
+          Array.from(document.querySelectorAll('details.children-block[data-details-key]')).forEach(d => {
+            const k = String(d.dataset.detailsKey || '');
+            if (k && set.has(k)) d.open = true;
+          });
+        }
+
+        function persistOpenDetails() {
+          const open = Array.from(document.querySelectorAll('details.children-block[data-details-key]'))
+            .filter(d => !!d.open)
+            .map(d => String(d.dataset.detailsKey || ''))
+            .filter(Boolean);
+          saveJsonToLocalStorage(LS_OPEN_DETAILS_KEY, open);
+        }
+
+        function rekeyOpenDetails(oldKey, newKey) {
+          if (!oldKey || !newKey || oldKey === newKey) return;
+          const arr = loadJsonFromLocalStorage(LS_OPEN_DETAILS_KEY, []);
+          if (!Array.isArray(arr) || !arr.length) return;
+          let changed = false;
+          const next = arr.map(k => {
+            if (String(k) === String(oldKey)) { changed = true; return String(newKey); }
+            return k;
+          });
+          if (changed) saveJsonToLocalStorage(LS_OPEN_DETAILS_KEY, next);
+        }
+
+        window.addEventListener('message', event => {
+          const msg = event && event.data ? event.data : null;
+          if (!msg || msg.command !== 'updateLineNumber') return;
+          const file = String(msg.file || '');
+          const oldLine = Number(msg.oldLineNumber);
+          const newLine = Number(msg.newLineNumber);
+          if (!file || !Number.isFinite(oldLine) || !Number.isFinite(newLine) || oldLine < 1 || newLine < 1) return;
+          const delta = newLine - oldLine;
+          if (delta === 0) return;
+
+          const link = document.querySelector('.agenda-task-link[data-file="' + CSS.escape(file) + '"][data-line="' + String(oldLine) + '"]');
+          const panel = link ? link.closest('.panel') : null;
+          if (!panel) return;
+
+          // Update the task panel's stored line numbers (heading, keyword, checkboxes, etc.).
+          const els = Array.from(panel.querySelectorAll('[data-line]'));
+          for (const el of els) {
+            const lineRaw = el.getAttribute('data-line');
+            const lineNum = lineRaw ? parseInt(lineRaw, 10) : NaN;
+            if (!Number.isFinite(lineNum)) continue;
+            const next = lineNum + delta;
+            if (next > 0) el.setAttribute('data-line', String(next));
+          }
+
+          // Update details-key and persisted open-details keys.
+          const detailsEls = Array.from(panel.querySelectorAll('details.children-block[data-details-key]'));
+          for (const d of detailsEls) {
+            const oldKey = String(d.dataset.detailsKey || '');
+            const m = oldKey.match(/^(.*?):(\d+)$/);
+            if (!m) continue;
+            const keyFile = m[1];
+            const keyLine = parseInt(m[2], 10);
+            if (keyFile !== file || !Number.isFinite(keyLine)) continue;
+            const newKey = keyFile + ':' + String(keyLine + delta);
+            d.dataset.detailsKey = newKey;
+            rekeyOpenDetails(oldKey, newKey);
+          }
+        });
+
         function getAllFilesFromDom() {
           const els = Array.from(document.querySelectorAll('.filename[data-file]'));
           const files = Array.from(new Set(els.map(e => e.dataset.file).filter(Boolean)));
@@ -1165,7 +1372,9 @@ module.exports = function () {
           container.replaceChildren();
 
           const state = vscode.getState && vscode.getState();
-          const initial = state && typeof state.selectedFile === 'string' ? state.selectedFile : '';
+          const fromState = state && typeof state.selectedFile === 'string' ? state.selectedFile : '';
+          const fromLs = (() => { try { return String(localStorage.getItem(LS_SELECTED_FILE_KEY) || ''); } catch { return ''; } })();
+          const initial = fromState || fromLs || '';
 
           const makeChip = (label, value) => {
             const chip = document.createElement('div');
@@ -1178,6 +1387,7 @@ module.exports = function () {
               if (vscode.setState) {
                 vscode.setState({ selectedFile: selected });
               }
+              try { localStorage.setItem(LS_SELECTED_FILE_KEY, selected); } catch {}
             });
             return chip;
           };
@@ -1227,6 +1437,15 @@ module.exports = function () {
         script.src = "https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js";
         script.onload = () => {
           buildFileChips(getAllFilesFromDom());
+
+          // Restore expanded day headings and open task details after a refresh.
+          restoreExpandedDates();
+          restoreOpenDetails();
+
+          // Track details open/close.
+          Array.from(document.querySelectorAll('details.children-block[data-details-key]')).forEach(d => {
+            d.addEventListener('toggle', () => { persistOpenDetails(); });
+          });
 
           // Initialize indeterminate display for partial checkboxes.
           Array.from(document.querySelectorAll('input.org-checkbox[data-state="partial"]'))
@@ -1349,11 +1568,15 @@ module.exports = function () {
             if (revealEl && revealTaskOnClick) {
               const file = revealEl.dataset.file;
               const lineNumber = Number(revealEl.dataset.line);
+                  const taskText = String(revealEl.dataset.text || '').trim();
+                  const date = String(revealEl.dataset.date || '').trim();
               if (file && Number.isFinite(lineNumber) && lineNumber > 0) {
                 vscode.postMessage({
                   command: 'revealTask',
                   file,
-                  lineNumber
+                      lineNumber,
+                      taskText,
+                      date
                 });
 
                 if (highlightTaskOnClick) {
@@ -1383,6 +1606,9 @@ module.exports = function () {
                   }
                 }
               }
+
+              // Persist expanded/collapsed day groups.
+              saveExpandedDates();
             }
 
             // Send filename to open file

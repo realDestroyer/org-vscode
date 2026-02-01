@@ -7,6 +7,7 @@ const path = require('path');
 
 const tests = [
   require(path.join(__dirname, 'command-registration.test.js')),
+  require(path.join(__dirname, 'syntax-color-customizer-webview.test.js')),
   require(path.join(__dirname, 'workflow-states.test.js')),
   require(path.join(__dirname, 'indent-utils.test.js')),
   require(path.join(__dirname, 'checkbox-stats.test.js')),

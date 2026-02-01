@@ -206,15 +206,16 @@ function parsePlanningFromText(text) {
   // Groups: (1) bracket type, (2) content
   const scheduledMatch = t.match(/\bSCHEDULED:\s*([<\[])([^\]>]+)[>\]]/);
   const deadlineMatch = t.match(/\bDEADLINE:\s*([<\[])([^\]>]+)[>\]]/);
-  // CLOSED/COMPLETED are always reference-only, not for agenda, so always match
-  const closedMatch = t.match(/\bCLOSED:\s*[<\[]([^\]>]+)[>\]]/);
-  const completedMatch = t.match(/\bCOMPLETED:\s*[<\[]([^\]>]+)[>\]]/);
+  // CLOSED/COMPLETED are reference-only, not for agenda.
+  // Repeated tasks may accumulate multiple CLOSED stamps; prefer the last one.
+  const closedMatches = Array.from(t.matchAll(/\bCLOSED:\s*[<\[]([^\]>]+)[>\]]/g));
+  const completedMatches = Array.from(t.matchAll(/\bCOMPLETED:\s*[<\[]([^\]>]+)[>\]]/g));
 
   // For SCHEDULED/DEADLINE, honor strictActiveTimestamps setting
   if (scheduledMatch && isTimestampActive(scheduledMatch[1])) out.scheduled = scheduledMatch[2];
   if (deadlineMatch && isTimestampActive(deadlineMatch[1])) out.deadline = deadlineMatch[2];
-  if (closedMatch) out.closed = closedMatch[1];
-  if (completedMatch) out.completed = completedMatch[1];
+  if (closedMatches.length) out.closed = closedMatches[closedMatches.length - 1][1];
+  if (completedMatches.length) out.completed = completedMatches[completedMatches.length - 1][1];
 
   // Back-compat: if a file still uses COMPLETED, treat it as CLOSED.
   if (!out.closed && out.completed) out.closed = out.completed;

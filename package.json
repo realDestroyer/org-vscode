@@ -2,7 +2,7 @@
 	"name": "org-vscode",
 	"displayName": "org-vscode",
 	"description": "Quickly create todo lists, take notes, plan projects and organize your thoughts.",
-	"version": "2.2.14",
+	"version": "2.2.15",
 	"repository": "https://www.github.com/realDestroyer/org-vscode",
 	"icon": "Images/org-vscode-logo.png",
 	"publisher": "realDestroyer",
@@ -31,6 +31,7 @@
 		"onCommand:orgMode.generateExecutiveReport",
 		"onCommand:orgMode.openYearInReview",
 		"onCommand:org-vscode.insertNewElement",
+		"onCommand:org-vscode.sortHeadingsByScheduledDate",
 		"onCommand:org-vscode.setRepeater",
 		"onCommand:org-vscode.executeSrcBlock"
 	],
@@ -217,6 +218,22 @@
 						"settings": {
 							"foreground": "#ff6b35",
 							"fontStyle": "bold"
+						}
+					},
+					{
+						"name": "Heading SCHEDULED Decoration",
+						"scope": "meta.decoration.heading.scheduled.vso",
+						"settings": {
+							"foreground": "#d1e800",
+							"fontStyle": "italic"
+						}
+					},
+					{
+						"name": "Heading DEADLINE Decoration",
+						"scope": "meta.decoration.heading.deadline.vso",
+						"settings": {
+							"foreground": "#ff6b35",
+							"fontStyle": "italic"
 						}
 					},
 					{
@@ -509,6 +526,30 @@
 					"default": true,
 					"description": "Decorate entire task heading lines with a background color based on TODO keyword (uses your editor.tokenColorCustomizations TextMate rule background for the keyword scopes)."
 				},
+				"Org-vscode.decorateHeadingScheduledDates": {
+					"type": "boolean",
+					"order": 8.25,
+					"default": false,
+					"description": "Append a task's SCHEDULED date to its heading line using editor decorations (useful when planning is on a folded child line)."
+				},
+				"Org-vscode.decorateHeadingDeadlineDates": {
+					"type": "boolean",
+					"order": 8.26,
+					"default": false,
+					"description": "Append a task's DEADLINE date to its heading line using editor decorations (useful when planning is on a folded child line)."
+				},
+				"Org-vscode.decorateHeadingClosedDates": {
+					"type": "boolean",
+					"order": 8.27,
+					"default": false,
+					"description": "Append a task's CLOSED date to its heading line using editor decorations (useful when planning is on a folded child line, and for repeated tasks this prefers the last CLOSED stamp)."
+				},
+				"Org-vscode.sortClosedTasksToTop": {
+					"type": "boolean",
+					"order": 8.3,
+					"default": false,
+					"description": "When enabled: done-like tasks are grouped at the top when sorting headings by SCHEDULED date, and tasks that transition into a done-like TODO state are auto-moved directly under the last done-like sibling. Done-like tasks are ordered by CLOSED timestamp (newest first) during sorting."
+				},
 				"Org-vscode.autoDoneWhenAllCheckboxesChecked": {
 					"type": "boolean",
 					"order": 9,
@@ -597,6 +638,11 @@
 				"command": "org-vscode.insertNewElement",
 				"category": "Org-vscode",
 				"title": "Insert New Element (Smart)"
+			},
+			{
+				"command": "org-vscode.sortHeadingsByScheduledDate",
+				"category": "Org-vscode",
+				"title": "Sort Headings by Scheduled Date"
 			},
 			{
 				"command": "org-vscode.setProperty",

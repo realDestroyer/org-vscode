@@ -11,6 +11,7 @@ const { computeLogbookInsertion, formatStateChangeEntry } = require("./orgLogboo
 const { computeHeadingTransitions } = require("./checkboxAutoDoneTransitions");
 const { normalizeBodyIndentation } = require("./indentUtils");
 const { parseHeadingInfo, findSubtreeEndExclusive } = require("./moveBlockUtils");
+const { applyAutoMoveDone } = require("./doneTaskAutoMove");
 
 const CHECKBOX_REGEX = /^\s*[-+*]\s+\[( |x|X)\]\s+/;
 const CHECKBOX_STATE_REPLACE_REGEX = /^(\s*[-+*]\s+\[)( |x|X|-)(\]\s+)/;
@@ -281,6 +282,13 @@ async function applyDoneToHeading(document, lineNumber) {
   }
 
   await vscode.workspace.applyEdit(workspaceEdit);
+
+  // Only auto-move tasks that actually ended as done-like (repeaters may reopen).
+  if (registry.isDoneLike(nextKeyword)) {
+    return { approxLineIndex: lineNumber, expectedHeadingLineText: newLine };
+  }
+
+  return null;
 }
 
 async function applyInProgressToHeading(document, lineNumber) {
@@ -376,12 +384,26 @@ async function autoDoneForDocument(document) {
   for (const n of toMarkInProgress) ops.push({ lineNumber: n, op: "inprogress" });
   ops.sort((a, b) => b.lineNumber - a.lineNumber);
 
+  const completionMoveRequests = [];
+
   for (const o of ops) {
     try {
-      if (o.op === "done") await applyDoneToHeading(document, o.lineNumber);
+      if (o.op === "done") {
+        const moveReq = await applyDoneToHeading(document, o.lineNumber);
+        if (moveReq) completionMoveRequests.push(moveReq);
+      }
       else await applyInProgressToHeading(document, o.lineNumber);
     } catch (_) {
       // Best-effort: never throw from a background auto-updater.
+    }
+  }
+
+  // Apply auto-moves after all edits, so line references stay stable.
+  for (const req of completionMoveRequests) {
+    try {
+      await applyAutoMoveDone(document, req.approxLineIndex, req.expectedHeadingLineText);
+    } catch (_) {
+      // Best-effort.
     }
   }
 }
