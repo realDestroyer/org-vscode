@@ -7,6 +7,13 @@
 - (none)
 
 
+# [2.2.16] 02-02-26
+
+`Fixed`
+
+- **Syntax Color Customizer live preview:** Fixed a startup-time webview error (`Cannot access 'LIVE_PREVIEW_STYLE_ID' before initialization`) that could break the customizer in some environments.
+
+
 # [2.2.15] 02-01-26
 
 `Added / Enhanced`
