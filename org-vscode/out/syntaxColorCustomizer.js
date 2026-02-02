@@ -1348,6 +1348,13 @@ function getWebviewContent(nonce, currentColors, currentWorkflowStates) {
 
       const BODY_NOTES_KEY = 'Body / Notes Text';
 
+      // Live-preview CSS is applied via a nonce'd <style> element.
+      // These constants must be initialized before any early startup code can
+      // call updatePreview() (e.g., theme foreground sync), otherwise some
+      // environments will hit a TDZ error.
+      const LIVE_PREVIEW_STYLE_ID = 'live-preview-style';
+      const LIVE_PREVIEW_STYLE_NONCE = "${nonce}";
+
       function normalizeHex(hex) {
         if (!hex) return '';
         return String(hex).trim().toLowerCase();
@@ -1465,9 +1472,6 @@ function getWebviewContent(nonce, currentColors, currentWorkflowStates) {
 
         return { foreground, background, fontStyle };
       }
-
-      const LIVE_PREVIEW_STYLE_ID = 'live-preview-style';
-      const LIVE_PREVIEW_STYLE_NONCE = "${nonce}";
 
       function getLivePreviewStyleEl() {
         let el = document.getElementById(LIVE_PREVIEW_STYLE_ID);
