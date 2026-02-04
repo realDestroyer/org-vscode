@@ -9,6 +9,13 @@ These are the features that I have either already implemented, or plan to in the
 | Feature Name              | Description                                                                                | Progress    | Version  | Author        |
 | ------------------------- | ------------------------------------------------------------------------------------------ | ----------- | -------- | ------------- |
 | Agenda View: deadlines + undated | Agenda View includes DEADLINE-only tasks and an optional (default-on) `[UNDATED]` section for tasks with no dates. | DONE | v2.2.14 | realDestroyer |
+| Embedded Query Blocks | Support an in-file `#+BEGIN_QUERY ... #+END_QUERY` block that renders a live/updatable list of matching headings (workspace-wide) into the preview (Org-QL/Dataview-style). | Not Started |  | realDestroyer |
+| Workspace Index Cache (Optional) | Optional on-disk index (JSON/SQLite) to speed up link completion, tag/title lookup, symbol search, and query blocks; should be gitignored by default. | Not Started |  | realDestroyer |
+| Context Action: Ctrl+C Ctrl+C | Add a context-aware command that “does the right thing” at point (toggle checkbox, follow link, update timestamp, etc.), similar to Emacs Org’s `C-c C-c`. | Not Started |  | realDestroyer |
+| Heading CodeLens Actions | Optional CodeLens above headings for common operations (toggle TODO, schedule/deadline, set tags/properties, promote/demote) without memorizing keybindings. | Not Started |  | realDestroyer |
+| Export Current File to HTML | Export the current Org document to a standalone HTML file using the existing preview renderer (save dialog + “export to same directory” option). | Not Started |  | realDestroyer |
+| `.org_archive` File Support | Recognize `.org_archive` files as Org documents for language mode, preview, navigation, and commands. | Not Started |  | realDestroyer |
+| Subtree Structure Commands | Org-like subtree ops (promote/demote subtree, cut/copy/paste subtree, refile/move subtree) with selection support and safe formatting. | Not Started |  | realDestroyer |
 | Right-edge planning display | Show SCHEDULED/DEADLINE/CLOSED in a right-aligned “column” without horizontal scrolling. Note: not possible with plain editor decorations; likely needs an alternative UI approach (e.g., hover/inset/codelens/status surface). | Not Started |  | realDestroyer |
 | LaTeX fragment rendering (org-fragtog-style) | Render LaTeX fragments as “inline images” (full math fragment preview, not only symbol substitutions) | Not Started |  | realDestroyer |
 | Src block execution (Org-babel-style) | Execute `#+BEGIN_SRC` blocks and insert/update `#+RESULTS:` immediately (Python/PowerShell/Bash/JS/C++), with CodeLens + context menu | DONE | v2.2.12 | realDestroyer |
