@@ -65,6 +65,9 @@ module.exports = function () {
     let unsortedObject = {};
     let sortedObject = {};
     let itemInSortedObject = "";
+    let unsortedClosedObject = {};
+    let sortedClosedObject = {};
+    let itemInClosedSortedObject = "";
 
     readFiles();
 
@@ -83,6 +86,44 @@ module.exports = function () {
       // Use actual non-breaking space (U+00A0) instead of &nbsp; entity
       const leadEsc = lead.replace(/ /g, "\u00A0").replace(/\t/g, "\u00A0\u00A0");
       return leadEsc + rest;
+    }
+
+    function getLatestCompletionMoment({ planning, childrenText, acceptedDateFormats, workflowRegistry } = {}) {
+      const registry = workflowRegistry;
+      const formats = Array.isArray(acceptedDateFormats) ? acceptedDateFormats : [];
+      const lines = Array.isArray(childrenText) ? childrenText : [];
+      let best = null;
+
+      const pushCandidate = (m) => {
+        if (!m || !m.isValid || !m.isValid()) return;
+        if (!best || m.valueOf() > best.valueOf()) best = m;
+      };
+
+      if (planning && planning.closed) {
+        pushCandidate(momentFromTimestampContent(planning.closed, formats, true));
+      }
+
+      for (const line of lines) {
+        const p = parsePlanningFromText(line);
+        if (p && p.closed) {
+          pushCandidate(momentFromTimestampContent(p.closed, formats, true));
+        }
+      }
+
+      // Example: - State "DONE" from "TODO" [2026-01-16 Fri 13:00]
+      const stateRe = /\bState\s+"([^"]+)"(?:\s+from\s+"[^"]+")?\s+\[([^\]]+)\]/i;
+      for (const line of lines) {
+        const m = String(line || "").match(stateRe);
+        if (!m) continue;
+        const toKeyword = String(m[1] || "").trim().toUpperCase();
+        const ts = String(m[2] || "").trim();
+        if (!toKeyword || !ts) continue;
+        if (registry && registry.isDoneLike && !registry.isDoneLike(toKeyword)) continue;
+        if (registry && registry.stampsClosed && !registry.stampsClosed(toKeyword)) continue;
+        pushCandidate(momentFromTimestampContent(ts, formats, true));
+      }
+
+      return best;
     }
 
     function renderChildrenBlock(children, fileName, headingLineNumber) {
@@ -170,19 +211,18 @@ module.exports = function () {
               const state = status ? (registry.states || []).find((s) => s.keyword === status) : null;
               const agendaVis = state && state.agendaVisibility ? state.agendaVisibility : "show";
               const isVisibleAgendaTask = Boolean(status && agendaVis === "show" && headingStartRegex.test(element));
-              
-              if (isVisibleAgendaTask) {
+              const isTaskHeading = Boolean(status && headingStartRegex.test(element));
 
-                // Capture indented child lines that belong to the current task
+              // Capture indented child lines once; used for both agenda rendering and completion parsing.
+              let children = [];
+              let deadlineFromChildren = null;
+              if (isTaskHeading) {
                 const baseIndent = element.match(/^\s*/)?.[0] || "";
-                const children = [];
-                let deadlineFromChildren = null;
                 for (let k = j + 1; k < fileText.length; k++) {
                   const nextLine = fileText[k];
                   const nextIndent = nextLine.match(/^\s*/)?.[0] || "";
                   if (nextIndent.length > baseIndent.length) {
                     children.push({ text: nextLine, lineNumber: k + 1 });
-                    // Check for DEADLINE in child lines
                     if (!deadlineFromChildren) {
                       const p = parsePlanningFromText(nextLine);
                       if (p && p.deadline) {
@@ -193,6 +233,59 @@ module.exports = function () {
                     break;
                   }
                 }
+              }
+
+              // Closed view: group tasks by latest completion date.
+              if (isTaskHeading) {
+                const childrenText = children.map((c) => String(c && typeof c === 'object' ? (c.text || '') : c || ''));
+                const closedMoment = getLatestCompletionMoment({
+                  planning,
+                  childrenText,
+                  acceptedDateFormats,
+                  workflowRegistry: registry
+                });
+
+                if (closedMoment) {
+                  const formattedClosedDate = closedMoment.format(dateFormat);
+                  const closedDayName = closedMoment.format("dddd");
+                  const cleanClosedDate = `[${formattedClosedDate}]`;
+
+                  const normalizedHeadline = stripInlinePlanning(normalizeTagsAfterPlanning(element));
+                  const closedTaskText = taskKeywordManager.cleanTaskText(stripAllTagSyntax(normalizedHeadline)).trim();
+                  const taskLineNumber = j + 1;
+
+                  const childrenBlock = renderChildrenBlock(children, items[i], taskLineNumber);
+                  const checkboxStats = computeCheckboxStatsFromLines(children);
+                  const cookie = findCheckboxCookie(element);
+                  const checkboxBadge = (cookie && checkboxStats.total >= 0)
+                    ? html`<span class="checkbox-stats">${formatCheckboxStats({ checked: checkboxStats.checked, total: checkboxStats.total }, cookie.mode)}</span>`
+                    : "";
+
+                  const dateAttrForReveal = cleanClosedDate;
+                  const filenameSpan = html`<span class="filename" data-file=${items[i]} data-line=${String(taskLineNumber)} data-text=${closedTaskText} data-date=${dateAttrForReveal}>${items[i]}:</span>`;
+                  const taskTextSpan = html`<span class="taskText agenda-task-link" data-file=${items[i]} data-line=${String(taskLineNumber)} data-text=${closedTaskText} data-date=${dateAttrForReveal}>${closedTaskText}</span>`;
+
+                  let renderedTask = "";
+                  if (status) {
+                    const bucket = getKeywordBucket(status, registry);
+                    const keywordSpan = html`<span class=${bucket} data-filename=${items[i]} data-text=${closedTaskText} data-date=${cleanClosedDate} data-line=${String(taskLineNumber)}>${status}</span>`;
+                    renderedTask = html`<>${filenameSpan} ${keywordSpan}${taskTextSpan}${checkboxBadge}<span class="closedTag">CLOSED</span></>`;
+                  } else {
+                    renderedTask = html`<>${filenameSpan} ${taskTextSpan}${checkboxBadge}<span class="closedTag">CLOSED</span></>`;
+                  }
+
+                  const dateDiv = html`<div class=${"heading" + closedDayName + " " + cleanClosedDate}><h4 class=${cleanClosedDate}>${cleanClosedDate}, ${closedDayName.toUpperCase()}</h4></div>`;
+                  const textDiv = html`<div class=${"panel " + cleanClosedDate}>${renderedTask}${childrenBlock}</div>`;
+
+                  if (!unsortedClosedObject[dateDiv]) {
+                    unsortedClosedObject[dateDiv] = "  " + textDiv;
+                  } else {
+                    unsortedClosedObject[dateDiv] += "  " + textDiv;
+                  }
+                }
+              }
+              
+              if (isVisibleAgendaTask) {
                 
                 // Prefer planning-parsed deadline for the task; fallback to deadlines found in child lines.
                 const deadlineStr = (planning && planning.deadline) ? planning.deadline : deadlineFromChildren;
@@ -387,6 +480,30 @@ module.exports = function () {
           itemInSortedObject += property + sortedObject[property] + "</br>";
         });
 
+        // Sort closed items by completion date (most recent first)
+        Object.keys(unsortedClosedObject)
+          .sort((a, b) => {
+            const tsA = getSortTimestampFromAgendaKey(a);
+            const tsB = getSortTimestampFromAgendaKey(b);
+            if (tsA == null && tsB == null) {
+              return a.localeCompare(b);
+            }
+            if (tsA == null) {
+              return 1;
+            }
+            if (tsB == null) {
+              return -1;
+            }
+            return tsB - tsA;
+          })
+          .forEach(key => {
+            sortedClosedObject[key] = unsortedClosedObject[key];
+          });
+
+        Object.keys(sortedClosedObject).forEach(property => {
+          itemInClosedSortedObject += property + sortedClosedObject[property] + "</br>";
+        });
+
         createWebview(skippedFiles);
       });
     }
@@ -458,7 +575,8 @@ module.exports = function () {
               const planning = getPlanningForHeading(lines, idx);
               const scheduled = planning && planning.scheduled ? normalizeDateOnly(planning.scheduled) : "";
               const deadline = planning && planning.deadline ? normalizeDateOnly(planning.deadline) : "";
-              return scheduled === dateOnly || deadline === dateOnly;
+              const closed = planning && planning.closed ? normalizeDateOnly(planning.closed) : "";
+              return scheduled === dateOnly || deadline === dateOnly || closed === dateOnly;
             }
 
             let resolvedLine = null;
@@ -982,6 +1100,16 @@ module.exports = function () {
         cursor: pointer;
         }
 
+        .closedTag{
+          color: #333;
+          padding-left: 10px;
+          font-weight: 700;
+          float: left;
+          padding-top: 13px;
+          height: 67%;
+          opacity: 0.8;
+        }
+
         .filename{
           font-size: 15px;
           font-weight: 700;
@@ -1171,6 +1299,33 @@ module.exports = function () {
           vertical-align: middle;
         }
 
+        #view-tabs {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 8px;
+          padding: 4px 0 8px 0;
+        }
+
+        .view-chip {
+          display: inline-flex;
+          align-items: center;
+          padding: 6px 12px;
+          border-radius: 999px;
+          font-size: 12px;
+          font-weight: 700;
+          cursor: pointer;
+          user-select: none;
+          border: 1px solid rgba(0,0,0,0.15);
+          background: #f3f3f3;
+          color: #111;
+        }
+
+        .view-chip.selected {
+          background: #2f6999;
+          color: #fff;
+          border-color: #2f6999;
+        }
+
         #file-bubbles {
           display: flex;
           flex-wrap: wrap;
@@ -1227,10 +1382,14 @@ module.exports = function () {
 
         <h1>Agenda View</h1>
         <div id="error-banner" class="${errorBannerClass}">${errorBannerContent}</div>
+        <div id="view-tabs" aria-label="Agenda tabs"></div>
         <div id="file-bubbles" aria-label="File filter"></div>
-        <div id="display-agenda">
+        <div id="display-agenda" data-view="agenda">
         ${itemInSortedObject}
-        </div>      
+        </div>
+        <div id="display-closed" data-view="closed" style="display:none;">
+        ${itemInClosedSortedObject}
+        </div>
         <script>
         const vscode = acquireVsCodeApi();
         const dateFormat = "${dateFormat}";
@@ -1238,8 +1397,98 @@ module.exports = function () {
         const highlightTaskOnClick = ${config.get("agendaHighlightTaskOnClick", true) ? "true" : "false"};
 
         const LS_EXPANDED_DATES_KEY = 'org-vscode.agenda.expandedDates';
+        const LS_EXPANDED_CLOSED_DATES_KEY = 'org-vscode.agendaClosed.expandedDates';
         const LS_OPEN_DETAILS_KEY = 'org-vscode.agenda.openDetails';
         const LS_SELECTED_FILE_KEY = 'org-vscode.agenda.selectedFile';
+        const LS_SELECTED_VIEW_KEY = 'org-vscode.agenda.selectedView';
+
+        function getRootForView(view) {
+          const v = String(view || '').toLowerCase();
+          if (v === 'closed') return document.getElementById('display-closed');
+          return document.getElementById('display-agenda');
+        }
+
+        function getSelectedView() {
+          const state = vscode.getState && vscode.getState();
+          const fromState = state && typeof state.selectedView === 'string' ? state.selectedView : '';
+          const fromLs = (() => { try { return String(localStorage.getItem(LS_SELECTED_VIEW_KEY) || ''); } catch { return ''; } })();
+          const v = (fromState || fromLs || 'agenda').toLowerCase();
+          return (v === 'closed') ? 'closed' : 'agenda';
+        }
+
+        function restoreExpandedDates(view) {
+          const v = (String(view || 'agenda').toLowerCase() === 'closed') ? 'closed' : 'agenda';
+          const key = (v === 'closed') ? LS_EXPANDED_CLOSED_DATES_KEY : LS_EXPANDED_DATES_KEY;
+          const root = getRootForView(v);
+          if (!root) return;
+
+          const expanded = loadJsonFromLocalStorage(key, []);
+          if (!Array.isArray(expanded) || !expanded.length) return;
+          const set = new Set(expanded.map(String));
+          const panels = Array.from(root.querySelectorAll('.panel'));
+          for (const p of panels) {
+            const dateClass = Array.from(p.classList).find(c => c && c.startsWith('[') && c.endsWith(']'));
+            if (dateClass && set.has(dateClass) && !p.classList.contains('filtered-out')) {
+              p.style.display = 'block';
+            }
+          }
+        }
+
+        function saveExpandedDates(view) {
+          const v = (String(view || getSelectedView()).toLowerCase() === 'closed') ? 'closed' : 'agenda';
+          const key = (v === 'closed') ? LS_EXPANDED_CLOSED_DATES_KEY : LS_EXPANDED_DATES_KEY;
+          const root = getRootForView(v);
+          if (!root) return;
+          const panels = Array.from(root.querySelectorAll('.panel'));
+          const expanded = new Set();
+          for (const p of panels) {
+            if (p.style && p.style.display === 'block') {
+              const dateClass = Array.from(p.classList).find(c => c && c.startsWith('[') && c.endsWith(']'));
+              if (dateClass) expanded.add(dateClass);
+            }
+          }
+          saveJsonToLocalStorage(key, Array.from(expanded));
+        }
+
+        function setSelectedView(view) {
+          const v = (String(view || 'agenda').toLowerCase() === 'closed') ? 'closed' : 'agenda';
+          const agendaRoot = document.getElementById('display-agenda');
+          const closedRoot = document.getElementById('display-closed');
+          if (agendaRoot) agendaRoot.style.display = (v === 'agenda') ? 'block' : 'none';
+          if (closedRoot) closedRoot.style.display = (v === 'closed') ? 'block' : 'none';
+
+          Array.from(document.querySelectorAll('.view-chip')).forEach(c => {
+            const vv = (c.dataset.view || '').toLowerCase();
+            if (vv === v) c.classList.add('selected');
+            else c.classList.remove('selected');
+          });
+
+          if (vscode.setState) {
+            const cur = vscode.getState && vscode.getState();
+            vscode.setState({ ...(cur || {}), selectedView: v });
+          }
+          try { localStorage.setItem(LS_SELECTED_VIEW_KEY, v); } catch {}
+
+          restoreExpandedDates(v);
+          restoreOpenDetails();
+        }
+
+        function buildViewTabs() {
+          const container = document.getElementById('view-tabs');
+          if (!container) return;
+          container.replaceChildren();
+          const mk = (label, view) => {
+            const el = document.createElement('div');
+            el.className = 'view-chip';
+            el.textContent = label;
+            el.dataset.view = view;
+            el.addEventListener('click', () => setSelectedView(view));
+            return el;
+          };
+          container.appendChild(mk('Agenda', 'agenda'));
+          container.appendChild(mk('Closed', 'closed'));
+          setSelectedView(getSelectedView());
+        }
 
         function loadJsonFromLocalStorage(key, fallback) {
           try {
@@ -1260,34 +1509,7 @@ module.exports = function () {
           }
         }
 
-        function getExpandedDateClasses() {
-          const panels = Array.from(document.querySelectorAll('.panel'));
-          const expanded = new Set();
-          for (const p of panels) {
-            if (p.style && p.style.display === 'block') {
-              const dateClass = Array.from(p.classList).find(c => c && c.startsWith('[') && c.endsWith(']'));
-              if (dateClass) expanded.add(dateClass);
-            }
-          }
-          return Array.from(expanded);
-        }
-
-        function restoreExpandedDates() {
-          const expanded = loadJsonFromLocalStorage(LS_EXPANDED_DATES_KEY, []);
-          if (!Array.isArray(expanded) || !expanded.length) return;
-          const set = new Set(expanded.map(String));
-          const panels = Array.from(document.querySelectorAll('.panel'));
-          for (const p of panels) {
-            const dateClass = Array.from(p.classList).find(c => c && c.startsWith('[') && c.endsWith(']'));
-            if (dateClass && set.has(dateClass) && !p.classList.contains('filtered-out')) {
-              p.style.display = 'block';
-            }
-          }
-        }
-
-        function saveExpandedDates() {
-          saveJsonToLocalStorage(LS_EXPANDED_DATES_KEY, getExpandedDateClasses());
-        }
+        // Expanded-date persistence is handled per-view by restoreExpandedDates(view) / saveExpandedDates(view)
 
         function restoreOpenDetails() {
           const openKeys = loadJsonFromLocalStorage(LS_OPEN_DETAILS_KEY, []);
@@ -1385,7 +1607,8 @@ module.exports = function () {
               const selected = chip.dataset.file || '';
               applyFileFilter(selected);
               if (vscode.setState) {
-                vscode.setState({ selectedFile: selected });
+                const cur = vscode.getState && vscode.getState();
+                vscode.setState({ ...(cur || {}), selectedFile: selected });
               }
               try { localStorage.setItem(LS_SELECTED_FILE_KEY, selected); } catch {}
             });
@@ -1408,38 +1631,42 @@ module.exports = function () {
             else c.classList.remove('selected');
           });
 
-          const panels = Array.from(document.querySelectorAll('.panel'));
-          panels.forEach(p => {
-            const fileEl = p.querySelector('.filename[data-file]');
-            const file = fileEl ? fileEl.dataset.file : '';
-            const match = !selectedFile || file === selectedFile;
-            if (match) p.classList.remove('filtered-out');
-            else p.classList.add('filtered-out');
-          });
+          const roots = [document.getElementById('display-agenda'), document.getElementById('display-closed')].filter(Boolean);
+          for (const root of roots) {
+            const panels = Array.from(root.querySelectorAll('.panel'));
+            panels.forEach(p => {
+              const fileEl = p.querySelector('.filename[data-file]');
+              const file = fileEl ? fileEl.dataset.file : '';
+              const match = !selectedFile || file === selectedFile;
+              if (match) p.classList.remove('filtered-out');
+              else p.classList.add('filtered-out');
+            });
 
-          // Hide day headings when no visible panels remain for that date.
-          const headingDivs = Array.from(document.querySelectorAll('div'))
-            .filter(d => Array.from(d.classList).some(c => c && c.startsWith('heading')));
+            // Hide day headings when no visible panels remain for that date.
+            const headingDivs = Array.from(root.querySelectorAll('div'))
+              .filter(d => Array.from(d.classList).some(c => c && c.startsWith('heading')));
 
-          headingDivs.forEach(h => {
-            const classes = Array.from(h.classList);
-            const dateClass = classes.find(c => c && c.startsWith('[') && c.endsWith(']'));
-            if (!dateClass) return;
-            const relatedPanels = panels.filter(p => p.classList.contains(dateClass));
-            const anyVisible = relatedPanels.some(p => !p.classList.contains('filtered-out'));
-            if (anyVisible) h.classList.remove('filtered-out');
-            else h.classList.add('filtered-out');
-          });
+            headingDivs.forEach(h => {
+              const classes = Array.from(h.classList);
+              const dateClass = classes.find(c => c && c.startsWith('[') && c.endsWith(']'));
+              if (!dateClass) return;
+              const relatedPanels = panels.filter(p => p.classList.contains(dateClass));
+              const anyVisible = relatedPanels.some(p => !p.classList.contains('filtered-out'));
+              if (anyVisible) h.classList.remove('filtered-out');
+              else h.classList.add('filtered-out');
+            });
+          }
         }
 
         // Load moment via CDN for formatting
         const script = document.createElement('script');
         script.src = "https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js";
         script.onload = () => {
+          buildViewTabs();
           buildFileChips(getAllFilesFromDom());
 
           // Restore expanded day headings and open task details after a refresh.
-          restoreExpandedDates();
+          restoreExpandedDates(getSelectedView());
           restoreOpenDetails();
 
           // Track details open/close.
@@ -1594,7 +1821,9 @@ module.exports = function () {
 
             let class0 = event.srcElement.classList[0];
             let class1 = event.srcElement.classList[1];
-            let panels = document.getElementsByClassName('panel');
+            const activeView = getSelectedView();
+            const activeRoot = getRootForView(activeView);
+            let panels = activeRoot ? activeRoot.getElementsByClassName('panel') : document.getElementsByClassName('panel');
 
             // Show or hide panels
             if (!event.srcElement.classList.contains('panel')) {
@@ -1608,7 +1837,7 @@ module.exports = function () {
               }
 
               // Persist expanded/collapsed day groups.
-              saveExpandedDates();
+              saveExpandedDates(activeView);
             }
 
             // Send filename to open file
