@@ -44,6 +44,7 @@ function smartDateAdjust(forward = true) {
     const sortedLines = Array.from(targetLines).sort((a, b) => b - a);
 
     const edit = new vscode.WorkspaceEdit();
+    const editedLineNumbers = new Set();
     let touched = false;
     let warnedParse = false;
 
@@ -62,8 +63,11 @@ function smartDateAdjust(forward = true) {
         }
         if (dayResult.text !== null) {
             if (dayResult.text !== text) {
+                if (!editedLineNumbers.has(lineNumber)) {
                 edit.replace(document.uri, line.range, dayResult.text);
                 touched = true;
+                    editedLineNumbers.add(lineNumber);
+                }
             }
             continue;
         }
@@ -76,8 +80,11 @@ function smartDateAdjust(forward = true) {
         }
         if (schedResult.text !== null) {
             if (schedResult.text !== text) {
+                if (!editedLineNumbers.has(lineNumber)) {
                 edit.replace(document.uri, line.range, schedResult.text);
                 touched = true;
+                    editedLineNumbers.add(lineNumber);
+                }
             }
             continue;
         }
@@ -91,8 +98,13 @@ function smartDateAdjust(forward = true) {
             }
             if (planningResult.text !== null && planningResult.text !== nextLineText) {
                 const planningLine = document.lineAt(lineNumber + 1);
+                const planningLineNumber = lineNumber + 1;
+                if (editedLineNumbers.has(planningLineNumber)) {
+                    continue;
+                }
                 edit.replace(document.uri, planningLine.range, planningResult.text);
                 touched = true;
+                editedLineNumbers.add(planningLineNumber);
             }
         }
     }
