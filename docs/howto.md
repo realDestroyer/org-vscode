@@ -570,6 +570,19 @@ Agenda View sections (Emacs-inspired):
 - **Deadline items**: tasks with `DEADLINE: <...>` even if they have no schedule (setting: `Org-vscode.agendaIncludeDeadlines`, default: `true`).
 - **Undated items**: tasks with no `SCHEDULED` and no `DEADLINE` appear under an **`[UNDATED]`** section (setting: `Org-vscode.agendaIncludeUndated`, default: `true`).
 
+### Tabs + range filtering
+
+The Agenda View has two tabs:
+
+- **Agenda**: scheduled / deadline / undated items (based on the settings above)
+- **Closed**: recently completed tasks, grouped by completion date
+
+Closed tasks are determined from `CLOSED:` planning stamps and (for repeaters/completion history) LOGBOOK `State "..." [timestamp]` entries; the most recent completion is used.
+
+Use the **Range** selector (**All / This week / This month / This year**) to limit *both* the Agenda and Closed tabs.
+
+- **This week** uses ISO week boundaries (**Monday–Sunday**).
+
 ### Performance notes (large `.org` files)
 
 Agenda View scanning is optimized to stay fast even on large Org files.

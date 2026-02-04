@@ -1,6 +1,6 @@
 ﻿# Roadmap
 
-Live version: 2.2.16
+Live version: 2.2.17
 
 These are the features that I have either already implemented, or plan to in the near future.
 
@@ -9,7 +9,7 @@ These are the features that I have either already implemented, or plan to in the
 | Feature Name              | Description                                                                                | Progress    | Version  | Author        |
 | ------------------------- | ------------------------------------------------------------------------------------------ | ----------- | -------- | ------------- |
 | Agenda View: deadlines + undated | Agenda View includes DEADLINE-only tasks and an optional (default-on) `[UNDATED]` section for tasks with no dates. | DONE | v2.2.14 | realDestroyer |
-| Agenda View: recently closed | Add an Agenda View tab/filter that shows recently completed tasks, bucketed by `CLOSED` date (daily groups). Should interpret `CLOSED:` stamps and LOGBOOK entries for repeated tasks so the most recent completion is used. | Not Started |  | realDestroyer |
+| Agenda View: recently closed | Add an Agenda View tab/filter that shows recently completed tasks, bucketed by `CLOSED` date (daily groups). Should interpret `CLOSED:` stamps and LOGBOOK entries for repeated tasks so the most recent completion is used. | DONE | v2.2.17 | realDestroyer |
 | Embedded Query Blocks | Support an in-file `#+BEGIN_QUERY ... #+END_QUERY` block that renders a live/updatable list of matching headings (workspace-wide) into the preview (Org-QL/Dataview-style). | Not Started |  | realDestroyer |
 | Workspace Index Cache (Optional) | Optional on-disk index (JSON/SQLite) to speed up link completion, tag/title lookup, symbol search, and query blocks; should be gitignored by default. | Not Started |  | realDestroyer |
 | Context Action: Ctrl+C Ctrl+C | Add a context-aware command that “does the right thing” at point (toggle checkbox, follow link, update timestamp, etc.), similar to Emacs Org’s `C-c C-c`. | Not Started |  | realDestroyer |

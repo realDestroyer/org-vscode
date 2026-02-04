@@ -7,6 +7,15 @@
 - (none)
 
 
+# [2.2.17] 02-04-26
+
+`Added / Enhanced`
+
+- **Agenda View: Closed tab:** Shows recently completed tasks grouped by completion date.
+  - Uses `CLOSED:` planning stamps and LOGBOOK `State "..." [timestamp]` history (repeaters) to determine the most recent completion.
+- **Agenda View: Range filter:** Limit Agenda + Closed to **All / This week / This month / This year** (week = Monday–Sunday).
+
+
 # [2.2.16] 02-02-26
 
 `Fixed`
