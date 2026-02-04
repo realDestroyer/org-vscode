@@ -275,7 +275,7 @@ module.exports = function () {
                   }
 
                   const dateDiv = html`<div class=${"heading" + closedDayName + " " + cleanClosedDate}><h4 class=${cleanClosedDate}>${cleanClosedDate}, ${closedDayName.toUpperCase()}</h4></div>`;
-                  const textDiv = html`<div class=${"panel " + cleanClosedDate}>${renderedTask}${childrenBlock}</div>`;
+                  const textDiv = html`<div class=${"panel " + cleanClosedDate} data-item-date=${formattedClosedDate} data-closed-date=${formattedClosedDate} data-scheduled-date="" data-deadline-date="">${renderedTask}${childrenBlock}</div>`;
 
                   if (!unsortedClosedObject[dateDiv]) {
                     unsortedClosedObject[dateDiv] = "  " + textDiv;
@@ -378,13 +378,20 @@ module.exports = function () {
 
                   if (!getDateFromTaskText) {
                     const dateDiv = html`<div class=${"headingUndated " + undatedClass}><h4 class=${undatedClass}>${undatedClass}, UNDATED</h4></div>`;
-                    const textDiv = html`<div class=${"panel " + undatedClass}>${renderedTask}${childrenBlock}</div>`;
+                    const textDiv = html`<div class=${"panel " + undatedClass} data-item-date="" data-scheduled-date="" data-deadline-date="">${renderedTask}${childrenBlock}</div>`;
                     convertedDateArray.push({ date: dateDiv, text: textDiv });
                   } else {
                     // If task is today or future
                     if (scheduledMoment.isSameOrAfter(moment().startOf("day"), "day")) {
+                      const itemDateOnly = scheduledMoment.format(dateFormat);
+                      const scheduledDateOnly = hasScheduled ? scheduledMoment.format(dateFormat) : "";
+                      let deadlineDateOnly = "";
+                      if (deadlineStr) {
+                        const dm = momentFromTimestampContent(deadlineStr, acceptedDateFormats, true);
+                        if (dm.isValid()) deadlineDateOnly = dm.format(dateFormat);
+                      }
                       const dateDiv = html`<div class=${"heading" + nameOfDay + " " + cleanDate}><h4 class=${cleanDate}>${cleanDate}, ${nameOfDay.toUpperCase()}</h4></div>`;
-                      const textDiv = html`<div class=${"panel " + cleanDate}>${renderedTask}${childrenBlock}</div>`;
+                      const textDiv = html`<div class=${"panel " + cleanDate} data-item-date=${itemDateOnly} data-scheduled-date=${scheduledDateOnly} data-deadline-date=${deadlineDateOnly}>${renderedTask}${childrenBlock}</div>`;
                       convertedDateArray.push({ date: dateDiv, text: textDiv });
                     } else {
                       // If task is overdue
@@ -394,11 +401,18 @@ module.exports = function () {
                       if (scheduledMoment.isBefore(moment().startOf("day"), "day")) {
                         const todayClass = "[" + today + "]";
                         const lateDate = momentFromTimestampContent(getDateFromTaskText[1], acceptedDateFormats, true).format(dateFormat);
+                        const itemDateOnly = lateDate;
+                        const scheduledDateOnly = hasScheduled ? lateDate : "";
+                        let deadlineDateOnly = "";
+                        if (deadlineStr) {
+                          const dm = momentFromTimestampContent(deadlineStr, acceptedDateFormats, true);
+                          if (dm.isValid()) deadlineDateOnly = dm.format(dateFormat);
+                        }
                         const lateBadge = hasScheduled
                           ? html`<span class="late">LATE: ${lateDate}</span>`
                           : html`<span class="late">DEADLINE: ${lateDate}</span>`;
                         const dateDiv = html`<div class=${"heading" + overdue + " " + todayClass}><h4 class=${todayClass}>${todayClass}, ${overdue.toUpperCase()}</h4></div>`;
-                        const textDiv = html`<div class=${"panel " + todayClass}>${renderedTask}${lateBadge}${childrenBlock}</div>`;
+                        const textDiv = html`<div class=${"panel " + todayClass} data-item-date=${itemDateOnly} data-scheduled-date=${scheduledDateOnly} data-deadline-date=${deadlineDateOnly}>${renderedTask}${lateBadge}${childrenBlock}</div>`;
                         convertedDateArray.push({ date: dateDiv, text: textDiv });
                       }
                     }
@@ -440,7 +454,7 @@ module.exports = function () {
                   const renderedTask = html`<>${filenameSpan} ${taskTextSpan}<span class="timestamp-marker"></span></>`;
 
                   const dateKey = html`<div class=${"heading" + nameOfDay + " " + cleanDate}><h4 class=${cleanDate}>${cleanDate}, ${nameOfDay.toUpperCase()}</h4></div>`;
-                  const panelHtml = html`<div class=${"panel " + cleanDate}>${renderedTask}</div>`;
+                  const panelHtml = html`<div class=${"panel " + cleanDate} data-item-date=${formattedDate} data-scheduled-date=${formattedDate} data-deadline-date="">${renderedTask}</div>`;
                   if (!unsortedObject[dateKey]) {
                     unsortedObject[dateKey] = "  " + panelHtml;
                   } else {
@@ -1358,6 +1372,33 @@ module.exports = function () {
         .filtered-out {
           display: none !important;
         }
+
+        .range-filtered-out {
+          display: none !important;
+        }
+
+        #range-controls {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          flex-wrap: wrap;
+          padding: 0 0 8px 0;
+        }
+
+        #range-controls label {
+          font-size: 12px;
+          font-weight: 700;
+          color: #111;
+        }
+
+        #range-select {
+          font-size: 12px;
+          padding: 6px 10px;
+          border-radius: 8px;
+          border: 1px solid rgba(0,0,0,0.2);
+          background: #fff;
+          color: #111;
+        }
         #error-banner {
           margin: 0 0 12px;
           padding: 10px 14px;
@@ -1383,6 +1424,15 @@ module.exports = function () {
         <h1>Agenda View</h1>
         <div id="error-banner" class="${errorBannerClass}">${errorBannerContent}</div>
         <div id="view-tabs" aria-label="Agenda tabs"></div>
+        <div id="range-controls" aria-label="Date range">
+          <label for="range-select">Range</label>
+          <select id="range-select">
+            <option value="all">All</option>
+            <option value="week">This week</option>
+            <option value="month">This month</option>
+            <option value="year">This year</option>
+          </select>
+        </div>
         <div id="file-bubbles" aria-label="File filter"></div>
         <div id="display-agenda" data-view="agenda">
         ${itemInSortedObject}
@@ -1393,6 +1443,7 @@ module.exports = function () {
         <script>
         const vscode = acquireVsCodeApi();
         const dateFormat = "${dateFormat}";
+        const acceptedDateFormats = ${JSON.stringify(acceptedDateFormats)};
         const revealTaskOnClick = ${config.get("agendaRevealTaskOnClick", true) ? "true" : "false"};
         const highlightTaskOnClick = ${config.get("agendaHighlightTaskOnClick", true) ? "true" : "false"};
 
@@ -1401,6 +1452,7 @@ module.exports = function () {
         const LS_OPEN_DETAILS_KEY = 'org-vscode.agenda.openDetails';
         const LS_SELECTED_FILE_KEY = 'org-vscode.agenda.selectedFile';
         const LS_SELECTED_VIEW_KEY = 'org-vscode.agenda.selectedView';
+        const LS_SELECTED_RANGE_KEY = 'org-vscode.agenda.selectedRange';
 
         function getRootForView(view) {
           const v = String(view || '').toLowerCase();
@@ -1416,6 +1468,125 @@ module.exports = function () {
           return (v === 'closed') ? 'closed' : 'agenda';
         }
 
+        function getSelectedRange() {
+          const state = vscode.getState && vscode.getState();
+          const fromState = state && typeof state.selectedRange === 'string' ? state.selectedRange : '';
+          const fromLs = (() => { try { return String(localStorage.getItem(LS_SELECTED_RANGE_KEY) || ''); } catch { return ''; } })();
+          const v = (fromState || fromLs || 'all').toLowerCase();
+          return (v === 'week' || v === 'month' || v === 'year') ? v : 'all';
+        }
+
+        function getSelectedFile() {
+          const state = vscode.getState && vscode.getState();
+          const fromState = state && typeof state.selectedFile === 'string' ? state.selectedFile : '';
+          const fromLs = (() => { try { return String(localStorage.getItem(LS_SELECTED_FILE_KEY) || ''); } catch { return ''; } })();
+          return String(fromState || fromLs || '');
+        }
+
+        function parseDateOnly(raw) {
+          const s = String(raw || '').trim();
+          if (!s) return null;
+          const m = s.match(/(\d{2,4}[-/]\d{2}[-/]\d{2,4})/);
+          const dateStr = m ? m[1] : s;
+          const parsed = window.moment ? window.moment(dateStr, acceptedDateFormats, true) : null;
+          if (!parsed || !parsed.isValid || !parsed.isValid()) return null;
+          return parsed;
+        }
+
+        function computeRangeBounds(rangeKey) {
+          const k = String(rangeKey || 'all').toLowerCase();
+          if (!window.moment) return null;
+          const now = window.moment();
+          if (k === 'week') {
+            return { start: now.clone().startOf('isoWeek'), end: now.clone().endOf('isoWeek') };
+          }
+          if (k === 'month') {
+            return { start: now.clone().startOf('month'), end: now.clone().endOf('month') };
+          }
+          if (k === 'year') {
+            return { start: now.clone().startOf('year'), end: now.clone().endOf('year') };
+          }
+          return null;
+        }
+
+        function panelIsHidden(p) {
+          return p.classList.contains('filtered-out') || p.classList.contains('range-filtered-out');
+        }
+
+        function updateHeadingsVisibility(root) {
+          if (!root) return;
+          const panels = Array.from(root.querySelectorAll('.panel'));
+          const headingDivs = Array.from(root.querySelectorAll('div'))
+            .filter(d => Array.from(d.classList).some(c => c && c.startsWith('heading')));
+
+          headingDivs.forEach(h => {
+            const classes = Array.from(h.classList);
+            const dateClass = classes.find(c => c && c.startsWith('[') && c.endsWith(']'));
+            if (!dateClass) return;
+            const relatedPanels = panels.filter(p => p.classList.contains(dateClass));
+            const anyVisible = relatedPanels.some(p => !panelIsHidden(p));
+            if (anyVisible) h.classList.remove('filtered-out');
+            else h.classList.add('filtered-out');
+          });
+        }
+
+        function applyRangeFilter() {
+          const range = getSelectedRange();
+          const bounds = computeRangeBounds(range);
+          const roots = [document.getElementById('display-agenda'), document.getElementById('display-closed')].filter(Boolean);
+
+          for (const root of roots) {
+            const isClosedView = root.id === 'display-closed';
+            const panels = Array.from(root.querySelectorAll('.panel'));
+            for (const p of panels) {
+              if (range === 'all' || !bounds) {
+                p.classList.remove('range-filtered-out');
+                continue;
+              }
+
+              if (isClosedView) {
+                const d = parseDateOnly(p.dataset.itemDate || p.dataset.closedDate || '');
+                if (!d) {
+                  p.classList.add('range-filtered-out');
+                  continue;
+                }
+                const ok = d.isBetween(bounds.start, bounds.end, 'day', '[]');
+                if (ok) p.classList.remove('range-filtered-out');
+                else p.classList.add('range-filtered-out');
+              } else {
+                const sched = parseDateOnly(p.dataset.scheduledDate || '');
+                const dead = parseDateOnly(p.dataset.deadlineDate || '');
+                const item = parseDateOnly(p.dataset.itemDate || '');
+                const ok = [sched, dead, item].some(x => x && x.isBetween(bounds.start, bounds.end, 'day', '[]'));
+                if (ok) p.classList.remove('range-filtered-out');
+                else p.classList.add('range-filtered-out');
+              }
+            }
+
+            updateHeadingsVisibility(root);
+          }
+        }
+
+        function initRangeControl() {
+          const sel = document.getElementById('range-select');
+          if (!sel) return;
+          sel.value = getSelectedRange();
+
+          sel.addEventListener('change', () => {
+            const v = getSelectedRange();
+            const next = String(sel.value || 'all').toLowerCase();
+            const cur = vscode.getState && vscode.getState();
+            if (vscode.setState) {
+              vscode.setState({ ...(cur || {}), selectedRange: next });
+            }
+            try { localStorage.setItem(LS_SELECTED_RANGE_KEY, next); } catch {}
+            applyRangeFilter();
+
+            // Ensure headings visibility is recomputed under both filters.
+            applyFileFilter(getSelectedFile());
+          });
+        }
+
         function restoreExpandedDates(view) {
           const v = (String(view || 'agenda').toLowerCase() === 'closed') ? 'closed' : 'agenda';
           const key = (v === 'closed') ? LS_EXPANDED_CLOSED_DATES_KEY : LS_EXPANDED_DATES_KEY;
@@ -1428,7 +1599,7 @@ module.exports = function () {
           const panels = Array.from(root.querySelectorAll('.panel'));
           for (const p of panels) {
             const dateClass = Array.from(p.classList).find(c => c && c.startsWith('[') && c.endsWith(']'));
-            if (dateClass && set.has(dateClass) && !p.classList.contains('filtered-out')) {
+            if (dateClass && set.has(dateClass) && !p.classList.contains('filtered-out') && !p.classList.contains('range-filtered-out')) {
               p.style.display = 'block';
             }
           }
@@ -1469,6 +1640,8 @@ module.exports = function () {
           }
           try { localStorage.setItem(LS_SELECTED_VIEW_KEY, v); } catch {}
 
+          // Ensure range filtering is applied before restoring expansion.
+          applyRangeFilter();
           restoreExpandedDates(v);
           restoreOpenDetails();
         }
@@ -1651,7 +1824,7 @@ module.exports = function () {
               const dateClass = classes.find(c => c && c.startsWith('[') && c.endsWith(']'));
               if (!dateClass) return;
               const relatedPanels = panels.filter(p => p.classList.contains(dateClass));
-              const anyVisible = relatedPanels.some(p => !p.classList.contains('filtered-out'));
+              const anyVisible = relatedPanels.some(p => !panelIsHidden(p));
               if (anyVisible) h.classList.remove('filtered-out');
               else h.classList.add('filtered-out');
             });
@@ -1663,7 +1836,11 @@ module.exports = function () {
         script.src = "https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js";
         script.onload = () => {
           buildViewTabs();
+          initRangeControl();
           buildFileChips(getAllFilesFromDom());
+
+          // Apply range after initial chips/filtering so headings are correct.
+          applyRangeFilter();
 
           // Restore expanded day headings and open task details after a refresh.
           restoreExpandedDates(getSelectedView());
