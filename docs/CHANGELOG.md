@@ -7,6 +7,16 @@
 - (none)
 
 
+# [2.2.18] 02-04-26
+
+`Added / Enhanced`
+
+- **Org links: render link descriptions (opt-in):** Optional decoration-based rendering for bracket links like `[[https://github.com][Github]]` to display only `Github`.
+  - Setting: `Org-vscode.decorateLinkDescriptions` (default: `false`).
+  - Command: **Org-vscode: Toggle Link Description Rendering**.
+  - Auto-reveals the full link while the cursor is inside it for easier editing.
+
+
 # [2.2.17] 02-04-26
 
 `Added / Enhanced`
