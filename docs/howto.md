@@ -405,6 +405,12 @@ Priority: [#A]
 - Follow `[[links]]` with Ctrl+Click (Windows/Linux) / Cmd+Click (Mac).
 - Type `[[` (or `[[id:`) to get link completions.
 
+Optional UI enhancement:
+
+- `Org-vscode.decorateLinkDescriptions`: when enabled, bracket links like `[[https://github.com][Github]]` are visually rendered as just `Github` (decorations only).
+  - The full link is automatically revealed while your cursor is inside it (so it stays editable).
+  - Command: **Org-vscode: Toggle Link Description Rendering**
+
 Examples:
 
 ```org

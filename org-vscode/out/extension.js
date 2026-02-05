@@ -56,6 +56,7 @@ const { registerOrgEmphasisDecorations } = require("./orgEmphasisDecorations");
 const { registerMathDecorations } = require("./mathDecorations");
 const { registerHeadingScheduledDecorations, registerHeadingDeadlineDecorations, registerHeadingClosedDecorations } = require("./headingScheduledDecorations");
 const { registerOrgLinkProvider } = require("./orgLinkProvider");
+const { registerOrgLinkDecorations } = require("./orgLinkDecorations");
 const { registerOrgSymbolProvider } = require("./orgSymbolProvider");
 const { registerOrgCompletionProvider } = require("./orgCompletionProvider");
 const { registerOrgPreview } = require("./orgPreview");
@@ -183,6 +184,9 @@ function activate(ctx) {
   registerOrgLinkProvider(ctx);
   registerOrgSymbolProvider(ctx);
   registerOrgCompletionProvider(ctx);
+
+  // Render [[link][desc]] as just `desc` (decorations only)
+  registerOrgLinkDecorations(ctx);
 
   // Visual-only unicode headings for org-style '*' files (no file rewrites)
   registerUnicodeHeadingDecorations(ctx);
