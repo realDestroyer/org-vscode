@@ -32,13 +32,13 @@ async function main() {
     // argument parsing when paths contain spaces. This repo lives under
     // `VSCode OrgMode`, so we create a no-space junction and run everything
     // through it.
-    const repoRoot = path.resolve(__dirname, '..');
+    const repoRoot = path.resolve(__dirname, '..', '..');
     const driveRoot = path.parse(repoRoot).root;
     const junctionRoot = path.join(driveRoot, '_orgvscode_testlink');
     ensureJunction(junctionRoot, repoRoot);
 
     const extensionDevelopmentPath = junctionRoot;
-    const extensionTestsPath = path.join(junctionRoot, 'test', 'suite', 'index.js');
+    const extensionTestsPath = path.join(junctionRoot, 'org-vscode', 'test', 'suite', 'index.js');
     const workspacePath = junctionRoot;
 
     const runId = String(Date.now());
@@ -49,6 +49,7 @@ async function main() {
     ensureEmptyDir(extensionsDir);
 
     await runTests({
+      version: '1.108.2',
       extensionDevelopmentPath,
       extensionTestsPath,
       launchArgs: [
