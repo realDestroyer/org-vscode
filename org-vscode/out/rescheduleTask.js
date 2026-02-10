@@ -36,6 +36,50 @@ function transformScheduledDate(text, forward, dateFormat, acceptedDateFormats) 
     return { text: updatedText, parseError: false };
 }
 
+function computeRescheduleReplacements(getLineText, lineCount, targetLines, forward, dateFormat, acceptedDateFormats) {
+    const sortedLines = Array.from(targetLines).sort((a, b) => b - a);
+    const replacements = new Map();
+    const replacedLines = new Set();
+    let warnedParse = false;
+
+    for (const lineNumber of sortedLines) {
+        if (replacedLines.has(lineNumber)) {
+            continue;
+        }
+
+        const text = getLineText(lineNumber);
+        const nextLineText = (lineNumber + 1 < lineCount) ? getLineText(lineNumber + 1) : "";
+
+        let result = transformScheduledDate(text, forward, dateFormat, acceptedDateFormats);
+        let targetLineNumber = lineNumber;
+
+        if (result.text === null && !result.parseError) {
+            if (isPlanningLine(nextLineText)) {
+                result = transformScheduledDate(nextLineText, forward, dateFormat, acceptedDateFormats);
+                targetLineNumber = lineNumber + 1;
+            }
+        }
+
+        if (result.parseError) {
+            warnedParse = true;
+            continue;
+        }
+
+        if (result.text !== null) {
+            if (replacedLines.has(targetLineNumber)) {
+                continue;
+            }
+            replacedLines.add(targetLineNumber);
+            const oldText = getLineText(targetLineNumber);
+            if (result.text !== oldText) {
+                replacements.set(targetLineNumber, result.text);
+            }
+        }
+    }
+
+    return { replacements, warnedParse };
+}
+
 function rescheduleTask(forward = true) {
     const vscode = require("vscode");
     const editor = vscode.window.activeTextEditor;
@@ -69,43 +113,16 @@ function rescheduleTask(forward = true) {
     const dateFormat = config.get("dateFormat", "YYYY-MM-DD");
     const acceptedDateFormats = getAcceptedDateFormats(dateFormat);
 
-    const edit = new vscode.WorkspaceEdit();
-    let touched = false;
-    let warnedParse = false;
+    const { replacements, warnedParse } = computeRescheduleReplacements(
+        (lineNumber) => document.lineAt(lineNumber).text,
+        document.lineCount,
+        targetLines,
+        forward,
+        dateFormat,
+        acceptedDateFormats
+    );
 
-    for (const lineNumber of sortedLines) {
-        const line = document.lineAt(lineNumber);
-        const text = line.text;
-        const nextLineText = (lineNumber + 1 < document.lineCount)
-            ? document.lineAt(lineNumber + 1).text
-            : "";
-
-        // Check current line first, then planning line below
-        let result = transformScheduledDate(text, forward, dateFormat, acceptedDateFormats);
-        let targetLineNumber = lineNumber;
-
-        if (result.text === null && !result.parseError) {
-            // Check next line if it's a planning line
-            if (isPlanningLine(nextLineText)) {
-                result = transformScheduledDate(nextLineText, forward, dateFormat, acceptedDateFormats);
-                targetLineNumber = lineNumber + 1;
-            }
-        }
-
-        if (result.parseError) {
-            warnedParse = true;
-            continue;
-        }
-        if (result.text !== null) {
-            const targetLine = document.lineAt(targetLineNumber);
-            if (result.text !== targetLine.text) {
-                edit.replace(document.uri, targetLine.range, result.text);
-                touched = true;
-            }
-        }
-    }
-
-    if (!touched) {
+    if (replacements.size === 0) {
         if (warnedParse) {
             vscode.window.showWarningMessage(`Could not parse one or more scheduled dates using format ${dateFormat}.`);
         }
@@ -113,6 +130,12 @@ function rescheduleTask(forward = true) {
             vscode.window.showWarningMessage("No scheduled date found on selected line(s).");
         }
         return;
+    }
+
+    const edit = new vscode.WorkspaceEdit();
+    for (const [lineNumber, newText] of replacements.entries()) {
+        const line = document.lineAt(lineNumber);
+        edit.replace(document.uri, line.range, newText);
     }
 
     vscode.workspace.applyEdit(edit);
@@ -131,5 +154,6 @@ function moveDateBackward() {
 module.exports = {
     moveDateForward,
     moveDateBackward,
-    transformScheduledDate
+    transformScheduledDate,
+    computeRescheduleReplacements
 };
