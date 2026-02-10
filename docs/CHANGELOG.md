@@ -7,6 +7,25 @@
 - (none)
 
 
+# [2.2.18] 02-04-26
+
+`Added / Enhanced`
+
+- **Org links: render link descriptions (opt-in):** Optional decoration-based rendering for bracket links like `[[https://github.com][Github]]` to display only `Github`.
+  - Setting: `Org-vscode.decorateLinkDescriptions` (default: `false`).
+  - Command: **Org-vscode: Toggle Link Description Rendering**.
+  - Auto-reveals the full link while the cursor is inside it for easier editing.
+
+
+# [2.2.17] 02-04-26
+
+`Added / Enhanced`
+
+- **Agenda View: Closed tab:** Shows recently completed tasks grouped by completion date.
+  - Uses `CLOSED:` planning stamps and LOGBOOK `State "..." [timestamp]` history (repeaters) to determine the most recent completion.
+- **Agenda View: Range filter:** Limit Agenda + Closed to **All / This week / This month / This year** (week = Monday–Sunday).
+
+
 # [2.2.16] 02-02-26
 
 `Fixed`

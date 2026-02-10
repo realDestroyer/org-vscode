@@ -405,6 +405,12 @@ Priority: [#A]
 - Follow `[[links]]` with Ctrl+Click (Windows/Linux) / Cmd+Click (Mac).
 - Type `[[` (or `[[id:`) to get link completions.
 
+Optional UI enhancement:
+
+- `Org-vscode.decorateLinkDescriptions`: when enabled, bracket links like `[[https://github.com][Github]]` are visually rendered as just `Github` (decorations only).
+  - The full link is automatically revealed while your cursor is inside it (so it stays editable).
+  - Command: **Org-vscode: Toggle Link Description Rendering**
+
 Examples:
 
 ```org
@@ -569,6 +575,19 @@ Agenda View sections (Emacs-inspired):
 - **Dated items**: tasks with `SCHEDULED: <...>`.
 - **Deadline items**: tasks with `DEADLINE: <...>` even if they have no schedule (setting: `Org-vscode.agendaIncludeDeadlines`, default: `true`).
 - **Undated items**: tasks with no `SCHEDULED` and no `DEADLINE` appear under an **`[UNDATED]`** section (setting: `Org-vscode.agendaIncludeUndated`, default: `true`).
+
+### Tabs + range filtering
+
+The Agenda View has two tabs:
+
+- **Agenda**: scheduled / deadline / undated items (based on the settings above)
+- **Closed**: recently completed tasks, grouped by completion date
+
+Closed tasks are determined from `CLOSED:` planning stamps and (for repeaters/completion history) LOGBOOK `State "..." [timestamp]` entries; the most recent completion is used.
+
+Use the **Range** selector (**All / This week / This month / This year**) to limit *both* the Agenda and Closed tabs.
+
+- **This week** uses ISO week boundaries (**Monday–Sunday**).
 
 ### Performance notes (large `.org` files)
 

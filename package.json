@@ -2,7 +2,7 @@
 	"name": "org-vscode",
 	"displayName": "org-vscode",
 	"description": "Quickly create todo lists, take notes, plan projects and organize your thoughts.",
-	"version": "2.2.16",
+	"version": "2.2.18",
 	"repository": "https://www.github.com/realDestroyer/org-vscode",
 	"icon": "Images/org-vscode-logo.png",
 	"publisher": "realDestroyer",
@@ -32,6 +32,7 @@
 		"onCommand:orgMode.openYearInReview",
 		"onCommand:org-vscode.insertNewElement",
 		"onCommand:org-vscode.sortHeadingsByScheduledDate",
+		"onCommand:org-vscode.toggleLinkDescriptionRendering",
 		"onCommand:org-vscode.setRepeater",
 		"onCommand:org-vscode.executeSrcBlock"
 	],
@@ -562,6 +563,12 @@
 					"default": true,
 					"description": "Render Org emphasis markers (*bold*, /italic/, _underline_) using editor decorations and hide the marker characters unless the cursor is on them."
 				},
+				"Org-vscode.decorateLinkDescriptions": {
+					"type": "boolean",
+					"order": 10.25,
+					"default": false,
+					"description": "When enabled: render Org bracket links like [[url][Label]] as just 'Label' using editor decorations. The full link is revealed when the cursor is inside it, and you can toggle this setting off to edit links."
+				},
 				"Org-vscode.decorateMath": {
 					"type": "boolean",
 					"order": 10.5,
@@ -673,6 +680,11 @@
 				"command": "org-vscode.setRepeater",
 				"category": "Org-vscode",
 				"title": "Set Repeater..."
+			},
+			{
+				"command": "org-vscode.toggleLinkDescriptionRendering",
+				"category": "Org-vscode",
+				"title": "Toggle Link Description Rendering"
 			},
 			{
 				"command": "extension.migrateFileToV2",
@@ -1077,6 +1089,7 @@
 		"@vscode/test-electron": "^2.3.8",
 		"@vscode/vsce": "^3.7.1",
 		"esbuild": "^0.27.1",
+		"mocha": "^10.8.2",
 		"typescript": "^5.5.4"
 	},
 	"dependencies": {
