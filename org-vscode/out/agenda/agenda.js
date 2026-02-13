@@ -435,6 +435,118 @@ module.exports = function () {
                   }
 
                   // Add each task block to unsorted object under its date
+                  // Also surface any child task headings with their own dates, since we skip the subtree.
+                  if (children && children.length) {
+                    for (const c of children) {
+                      const childLineText = c && typeof c === "object" ? String(c.text || "") : String(c || "");
+                      const childLineNumber = c && typeof c === "object" ? Number(c.lineNumber) : NaN;
+                      if (!Number.isFinite(childLineNumber)) continue;
+
+                      if (!headingStartRegex.test(childLineText)) continue;
+                      if (!/^\s*\*+\s+/.test(childLineText)) continue;
+                      const childStatus = taskKeywordManager.findTaskKeyword(childLineText);
+                      if (!childStatus) continue;
+
+                      const childState = (registry.states || []).find((s) => s.keyword === childStatus) || null;
+                      const childAgendaVis = childState && childState.agendaVisibility ? childState.agendaVisibility : "show";
+                      if (childAgendaVis !== "show") continue;
+
+                      const childIdx = childLineNumber - 1;
+                      const childPlanning = getPlanningForHeading(fileText, childIdx);
+                      const childHasScheduled = Boolean(childPlanning && childPlanning.scheduled);
+                      const childDeadlineStr = (childPlanning && childPlanning.deadline) ? childPlanning.deadline : "";
+                      const childHasDeadline = Boolean(childDeadlineStr);
+                      const childIsUndated = !childHasScheduled && !childHasDeadline;
+                      const childShouldInclude = childHasScheduled || (agendaIncludeDeadlines && childHasDeadline) || (agendaIncludeUndated && childIsUndated);
+                      if (!childShouldInclude) continue;
+
+                      const childAgendaDateContent = childHasScheduled ? childPlanning.scheduled : (childHasDeadline ? childDeadlineStr : null);
+                      const childDateMatch = childAgendaDateContent ? [null, childAgendaDateContent] : null;
+
+                      const normalizedChildHeadline = stripInlinePlanning(normalizeTagsAfterPlanning(childLineText));
+                      const childTaskText = taskKeywordManager.cleanTaskText(stripAllTagSyntax(normalizedChildHeadline)).trim();
+
+                      const undatedClass = "[UNDATED]";
+                      let childScheduledMoment = null;
+                      let childFormattedDate = "";
+                      let childNameOfDay = "";
+                      let childCleanDate = "";
+                      if (childDateMatch) {
+                        childScheduledMoment = momentFromTimestampContent(childDateMatch[1], acceptedDateFormats, true);
+                        if (!childScheduledMoment.isValid()) continue;
+                        childFormattedDate = childScheduledMoment.format(dateFormat);
+                        childNameOfDay = childScheduledMoment.format("dddd");
+                        childCleanDate = `[${childFormattedDate}]`;
+                      }
+
+                      let childDeadlineBadge = "";
+                      if (childDeadlineStr) {
+                        const deadlineDate = momentFromTimestampContent(childDeadlineStr, acceptedDateFormats, true);
+                        if (deadlineDate.isValid()) {
+                          const today = moment().startOf("day");
+                          const daysUntil = deadlineDate.diff(today, "days");
+                          if (daysUntil < 0) {
+                            childDeadlineBadge = html`<span class="deadline deadline-overdue">⚠ OVERDUE: ${deadlineDate.format("MMM Do")}</span>`;
+                          } else if (daysUntil === 0) {
+                            childDeadlineBadge = html`<span class="deadline deadline-today">⚠ DUE TODAY</span>`;
+                          } else if (daysUntil <= 3) {
+                            childDeadlineBadge = html`<span class="deadline deadline-soon">⏰ Due in ${daysUntil} day${daysUntil > 1 ? "s" : ""}</span>`;
+                          } else {
+                            childDeadlineBadge = html`<span class="deadline deadline-future">📅 Due: ${deadlineDate.format("MMM Do")}</span>`;
+                          }
+                        }
+                      }
+
+                      const childDateAttrForReveal = childDateMatch ? childCleanDate : undatedClass;
+                      const childFilenameSpan = html`<span class="filename" data-file=${items[i]} data-line=${String(childLineNumber)} data-text=${childTaskText} data-date=${childDateAttrForReveal}>${items[i]}:</span>`;
+                      const childTaskTextSpan = html`<span class="taskText agenda-task-link" data-file=${items[i]} data-line=${String(childLineNumber)} data-text=${childTaskText} data-date=${childDateAttrForReveal}>${childTaskText}</span>`;
+                      const childPlanningLabelSpan = childHasScheduled
+                        ? html`<span class="scheduled">SCHEDULED</span>`
+                        : (childHasDeadline ? html`<span class="deadlineTag">DEADLINE</span>` : html`<span class="undatedTag">UNDATED</span>`);
+                      const childBucket = getKeywordBucket(childStatus, registry);
+                      const childKeywordSpan = html`<span class=${childBucket} data-filename=${items[i]} data-text=${childTaskText} data-date=${childDateMatch ? childCleanDate : ""} data-line=${String(childLineNumber)}>${childStatus}</span>`;
+                      const childRenderedTask = html`<>${childFilenameSpan} ${childKeywordSpan}${childTaskTextSpan}${childPlanningLabelSpan}${childDeadlineBadge}</>`;
+
+                      if (!childDateMatch) {
+                        const dateDiv = html`<div class=${"headingUndated " + undatedClass}><h4 class=${undatedClass}>${undatedClass}, UNDATED</h4></div>`;
+                        const textDiv = html`<div class=${"panel " + undatedClass} data-item-date="" data-scheduled-date="" data-deadline-date="">${childRenderedTask}</div>`;
+                        if (!unsortedObject[dateDiv]) unsortedObject[dateDiv] = "  " + textDiv;
+                        else unsortedObject[dateDiv] += "  " + textDiv;
+                      } else if (childScheduledMoment.isSameOrAfter(moment().startOf("day"), "day")) {
+                        const itemDateOnly = childScheduledMoment.format(dateFormat);
+                        const scheduledDateOnly = childHasScheduled ? childScheduledMoment.format(dateFormat) : "";
+                        let deadlineDateOnly = "";
+                        if (childDeadlineStr) {
+                          const dm = momentFromTimestampContent(childDeadlineStr, acceptedDateFormats, true);
+                          if (dm.isValid()) deadlineDateOnly = dm.format(dateFormat);
+                        }
+                        const dateDiv = html`<div class=${"heading" + childNameOfDay + " " + childCleanDate}><h4 class=${childCleanDate}>${childCleanDate}, ${childNameOfDay.toUpperCase()}</h4></div>`;
+                        const textDiv = html`<div class=${"panel " + childCleanDate} data-item-date=${itemDateOnly} data-scheduled-date=${scheduledDateOnly} data-deadline-date=${deadlineDateOnly}>${childRenderedTask}</div>`;
+                        if (!unsortedObject[dateDiv]) unsortedObject[dateDiv] = "  " + textDiv;
+                        else unsortedObject[dateDiv] += "  " + textDiv;
+                      } else {
+                        const today = moment().format(dateFormat);
+                        const overdue = moment().format("dddd");
+                        const todayClass = "[" + today + "]";
+                        const lateDate = childScheduledMoment.format(dateFormat);
+                        const itemDateOnly = lateDate;
+                        const scheduledDateOnly = childHasScheduled ? lateDate : "";
+                        let deadlineDateOnly = "";
+                        if (childDeadlineStr) {
+                          const dm = momentFromTimestampContent(childDeadlineStr, acceptedDateFormats, true);
+                          if (dm.isValid()) deadlineDateOnly = dm.format(dateFormat);
+                        }
+                        const lateBadge = childHasScheduled
+                          ? html`<span class="late">LATE: ${lateDate}</span>`
+                          : html`<span class="late">DEADLINE: ${lateDate}</span>`;
+                        const dateDiv = html`<div class=${"heading" + overdue + " " + todayClass}><h4 class=${todayClass}>${todayClass}, ${overdue.toUpperCase()}</h4></div>`;
+                        const textDiv = html`<div class=${"panel " + todayClass} data-item-date=${itemDateOnly} data-scheduled-date=${scheduledDateOnly} data-deadline-date=${deadlineDateOnly}>${childRenderedTask}${lateBadge}</div>`;
+                        if (!unsortedObject[dateDiv]) unsortedObject[dateDiv] = "  " + textDiv;
+                        else unsortedObject[dateDiv] += "  " + textDiv;
+                      }
+                    }
+                  }
+
                   convertedDateArray.forEach(element => {
                     if (!unsortedObject[element.date]) {
                       unsortedObject[element.date] = "  " + element.text;
@@ -1332,6 +1444,24 @@ module.exports = function () {
 
         .detail-line.subtask-line .taskText {
           margin-left: 6px;
+        }
+        
+        /* Child task rows inside Show Details should not inherit the main row float layout. */
+        .children-block .taskText {
+          float: none;
+          width: auto;
+          margin-top: 0;
+          font-family: monospace;
+        }
+        .children-block .todo,
+        .children-block .done,
+        .children-block .in_progress,
+        .children-block .continued,
+        .children-block .abandoned {
+          float: none;
+          padding-top: 0;
+          height: auto;
+          display: inline-block;
         }
 
         .org-checkbox {

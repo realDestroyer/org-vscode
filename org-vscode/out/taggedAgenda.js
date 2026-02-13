@@ -1187,6 +1187,24 @@ body{
         .detail-line.subtask-line .taskText {
           margin-left: 6px;
         }
+
+        /* Child task rows inside Show Details should not inherit the main row float layout. */
+        .children-block .taskText {
+          float: none;
+          width: auto;
+          margin-top: 0;
+          font-family: monospace;
+        }
+        .children-block .todo,
+        .children-block .done,
+        .children-block .in_progress,
+        .children-block .continued,
+        .children-block .abandoned {
+          float: none;
+          padding-top: 0;
+          height: auto;
+          display: inline-block;
+        }
         #error-banner {
           margin: 0 0 12px;
           padding: 10px 14px;
