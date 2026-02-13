@@ -7,6 +7,14 @@
 - (none)
 
 
+# [2.2.19] 02-12-26
+
+`Fixed`
+
+- **Agenda View: child tasks with their own dates are no longer skipped:** Child task headings with their own `SCHEDULED` / `DEADLINE` are now surfaced even when their parent task is included in the agenda and the subtree is otherwise skipped.
+- **Tagged Agenda View: child task rows render correctly in “Show Details”:** Child task headings inside the details block no longer inherit the main row float layout.
+
+
 # [2.2.19] 02-09-26
 
 `Fixed`
