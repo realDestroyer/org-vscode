@@ -133,6 +133,22 @@ module.exports = function () {
       const linesHtml = arr.map((c) => {
         const text = c && typeof c === 'object' ? String(c.text || '') : String(c || '');
         const lineNumber = c && typeof c === 'object' ? Number(c.lineNumber) : NaN;
+
+        // Render child task headings as mini task rows.
+        const keyword = taskKeywordManager.findTaskKeyword(text);
+        const isHeading = /^\s*\*+\s+/.test(text);
+        if (keyword && isHeading) {
+          const safeLine = Number.isFinite(lineNumber) ? String(lineNumber) : "";
+          const normalizedHeadline = stripInlinePlanning(normalizeTagsAfterPlanning(text));
+          const childTaskText = taskKeywordManager.cleanTaskText(stripAllTagSyntax(normalizedHeadline)).trim();
+          const bucket = getKeywordBucket(keyword, registry);
+          const indent = text.match(/^(\s*)/)?.[1] || "";
+          const indentSpan = indent ? html`<span class="subtask-indent">${escapeLeadingSpaces(indent)}</span>` : "";
+          const keywordSpan = html`<span class=${bucket} data-filename=${fileName} data-text=${childTaskText} data-date="" data-line=${safeLine}>${keyword}</span>`;
+          const taskTextSpan = html`<span class="taskText agenda-task-link" data-file=${fileName} data-line=${safeLine} data-text=${childTaskText} data-date="">${childTaskText}</span>`;
+          return html`<div class="detail-line subtask-line">${indentSpan}${keywordSpan}${taskTextSpan}</div>`;
+        }
+
         const m = text.match(/^(\s*)([-+*]|\d+[.)])\s+\[( |x|X|-)\]\s+(.*)$/);
         if (!m) {
           return html`<div class="detail-line">${escapeLeadingSpaces(text)}</div>`;
@@ -146,8 +162,8 @@ module.exports = function () {
         const isPartial = state === "-";
         const safeLine = Number.isFinite(lineNumber) ? String(lineNumber) : "";
         const checkboxInput = html`<input class="org-checkbox" type="checkbox" data-file=${fileName} data-line=${safeLine} data-indent=${String(indentLen)} data-state=${isPartial ? "partial" : null} checked=${isChecked}/>`;
-        const restSpan = html`<span class="checkbox-text">${rest}</span>`;
-        return html`<div class="detail-line checkbox-line">${bullet} ${checkboxInput} ${restSpan}</div>`;
+        const restSpan = html`<span class="checkbox-text agenda-task-link" data-file=${fileName} data-line=${safeLine} data-text=${rest} data-date="">${rest}</span>`;
+        return html`<div class="detail-line checkbox-line subtask-line">${bullet} ${checkboxInput} ${restSpan}</div>`;
       });
 
       const keyLine = Number.isFinite(Number(headingLineNumber)) ? String(Number(headingLineNumber)) : "";
@@ -1307,6 +1323,15 @@ module.exports = function () {
 
         .detail-line.checkbox-line {
           display: block;
+        }
+
+        .detail-line.subtask-line {
+          display: block;
+          padding: 2px 0;
+        }
+
+        .detail-line.subtask-line .taskText {
+          margin-left: 6px;
         }
 
         .org-checkbox {
