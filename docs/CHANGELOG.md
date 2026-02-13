@@ -7,6 +7,13 @@
 - (none)
 
 
+# [2.2.19] 02-09-26
+
+`Fixed`
+
+- **Multiline selection: SCHEDULED Smart Date/Reschedule:** Fixed an "Overlapping ranges are not allowed" error when adjusting dates across multi-line selections that include both a heading and its planning line.
+
+
 # [2.2.18] 02-04-26
 
 `Added / Enhanced`
