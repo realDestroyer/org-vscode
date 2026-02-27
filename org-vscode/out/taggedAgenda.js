@@ -13,6 +13,7 @@ const { computeLogbookInsertion, formatStateChangeEntry } = require("./orgLogboo
 const { computeCheckboxStatsByHeadingLine, formatCheckboxStats, findCheckboxCookie } = require("./checkboxStats");
 const { computeCheckboxToggleEdits } = require("./checkboxToggle");
 const { html, escapeText, escapeAttr } = require("./htmlUtils");
+const { mergePlanningFromNearbyLines } = require("./planningMerge");
 
 function escapeRegExp(text) {
   return String(text).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -298,17 +299,9 @@ async function updateTaskStatusInFile(file, taskText, scheduledDate, newStatus, 
 
     const indent = currentLine.text.match(/^\s*/)?.[0] || "";
     const planningIndent = `${indent}${bodyIndent}`;
-    const planningFromHead = parsePlanningFromText(currentLine.text);
-    const planningFromNext = (nextLine && isPlanningLine(nextLine.text)) ? parsePlanningFromText(nextLine.text) : {};
-    const planningFromNextNext = (nextNextLine && isPlanningLine(nextNextLine.text)) ? parsePlanningFromText(nextNextLine.text) : {};
-
-  // Merge any adjacent planning lines into a single planning state.
-  const mergedPlanning = {
-    scheduled: planningFromNext.scheduled || planningFromHead.scheduled || null,
-    deadline: planningFromNext.deadline || planningFromHead.deadline || null,
-    // Prefer CLOSED; legacy COMPLETED is mapped to closed by the parser.
-    closed: planningFromNext.closed || planningFromHead.closed || planningFromNextNext.closed || null
-  };
+    // Merge any adjacent planning lines into a single planning state.
+    // Important: only consider a "next-next" planning line when the intervening line is blank.
+    const mergedPlanning = mergePlanningFromNearbyLines(currentLine.text, nextLine?.text || null, nextNextLine?.text || null);
 
     // Add/remove CLOSED in the planning line (preferred: single planning line directly under heading).
     if (registry.stampsClosed(newStatus)) {
@@ -398,7 +391,8 @@ async function updateTaskStatusInFile(file, taskText, scheduledDate, newStatus, 
       }
     } else {
       // If the second line was a planning line (rare), delete it and insert the merged one as immediate next line.
-      if (nextNextLine && isPlanningLine(nextNextLine.text)) {
+      // Only delete a next-next planning line if it's separated by a blank line; otherwise it may belong to a sibling heading.
+      if (nextLine && !nextLine.text.trim() && nextNextLine && isPlanningLine(nextNextLine.text)) {
         workspaceEdit.delete(uri, nextNextLine.rangeIncludingLineBreak);
       }
       workspaceEdit.insert(uri, currentLine.range.end, `\n${planningIndent}${planningBody}`);
@@ -407,7 +401,7 @@ async function updateTaskStatusInFile(file, taskText, scheduledDate, newStatus, 
     // No planning left: delete immediate planning line, or a stray second planning line.
     if (nextLine && isPlanningLine(nextLine.text)) {
       workspaceEdit.delete(uri, nextLine.rangeIncludingLineBreak);
-    } else if (nextNextLine && isPlanningLine(nextNextLine.text) && (nextNextLine.text.includes("CLOSED") || nextNextLine.text.includes("COMPLETED"))) {
+    } else if (nextLine && !nextLine.text.trim() && nextNextLine && isPlanningLine(nextNextLine.text) && (nextNextLine.text.includes("CLOSED") || nextNextLine.text.includes("COMPLETED"))) {
       workspaceEdit.delete(uri, nextNextLine.rangeIncludingLineBreak);
     }
   }

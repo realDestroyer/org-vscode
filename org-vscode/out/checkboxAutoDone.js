@@ -12,6 +12,7 @@ const { computeHeadingTransitions } = require("./checkboxAutoDoneTransitions");
 const { normalizeBodyIndentation } = require("./indentUtils");
 const { parseHeadingInfo, findSubtreeEndExclusive } = require("./moveBlockUtils");
 const { applyAutoMoveDone } = require("./doneTaskAutoMove");
+const { mergePlanningFromNearbyLines } = require("./planningMerge");
 
 const CHECKBOX_REGEX = /^\s*[-+*]\s+\[( |x|X)\]\s+/;
 const CHECKBOX_STATE_REPLACE_REGEX = /^(\s*[-+*]\s+\[)( |x|X|-)(\]\s+)/;
@@ -83,15 +84,7 @@ function queueResetHeadingToKeyword(workspaceEdit, document, lineNumber, targetK
   const starPrefixMatch = currentLine.text.match(/^\s*(\*+)/);
   const starPrefix = starPrefixMatch ? starPrefixMatch[1] : "*";
 
-  const planningFromHeadline = parsePlanningFromText(currentLine.text);
-  const planningFromNext = (nextLine && isPlanningLine(nextLine.text)) ? parsePlanningFromText(nextLine.text) : {};
-  const planningFromNextNext = (nextNextLine && isPlanningLine(nextNextLine.text)) ? parsePlanningFromText(nextNextLine.text) : {};
-
-  const mergedPlanning = {
-    scheduled: planningFromNext.scheduled || planningFromHeadline.scheduled || null,
-    deadline: planningFromNext.deadline || planningFromHeadline.deadline || null,
-    closed: planningFromNext.closed || planningFromHeadline.closed || planningFromNextNext.closed || null
-  };
+  const mergedPlanning = mergePlanningFromNearbyLines(currentLine.text, nextLine?.text || null, nextNextLine?.text || null);
 
   // Resetting a task to an active state should remove CLOSED.
   mergedPlanning.closed = null;
@@ -116,7 +109,8 @@ function queueResetHeadingToKeyword(workspaceEdit, document, lineNumber, targetK
         workspaceEdit.delete(document.uri, nextNextLine.rangeIncludingLineBreak);
       }
     } else {
-      if (nextNextLine && isPlanningLine(nextNextLine.text)) {
+      // Only delete a next-next planning line if it's separated by a blank line; otherwise it may belong to a sibling heading.
+      if (nextLine && !nextLine.text.trim() && nextNextLine && isPlanningLine(nextNextLine.text)) {
         workspaceEdit.delete(document.uri, nextNextLine.rangeIncludingLineBreak);
       }
       workspaceEdit.insert(document.uri, currentLine.range.end, `\n${planningIndent}${planningBody}`);
@@ -125,7 +119,7 @@ function queueResetHeadingToKeyword(workspaceEdit, document, lineNumber, targetK
     // Remove planning lines if they exist but will be empty after removing CLOSED.
     if (nextLine && isPlanningLine(nextLine.text)) {
       workspaceEdit.delete(document.uri, nextLine.rangeIncludingLineBreak);
-    } else if (nextNextLine && isPlanningLine(nextNextLine.text) && (nextNextLine.text.includes("CLOSED") || nextNextLine.text.includes("COMPLETED"))) {
+    } else if (nextLine && !nextLine.text.trim() && nextNextLine && isPlanningLine(nextNextLine.text) && (nextNextLine.text.includes("CLOSED") || nextNextLine.text.includes("COMPLETED"))) {
       workspaceEdit.delete(document.uri, nextNextLine.rangeIncludingLineBreak);
     }
   }
@@ -159,15 +153,7 @@ async function applyDoneToHeading(document, lineNumber) {
   const starPrefixMatch = currentLine.text.match(/^\s*(\*+)/);
   const starPrefix = starPrefixMatch ? starPrefixMatch[1] : "*";
 
-  const planningFromHeadline = parsePlanningFromText(currentLine.text);
-  const planningFromNext = (nextLine && isPlanningLine(nextLine.text)) ? parsePlanningFromText(nextLine.text) : {};
-  const planningFromNextNext = (nextNextLine && isPlanningLine(nextNextLine.text)) ? parsePlanningFromText(nextNextLine.text) : {};
-
-  const mergedPlanning = {
-    scheduled: planningFromNext.scheduled || planningFromHeadline.scheduled || null,
-    deadline: planningFromNext.deadline || planningFromHeadline.deadline || null,
-    closed: planningFromNext.closed || planningFromHeadline.closed || planningFromNextNext.closed || null
-  };
+  const mergedPlanning = mergePlanningFromNearbyLines(currentLine.text, nextLine?.text || null, nextNextLine?.text || null);
 
   const doneKeyword = pickDoneKeyword(registry);
   const completionStampsClosed = registry.stampsClosed(doneKeyword);
@@ -274,7 +260,8 @@ async function applyDoneToHeading(document, lineNumber) {
         workspaceEdit.delete(document.uri, nextNextLine.rangeIncludingLineBreak);
       }
     } else {
-      if (nextNextLine && isPlanningLine(nextNextLine.text)) {
+      // Only delete a next-next planning line if it's separated by a blank line; otherwise it may belong to a sibling heading.
+      if (nextLine && !nextLine.text.trim() && nextNextLine && isPlanningLine(nextNextLine.text)) {
         workspaceEdit.delete(document.uri, nextNextLine.rangeIncludingLineBreak);
       }
       workspaceEdit.insert(document.uri, currentLine.range.end, `\n${planningIndent}${planningBody}`);
@@ -314,15 +301,7 @@ async function applyInProgressToHeading(document, lineNumber) {
   const starPrefixMatch = currentLine.text.match(/^\s*(\*+)/);
   const starPrefix = starPrefixMatch ? starPrefixMatch[1] : "*";
 
-  const planningFromHeadline = parsePlanningFromText(currentLine.text);
-  const planningFromNext = (nextLine && isPlanningLine(nextLine.text)) ? parsePlanningFromText(nextLine.text) : {};
-  const planningFromNextNext = (nextNextLine && isPlanningLine(nextNextLine.text)) ? parsePlanningFromText(nextNextLine.text) : {};
-
-  const mergedPlanning = {
-    scheduled: planningFromNext.scheduled || planningFromHeadline.scheduled || null,
-    deadline: planningFromNext.deadline || planningFromHeadline.deadline || null,
-    closed: planningFromNext.closed || planningFromHeadline.closed || planningFromNextNext.closed || null
-  };
+  const mergedPlanning = mergePlanningFromNearbyLines(currentLine.text, nextLine?.text || null, nextNextLine?.text || null);
 
   // Leaving DONE should remove CLOSED.
   mergedPlanning.closed = null;
@@ -347,7 +326,8 @@ async function applyInProgressToHeading(document, lineNumber) {
         workspaceEdit.delete(document.uri, nextNextLine.rangeIncludingLineBreak);
       }
     } else {
-      if (nextNextLine && isPlanningLine(nextNextLine.text)) {
+      // Only delete a next-next planning line if it's separated by a blank line; otherwise it may belong to a sibling heading.
+      if (nextLine && !nextLine.text.trim() && nextNextLine && isPlanningLine(nextNextLine.text)) {
         workspaceEdit.delete(document.uri, nextNextLine.rangeIncludingLineBreak);
       }
       workspaceEdit.insert(document.uri, currentLine.range.end, `\n${planningIndent}${planningBody}`);
@@ -356,7 +336,7 @@ async function applyInProgressToHeading(document, lineNumber) {
     // Remove planning lines if they exist but will be empty after removing CLOSED.
     if (nextLine && isPlanningLine(nextLine.text)) {
       workspaceEdit.delete(document.uri, nextLine.rangeIncludingLineBreak);
-    } else if (nextNextLine && isPlanningLine(nextNextLine.text) && (nextNextLine.text.includes("CLOSED") || nextNextLine.text.includes("COMPLETED"))) {
+    } else if (nextLine && !nextLine.text.trim() && nextNextLine && isPlanningLine(nextNextLine.text) && (nextNextLine.text.includes("CLOSED") || nextNextLine.text.includes("COMPLETED"))) {
       workspaceEdit.delete(document.uri, nextNextLine.rangeIncludingLineBreak);
     }
   }

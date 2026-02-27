@@ -25,6 +25,7 @@ const tests = [
   require(path.join(__dirname, 'date-mutations.test.js')),
   require(path.join(__dirname, 'smart-date-multiline.test.js')),
   require(path.join(__dirname, 'timestamp-repeater.test.js')),
+  require(path.join(__dirname, 'planning-merge.test.js')),
   require(path.join(__dirname, 'set-todo-state.test.js')),
   require(path.join(__dirname, 'continued-task-handler.test.js')),
   require(path.join(__dirname, 'src-block-utils.test.js'))

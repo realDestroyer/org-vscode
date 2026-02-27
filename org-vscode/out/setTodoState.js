@@ -6,6 +6,7 @@ const moment = require("moment");
 const { isPlanningLine, parsePlanningFromText, normalizeTagsAfterPlanning, stripInlinePlanning, getAcceptedDateFormats, processRepeaterOnDone } = require("./orgTagUtils");
 const { normalizeBodyIndentation } = require("./indentUtils");
 const { applyAutoMoveDone } = require("./doneTaskAutoMove");
+const { mergePlanningFromNearbyLines } = require("./planningMerge");
 
 function buildPlanningBody(planning) {
   const parts = [];
@@ -46,15 +47,7 @@ function computeTodoStateChange(params) {
   const starPrefixMatch = currentLineText.match(/^\s*(\*+)/);
   const starPrefix = starPrefixMatch ? starPrefixMatch[1] : "*";
 
-  const planningFromHeadline = parsePlanningFromText(currentLineText);
-  const planningFromNext = (nextLineText && isPlanningLine(nextLineText)) ? parsePlanningFromText(nextLineText) : {};
-  const planningFromNextNext = (nextNextLineText && isPlanningLine(nextNextLineText)) ? parsePlanningFromText(nextNextLineText) : {};
-
-  const mergedPlanning = {
-    scheduled: planningFromNext.scheduled || planningFromHeadline.scheduled || null,
-    deadline: planningFromNext.deadline || planningFromHeadline.deadline || null,
-    closed: planningFromNext.closed || planningFromHeadline.closed || planningFromNextNext.closed || null
-  };
+  const mergedPlanning = mergePlanningFromNearbyLines(currentLineText, nextLineText, nextNextLineText);
 
   const headlineNoPlanning = stripInlinePlanning(normalizeTagsAfterPlanning(currentLineText));
   const cleanedText = taskKeywordManager.cleanTaskText(headlineNoPlanning);
