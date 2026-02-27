@@ -14,7 +14,7 @@
 - **Status toggling no longer steals sibling `CLOSED:` planning lines:** Hardened planning-line merge logic so `Ctrl+Left` / `Ctrl+Right` and related workflows only bind nearby planning metadata to the current heading when ownership is unambiguous.
 - **Year-in-Review executive report export no longer fails on `SafeHtml`:** Coerces rendered HTML to a primitive string before writing report files.
 - **Year-in-Review dashboard rendering reliability:** Browser HTML utilities now preserve nested safe HTML correctly, including void elements like `<input>`, preventing literal markup text from appearing in the Raw Tasks table.
-- **Year-in-Review tag extraction from inline planning lines:** Tasks now correctly capture Emacs-style colon tags (for example `:LWS_MFG:LWS_LINE2:FUJI:`) even when tags appear before inline `SCHEDULED` / `DEADLINE` / `CLOSED` stamps.
+- **Year-in-Review tag extraction from inline planning lines:** Tasks now correctly capture Emacs-style colon tags (for example `:TAG1:TAG2:TAG3:`) even when tags appear before inline `SCHEDULED` / `DEADLINE` / `CLOSED` stamps.
 - **Year-in-Review heatmap readability + coverage:** Increased default heatmap tag depth and improved month-header cell sizing/overflow behavior for clearer labels.
 
 
