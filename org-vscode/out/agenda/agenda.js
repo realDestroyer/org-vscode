@@ -15,6 +15,7 @@ const { formatCheckboxStats, findCheckboxCookie, computeHierarchicalCheckboxStat
 const { computeCheckboxToggleEdits } = require("../checkboxToggle");
 const { normalizeBodyIndentation } = require("../indentUtils");
 const { html, escapeText } = require("../htmlUtils");
+const { mergePlanningFromNearbyLines } = require("../planningMerge");
 
 function escapeRegExp(text) {
   return String(text).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -886,15 +887,9 @@ module.exports = function () {
             const indent = currentLine.text.match(/^\s*/)?.[0] || "";
 
             const planningIndent = `${indent}${bodyIndent}`;
-            const planningFromHead = parsePlanningFromText(currentLine.text);
-            const planningFromNext = (nextLine && isPlanningLine(nextLine.text)) ? parsePlanningFromText(nextLine.text) : {};
-            const planningFromNextNext = (nextNextLine && isPlanningLine(nextNextLine.text)) ? parsePlanningFromText(nextNextLine.text) : {};
-
-            const mergedPlanning = {
-              scheduled: planningFromNext.scheduled || planningFromHead.scheduled || null,
-              deadline: planningFromNext.deadline || planningFromHead.deadline || null,
-              closed: planningFromNext.closed || planningFromHead.closed || planningFromNextNext.closed || null
-            };
+            // Merge adjacent planning lines into a single planning state.
+            // Important: only consider a "next-next" planning line when the intervening line is blank.
+            const mergedPlanning = mergePlanningFromNearbyLines(currentLine.text, nextLine?.text || null, nextNextLine?.text || null);
 
             if (registry.stampsClosed(newStatus)) {
               mergedPlanning.closed = moment().format(`${dateFormat} ddd HH:mm`);
@@ -981,7 +976,8 @@ module.exports = function () {
                   workspaceEdit.delete(uri, nextNextLine.rangeIncludingLineBreak);
                 }
               } else {
-                if (nextNextLine && isPlanningLine(nextNextLine.text)) {
+                // Only delete a next-next planning line if it's separated by a blank line; otherwise it may belong to a sibling heading.
+                if (nextLine && !nextLine.text.trim() && nextNextLine && isPlanningLine(nextNextLine.text)) {
                   workspaceEdit.delete(uri, nextNextLine.rangeIncludingLineBreak);
                 }
                 workspaceEdit.insert(uri, currentLine.range.end, `\n${planningIndent}${planningBody}`);
@@ -989,7 +985,7 @@ module.exports = function () {
             } else {
               if (nextLine && isPlanningLine(nextLine.text)) {
                 workspaceEdit.delete(uri, nextLine.rangeIncludingLineBreak);
-              } else if (nextNextLine && isPlanningLine(nextNextLine.text) && (nextNextLine.text.includes("CLOSED") || nextNextLine.text.includes("COMPLETED"))) {
+              } else if (nextLine && !nextLine.text.trim() && nextNextLine && isPlanningLine(nextNextLine.text) && (nextNextLine.text.includes("CLOSED") || nextNextLine.text.includes("COMPLETED"))) {
                 workspaceEdit.delete(uri, nextNextLine.rangeIncludingLineBreak);
               }
             }

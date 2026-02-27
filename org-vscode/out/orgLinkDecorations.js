@@ -94,6 +94,22 @@ function computeDecorationsForEditor(editor) {
 }
 
 function registerOrgLinkDecorations(ctx) {
+  // Always register the toggle command (even in unit tests where decoration APIs are mocked).
+  if (vscode.commands && typeof vscode.commands.registerCommand === "function") {
+    ctx.subscriptions.push(
+      vscode.commands.registerCommand("org-vscode.toggleLinkDescriptionRendering", async () => {
+        const config = vscode.workspace.getConfiguration("Org-vscode");
+        const current = Boolean(config.get("decorateLinkDescriptions", false));
+        const next = !current;
+
+        await config.update("decorateLinkDescriptions", next, vscode.ConfigurationTarget.Global);
+
+        // If decoration wiring is present, the configuration change listener will repaint.
+        // Otherwise, no-op.
+      })
+    );
+  }
+
   // Unit tests mock vscode; skip decoration wiring when APIs aren't present.
   if (!vscode.window || typeof vscode.window.createTextEditorDecorationType !== "function") {
     return;
@@ -165,15 +181,11 @@ function registerOrgLinkDecorations(ctx) {
         scheduleApply(vscode.window.activeTextEditor);
       }
     }),
-    vscode.commands.registerCommand("org-vscode.toggleLinkDescriptionRendering", async () => {
-      const config = vscode.workspace.getConfiguration("Org-vscode");
-      const current = Boolean(config.get("decorateLinkDescriptions", false));
-      const next = !current;
-
-      await config.update("decorateLinkDescriptions", next, vscode.ConfigurationTarget.Global);
-      scheduleApply(vscode.window.activeTextEditor);
-    })
+    // Note: command registered above so unit tests see it; here we just repaint on toggle.
   );
+
+  // Repaint on toggle by listening to config changes (covers command + manual changes).
+  // (The command above updates the config; this listener triggers scheduleApply.)
 }
 
 module.exports = {

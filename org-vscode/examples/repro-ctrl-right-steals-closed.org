@@ -1,0 +1,19 @@
+#+TITLE: Repro - Ctrl+Left/Right steals CLOSED
+
+This file reproduces a bug where `Ctrl+Right` / `Ctrl+Left` (toggle status)
+could insert a `CLOSED:` planning line even when toggling into non-done states.
+
+Steps:
+1) Put the caret on the first headline.
+2) Press Ctrl+Right.
+
+Before fix:
+- The first headline could get a `CLOSED:` planning line copied from the next headline.
+
+Expected:
+- Only insert/update `CLOSED:` when transitioning *to* a done-like state that stamps CLOSED.
+- Never inherit planning from the next headline.
+
+* Skibbidy rizzle (forgive me...my children told me the task needed to be named this lol)
+* DONE Next task that already has CLOSED
+  CLOSED: [2026-01-20 Tue 11:00]

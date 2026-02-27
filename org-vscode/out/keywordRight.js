@@ -5,6 +5,7 @@ const taskKeywordManager = require("./taskKeywordManager");
 const continuedTaskHandler = require("./continuedTaskHandler");
 const moment = require("moment");
 const { isPlanningLine, parsePlanningFromText, normalizeTagsAfterPlanning, stripInlinePlanning } = require("./orgTagUtils");
+const { mergePlanningFromNearbyLines } = require("./planningMerge");
 const { applyRepeatersOnCompletion } = require("./repeatedTasks");
 const { computeLogbookInsertion, formatStateChangeEntry } = require("./orgLogbook");
 const { normalizeBodyIndentation } = require("./indentUtils");
@@ -87,16 +88,7 @@ module.exports = async function () {
     const leadingSpaces = currentLine.text.slice(0, currentLine.firstNonWhitespaceCharacterIndex);
     const starPrefixMatch = currentLine.text.match(/^\s*(\*+)/);
     const starPrefix = starPrefixMatch ? starPrefixMatch[1] : "*";
-    const planningFromHeadline = parsePlanningFromText(currentLine.text);
-    const planningFromNext = (nextLine && isPlanningLine(nextLine.text)) ? parsePlanningFromText(nextLine.text) : {};
-    const planningFromNextNext = (nextNextLine && isPlanningLine(nextNextLine.text)) ? parsePlanningFromText(nextNextLine.text) : {};
-
-    const mergedPlanning = {
-      scheduled: planningFromNext.scheduled || planningFromHeadline.scheduled || null,
-      deadline: planningFromNext.deadline || planningFromHeadline.deadline || null,
-      // Prefer CLOSED; accept legacy COMPLETED from any parsed source.
-      closed: planningFromNext.closed || planningFromHeadline.closed || planningFromNextNext.closed || null
-    };
+    const mergedPlanning = mergePlanningFromNearbyLines(currentLine.text, nextLine?.text || null, nextNextLine?.text || null);
 
     const headlineNoPlanning = stripInlinePlanning(normalizeTagsAfterPlanning(currentLine.text));
     const cleanedText = taskKeywordManager.cleanTaskText(headlineNoPlanning);
