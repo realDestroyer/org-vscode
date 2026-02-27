@@ -28,7 +28,10 @@ const tests = [
   require(path.join(__dirname, 'planning-merge.test.js')),
   require(path.join(__dirname, 'set-todo-state.test.js')),
   require(path.join(__dirname, 'continued-task-handler.test.js')),
-  require(path.join(__dirname, 'src-block-utils.test.js'))
+  require(path.join(__dirname, 'src-block-utils.test.js')),
+  require(path.join(__dirname, 'html-utils-browser.test.js')),
+  require(path.join(__dirname, 'year-executive-report.test.js')),
+  require(path.join(__dirname, 'year-summary-tags.test.js'))
 ];
 
 async function main() {

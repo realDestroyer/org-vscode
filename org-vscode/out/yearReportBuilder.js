@@ -50,7 +50,7 @@ function buildDashboardModel(sourcePath, parsed, options = {}) {
   const tasks = flattenTasks(parsed.days);
   const monthOrder = buildMonthOrder(parsed.year, tasks);
   const monthlyStatus = buildMonthlyStatusSeries(tasks, monthOrder);
-  const tagMatrix = buildTagMatrix(tasks, monthOrder, options.tagLimit || 6);
+  const tagMatrix = buildTagMatrix(tasks, monthOrder, options.tagLimit || 18);
   const taskFeed = buildTaskFeed(tasks, options.feedLimit || 160);
 
   const statusTotals = tasks.reduce((acc, task) => {
