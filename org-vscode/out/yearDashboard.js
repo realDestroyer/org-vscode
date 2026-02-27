@@ -389,10 +389,11 @@ function getDashboardHtml(webview, nonce) {
       display: flex;
       flex-direction: column;
       gap: 10px;
+      overflow-x: auto;
     }
     .heatmap-row {
       display: grid;
-      grid-template-columns: 120px repeat(auto-fit, minmax(0, 1fr));
+      grid-template-columns: 120px repeat(auto-fit, minmax(26px, 1fr));
       gap: 4px;
       align-items: center;
       font-size: 0.85rem;
@@ -420,11 +421,11 @@ function getDashboardHtml(webview, nonce) {
     }
     .heatmap-header {
       display: grid;
-      grid-template-columns: 120px repeat(auto-fit, minmax(0, 1fr));
+      grid-template-columns: 120px repeat(auto-fit, minmax(26px, 1fr));
       gap: 4px;
       font-size: 0.75rem;
       text-transform: uppercase;
-      letter-spacing: 0.2rem;
+      letter-spacing: 0.1rem;
       color: var(--muted);
     }
     .panel.full {
