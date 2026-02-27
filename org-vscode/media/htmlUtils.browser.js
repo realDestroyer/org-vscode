@@ -27,6 +27,13 @@
     "'": "&#39;"
   };
 
+  // Wrapper for HTML strings that should not be escaped.
+  // Using a boxed string lets us detect nested element output and avoid
+  // double-escaping when htm composes trees.
+  class SafeHtml extends String {
+    constructor(s) { super(s); }
+  }
+
   function escapeText(str) {
     if (str == null) return "";
     return String(str).replace(/[&<>]/g, c => TEXT_ESCAPE_MAP[c]);
@@ -54,6 +61,7 @@
     if (!tag) {
       return children.flat(Infinity).map(c => {
         if (c == null) return "";
+        if (c instanceof SafeHtml) return String(c);
         if (typeof c === "object" && c.__raw) return c.toString();
         return escapeText(String(c));
       }).join("");
@@ -80,7 +88,7 @@
     }
 
     if (VOID_ELEMENTS.has(tag.toLowerCase())) {
-      return htmlStr + ">";
+      return new SafeHtml(htmlStr + ">");
     }
 
     htmlStr += ">";
@@ -90,6 +98,10 @@
     } else {
       for (const child of children.flat(Infinity)) {
         if (child == null || child === false) continue;
+        if (child instanceof SafeHtml) {
+          htmlStr += String(child);
+          continue;
+        }
         if (typeof child === "object" && child.__raw) {
           htmlStr += child.toString();
         } else {
@@ -98,7 +110,7 @@
       }
     }
 
-    return htmlStr + `</${tag}>`;
+    return new SafeHtml(htmlStr + `</${tag}>`);
   }
 
   function raw(htmlString) {
