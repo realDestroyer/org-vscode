@@ -35,7 +35,9 @@ async function generateExecutiveReportForFile(orgPath, parsedInput) {
   const model = buildReportModel(orgPath, parsed);
   const reportDir = await ensureReportDirectory(orgPath, model.year);
   const markdown = renderMarkdown(model);
-  const html = renderHtml(model);
+  // renderHtml returns SafeHtml (a boxed string). fs.writeFileSync requires a
+  // primitive string/Buffer/TypedArray/DataView.
+  const html = String(renderHtml(model));
 
   const mdPath = path.join(reportDir, "year-executive-report.md");
   const htmlPath = path.join(reportDir, "year-executive-report.html");

@@ -2,7 +2,7 @@ const vscode = require("vscode");
 const fs = require("fs");
 const path = require("path");
 const moment = require("moment");
-const { getAllTagsFromLine, stripAllTagSyntax, isPlanningLine, parsePlanningFromText, PLANNING_STRIP_RE } = require("./orgTagUtils");
+const { getAllTagsFromLine, stripAllTagSyntax, isPlanningLine, parsePlanningFromText, PLANNING_STRIP_RE, normalizeTagsAfterPlanning } = require("./orgTagUtils");
 const taskKeywordManager = require("./taskKeywordManager");
 
 const ORG_SYMBOL_REGEX = /\s*[⊙⊖⊘⊜⊗]\s*/g;
@@ -164,7 +164,7 @@ function parseOrgContent(raw) {
 }
 
 function extractMetadata(line) {
-  const cleaned = taskKeywordManager.cleanTaskText(line).trim();
+  const cleaned = normalizeTagsAfterPlanning(taskKeywordManager.cleanTaskText(line)).trim();
 
   const tags = getAllTagsFromLine(cleaned);
   const planning = parsePlanningFromText(cleaned);
