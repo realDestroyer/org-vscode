@@ -7,6 +7,14 @@
 - (none)
 
 
+# [2.2.22] 02-27-26
+
+`Added / Enhanced`
+
+- **Year-In-Review dashboard redesign:** Refreshed the year-end review dashboard UI with cleaner layout and stronger visual hierarchy for scanning annual activity.
+- **Year summary/report rendering improvements:** Improved summary composition and report builder output for more reliable and readable annual exports.
+
+
 # [2.2.21] 02-27-26
 
 `Fixed`
