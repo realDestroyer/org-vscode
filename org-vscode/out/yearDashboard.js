@@ -220,45 +220,52 @@ function getDashboardHtml(webview, nonce) {
   <style nonce="${nonce}">
     :root {
       color-scheme: light dark;
-      --bg: #0a111a;
-      --panel: rgba(12, 19, 28, 0.9);
-      --panel-border: rgba(255, 255, 255, 0.08);
-      --text: #eef2ff;
-      --muted: rgba(229, 231, 235, 0.7);
+      --bg: #050b16;
+      --panel: rgba(10, 17, 31, 0.82);
+      --panel-border: rgba(147, 197, 253, 0.18);
+      --text: #e6edf8;
+      --muted: rgba(191, 209, 236, 0.72);
       --accent: #38bdf8;
-      --accent-2: #f472b6;
-      --accent-3: #facc15;
-      --shell-max: clamp(1200px, 88vw, 2200px);
+      --accent-2: #22d3ee;
+      --accent-3: #f59e0b;
+      --shell-max: clamp(1280px, 94vw, 3000px);
       font-family: "Space Grotesk", "Fira Sans", "Segoe UI", sans-serif;
     }
     body {
       margin: 0;
-      padding: clamp(18px, 4vw, 56px);
-      background: radial-gradient(circle at 20% 20%, #1a2440, #050914 70%);
+      padding: clamp(12px, 2.2vw, 32px);
+      background:
+        radial-gradient(circle at 12% 18%, rgba(56,189,248,0.18), transparent 34%),
+        radial-gradient(circle at 84% 10%, rgba(34,211,238,0.12), transparent 28%),
+        radial-gradient(circle at 50% 80%, rgba(14,165,233,0.08), transparent 35%),
+        var(--bg);
       color: var(--text);
+      min-height: 100vh;
+      box-sizing: border-box;
     }
     .shell {
       width: min(var(--shell-max), 100%);
       margin: 0 auto;
       display: flex;
       flex-direction: column;
-      gap: 20px;
+      gap: 14px;
     }
     .hero {
       background: var(--panel);
       border: 1px solid var(--panel-border);
-      border-radius: 18px;
-      padding: 24px;
+      border-radius: 16px;
+      padding: 18px 20px;
       display: flex;
       flex-wrap: wrap;
       justify-content: space-between;
-      gap: 16px;
-      box-shadow: 0 30px 60px rgba(0,0,0,0.35);
+      gap: 14px;
+      box-shadow: 0 18px 44px rgba(1,6,20,0.45);
+      backdrop-filter: blur(8px);
     }
     .hero h1 {
-      margin: 4px 0;
-      font-size: 1.9rem;
-      letter-spacing: -0.5px;
+      margin: 2px 0;
+      font-size: clamp(1.45rem, 2.2vw, 2.05rem);
+      letter-spacing: -0.02em;
     }
     .hero p {
       margin: 0;
@@ -266,19 +273,19 @@ function getDashboardHtml(webview, nonce) {
     }
     .tabs {
       display: inline-flex;
-      gap: 12px;
+      gap: 8px;
       align-items: center;
-      background: rgba(7, 11, 18, 0.8);
+      background: rgba(8, 14, 27, 0.82);
       border: 1px solid var(--panel-border);
       border-radius: 999px;
-      padding: 6px;
+      padding: 4px;
       width: fit-content;
     }
     .tabs .tab {
       border: none;
       background: transparent;
       color: var(--muted);
-      padding: 8px 18px;
+      padding: 8px 16px;
       border-radius: 999px;
       font-weight: 600;
       letter-spacing: 0.12rem;
@@ -288,9 +295,9 @@ function getDashboardHtml(webview, nonce) {
       box-shadow: none;
     }
     .tabs .tab.active {
-      background: var(--accent);
+      background: linear-gradient(120deg, var(--accent), var(--accent-2));
       color: #04111f;
-      box-shadow: 0 15px 30px rgba(56,189,248,0.35);
+      box-shadow: 0 10px 24px rgba(56,189,248,0.35);
     }
     .tabs .tab:not(.active):hover {
       color: var(--text);
@@ -300,22 +307,22 @@ function getDashboardHtml(webview, nonce) {
     }
     .eyebrow {
       text-transform: uppercase;
-      letter-spacing: 0.4rem;
-      font-size: 0.75rem;
+      letter-spacing: 0.34rem;
+      font-size: 0.68rem;
       color: var(--accent-3);
     }
     .actions {
       display: flex;
       flex-wrap: wrap;
-      gap: 12px;
+      gap: 8px;
       align-items: center;
     }
     button {
       border-radius: 999px;
       border: 1px solid transparent;
-      background: var(--accent);
+      background: linear-gradient(120deg, var(--accent), var(--accent-2));
       color: #04111f;
-      padding: 10px 18px;
+      padding: 9px 16px;
       font-weight: 600;
       cursor: pointer;
       transition: transform 120ms ease, box-shadow 120ms ease;
@@ -336,17 +343,18 @@ function getDashboardHtml(webview, nonce) {
     }
     .stats {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-      gap: 16px;
+      grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+      gap: 12px;
     }
     .stat {
       background: var(--panel);
       border: 1px solid var(--panel-border);
-      border-radius: 16px;
-      padding: 18px;
+      border-radius: 14px;
+      padding: 14px;
       display: flex;
       flex-direction: column;
-      gap: 6px;
+      gap: 4px;
+      min-height: 108px;
     }
     .stat-label {
       font-size: 0.85rem;
@@ -355,27 +363,29 @@ function getDashboardHtml(webview, nonce) {
       color: var(--muted);
     }
     .stat-value {
-      font-size: 2rem;
+      font-size: clamp(1.35rem, 2.3vw, 2rem);
       font-weight: 600;
     }
     .panels {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
-      gap: 20px;
+      grid-template-columns: minmax(280px, 1fr) minmax(560px, 1.5fr);
+      gap: 12px;
+      align-items: stretch;
     }
     .panel {
       background: var(--panel);
       border: 1px solid var(--panel-border);
-      border-radius: 18px;
-      padding: 20px;
+      border-radius: 14px;
+      padding: 14px;
       position: relative;
       overflow: hidden;
+      min-height: 0;
     }
     .panel h2 {
       margin: 0 0 12px;
-      font-size: 1rem;
+      font-size: 0.92rem;
       text-transform: uppercase;
-      letter-spacing: 0.2rem;
+      letter-spacing: 0.16rem;
       color: var(--accent);
     }
     canvas {
@@ -388,45 +398,131 @@ function getDashboardHtml(webview, nonce) {
     .heatmap {
       display: flex;
       flex-direction: column;
+      gap: 0;
+      min-width: max-content;
+    }
+    .heatmap-panel {
+      display: grid;
+      grid-column: 2;
+      grid-row: 1 / span 2;
+      min-height: 540px;
+    }
+    .timeline-panel {
+      grid-column: 1;
+      grid-row: 1;
+    }
+    .storyboard-panel {
+      grid-column: 1;
+      grid-row: 2;
+    }
+    .heatmap-shell {
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      border-radius: 12px;
+      background: rgba(2, 8, 22, 0.72);
+      overflow: auto;
+      max-height: calc(100vh - 360px);
+      min-height: 360px;
+    }
+    .heatmap-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
       gap: 10px;
-      overflow-x: auto;
+      flex-wrap: wrap;
+      margin-bottom: 10px;
+    }
+    .heatmap-meta p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.82rem;
+      letter-spacing: 0.04rem;
+      text-transform: uppercase;
+    }
+    .heatmap-controls {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .heatmap-controls input,
+    .heatmap-controls select {
+      min-width: 130px;
+      border-radius: 10px;
+      padding: 7px 10px;
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06rem;
+    }
+    .heatmap-controls input[type="search"] {
+      min-width: 190px;
     }
     .heatmap-row {
       display: grid;
-      grid-template-columns: 120px repeat(auto-fit, minmax(26px, 1fr));
-      gap: 4px;
+      grid-template-columns: 190px repeat(var(--month-count, 12), minmax(44px, 44px));
+      gap: 2px;
       align-items: center;
-      font-size: 0.85rem;
+      font-size: 0.78rem;
+      min-width: max-content;
     }
     .heatmap-row span.tag {
+      position: sticky;
+      left: 0;
+      z-index: 2;
+      background: rgba(7, 14, 30, 0.96);
+      padding: 6px 10px;
+      border-right: 1px solid rgba(148, 163, 184, 0.18);
+      border-bottom: 1px solid rgba(148, 163, 184, 0.12);
       text-transform: uppercase;
-      letter-spacing: 0.1rem;
-      color: var(--muted);
+      letter-spacing: 0.08rem;
+      color: #d6e4ff;
       font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
     .heat-cell {
-      border-radius: 6px;
+      border-radius: 5px;
       text-align: center;
-      padding: 6px 0;
-      background: rgba(248,113,113, calc(var(--intensity, 0) * 0.85));
+      padding: 5px 0;
+      min-height: 22px;
+      background: linear-gradient(180deg, rgba(56,189,248, calc(var(--intensity, 0) * 0.95)), rgba(14,165,233, calc(var(--intensity, 0) * 0.6)));
       color: rgba(255,255,255,0.9);
       cursor: pointer;
       transition: opacity 100ms ease;
-      border: 1px solid rgba(255,255,255,0.03);
+      border: 1px solid rgba(148,163,184,0.12);
       font-weight: 600;
-      font-size: 0.8rem;
+      font-size: 0.7rem;
     }
     .heat-cell:hover {
-      opacity: 0.85;
+      opacity: 0.88;
+      border-color: rgba(103, 232, 249, 0.5);
     }
     .heatmap-header {
       display: grid;
-      grid-template-columns: 120px repeat(auto-fit, minmax(26px, 1fr));
-      gap: 4px;
-      font-size: 0.75rem;
+      position: sticky;
+      top: 0;
+      z-index: 3;
+      grid-template-columns: 190px repeat(var(--month-count, 12), minmax(44px, 44px));
+      gap: 2px;
+      font-size: 0.66rem;
       text-transform: uppercase;
-      letter-spacing: 0.1rem;
+      letter-spacing: 0.09rem;
       color: var(--muted);
+      min-width: max-content;
+    }
+    .heatmap-header span {
+      text-align: center;
+      background: rgba(6, 12, 25, 0.98);
+      border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+      padding: 6px 4px;
+    }
+    .heatmap-header span:first-child {
+      position: sticky;
+      left: 0;
+      z-index: 4;
+      text-align: left;
+      padding-left: 10px;
+      border-right: 1px solid rgba(148, 163, 184, 0.2);
     }
     .panel.full {
       grid-column: 1 / -1;
@@ -546,7 +642,7 @@ function getDashboardHtml(webview, nonce) {
     .filters {
       display: flex;
       flex-wrap: wrap;
-      gap: 12px;
+      gap: 8px;
       margin-bottom: 14px;
       align-items: center;
     }
@@ -628,7 +724,7 @@ function getDashboardHtml(webview, nonce) {
     }
     @media (max-width: 900px) {
       body {
-        padding: 18px;
+        padding: 12px;
       }
       .hero {
         flex-direction: column;
@@ -636,6 +732,18 @@ function getDashboardHtml(webview, nonce) {
       .tabs {
         flex-wrap: wrap;
         width: 100%;
+      }
+      .panels {
+        grid-template-columns: 1fr;
+      }
+      .timeline-panel,
+      .heatmap-panel,
+      .storyboard-panel {
+        grid-column: 1;
+        grid-row: auto;
+      }
+      .heatmap-panel {
+        min-height: 440px;
       }
       canvas {
         height: 180px;
@@ -670,7 +778,7 @@ function getDashboardHtml(webview, nonce) {
       <section class="stats" id="stat-grid"></section>
 
       <section class="panels">
-        <article class="panel">
+        <article class="panel timeline-panel">
           <h2>Timeline Pulse</h2>
           <div class="filters">
             <select id="status-filter">
@@ -679,12 +787,26 @@ function getDashboardHtml(webview, nonce) {
           </div>
           <canvas id="timeline" width="900" height="260"></canvas>
         </article>
-        <article class="panel">
+        <article class="panel heatmap-panel">
           <h2>Tag Heatmap</h2>
-          <div class="heatmap-header" id="heatmap-header"></div>
-          <div class="heatmap" id="heatmap"></div>
+          <div class="heatmap-meta">
+            <p id="heatmap-summary">Loading tags…</p>
+            <div class="heatmap-controls">
+              <input type="search" id="heatmap-search" placeholder="Filter tags" aria-label="Filter heatmap tags" />
+              <select id="heatmap-limit" aria-label="Heatmap row count">
+                <option value="25">Top 25</option>
+                <option value="50" selected>Top 50</option>
+                <option value="100">Top 100</option>
+                <option value="0">All tags</option>
+              </select>
+            </div>
+          </div>
+          <div class="heatmap-shell" id="heatmap-shell">
+            <div class="heatmap-header" id="heatmap-header"></div>
+            <div class="heatmap" id="heatmap"></div>
+          </div>
         </article>
-        <article class="panel full">
+        <article class="panel storyboard-panel">
           <h2>Task Storyboard</h2>
           <div class="filters">
             <input type="search" id="search-input" placeholder="Search accomplishments" />
