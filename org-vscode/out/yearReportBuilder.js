@@ -50,8 +50,10 @@ function buildDashboardModel(sourcePath, parsed, options = {}) {
   const tasks = flattenTasks(parsed.days);
   const monthOrder = buildMonthOrder(parsed.year, tasks);
   const monthlyStatus = buildMonthlyStatusSeries(tasks, monthOrder);
-  const tagMatrix = buildTagMatrix(tasks, monthOrder, options.tagLimit || 18);
-  const taskFeed = buildTaskFeed(tasks, options.feedLimit || 160);
+  const tagLimit = typeof options.tagLimit === "number" ? options.tagLimit : undefined;
+  const tagMatrix = buildTagMatrix(tasks, monthOrder, tagLimit);
+  const feedLimit = typeof options.feedLimit === "number" ? options.feedLimit : undefined;
+  const taskFeed = buildTaskFeed(tasks, feedLimit);
 
   const statusTotals = tasks.reduce((acc, task) => {
     acc[task.status] = (acc[task.status] || 0) + 1;
@@ -349,9 +351,12 @@ function buildTagMatrix(tasks, monthOrder, limit) {
     });
   });
 
-  const ranked = Object.values(map)
-    .sort((a, b) => b.total - a.total)
-    .slice(0, limit);
+  const rankedAll = Object.values(map)
+    .sort((a, b) => b.total - a.total);
+
+  const ranked = typeof limit === "number" && limit > 0
+    ? rankedAll.slice(0, limit)
+    : rankedAll;
 
   return ranked.map(entry => ({
     tag: entry.tag,

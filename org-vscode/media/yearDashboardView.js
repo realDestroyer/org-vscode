@@ -5,6 +5,7 @@
   const state = {
     payload: null,
     filters: { status: "ALL", tag: null, month: null, search: "" },
+    heatmap: { query: "", limit: 50 },
     activeView: "insights",
     rawCsv: "",
     csvRows: null,
@@ -22,6 +23,9 @@
     generatedAt: document.getElementById("generated-at"),
     folderNote: document.getElementById("folder-note"),
     statusFilter: document.getElementById("status-filter"),
+    heatmapSearch: document.getElementById("heatmap-search"),
+    heatmapLimit: document.getElementById("heatmap-limit"),
+    heatmapSummary: document.getElementById("heatmap-summary"),
     heatmap: document.getElementById("heatmap"),
     heatmapHeader: document.getElementById("heatmap-header"),
     taskList: document.getElementById("task-list"),
@@ -49,7 +53,14 @@
   }
   document.getElementById("clear-filters").addEventListener("click", () => {
     state.filters = { status: "ALL", tag: null, month: null, search: "" };
+    state.heatmap = { query: "", limit: 50 };
     elements.searchInput.value = "";
+    if (elements.heatmapSearch) {
+      elements.heatmapSearch.value = "";
+    }
+    if (elements.heatmapLimit) {
+      elements.heatmapLimit.value = "50";
+    }
     render();
   });
 
@@ -70,6 +81,21 @@
     renderTasks();
   });
 
+  if (elements.heatmapSearch) {
+    elements.heatmapSearch.addEventListener("input", () => {
+      state.heatmap.query = elements.heatmapSearch.value.toLowerCase().trim();
+      renderHeatmap();
+    });
+  }
+
+  if (elements.heatmapLimit) {
+    elements.heatmapLimit.addEventListener("change", () => {
+      const parsed = Number(elements.heatmapLimit.value);
+      state.heatmap.limit = Number.isNaN(parsed) ? 50 : parsed;
+      renderHeatmap();
+    });
+  }
+
   window.addEventListener("message", (event) => {
     if (event.data?.command === "dashboardData") {
       state.payload = event.data.payload;
@@ -80,6 +106,13 @@
       state.csvFilters = [];
       state.csvColumnWidths = [];
       state.csvColumnCount = 0;
+      state.heatmap = { query: "", limit: 50 };
+      if (elements.heatmapSearch) {
+        elements.heatmapSearch.value = "";
+      }
+      if (elements.heatmapLimit) {
+        elements.heatmapLimit.value = "50";
+      }
       render();
     }
   });
@@ -191,18 +224,48 @@
   function renderHeatmap() {
     const { model } = state.payload;
     const months = model.monthOrder || [];
-    elements.heatmapHeader.innerHTML = [html`<span></span>`, ...months.map(month => html`<span>${month.label}</span>`)].join("");
+    const monthCount = Math.max(months.length, 1);
+    document.documentElement.style.setProperty("--month-count", String(monthCount));
+
+    elements.heatmapHeader.innerHTML = [html`<span>Tag</span>`, ...months.map(month => html`<span>${month.label}</span>`)].join("");
+
     if (!model.tagMatrix?.length) {
       elements.heatmap.innerHTML = html`<p class="empty-state">No tag data captured.</p>`;
+      if (elements.heatmapSummary) {
+        elements.heatmapSummary.textContent = "No tag activity available";
+      }
       return;
     }
-    const max = Math.max(...model.tagMatrix.flatMap(row => row.monthly.map(cell => cell.count)), 1);
-    elements.heatmap.innerHTML = model.tagMatrix
+
+    const query = (state.heatmap.query || "").trim();
+    const limit = Number(state.heatmap.limit) || 50;
+    const matchingRows = model.tagMatrix.filter(row => {
+      if (!query) {
+        return true;
+      }
+      return String(row.tag || "").toLowerCase().includes(query);
+    });
+    const visibleRows = limit > 0 ? matchingRows.slice(0, limit) : matchingRows;
+
+    if (elements.heatmapSummary) {
+      const shown = visibleRows.length.toLocaleString();
+      const total = model.tagMatrix.length.toLocaleString();
+      elements.heatmapSummary.textContent = `Showing ${shown} of ${total} tags`;
+    }
+
+    if (!visibleRows.length) {
+      elements.heatmap.innerHTML = html`<p class="empty-state">No tags match the current heatmap filter.</p>`;
+      return;
+    }
+
+    const max = Math.max(...visibleRows.flatMap(row => row.monthly.map(cell => cell.count)), 1);
+    elements.heatmap.innerHTML = visibleRows
       .map(row => {
         const cells = row.monthly
           .map(cell => {
             const intensity = cell.count / max;
-            return html`<span class="heat-cell" data-tag=${row.tag} data-month=${cell.key} style="--intensity:${intensity}">${cell.count || ""}</span>`;
+            const countLabel = cell.count || "";
+            return html`<span class="heat-cell" data-tag=${row.tag} data-month=${cell.key} style="--intensity:${intensity}" title="${row.tag} · ${cell.label}: ${cell.count}">${countLabel}</span>`;
           })
           .join("");
         return html`<div class="heatmap-row"><span class="tag">${row.tag}</span>${raw(cells)}</div>`;
@@ -265,18 +328,21 @@
         elements.statusFilter.value = "ALL";
         renderTimeline();
         renderTasks();
+        renderActiveFilters();
       }));
     }
     if (state.filters.tag) {
       chips.push(filterChip(`Tag · ${state.filters.tag}`, () => {
         state.filters.tag = null;
         renderTasks();
+        renderActiveFilters();
       }));
     }
     if (state.filters.month) {
       chips.push(filterChip(`Month · ${state.filters.month}`, () => {
         state.filters.month = null;
         renderTasks();
+        renderActiveFilters();
       }));
     }
     if (state.filters.search) {
@@ -284,6 +350,7 @@
         state.filters.search = "";
         elements.searchInput.value = "";
         renderTasks();
+        renderActiveFilters();
       }));
     }
     elements.activeFilters.innerHTML = chips.length ? chips.join("") : html`<span class="muted">No filters active.</span>`;

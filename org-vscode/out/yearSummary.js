@@ -146,8 +146,13 @@ function parseOrgContent(raw) {
     }
   });
 
-  const year = deriveYear(days);
-  const aggregates = buildAggregates(days, registry);
+  const year = deriveYear(days, lines);
+
+  // Mixed-year files are common (e.g. a 2025 file with a few 2024 carryover items).
+  // The Year-in-Review dashboard assumes a single year, so we filter parsed content
+  // down to the derived year to keep the heatmap/month filters consistent.
+  const filteredDays = filterDaysToYear(days, year);
+  const aggregates = buildAggregates(filteredDays, registry);
   const workflowMeta = {
     cycleKeywords: registry.getCycleKeywords(),
     doneLikeKeywords: (registry.states || []).filter((s) => s && s.isDoneLike).map((s) => s.keyword),
@@ -160,7 +165,7 @@ function parseOrgContent(raw) {
     .filter((s) => s && !s.isDoneLike && !s.triggersForward && s.keyword !== cycle[0])
     .map((s) => s.keyword);
 
-  return { days, year, aggregates, workflowMeta };
+  return { days: filteredDays, year, aggregates, workflowMeta };
 }
 
 function extractMetadata(line) {
@@ -183,13 +188,88 @@ function extractMetadata(line) {
   };
 }
 
-function deriveYear(days) {
+function deriveYear(days, lines) {
+  const declared = detectDeclaredYear(lines);
+  if (declared) {
+    return declared;
+  }
+
   const first = days.find(day => day.date);
   if (!first) {
     return new Date().getFullYear();
   }
   const parsed = moment(first.date, ["MM-DD-YYYY", "YYYY-MM-DD"], true);
   return parsed.isValid() ? parsed.year() : new Date().getFullYear();
+}
+
+function detectDeclaredYear(lines) {
+  const arr = Array.isArray(lines) ? lines : [];
+  const MAX_SCAN = 120;
+  const yearRe = /\b(19|20)\d{2}\b/;
+  const filetagsYearRe = /:(19|20)\d{2}:/;
+
+  for (let i = 0; i < Math.min(arr.length, MAX_SCAN); i++) {
+    const line = String(arr[i] || "").trim();
+    if (!line) {
+      continue;
+    }
+
+    const titleMatch = line.match(/^#\+TITLE:\s*(.*)$/i);
+    if (titleMatch) {
+      const match = String(titleMatch[1] || "").match(yearRe);
+      if (match) {
+        const year = Number(match[0]);
+        if (!Number.isNaN(year)) {
+          return year;
+        }
+      }
+    }
+
+    const fileTagsMatch = line.match(/^#\+FILETAGS:\s*(.*)$/i);
+    if (fileTagsMatch) {
+      const match = String(fileTagsMatch[1] || "").match(filetagsYearRe) || String(fileTagsMatch[1] || "").match(yearRe);
+      if (match) {
+        const year = Number(match[0].replace(/:/g, ""));
+        if (!Number.isNaN(year)) {
+          return year;
+        }
+      }
+    }
+  }
+
+  return null;
+}
+
+function filterDaysToYear(days, year) {
+  const list = Array.isArray(days) ? days : [];
+  const selectedYear = typeof year === "number" ? year : new Date().getFullYear();
+  const out = [];
+
+  list.forEach(day => {
+    const dayMoment = moment(day.date, ["MM-DD-YYYY", "YYYY-MM-DD"], true);
+    if (!dayMoment.isValid() || dayMoment.year() !== selectedYear) {
+      return;
+    }
+
+    const filteredTasks = (day.tasks || []).filter(task => {
+      const scheduledValue = task?.scheduled ? String(task.scheduled) : "";
+      if (scheduledValue) {
+        const scheduledMoment = moment(scheduledValue, ["MM-DD-YYYY", "YYYY-MM-DD"], true);
+        if (scheduledMoment.isValid()) {
+          return scheduledMoment.year() === selectedYear;
+        }
+      }
+      // Unscheduled tasks inherit their day heading's year.
+      return true;
+    });
+
+    out.push({
+      ...day,
+      tasks: filteredTasks
+    });
+  });
+
+  return out;
 }
 
 function buildAggregates(days, registry) {
