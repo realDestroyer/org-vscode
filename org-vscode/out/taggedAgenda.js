@@ -14,6 +14,7 @@ const { computeCheckboxStatsByHeadingLine, formatCheckboxStats, findCheckboxCook
 const { computeCheckboxToggleEdits } = require("./checkboxToggle");
 const { html, escapeText, escapeAttr } = require("./htmlUtils");
 const { mergePlanningFromNearbyLines } = require("./planningMerge");
+const { shouldIncludeOrgFileInViews } = require("./orgFileFilters");
 
 function escapeRegExp(text) {
   return String(text).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -67,7 +68,10 @@ module.exports = async function taggedAgenda() {
   const orgDir = getOrgFolder();
   let files;
   try {
-    files = fs.readdirSync(orgDir).filter(file => file.endsWith(".org") && !file.startsWith(".") && file !== "CurrentTasks.org");
+    files = fs.readdirSync(orgDir).filter((file) => {
+      const filePath = path.join(orgDir, file);
+      return shouldIncludeOrgFileInViews(file, filePath, config);
+    });
   } catch (dirErr) {
     vscode.window.showErrorMessage(`Error reading org directory: ${dirErr.message}`);
     return;
