@@ -72,6 +72,7 @@ const { registerSrcBlockCodeLens } = require("./srcBlockCodeLens");
 const setRepeater = require("./setRepeater");
 const taskKeywordManager = require("./taskKeywordManager");
 const { sortHeadingsByScheduledDate } = require("./sortHeadingsByScheduledDate");
+const archiveSubtree = require("./archiveSubtree");
 
 // Startup log for debugging
 console.log("📌 agenda.js has been loaded in extension.js");
@@ -301,6 +302,8 @@ function activate(ctx) {
   ctx.subscriptions.push(vscode.commands.registerCommand("org-vscode.insertNewElement", insertNewElement));
   ctx.subscriptions.push(vscode.commands.registerCommand("org-vscode.executeSrcBlock", executeSrcBlock));
   ctx.subscriptions.push(vscode.commands.registerCommand("org-vscode.sortHeadingsByScheduledDate", sortHeadingsByScheduledDate));
+  ctx.subscriptions.push(vscode.commands.registerCommand("org-vscode.archiveSubtree", archiveSubtree));
+  ctx.subscriptions.push(vscode.commands.registerCommand("extension.archiveSubtree", archiveSubtree));
 
   // org-vscode.insertTable is registered inside insertTable.activate()
   insertTable.activate(ctx);

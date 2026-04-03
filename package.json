@@ -34,7 +34,8 @@
 		"onCommand:org-vscode.sortHeadingsByScheduledDate",
 		"onCommand:org-vscode.toggleLinkDescriptionRendering",
 		"onCommand:org-vscode.setRepeater",
-		"onCommand:org-vscode.executeSrcBlock"
+		"onCommand:org-vscode.executeSrcBlock",
+		"onCommand:org-vscode.archiveSubtree"
 	],
 	"keywords": [
 		"todo",
@@ -389,6 +390,24 @@
 					"default": true,
 					"description": "When enabled, the Agenda View includes an [UNDATED] section for tasks that have no SCHEDULED/DEADLINE date."
 				},
+				"Org-vscode.ignoreArchivedFilesInViews": {
+					"type": "boolean",
+					"order": 6.92,
+					"default": true,
+					"description": "When enabled, Agenda/Tagged Agenda/Calendar ignore archived files (e.g. .org_archive files or files inside Archive/Archived folders)."
+				},
+				"Org-vscode.archiveFolderName": {
+					"type": "string",
+					"order": 6.93,
+					"default": "Archived",
+					"description": "Folder name (created next to the current org file) used by Archive Subtree command."
+				},
+				"Org-vscode.enforceTodoDependencies": {
+					"type": "boolean",
+					"order": 6.94,
+					"default": false,
+					"description": "When enabled, parent tasks cannot transition to done-like states while child task headings remain in non-done states (Org-style todo dependency behavior)."
+				},
 				"Org-vscode.includeContinuedInTaggedAgenda": {
 					"type": "boolean",
 					"order": 7,
@@ -680,6 +699,11 @@
 				"command": "org-vscode.setRepeater",
 				"category": "Org-vscode",
 				"title": "Set Repeater..."
+			},
+			{
+				"command": "org-vscode.archiveSubtree",
+				"category": "Org-vscode",
+				"title": "Archive Subtree"
 			},
 			{
 				"command": "org-vscode.toggleLinkDescriptionRendering",
