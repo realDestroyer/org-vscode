@@ -75,3 +75,6 @@ This repo bundles the extension into `dist/extension.js`. For a release, ensure 
     - Requires an OpenVSX token (commonly via `OVSX_PAT`).
     - From `org-vscode/`:
        - `npx ovsx publish -p $env:OVSX_PAT`
+
+8. **Update the Latest Release in GitHub**
+    - Upload the latest .vsix to GitHub "Latest Release"
