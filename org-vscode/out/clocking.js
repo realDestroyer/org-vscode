@@ -1,7 +1,7 @@
 "use strict";
 
 const vscode = require("vscode");
-const { parseHeadingInfo, findNearestHeadingStart } = require("./moveBlockUtils");
+const { parseHeadingInfo, findNearestHeadingStart, findSubtreeEndExclusive } = require("./moveBlockUtils");
 const { isPlanningLine, getAcceptedDateFormats } = require("./orgTagUtils");
 const {
   closeClockLine,
@@ -23,6 +23,10 @@ function locateClockInsertPoint(lines, headingLineIndex, bodyIndent, drawerName)
   const headingIndent = (String(lines[headingLineIndex] || "").match(/^(\s*)/) || ["", ""])[1];
   const drawerIndent = `${headingIndent}${bodyIndent}`;
   const drawerBeginRe = new RegExp(`^\\s*:${String(drawerName || "LOGBOOK").replace(/[.*+?^${}()|[\\]\\]/g, "\\$&")}:\\s*$`, "i");
+  const headingInfo = parseHeadingInfo(String(lines[headingLineIndex] || ""));
+  const subtreeEnd = headingInfo
+    ? findSubtreeEndExclusive(lines, headingLineIndex, headingInfo)
+    : lines.length;
 
   let i = headingLineIndex + 1;
   while (i < lines.length && isPlanningLine(lines[i])) i++;
@@ -36,8 +40,9 @@ function locateClockInsertPoint(lines, headingLineIndex, bodyIndent, drawerName)
     }
   }
 
-  if (i < lines.length && drawerBeginRe.test(String(lines[i] || ""))) {
-    const end = findDrawerEnd(lines, i);
+  for (let line = i; line < subtreeEnd; line++) {
+    if (!drawerBeginRe.test(String(lines[line] || ""))) continue;
+    const end = findDrawerEnd(lines, line);
     if (end !== -1) {
       return {
         insertLine: end,
@@ -52,35 +57,29 @@ function locateClockInsertPoint(lines, headingLineIndex, bodyIndent, drawerName)
   };
 }
 
-function findClocktableBounds(lines, cursorLine) {
-  let begin = -1;
-  let end = -1;
+function findClocktableBoundsInSubtree(lines, headingLineIndex, subtreeEndExclusive) {
+  let activeBegin = -1;
+  let latestComplete = null;
 
-  for (let i = cursorLine; i >= 0; i--) {
-    if (/^\s*#\+BEGIN_CLOCKTABLE\b/i.test(String(lines[i] || ""))) {
-      begin = i;
-      break;
+  for (let i = headingLineIndex + 1; i < subtreeEndExclusive; i++) {
+    const text = String(lines[i] || "");
+    if (/^\s*#\+BEGIN_CLOCKTABLE\b/i.test(text)) {
+      activeBegin = i;
+      continue;
     }
-    if (/^\s*#\+END_CLOCKTABLE\b/i.test(String(lines[i] || ""))) break;
-  }
-
-  if (begin === -1) return null;
-
-  for (let i = begin + 1; i < lines.length; i++) {
-    if (/^\s*#\+END_CLOCKTABLE\b/i.test(String(lines[i] || ""))) {
-      end = i;
-      break;
+    if (/^\s*#\+END_CLOCKTABLE\b/i.test(text) && activeBegin !== -1) {
+      latestComplete = { begin: activeBegin, end: i };
+      activeBegin = -1;
     }
   }
 
-  if (end === -1) return null;
-  return { begin, end };
+  return latestComplete;
 }
 
 function findClocktableInsertLine(lines, headingLineIndex) {
-  let i = headingLineIndex + 1;
-  while (i < lines.length && isPlanningLine(lines[i])) i++;
-  return i;
+  const headingInfo = parseHeadingInfo(String(lines[headingLineIndex] || ""));
+  if (!headingInfo) return lines.length;
+  return findSubtreeEndExclusive(lines, headingLineIndex, headingInfo);
 }
 
 async function clockIn() {
@@ -179,12 +178,13 @@ async function updateClockTable() {
   const accepted = getAcceptedDateFormats(dateFormat);
   const document = editor.document;
   const lines = document.getText().split(/\r?\n/);
-  const bounds = findClocktableBounds(lines, editor.selection.active.line);
   const heading = findNearestHeadingStart(lines, editor.selection.active.line);
   if (!heading || (heading.info && heading.info.isDayHeading)) {
     vscode.window.showWarningMessage("Place cursor on a task heading to update clock table.");
     return;
   }
+  const subtreeEndExclusive = findSubtreeEndExclusive(lines, heading.startLine, heading.info);
+  const bounds = findClocktableBoundsInSubtree(lines, heading.startLine, subtreeEndExclusive);
 
   const headingIndent = (String(lines[heading.startLine] || "").match(/^(\s*)/) || ["", ""])[1];
   const defaultClocktableIndent = `${headingIndent}${bodyIndent}`;
