@@ -77,6 +77,12 @@ function findClocktableBounds(lines, cursorLine) {
   return { begin, end };
 }
 
+function findClocktableInsertLine(lines, headingLineIndex) {
+  let i = headingLineIndex + 1;
+  while (i < lines.length && isPlanningLine(lines[i])) i++;
+  return i;
+}
+
 async function clockIn() {
   const editor = vscode.window.activeTextEditor;
   if (!editor || editor.document.languageId !== "vso") return;
@@ -168,25 +174,37 @@ async function updateClockTable() {
   if (!editor || editor.document.languageId !== "vso") return;
 
   const config = vscode.workspace.getConfiguration("Org-vscode");
+  const bodyIndent = normalizeBodyIndentation(config.get("bodyIndentation", 2), 2);
   const dateFormat = config.get("dateFormat", "YYYY-MM-DD");
   const accepted = getAcceptedDateFormats(dateFormat);
   const document = editor.document;
   const lines = document.getText().split(/\r?\n/);
   const bounds = findClocktableBounds(lines, editor.selection.active.line);
+  const heading = findNearestHeadingStart(lines, editor.selection.active.line);
+  if (!heading || (heading.info && heading.info.isDayHeading)) {
+    vscode.window.showWarningMessage("Place cursor on a task heading to update clock table.");
+    return;
+  }
+
+  const headingIndent = (String(lines[heading.startLine] || "").match(/^(\s*)/) || ["", ""])[1];
+  const defaultClocktableIndent = `${headingIndent}${bodyIndent}`;
+  const blockIndent = bounds
+    ? ((String(lines[bounds.begin] || "").match(/^(\s*)/) || ["", ""])[1] || defaultClocktableIndent)
+    : defaultClocktableIndent;
 
   const summary = computeClockTableRows(lines, accepted);
-  const tableLines = [
+  const rawTableLines = [
     "| Heading | Time |",
     "| --- | ---: |",
     ...summary.rows.map((r) => `| ${r.heading.replace(/\|/g, "\\|")} | ${formatDuration(r.minutes)} |`),
     `| *Total* | *${formatDuration(summary.totalMinutes)}* |`
   ];
-  const tableBody = tableLines.join("\n");
+  const tableBody = rawTableLines.map((line) => `${blockIndent}${line}`).join("\n");
 
   const edit = new vscode.WorkspaceEdit();
   if (!bounds) {
-    const insertAt = editor.selection.active.line + 1;
-    const block = `#+BEGIN_CLOCKTABLE\n${tableBody}\n#+END_CLOCKTABLE\n`;
+    const insertAt = findClocktableInsertLine(lines, heading.startLine);
+    const block = `${blockIndent}#+BEGIN_CLOCKTABLE\n${tableBody}\n${blockIndent}#+END_CLOCKTABLE\n`;
     edit.insert(document.uri, new vscode.Position(insertAt, 0), block);
   } else {
     const start = new vscode.Position(bounds.begin + 1, 0);

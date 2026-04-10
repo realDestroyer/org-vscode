@@ -804,7 +804,11 @@ function getWebviewContent(nonce, currentColors, currentWorkflowStates) {
     const scopesHtml = scopeNames.map(name => {
       const settings = currentColors[name];
       const technicalScope = Array.isArray(settings.scope) ? settings.scope.join(", ") : settings.scope;
-      const supportsBackground = /\bKeyword\b/.test(name) || name === "Property Drawer" || /\bDecoration\b/.test(name);
+      const supportsBackground =
+        /\bKeyword\b/.test(name) ||
+        name === "Property Drawer" ||
+        /\bDecoration\b/.test(name) ||
+        name.startsWith("Clock Table");
 
       const previewSelector = `.preview[data-scope="${escapeCssAttrValue(name)}"]`;
       const previewRule = [
@@ -841,7 +845,7 @@ function getWebviewContent(nonce, currentColors, currentWorkflowStates) {
                      title="Hex color code" />
             </div>
             ${supportsBackground ? html`
-            <div class="color-picker-wrapper" title="Keyword background">
+            <div class="color-picker-wrapper" title="Token background">
             <span class="control-heading">Background</span>
               <input type="color"
               class="color-picker bg-color-picker"
@@ -1560,7 +1564,12 @@ function getWebviewContent(nonce, currentColors, currentWorkflowStates) {
         // scopeName comes from our fixed set of UI labels (keys of colors).
           // Avoid brittle escaping logic inside the template literal.
         const selector = '.preview[data-scope="' + scopeName + '"]';
-        const supportsBackground = (scopeName.includes('Keyword') || scopeName.includes('Decoration') || scopeName === 'Property Drawer');
+        const supportsBackground = (
+          scopeName.includes('Keyword') ||
+          scopeName.includes('Decoration') ||
+          scopeName === 'Property Drawer' ||
+          scopeName.startsWith('Clock Table')
+        );
 
         const parts = [];
         parts.push('color: ' + current.foreground + ';');
@@ -1812,7 +1821,7 @@ function getWebviewContent(nonce, currentColors, currentWorkflowStates) {
       renderWorkflowTable();
       setActiveTab('colors');
 
-      // Background picker handlers (keyword entries only)
+      // Background picker handlers (entries with background controls)
       document.querySelectorAll('.bg-color-picker').forEach(picker => {
         const handle = function() {
           const scope = this.dataset.scope;
