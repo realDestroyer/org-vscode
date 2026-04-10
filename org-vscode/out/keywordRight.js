@@ -10,6 +10,7 @@ const { applyRepeatersOnCompletion } = require("./repeatedTasks");
 const { computeLogbookInsertion, formatStateChangeEntry } = require("./orgLogbook");
 const { normalizeBodyIndentation } = require("./indentUtils");
 const { applyAutoMoveDone } = require("./doneTaskAutoMove");
+const { findIncompleteChildTask } = require("./todoDependencies");
 
 function buildPlanningBody(planning) {
   const parts = [];
@@ -32,6 +33,7 @@ module.exports = async function () {
   const bodyIndent = normalizeBodyIndentation(config.get("bodyIndentation", 2), 2);
   const logIntoDrawer = config.get("logIntoDrawer", false);
   const logDrawerName = config.get("logDrawerName", "LOGBOOK");
+  const enforceTodoDependencies = config.get("enforceTodoDependencies", false);
   const workflowRegistry = taskKeywordManager.getWorkflowRegistry();
 
   const { document } = activeTextEditor;
@@ -63,6 +65,7 @@ module.exports = async function () {
   const sortedLines = Array.from(targetLines).sort((a, b) => b - a);
   const changesForCurrentTasks = [];
   const completionMoveRequests = [];
+  const dependencyBlocks = [];
 
   for (const lineNumber of sortedLines) {
     const currentLine = document.lineAt(lineNumber);
@@ -100,6 +103,15 @@ module.exports = async function () {
 
     let nextKeyword = rotatedKeyword;
     const workspaceEdit = new vscode.WorkspaceEdit();
+
+    if (enforceTodoDependencies && workflowRegistry.isDoneLike(nextKeyword) && !workflowRegistry.isDoneLike(currentKeyword)) {
+      const currentLines = document.getText().split(/\r?\n/);
+      const blocker = findIncompleteChildTask(currentLines, lineNumber, workflowRegistry);
+      if (blocker) {
+        dependencyBlocks.push({ parentLine: lineNumber + 1, blocker });
+        continue;
+      }
+    }
 
     // Upsert/remove CLOSED in the planning line (preferred: single planning line under the headline).
     if (completionStampsClosed) {
@@ -235,6 +247,13 @@ module.exports = async function () {
 
   if (completionMoveRequests.length) {
     await vscode.commands.executeCommand("workbench.action.files.save");
+  }
+
+  if (dependencyBlocks.length) {
+    const first = dependencyBlocks[0];
+    vscode.window.showWarningMessage(
+      `Blocked by TODO dependencies: parent line ${first.parentLine} has incomplete child task at line ${first.blocker.lineNumber} (${first.blocker.keyword}).`
+    );
   }
 
   // If inside CurrentTasks.org, update original file(s)

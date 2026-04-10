@@ -260,6 +260,66 @@ const DEFAULT_COLORS = {
     background: "",
     fontStyle: ""
   },
+  "Clock Table Block": {
+    scope: "meta.block.clocktable.vso",
+    foreground: "#d4d4d4",
+    background: "",
+    fontStyle: ""
+  },
+  "Clock Table Begin": {
+    scope: "keyword.control.block.begin.clocktable.vso",
+    foreground: "#569cd6",
+    background: "",
+    fontStyle: ""
+  },
+  "Clock Table End": {
+    scope: "keyword.control.block.end.clocktable.vso",
+    foreground: "#569cd6",
+    background: "",
+    fontStyle: ""
+  },
+  "Clock Table Header": {
+    scope: "entity.name.table.clocktable.column.vso",
+    foreground: "#d7ba7d",
+    background: "",
+    fontStyle: "bold"
+  },
+  "Clock Table Row": {
+    scope: "meta.table.clocktable.row.vso",
+    foreground: "#d4d4d4",
+    background: "",
+    fontStyle: ""
+  },
+  "Clock Table TODO Status": {
+    scope: "keyword.control.clocktable.todo.vso",
+    foreground: "#24FF02",
+    background: "",
+    fontStyle: "bold"
+  },
+  "Clock Table IN_PROGRESS Status": {
+    scope: "keyword.control.clocktable.in_progress.vso",
+    foreground: "#33BFFF",
+    background: "",
+    fontStyle: "italic"
+  },
+  "Clock Table CONTINUED Status": {
+    scope: "keyword.control.clocktable.continued.vso",
+    foreground: "#888888",
+    background: "",
+    fontStyle: "italic"
+  },
+  "Clock Table DONE Status": {
+    scope: "keyword.control.clocktable.done.vso",
+    foreground: "#3AF605",
+    background: "",
+    fontStyle: "bold"
+  },
+  "Clock Table ABANDONED Status": {
+    scope: "keyword.control.clocktable.abandoned.vso",
+    foreground: "#FF3B3B",
+    background: "",
+    fontStyle: "bold"
+  },
   "Comment": {
     scope: ["comment.line.number-sign.vso", "comment.vso"],
     foreground: "#6a9955",
@@ -374,6 +434,11 @@ const SCOPE_GROUPS = {
     "List Bullet",
     "Ordered List Number",
     "Table",
+    "Clock Table Block",
+    "Clock Table Begin",
+    "Clock Table End",
+    "Clock Table Header",
+    "Clock Table Row",
     "Comment",
     "Block Begin",
     "Block End",
@@ -386,6 +451,13 @@ const SCOPE_GROUPS = {
     "Emphasis Italic",
     "Emphasis Underline",
     "Emphasis Strike"
+  ],
+  "Clock Table": [
+    "Clock Table TODO Status",
+    "Clock Table IN_PROGRESS Status",
+    "Clock Table CONTINUED Status",
+    "Clock Table DONE Status",
+    "Clock Table ABANDONED Status"
   ]
 };
 
@@ -732,7 +804,11 @@ function getWebviewContent(nonce, currentColors, currentWorkflowStates) {
     const scopesHtml = scopeNames.map(name => {
       const settings = currentColors[name];
       const technicalScope = Array.isArray(settings.scope) ? settings.scope.join(", ") : settings.scope;
-      const supportsBackground = /\bKeyword\b/.test(name) || name === "Property Drawer" || /\bDecoration\b/.test(name);
+      const supportsBackground =
+        /\bKeyword\b/.test(name) ||
+        name === "Property Drawer" ||
+        /\bDecoration\b/.test(name) ||
+        name.startsWith("Clock Table");
 
       const previewSelector = `.preview[data-scope="${escapeCssAttrValue(name)}"]`;
       const previewRule = [
@@ -769,7 +845,7 @@ function getWebviewContent(nonce, currentColors, currentWorkflowStates) {
                      title="Hex color code" />
             </div>
             ${supportsBackground ? html`
-            <div class="color-picker-wrapper" title="Keyword background">
+            <div class="color-picker-wrapper" title="Token background">
             <span class="control-heading">Background</span>
               <input type="color"
               class="color-picker bg-color-picker"
@@ -1488,7 +1564,12 @@ function getWebviewContent(nonce, currentColors, currentWorkflowStates) {
         // scopeName comes from our fixed set of UI labels (keys of colors).
           // Avoid brittle escaping logic inside the template literal.
         const selector = '.preview[data-scope="' + scopeName + '"]';
-        const supportsBackground = (scopeName.includes('Keyword') || scopeName.includes('Decoration') || scopeName === 'Property Drawer');
+        const supportsBackground = (
+          scopeName.includes('Keyword') ||
+          scopeName.includes('Decoration') ||
+          scopeName === 'Property Drawer' ||
+          scopeName.startsWith('Clock Table')
+        );
 
         const parts = [];
         parts.push('color: ' + current.foreground + ';');
@@ -1740,7 +1821,7 @@ function getWebviewContent(nonce, currentColors, currentWorkflowStates) {
       renderWorkflowTable();
       setActiveTab('colors');
 
-      // Background picker handlers (keyword entries only)
+      // Background picker handlers (entries with background controls)
       document.querySelectorAll('.bg-color-picker').forEach(picker => {
         const handle = function() {
           const scope = this.dataset.scope;
@@ -2057,6 +2138,16 @@ function getPreviewText(scopeName) {
     "List Bullet": "-",
     "Ordered List Number": "1.",
     "Table": "| a | b |",
+    "Clock Table Block": "#+BEGIN_CLOCKTABLE ... #+END_CLOCKTABLE",
+    "Clock Table Begin": "#+BEGIN_CLOCKTABLE",
+    "Clock Table End": "#+END_CLOCKTABLE",
+    "Clock Table Header": "| Heading | Time |",
+    "Clock Table Row": "| TODO Build feature | 01:20 |",
+    "Clock Table TODO Status": "TODO",
+    "Clock Table IN_PROGRESS Status": "IN_PROGRESS",
+    "Clock Table CONTINUED Status": "CONTINUED",
+    "Clock Table DONE Status": "DONE",
+    "Clock Table ABANDONED Status": "ABANDONED",
     "Comment": "# comment",
     "Block Begin": "#+BEGIN_SRC js",
     "Block End": "#+END_SRC",

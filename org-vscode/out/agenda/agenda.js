@@ -16,6 +16,7 @@ const { computeCheckboxToggleEdits } = require("../checkboxToggle");
 const { normalizeBodyIndentation } = require("../indentUtils");
 const { html, escapeText } = require("../htmlUtils");
 const { mergePlanningFromNearbyLines } = require("../planningMerge");
+const { shouldIncludeOrgFileInViews } = require("../orgFileFilters");
 
 function escapeRegExp(text) {
   return String(text).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -193,15 +194,16 @@ module.exports = function () {
         const skippedFiles = [];
 
         for (let i = 0; i < items.length; i++) {
-          if (items[i].endsWith(".org") && !items[i].startsWith(".") && items[i] !== "CurrentTasks.org") {
+          const fileName = items[i];
+          const fullPath = path.join(dirPath, fileName);
+          if (shouldIncludeOrgFileInViews(fileName, fullPath, config)) {
 
             // Read the contents of the .org file
-            const fullPath = path.join(dirPath, items[i]);
             let fileText;
             try {
               fileText = fs.readFileSync(fullPath).toString().split(/\r?\n/);
             } catch (fileErr) {
-              skippedFiles.push({ file: items[i], reason: fileErr.message });
+              skippedFiles.push({ file: fileName, reason: fileErr.message });
               continue;
             }
 
@@ -271,7 +273,7 @@ module.exports = function () {
                   const closedTaskText = taskKeywordManager.cleanTaskText(stripAllTagSyntax(normalizedHeadline)).trim();
                   const taskLineNumber = j + 1;
 
-                  const childrenBlock = renderChildrenBlock(children, items[i], taskLineNumber);
+                  const childrenBlock = renderChildrenBlock(children, fileName, taskLineNumber);
                   const checkboxStats = computeCheckboxStatsFromLines(children);
                   const cookie = findCheckboxCookie(element);
                   const checkboxBadge = (cookie && checkboxStats.total >= 0)
@@ -279,13 +281,13 @@ module.exports = function () {
                     : "";
 
                   const dateAttrForReveal = cleanClosedDate;
-                  const filenameSpan = html`<span class="filename" data-file=${items[i]} data-line=${String(taskLineNumber)} data-text=${closedTaskText} data-date=${dateAttrForReveal}>${items[i]}:</span>`;
-                  const taskTextSpan = html`<span class="taskText agenda-task-link" data-file=${items[i]} data-line=${String(taskLineNumber)} data-text=${closedTaskText} data-date=${dateAttrForReveal}>${closedTaskText}</span>`;
+                  const filenameSpan = html`<span class="filename" data-file=${fileName} data-line=${String(taskLineNumber)} data-text=${closedTaskText} data-date=${dateAttrForReveal}>${fileName}:</span>`;
+                  const taskTextSpan = html`<span class="taskText agenda-task-link" data-file=${fileName} data-line=${String(taskLineNumber)} data-text=${closedTaskText} data-date=${dateAttrForReveal}>${closedTaskText}</span>`;
 
                   let renderedTask = "";
                   if (status) {
                     const bucket = getKeywordBucket(status, registry);
-                    const keywordSpan = html`<span class=${bucket} data-filename=${items[i]} data-text=${closedTaskText} data-date=${cleanClosedDate} data-line=${String(taskLineNumber)}>${status}</span>`;
+                    const keywordSpan = html`<span class=${bucket} data-filename=${fileName} data-text=${closedTaskText} data-date=${cleanClosedDate} data-line=${String(taskLineNumber)}>${status}</span>`;
                     renderedTask = html`<>${filenameSpan} ${keywordSpan}${taskTextSpan}${checkboxBadge}<span class="closedTag">CLOSED</span></>`;
                   } else {
                     renderedTask = html`<>${filenameSpan} ${taskTextSpan}${checkboxBadge}<span class="closedTag">CLOSED</span></>`;
@@ -374,17 +376,17 @@ module.exports = function () {
                   // Build HTML task entry
                   let renderedTask = "";
                   const taskLineNumber = j + 1;
-                  let childrenBlock = renderChildrenBlock(children, items[i], taskLineNumber);
+                  let childrenBlock = renderChildrenBlock(children, fileName, taskLineNumber);
                   const dateAttrForReveal = getDateFromTaskText ? cleanDate : undatedClass;
-                  const filenameSpan = html`<span class="filename" data-file=${items[i]} data-line=${String(taskLineNumber)} data-text=${taskText} data-date=${dateAttrForReveal}>${items[i]}:</span>`;
-                  const taskTextSpan = html`<span class="taskText agenda-task-link" data-file=${items[i]} data-line=${String(taskLineNumber)} data-text=${taskText} data-date=${dateAttrForReveal}>${taskText}</span>`;
+                  const filenameSpan = html`<span class="filename" data-file=${fileName} data-line=${String(taskLineNumber)} data-text=${taskText} data-date=${dateAttrForReveal}>${fileName}:</span>`;
+                  const taskTextSpan = html`<span class="taskText agenda-task-link" data-file=${fileName} data-line=${String(taskLineNumber)} data-text=${taskText} data-date=${dateAttrForReveal}>${taskText}</span>`;
                   const planningLabelSpan = hasScheduled
                     ? html`<span class="scheduled">SCHEDULED</span>`
                     : (hasDeadline ? html`<span class="deadlineTag">DEADLINE</span>` : html`<span class="undatedTag">UNDATED</span>`);
                   if (taskKeywordMatch) {
                     const bucket = getKeywordBucket(taskKeywordMatch, registry);
                     const dateAttr = getDateFromTaskText ? cleanDate : "";
-                    const keywordSpan = html`<span class=${bucket} data-filename=${items[i]} data-text=${taskText} data-date=${dateAttr} data-line=${String(taskLineNumber)}>${taskKeywordMatch}</span>`;
+                    const keywordSpan = html`<span class=${bucket} data-filename=${fileName} data-text=${taskText} data-date=${dateAttr} data-line=${String(taskLineNumber)}>${taskKeywordMatch}</span>`;
                     renderedTask = html`<>${filenameSpan} ${keywordSpan}${taskTextSpan}${checkboxBadge}${planningLabelSpan}${deadlineBadge}</>`;
                   } else {
                     renderedTask = html`<>${filenameSpan} ${taskTextSpan}${checkboxBadge}${planningLabelSpan}${deadlineBadge}</>`;
@@ -499,13 +501,13 @@ module.exports = function () {
                       }
 
                       const childDateAttrForReveal = childDateMatch ? childCleanDate : undatedClass;
-                      const childFilenameSpan = html`<span class="filename" data-file=${items[i]} data-line=${String(childLineNumber)} data-text=${childTaskText} data-date=${childDateAttrForReveal}>${items[i]}:</span>`;
-                      const childTaskTextSpan = html`<span class="taskText agenda-task-link" data-file=${items[i]} data-line=${String(childLineNumber)} data-text=${childTaskText} data-date=${childDateAttrForReveal}>${childTaskText}</span>`;
+                      const childFilenameSpan = html`<span class="filename" data-file=${fileName} data-line=${String(childLineNumber)} data-text=${childTaskText} data-date=${childDateAttrForReveal}>${fileName}:</span>`;
+                      const childTaskTextSpan = html`<span class="taskText agenda-task-link" data-file=${fileName} data-line=${String(childLineNumber)} data-text=${childTaskText} data-date=${childDateAttrForReveal}>${childTaskText}</span>`;
                       const childPlanningLabelSpan = childHasScheduled
                         ? html`<span class="scheduled">SCHEDULED</span>`
                         : (childHasDeadline ? html`<span class="deadlineTag">DEADLINE</span>` : html`<span class="undatedTag">UNDATED</span>`);
                       const childBucket = getKeywordBucket(childStatus, registry);
-                      const childKeywordSpan = html`<span class=${childBucket} data-filename=${items[i]} data-text=${childTaskText} data-date=${childDateMatch ? childCleanDate : ""} data-line=${String(childLineNumber)}>${childStatus}</span>`;
+                      const childKeywordSpan = html`<span class=${childBucket} data-filename=${fileName} data-text=${childTaskText} data-date=${childDateMatch ? childCleanDate : ""} data-line=${String(childLineNumber)}>${childStatus}</span>`;
                       const childRenderedTask = html`<>${childFilenameSpan} ${childKeywordSpan}${childTaskTextSpan}${childPlanningLabelSpan}${childDeadlineBadge}</>`;
 
                       if (!childDateMatch) {
@@ -573,7 +575,7 @@ module.exports = function () {
 
                   const timestampLineNumber = j + 1;  // Click jumps to timestamp line
                   const displayText = currentHeadingText || element.trim();
-                  const filename = items[i];
+                  const filename = fileName;
                   const formattedDate = parsedDate.format(dateFormat);
                   const nameOfDay = parsedDate.format("dddd");
                   const cleanDate = "[" + formattedDate + "]";

@@ -7,6 +7,7 @@ const moment = require("moment");   // Date formatting library
 const taskKeywordManager = require("./taskKeywordManager");
 const { getAllTagsFromLine, stripAllTagSyntax, parseFileTagsFromText, createInheritanceTracker, getPlanningForHeading, isPlanningLine, normalizeTagsAfterPlanning, getAcceptedDateFormats, buildScheduledReplacement, getMatchingScheduledOnLine, rescheduleScheduledForHeadingByIndex, SCHEDULED_STRIP_RE, SCHEDULED_REGEX, DEADLINE_REGEX, momentFromTimestampContent, extractPlainTimestamps } = require("./orgTagUtils");
 const { normalizeBodyIndentation } = require("./indentUtils");
+const { shouldIncludeOrgFileInViews } = require("./orgFileFilters");
 
 function escapeRegExp(text) {
   return String(text).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -78,9 +79,8 @@ function sendTasksToCalendar(panel) {
   const skippedFiles = [];
 
   files.forEach(file => {
-      // Ignore non-.org files and the special CurrentTasks.org export file
-      if (file.endsWith(".org") && !file.startsWith(".") && file !== "CurrentTasks.org") {
-        let filePath = path.join(dirPath, file);
+      const filePath = path.join(dirPath, file);
+      if (shouldIncludeOrgFileInViews(file, filePath, config)) {
         let fileText;
         try {
           fileText = fs.readFileSync(filePath, "utf-8");

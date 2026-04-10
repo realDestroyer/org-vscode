@@ -7,6 +7,28 @@
 - (none)
 
 
+# [2.2.23] 04-09-26
+
+`Added / Enhanced`
+
+- **Archive Subtree (Org-style):** Added `org-vscode.archiveSubtree` to move the current heading subtree into an archive destination, plus archive-awareness settings for views.
+  - `Org-vscode.archiveFolderName`
+  - `Org-vscode.ignoreArchivedFilesInViews`
+- **Archived file filtering in Agenda/Tagged Agenda/Calendar:** Optional filtering now ignores archive-oriented files/folders in major views by default.
+- **TODO dependency enforcement (Org-style):** Added `Org-vscode.enforceTodoDependencies` so parent tasks cannot transition to done-like states while incomplete child task headings remain.
+- **Clocking MVP commands:** Added `org-vscode.clockIn`, `org-vscode.clockOut`, and `org-vscode.updateClockTable` commands.
+- **Clock table placement + indentation parity improvements:**
+  - New clock tables are inserted at the end of the current task subtree (below body content), not above planning/body lines.
+  - Generated `#+BEGIN_CLOCKTABLE` blocks and rows respect task body indentation.
+  - Existing clock tables are discovered by scanning the full current subtree (not only cursor-adjacent lines), avoiding duplicate block insertion when blank lines/body content are present.
+  - Clock-in now reuses an existing `LOGBOOK` drawer found anywhere in the current subtree, preventing duplicate drawer creation when clocktable/report blocks exist.
+- **Clocktable syntax scopes + customizer controls:** Added dedicated clocktable TextMate scopes and Syntax Color Customizer entries for block markers, header/rows, and per-status values (TODO/IN_PROGRESS/CONTINUED/DONE/ABANDONED), including background color support.
+
+`Tests`
+
+- Added clock utility unit coverage and validated the updated behavior through full bundle + test workflow.
+
+
 # [2.2.22] 02-27-26
 
 `Added / Enhanced`

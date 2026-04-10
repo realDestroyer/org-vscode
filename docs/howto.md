@@ -33,6 +33,7 @@
 * [🔤 Unicode Headings](#unicode-headings-based-on-asterisk-level)
 * [🔁 Cycle Task Statuses](#cycle-task-statuses)
 * [📒 LOGBOOK (State Change History)](#logbook)
+* [⏱ Clocking + Clock Table](#clocking--clock-table)
 * [🏷 Inline Tags & Tag Filtering](#inline-tags--tag-filtering)
 * [🧮 Insert Org Table](#insert-org-table)
 * [Align Scheduled Task Tags](#align-scheduled-tasks)
@@ -887,6 +888,40 @@ You can manually change task keywords:
 ```
 
 Or remove/change the keyword symbol, and the extension will update it accordingly on save.
+
+---
+
+## ⏱ Clocking + Clock Table <a id="clocking--clock-table"></a>
+
+Org-vscode includes Org-style clocking commands so you can track task effort and generate a clock summary table.
+
+### Commands
+
+- `Org-vscode: Clock In`
+- `Org-vscode: Clock Out`
+- `Org-vscode: Update Clock Table`
+
+### Typical flow
+
+1. Place the cursor on a task heading.
+2. Run **Clock In** to open a `CLOCK:` entry in the task `:LOGBOOK:` drawer.
+3. Run **Clock Out** to close the active clock range.
+4. Run **Update Clock Table** to create/refresh a `#+BEGIN_CLOCKTABLE ... #+END_CLOCKTABLE` report for that task subtree.
+
+### Behavior notes (Org-parity direction)
+
+- Clocktable blocks are indented with the task body indentation.
+- New clocktable blocks are inserted at the end of the current task subtree (below body content).
+- Existing clocktable blocks are updated in place when found in the current subtree.
+- Existing `:LOGBOOK:` drawers are reused for new `CLOCK:` entries to avoid duplicate drawers.
+
+### Related settings
+
+```json
+"Org-vscode.logDrawerName": "LOGBOOK",
+"Org-vscode.bodyIndentation": 2,
+"Org-vscode.dateFormat": "YYYY-MM-DD"
+```
 
 ---
 
