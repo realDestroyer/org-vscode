@@ -1,6 +1,6 @@
 ﻿# Roadmap
 
-Live version: 2.2.22
+Live version: 2.2.23
 
 These are the features that I have either already implemented, or plan to in the near future.
 
@@ -8,6 +8,11 @@ These are the features that I have either already implemented, or plan to in the
 
 | Feature Name              | Description                                                                                | Progress    | Version  | Author        |
 | ------------------------- | ------------------------------------------------------------------------------------------ | ----------- | -------- | ------------- |
+| Org Clocking + Clock Table (MVP) | Add Org-style clocking commands (`clock in` / `clock out`) and generate/update `#+BEGIN_CLOCKTABLE` reports for task time summaries. | DONE | v2.2.23 | realDestroyer |
+| Clock Table parity placement/indentation | Place clocktable reports at subtree end (below body content), preserve task-body indentation, and update existing subtree table blocks reliably. | DONE | v2.2.23 | realDestroyer |
+| Archive Subtree + archive-aware views | Archive selected subtree and optionally ignore archive files/folders in Agenda, Tagged Agenda, and Calendar views. | DONE | v2.2.23 | realDestroyer |
+| TODO dependency enforcement | Optional Org-style parent/child dependency guard that blocks parent done-like transitions while children remain incomplete. | DONE | v2.2.23 | realDestroyer |
+| Clocktable syntax scopes + customizer support | Add dedicated clocktable token scopes and expose independent Syntax Color Customizer controls (including background colors). | DONE | v2.2.23 | realDestroyer |
 | Agenda View: deadlines + undated | Agenda View includes DEADLINE-only tasks and an optional (default-on) `[UNDATED]` section for tasks with no dates. | DONE | v2.2.14 | realDestroyer |
 | Agenda View: recently closed | Add an Agenda View tab/filter that shows recently completed tasks, bucketed by `CLOSED` date (daily groups). Should interpret `CLOSED:` stamps and LOGBOOK entries for repeated tasks so the most recent completion is used. | DONE | v2.2.17 | realDestroyer |
 | Embedded Query Blocks | Support an in-file `#+BEGIN_QUERY ... #+END_QUERY` block that renders a live/updatable list of matching headings (workspace-wide) into the preview (Org-QL/Dataview-style). | Not Started |  | realDestroyer |
