@@ -416,6 +416,39 @@
     "org_blocks": {
       "patterns": [
         {
+          "name": "meta.block.clocktable.vso",
+          "begin": "^\\s*#\\+BEGIN_CLOCKTABLE\\b.*$",
+          "beginCaptures": { "0": { "name": "keyword.control.block.begin.clocktable.vso" } },
+          "end": "^\\s*#\\+END_CLOCKTABLE\\s*$",
+          "endCaptures": { "0": { "name": "keyword.control.block.end.clocktable.vso" } },
+          "patterns": [
+            {
+              "name": "meta.table.clocktable.header.vso",
+              "begin": "^\\s*\\|(?=.*\\bHeading\\b)(?=.*\\bTime\\b)",
+              "end": "\\|\\s*$",
+              "patterns": [
+                { "name": "entity.name.table.clocktable.column.vso", "match": "\\b(?:Heading|Time)\\b" }
+              ]
+            },
+            {
+              "name": "meta.table.clocktable.separator.vso",
+              "match": "^\\s*\\|[-+|:\\s]+\\|\\s*$"
+            },
+            {
+              "name": "meta.table.clocktable.row.vso",
+              "begin": "^\\s*\\|",
+              "end": "\\|\\s*$",
+              "patterns": [
+                { "name": "keyword.control.clocktable.todo.vso", "match": "\\bTODO\\b" },
+                { "name": "keyword.control.clocktable.in_progress.vso", "match": "\\bIN_PROGRESS\\b" },
+                { "name": "keyword.control.clocktable.continued.vso", "match": "\\bCONTINUED\\b" },
+                { "name": "keyword.control.clocktable.done.vso", "match": "\\bDONE\\b" },
+                { "name": "keyword.control.clocktable.abandoned.vso", "match": "\\bABANDONED\\b" }
+              ]
+            }
+          ]
+        },
+        {
           "name": "meta.block.src.vso",
           "begin": "^\\s*#\\+BEGIN_SRC\\b.*$",
           "beginCaptures": { "0": { "name": "keyword.control.block.begin.vso" } },
