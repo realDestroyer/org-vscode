@@ -35,7 +35,10 @@
 		"onCommand:org-vscode.toggleLinkDescriptionRendering",
 		"onCommand:org-vscode.setRepeater",
 		"onCommand:org-vscode.executeSrcBlock",
-		"onCommand:org-vscode.archiveSubtree"
+		"onCommand:org-vscode.archiveSubtree",
+		"onCommand:org-vscode.clockIn",
+		"onCommand:org-vscode.clockOut",
+		"onCommand:org-vscode.updateClockTable"
 	],
 	"keywords": [
 		"todo",
@@ -704,6 +707,21 @@
 				"command": "org-vscode.archiveSubtree",
 				"category": "Org-vscode",
 				"title": "Archive Subtree"
+			},
+			{
+				"command": "org-vscode.clockIn",
+				"category": "Org-vscode",
+				"title": "Clock In"
+			},
+			{
+				"command": "org-vscode.clockOut",
+				"category": "Org-vscode",
+				"title": "Clock Out"
+			},
+			{
+				"command": "org-vscode.updateClockTable",
+				"category": "Org-vscode",
+				"title": "Update Clock Table"
 			},
 			{
 				"command": "org-vscode.toggleLinkDescriptionRendering",
