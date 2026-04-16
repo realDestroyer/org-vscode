@@ -7,6 +7,22 @@
 - (none)
 
 
+# [2.2.24] 04-15-26
+
+`Added / Enhanced`
+
+- **Column View (MVP):** Added `extension.openColumnView` with a dedicated task table webview.
+  - Scope modes: **All Org Files**, **Active File**, and **Current Subtree**.
+  - Dynamic property columns from inherited Org properties.
+  - Interactive column picker with persisted layout (visible columns + sorting + scope) per workspace.
+  - Fast filtering, sortable headers, click-to-reveal source location, and refresh on file save.
+- **Agenda View panel placement stability:** Save-triggered refresh now updates Agenda content in-place so panel location/pop-out state is preserved.
+
+`Tests`
+
+- Added unit coverage for Column View subtree parsing/range helpers and extension-host coverage for `extension.openColumnView` panel open/reuse lifecycle.
+
+
 # [2.2.23] 04-09-26
 
 `Added / Enhanced`
