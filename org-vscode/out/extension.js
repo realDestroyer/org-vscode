@@ -74,6 +74,7 @@ const taskKeywordManager = require("./taskKeywordManager");
 const { sortHeadingsByScheduledDate } = require("./sortHeadingsByScheduledDate");
 const archiveSubtree = require("./archiveSubtree");
 const { clockIn, clockOut, updateClockTable } = require("./clocking");
+const { showColumnView } = require("./columnView");
 
 // Startup log for debugging
 console.log("📌 agenda.js has been loaded in extension.js");
@@ -295,6 +296,7 @@ function activate(ctx) {
   ctx.subscriptions.push(vscode.commands.registerCommand("extension.decrement", decrement));
   ctx.subscriptions.push(vscode.commands.registerCommand("extension.viewTaggedAgenda", taggedAgenda));
   ctx.subscriptions.push(vscode.commands.registerCommand("extension.openCalendarView", openCalendarView));
+  ctx.subscriptions.push(vscode.commands.registerCommand("extension.openColumnView", () => showColumnView(ctx)));
   ctx.subscriptions.push(vscode.commands.registerCommand("extension.openSyntaxColorCustomizer", openSyntaxColorCustomizer));
   ctx.subscriptions.push(vscode.commands.registerCommand("extension.openKeybindingCustomizer", openKeybindingCustomizer));
   ctx.subscriptions.push(vscode.commands.registerCommand("extension.insertCheckboxItem", insertCheckboxItem));

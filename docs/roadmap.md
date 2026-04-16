@@ -1,6 +1,6 @@
 ﻿# Roadmap
 
-Live version: 2.2.23
+Live version: 2.2.24
 
 These are the features that I have either already implemented, or plan to in the near future.
 
@@ -8,6 +8,8 @@ These are the features that I have either already implemented, or plan to in the
 
 | Feature Name              | Description                                                                                | Progress    | Version  | Author        |
 | ------------------------- | ------------------------------------------------------------------------------------------ | ----------- | -------- | ------------- |
+| Column View (MVP) | Open a task table with sortable/filterable columns, inherited Org properties, and scope modes (global/file/subtree). | DONE | v2.2.24 | realDestroyer |
+| Agenda panel placement preservation | Keep Agenda View in its current panel/editor group when auto-refreshing after file save. | DONE | v2.2.24 | realDestroyer |
 | Org Clocking + Clock Table (MVP) | Add Org-style clocking commands (`clock in` / `clock out`) and generate/update `#+BEGIN_CLOCKTABLE` reports for task time summaries. | DONE | v2.2.23 | realDestroyer |
 | Clock Table parity placement/indentation | Place clocktable reports at subtree end (below body content), preserve task-body indentation, and update existing subtree table blocks reliably. | DONE | v2.2.23 | realDestroyer |
 | Archive Subtree + archive-aware views | Archive selected subtree and optionally ignore archive files/folders in Agenda, Tagged Agenda, and Calendar views. | DONE | v2.2.23 | realDestroyer |

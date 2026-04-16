@@ -25,6 +25,7 @@
 * [∑ Math Symbol Decorations](#math-symbol-decorations)
 * [📂 Open a File by Tags or Titles](#open-a-file-by-tags-or-titles)
 * [📅 Agenda View & Scheduling](#agenda-view--scheduling)
+* [📊 Column View](#column-view)
 * [☑️ Checkboxes](#checkboxes)
 * [⏰ Deadlines](#deadlines)
 * [🔁 Repeaters (Recurring Tasks)](#repeaters)
@@ -611,6 +612,34 @@ Optional settings:
 ```
 
 <img src="https://github.com/realdestroyer/org-vscode/blob/master/Images/openAgenda.gif?raw=true" width="700" height="400" />
+
+---
+
+## 📊 Column View <a id="column-view"></a>
+
+Open a table view of your tasks with core fields (status, heading, schedule/deadline/closed, tags) and inherited property columns.
+
+- Command: **Org-vscode: Open Column View**
+- Command id: `extension.openColumnView`
+
+### Scope modes
+
+- **All Org Files**: scans files included by your Org-vscode folder/filter settings.
+- **Active File**: only the file in the active editor.
+- **Current Subtree**: heading at/above cursor and all child headings in that subtree.
+
+### Layout + sorting
+
+- Use **Columns** to show/hide fields.
+- Click a header to sort ascending/descending.
+- Type in the filter box for instant row filtering.
+
+Column View stores your visible columns, sort settings, and selected scope in workspace state so it restores the same layout when reopened.
+
+### Navigation
+
+- Click any row to jump to that heading in the source file.
+- Use **Refresh** for a manual rescan; the view also refreshes on file save.
 
 ---
 
