@@ -70,8 +70,24 @@ module.exports = function () {
     let unsortedClosedObject = {};
     let sortedClosedObject = {};
     let itemInClosedSortedObject = "";
+    let fullAgendaView = null;
+    let suppressReloadForFsPath = null;
+    let refreshInProgress = false;
+    let refreshQueued = false;
 
-    readFiles();
+    readFiles((skippedFiles) => {
+      renderAgendaWebview(skippedFiles);
+    });
+
+    function resetAgendaCollections() {
+      convertedDateArray = [];
+      unsortedObject = {};
+      sortedObject = {};
+      itemInSortedObject = "";
+      unsortedClosedObject = {};
+      sortedClosedObject = {};
+      itemInClosedSortedObject = "";
+    }
 
     function computeCheckboxStatsFromLines(lines) {
       const arr = Array.isArray(lines) ? lines : [];
@@ -174,7 +190,8 @@ module.exports = function () {
     }
 
     // Reads all .org files and builds agenda view HTML blocks grouped by scheduled date
-    function readFiles() {
+    function readFiles(onComplete) {
+      resetAgendaCollections();
       const dirPath = setMainDir();
       fs.readdir(dirPath, (err, items) => {
         if (err) {
@@ -649,7 +666,11 @@ module.exports = function () {
           itemInClosedSortedObject += property + sortedClosedObject[property] + "</br>";
         });
 
-        createWebview(skippedFiles);
+        if (typeof onComplete === "function") {
+          onComplete(skippedFiles);
+          return;
+        }
+        renderAgendaWebview(skippedFiles);
       });
     }
 
@@ -661,27 +682,42 @@ module.exports = function () {
         : path.join(os.homedir(), "VSOrgFiles");
     }
 
-    function createWebview(skippedFiles) {
-      let reload = false;
-      let suppressReloadForFsPath = null;
-      let fullAgendaView = vscode.window.createWebviewPanel("fullAgenda", "Full Agenda View", vscode.ViewColumn.Beside, { enableScripts: true });
-      fullAgendaView.webview.html = getWebviewContent(sortedObject, skippedFiles);
-
-      const saveDisposable = vscode.workspace.onDidSaveTextDocument((savedDoc) => {
-        if (suppressReloadForFsPath && savedDoc && savedDoc.uri && savedDoc.uri.fsPath === suppressReloadForFsPath) {
-          suppressReloadForFsPath = null;
-          return;
+    function requestAgendaRefresh() {
+      if (refreshInProgress) {
+        refreshQueued = true;
+        return;
+      }
+      refreshInProgress = true;
+      readFiles((nextSkippedFiles) => {
+        if (fullAgendaView) {
+          fullAgendaView.webview.html = getWebviewContent(sortedObject, nextSkippedFiles);
         }
-        reload = true;
-        fullAgendaView.dispose();
+        refreshInProgress = false;
+        if (refreshQueued) {
+          refreshQueued = false;
+          requestAgendaRefresh();
+        }
       });
+    }
 
-      fullAgendaView.onDidDispose(() => {
-        saveDisposable.dispose();
-        if (reload) vscode.commands.executeCommand("extension.viewAgenda");
-      });
+    function renderAgendaWebview(skippedFiles) {
+      if (!fullAgendaView) {
+        fullAgendaView = vscode.window.createWebviewPanel("fullAgenda", "Full Agenda View", vscode.ViewColumn.Beside, { enableScripts: true });
 
-      fullAgendaView.webview.onDidReceiveMessage(message => {
+        const saveDisposable = vscode.workspace.onDidSaveTextDocument((savedDoc) => {
+          if (suppressReloadForFsPath && savedDoc && savedDoc.uri && savedDoc.uri.fsPath === suppressReloadForFsPath) {
+            suppressReloadForFsPath = null;
+            return;
+          }
+          requestAgendaRefresh();
+        });
+
+        fullAgendaView.onDidDispose(() => {
+          saveDisposable.dispose();
+          fullAgendaView = null;
+        });
+
+        fullAgendaView.webview.onDidReceiveMessage(message => {
         if (message.command === "open") {
           let fullPath = path.join(setMainDir(), message.text);
           vscode.workspace.openTextDocument(vscode.Uri.file(fullPath)).then(doc => {
@@ -1063,7 +1099,10 @@ module.exports = function () {
             });
           });
         }
-      });
+        });
+      }
+
+      fullAgendaView.webview.html = getWebviewContent(sortedObject, skippedFiles);
     }
         function getWebviewContent(task, skippedFiles) {
             const errorBannerContent = (skippedFiles && skippedFiles.length > 0)

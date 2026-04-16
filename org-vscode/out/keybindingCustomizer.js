@@ -85,6 +85,7 @@ function getKeybindingModel() {
     ["extension.viewAgenda", "Open the agenda view."],
     ["extension.viewTaggedAgenda", "Open the tagged agenda view."],
     ["extension.openCalendarView", "Open the calendar view."],
+    ["extension.openColumnView", "Open the column view."],
     ["org-vscode.openPreview", "Open the org preview webview."],
     ["org-vscode.openPreviewToSide", "Open the org preview webview to the side."],
     ["extension.openSyntaxColorCustomizer", "Open the syntax color customizer."],
@@ -245,7 +246,7 @@ function groupRows(rows) {
   };
 
   const categorize = (cmd) => {
-    if (cmd === "org-vscode.openPreviewToSide" || cmd === "org-vscode.openPreview" || cmd === "extension.openCalendarView" || cmd === "extension.viewAgenda" || cmd === "extension.viewTaggedAgenda") {
+    if (cmd === "org-vscode.openPreviewToSide" || cmd === "org-vscode.openPreview" || cmd === "extension.openCalendarView" || cmd === "extension.openColumnView" || cmd === "extension.viewAgenda" || cmd === "extension.viewTaggedAgenda") {
       return "Views";
     }
     if (/Date|deadline|scheduling|reschedule|alignSchedules/i.test(cmd) || /insertDateStamp/i.test(cmd)) {
