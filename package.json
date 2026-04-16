@@ -2,7 +2,7 @@
 	"name": "org-vscode",
 	"displayName": "org-vscode",
 	"description": "Quickly create todo lists, take notes, plan projects and organize your thoughts.",
-	"version": "2.2.23",
+	"version": "2.2.24",
 	"repository": "https://www.github.com/realDestroyer/org-vscode",
 	"icon": "Images/org-vscode-logo.png",
 	"publisher": "realDestroyer",
@@ -27,6 +27,7 @@
 		"onCommand:extension.createVsoFile",
 		"onCommand:extension.openSyntaxColorCustomizer",
 		"onCommand:extension.openKeybindingCustomizer",
+		"onCommand:extension.openColumnView",
 		"onCommand:orgMode.exportYearSummary",
 		"onCommand:orgMode.generateExecutiveReport",
 		"onCommand:orgMode.openYearInReview",
@@ -636,7 +637,11 @@
 				"Org-vscode.srcExecution.cppCompilerStyle": {
 					"type": "string",
 					"order": 20.5,
-					"enum": ["auto", "gcc", "msvc"],
+					"enum": [
+						"auto",
+						"gcc",
+						"msvc"
+					],
 					"default": "auto",
 					"description": "How to invoke the configured C++ compiler: auto (guess based on compiler), gcc (g++/clang++ flags), or msvc (cl.exe flags)."
 				}
@@ -772,6 +777,11 @@
 				"command": "extension.openCalendarView",
 				"category": "Org-vscode",
 				"title": "Open Calendar View"
+			},
+			{
+				"command": "extension.openColumnView",
+				"category": "Org-vscode",
+				"title": "Open Column View"
 			},
 			{
 				"command": "extension.openSyntaxColorCustomizer",

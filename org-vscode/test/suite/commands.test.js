@@ -145,4 +145,39 @@ suite('Command registration', function () {
     const out = editor.document.getText();
     assert.ok(/\bCLOSED:\s*\[2025-12-28 Sun 10:49\]/.test(out), 'CLOSED should remain on the planning line after alignment');
   });
+
+  test('Column View command opens and reuses webview panel', async () => {
+    const ext = vscode.extensions.getExtension('realDestroyer.org-vscode');
+    assert.ok(ext, 'Extension realDestroyer.org-vscode not found in test host');
+    await ext.activate();
+
+    const countColumnViewTabs = () => {
+      const groups = (vscode.window.tabGroups && vscode.window.tabGroups.all) || [];
+      const tabs = groups.flatMap((g) => g.tabs || []);
+      return tabs.filter((t) => String(t.label || '').includes('Column View')).length;
+    };
+
+    const before = countColumnViewTabs();
+
+    await vscode.commands.executeCommand('extension.openColumnView');
+    await new Promise((resolve) => setTimeout(resolve, 250));
+    const afterFirstOpen = countColumnViewTabs();
+
+    assert.ok(
+      afterFirstOpen >= Math.max(1, before),
+      'Column View panel should be visible after first command execution'
+    );
+
+    await vscode.commands.executeCommand('extension.openColumnView');
+    await new Promise((resolve) => setTimeout(resolve, 250));
+    const afterSecondOpen = countColumnViewTabs();
+
+    assert.strictEqual(
+      afterSecondOpen,
+      afterFirstOpen,
+      'Second execution should reuse the existing Column View panel'
+    );
+
+    await vscode.commands.executeCommand('workbench.action.closeActiveEditor');
+  });
 });

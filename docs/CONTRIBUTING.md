@@ -78,3 +78,6 @@ This repo bundles the extension into `dist/extension.js`. For a release, ensure 
 
 8. **Update the Latest Release in GitHub**
     - Upload the latest .vsix to GitHub "Latest Release"
+
+
+    
