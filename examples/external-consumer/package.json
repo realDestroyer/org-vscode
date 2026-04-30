@@ -1,0 +1,38 @@
+{
+  "name": "org-vscode-external-consumer-example",
+  "displayName": "Org-vscode External Consumer (Example)",
+  "description": "Reference extension showing how third-party extensions integrate with the org-vscode public API (registerLinkType + captureTodo). Demonstrates the email-capture pattern from Issue #110.",
+  "version": "0.0.1",
+  "publisher": "org-vscode-examples",
+  "private": true,
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.70.0"
+  },
+  "main": "./extension.js",
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "extensionDependencies": [
+    "realDestroyer.org-vscode"
+  ],
+  "contributes": {
+    "commands": [
+      {
+        "command": "orgConsumerExample.captureFromFakeInbox",
+        "category": "Org Consumer Example",
+        "title": "Capture Fake Email Into Org Inbox"
+      },
+      {
+        "command": "orgConsumerExample.captureMinimal",
+        "category": "Org Consumer Example",
+        "title": "Capture Minimal TODO (no body)"
+      },
+      {
+        "command": "orgConsumerExample.tryMaliciousPayload",
+        "category": "Org Consumer Example",
+        "title": "Try Malicious Payload (should be rejected)"
+      }
+    ]
+  }
+}
