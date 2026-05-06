@@ -76,6 +76,9 @@ const { sortHeadingsByScheduledDate } = require("./sortHeadingsByScheduledDate")
 const archiveSubtree = require("./archiveSubtree");
 const { clockIn, clockOut, updateClockTable } = require("./clocking");
 const { showColumnView } = require("./columnView");
+const { createExtensionApi, performCapture, CaptureDisabledError, TrustDeniedError } = require("./api/extensionApi");
+const { CaptureValidationError } = require("./api/captureTodo");
+const { createTrustStore } = require("./api/trustStore");
 
 // Startup log for debugging
 console.log("📌 agenda.js has been loaded in extension.js");
@@ -323,6 +326,75 @@ function activate(ctx) {
   ctx.subscriptions.push(
     vscode.languages.registerOnTypeFormattingEditProvider(GO_MODE, new GoOnTypingFormatter(), " ", "\n")
   );
+
+  // ─────────────────────────────────────────────────────────────
+  // External API (v1): registerLinkType + captureTodo
+  // ─────────────────────────────────────────────────────────────
+  // Some lightweight test harnesses call activate({ subscriptions: [] })
+  // without a workspaceState; degrade gracefully in that case so the
+  // existing command-registration smoke test keeps working.
+  const wsState = ctx.workspaceState || {
+    get: (_k, d) => d,
+    update: async () => undefined
+  };
+  const trustStore = createTrustStore(wsState);
+  const orgExt = vscode.extensions && typeof vscode.extensions.getExtension === "function"
+    ? vscode.extensions.getExtension("realDestroyer.org-vscode")
+    : null;
+  const apiVersion = (orgExt && orgExt.packageJSON && orgExt.packageJSON.version) || "0.0.0";
+  const api = createExtensionApi(vscode, { trustStore, version: apiVersion });
+
+  // Internal command callable from the command palette / keybindings.
+  // Bypasses caller-attestation (it's invoked by the user) but still
+  // honors the enableExternalCapture kill-switch, so SEL operators can
+  // disable both palette and API surfaces with one setting.
+  ctx.subscriptions.push(vscode.commands.registerCommand("org-vscode.captureTodo", async (payload) => {
+    const cfg = vscode.workspace.getConfiguration();
+    if (!cfg.get("Org-vscode.enableExternalCapture", false)) {
+      vscode.window.showWarningMessage(
+        "org-vscode: external capture is disabled. Enable \"Org-vscode.enableExternalCapture\" first."
+      );
+      return undefined;
+    }
+    // Interactive fallback: when invoked from the command palette there is
+    // no payload, so prompt the user for a headline (and optional tags).
+    let effectivePayload = payload;
+    if (!effectivePayload || typeof effectivePayload.headline !== "string" || !effectivePayload.headline.trim()) {
+      const headline = await vscode.window.showInputBox({
+        prompt: "Capture TODO headline",
+        placeHolder: "e.g. Reply to design review",
+        ignoreFocusOut: true,
+        validateInput: (v) => (v && v.trim() ? undefined : "Headline is required")
+      });
+      if (!headline) {
+        return undefined; // user cancelled
+      }
+      const tagsInput = await vscode.window.showInputBox({
+        prompt: "Optional tags (comma-separated, leave blank to skip)",
+        placeHolder: "inbox, urgent",
+        ignoreFocusOut: true
+      });
+      const tags = (tagsInput || "")
+        .split(",")
+        .map((t) => t.trim())
+        .filter(Boolean);
+      effectivePayload = Object.assign({}, payload || {}, {
+        headline,
+        tags: tags.length ? tags : undefined
+      });
+    }
+    try {
+      return await performCapture(vscode, "org-vscode-internal", effectivePayload);
+    } catch (e) {
+      if (e instanceof CaptureValidationError || e instanceof CaptureDisabledError || e instanceof TrustDeniedError) {
+        vscode.window.showErrorMessage(`org-vscode capture failed: ${e.message}`);
+        return undefined;
+      }
+      throw e;
+    }
+  }));
+
+  return api;
 }
 
 module.exports = {
