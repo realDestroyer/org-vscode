@@ -7,6 +7,17 @@
 - (none)
 
 
+# [2.2.25] 05-05-26
+
+`Fixed`
+
+- **Heading folding for unindented body content (#111):** Added a dedicated `FoldingRangeProvider` so every heading gets a chevron in the gutter regardless of whether its body text is indented. Previously the extension relied on indent-based folding plus drawer markers, which meant flush-left content under a heading had no fold control at all (reported by RexxMagnus). Each heading now folds from its own line through the line just before the next heading at the same or shallower level, with trailing blank lines trimmed off.
+
+`Tests`
+
+- Added `heading-folding.test.js` covering unindented bodies, headings with no body, trailing-blank trimming, nested levels, and unicode heading markers.
+
+
 # [2.2.24] 04-15-26
 
 `Added / Enhanced`

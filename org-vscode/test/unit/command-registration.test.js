@@ -33,7 +33,8 @@ function createVscodeMock() {
       registerCodeLensProvider: () => disposable(),
       registerDocumentLinkProvider: () => disposable(),
       registerDocumentSymbolProvider: () => disposable(),
-      registerCompletionItemProvider: () => disposable()
+      registerCompletionItemProvider: () => disposable(),
+      registerFoldingRangeProvider: () => disposable()
     },
 
     window: {
