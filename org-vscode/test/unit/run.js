@@ -33,7 +33,8 @@ const tests = [
   require(path.join(__dirname, 'column-view.test.js')),
   require(path.join(__dirname, 'html-utils-browser.test.js')),
   require(path.join(__dirname, 'year-executive-report.test.js')),
-  require(path.join(__dirname, 'year-summary-tags.test.js'))
+  require(path.join(__dirname, 'year-summary-tags.test.js')),
+  require(path.join(__dirname, 'heading-folding.test.js'))
 ];
 
 async function main() {
