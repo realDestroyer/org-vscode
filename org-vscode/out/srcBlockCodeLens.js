@@ -1,9 +1,50 @@
 "use strict";
 
 const vscode = require("vscode");
+const path = require("path");
 
 function isBeginSrcLine(line) {
   return /^\s*#\+BEGIN_SRC\b/i.test(String(line || ""));
+}
+
+/*
+  Returns true if `documentUri` matches any path listed in
+  Org-vscode.disableSrcExecutionInPaths. Patterns may be absolute or
+  workspace-relative. This is a simple equality / endsWith match — we
+  intentionally avoid glob semantics here to keep the policy easy to
+  audit.
+*/
+function isSrcExecutionDisabledFor(documentUri) {
+  try {
+    const cfg = vscode.workspace.getConfiguration();
+    const list = cfg.get("Org-vscode.disableSrcExecutionInPaths", []);
+    if (!Array.isArray(list) || list.length === 0) return false;
+
+    const docPath = path.resolve(documentUri.fsPath);
+    const folders = vscode.workspace.workspaceFolders || [];
+
+    for (const raw of list) {
+      if (typeof raw !== "string" || !raw.trim()) continue;
+      const entry = raw.trim();
+      if (path.isAbsolute(entry)) {
+        if (path.resolve(entry) === docPath) return true;
+        continue;
+      }
+      // Relative: match against any workspace folder.
+      for (const f of folders) {
+        const candidate = path.resolve(f.uri.fsPath, entry);
+        if (candidate === docPath) return true;
+      }
+      // Also accept basename matches (e.g. "inbox.org" → any file named inbox.org).
+      if (!entry.includes(path.sep) && !entry.includes("/")) {
+        if (path.basename(docPath) === entry) return true;
+      }
+    }
+  } catch {
+    // Fail-closed: on any unexpected error, do NOT suppress; users still
+    // see the lens. The performance hit is negligible.
+  }
+  return false;
 }
 
 function registerSrcBlockCodeLens(ctx) {
@@ -17,6 +58,7 @@ function registerSrcBlockCodeLens(ctx) {
   const provider = {
     provideCodeLenses: function (document) {
       const lenses = [];
+      if (isSrcExecutionDisabledFor(document.uri)) return lenses;
       const lineCount = document.lineCount || 0;
 
       for (let i = 0; i < lineCount; i++) {
@@ -48,5 +90,6 @@ function registerSrcBlockCodeLens(ctx) {
 }
 
 module.exports = {
-  registerSrcBlockCodeLens
+  registerSrcBlockCodeLens,
+  isSrcExecutionDisabledFor
 };

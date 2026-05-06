@@ -102,7 +102,12 @@ function activate(ctx) {
         await api.captureTodo({
           headline: `Reply to ${m.from}: ${m.subject}`,
           tags: ["email"],
-          body: `From: ${m.from}\nDate: ${m.date}\n\n${m.snippet}\n\n[[mailto:${m.id}][${m.subject}]]`,
+          body: `From: ${m.from}\nDate: ${m.date}\n\n${m.snippet}`,
+          link: {
+            scheme: "mailto",
+            path: m.id,
+            description: m.subject
+          },
           properties: {
             EMAIL_ID: m.id,
             EMAIL_FROM: m.from,
