@@ -5,17 +5,12 @@ dist/
 *.vsix
 /media/
 /snippets/
-/Archived
-*integration.txt
 org-vscode/package.json
 org-vscode/roadmap.md
 org-vscode/changelog.md
 org-vscode/README.md
 /Test Org Files
-Roadmap/11-yearly-summary-report.md
 org-vscode/tsconfig.json
 org-vscode/package-lock.json
 org-vscode/Logo.png
 org-vscode/.vscodeignore
-org-vscode/Logs/*
-Logs/debug-logs.log
