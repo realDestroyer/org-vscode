@@ -54,19 +54,22 @@ async function getOrgApi() {
 }
 
 function activate(ctx) {
-  // 1) Register a mailto: link handler. When the user clicks a [[mailto:...]]
+  // 1) Register a msgid: link handler. When the user clicks a [[msgid:...]]
   //    link inside an org file, org-vscode's link provider falls through to
   //    this handler.
   getOrgApi()
     .then((api) => {
       const disposable = api.registerLinkType({
-        scheme: "mailto",
-        open: async (uri) => {
-          // In a real mail extension you'd resolve uri.path to a message
-          // and reveal it in your custom view. Here we just show a notice.
-          vscode.window.showInformationMessage(
-            `[example] mailto handler invoked for: ${uri.toString()}`
-          );
+        type: "msgid",
+        description: "Email Message-ID links",
+        pattern: /^[^\s<>]+@[^\s<>]+$/,
+        resolve(path) {
+          return {
+            displayText: `Email: ${path}`,
+            url: `command:orgConsumerExample.openMessage?${encodeURIComponent(JSON.stringify({ msgid: path }))}`,
+            tooltip: `Open message ${path}`,
+            exists: true
+          };
         }
       });
       ctx.subscriptions.push(disposable);
@@ -76,6 +79,16 @@ function activate(ctx) {
         `Org consumer example: failed to register link handler: ${err.message}`
       );
     });
+
+  // Command target used by the msgid: handler above.
+  ctx.subscriptions.push(
+    vscode.commands.registerCommand("orgConsumerExample.openMessage", async (arg) => {
+      const msgid = arg && typeof arg.msgid === "string" ? arg.msgid : "<unknown>";
+      vscode.window.showInformationMessage(
+        `[example] msgid handler invoked for: ${msgid}`
+      );
+    })
+  );
 
   // 2) Capture a "real-looking" email payload.
   ctx.subscriptions.push(
@@ -104,7 +117,7 @@ function activate(ctx) {
           tags: ["email"],
           body: `From: ${m.from}\nDate: ${m.date}\n\n${m.snippet}`,
           link: {
-            scheme: "mailto",
+            scheme: "msgid",
             path: m.id,
             description: m.subject
           },

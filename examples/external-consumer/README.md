@@ -16,7 +16,7 @@ copy it as a starting point for real integrations such as:
 | Capability | Where in `extension.js` |
 |---|---|
 | Resolving the org-vscode API safely | `getOrgApi()` |
-| Registering a custom link scheme (`mailto:`) | `activate()` step 1 |
+| Registering a custom link scheme (`msgid:`) | `activate()` step 1 |
 | Capturing a realistic email-shaped payload | `captureFromFakeInbox` command |
 | Triggering the first-call trust prompt | `captureMinimal` command |
 | Verifying the validation gate (security) | `tryMaliciousPayload` command |
@@ -52,12 +52,13 @@ copy it as a starting point for real integrations such as:
    - **Org Consumer Example: Try Malicious Payload** — three known-bad
      payloads should each be rejected with `CaptureValidationError`.
 
-## Round-tripping the mailto link
+## Round-tripping the msgid link
 
-Once a fake email is captured, click the `[[mailto:...]]` link inside the
+Once a fake email is captured, click the `[[msgid:...]]` link inside the
 inbox file. org-vscode's link provider falls through to this extension's
-registered handler, which surfaces an information message. In a real mail
-extension you'd resolve the message ID and reveal it in your view.
+registered handler, which routes to the example command
+`orgConsumerExample.openMessage` and surfaces an information message. In a
+real mail extension you'd resolve the message ID and reveal it in your view.
 
 ## Anatomy of a capture payload
 
@@ -67,7 +68,7 @@ await api.captureTodo({
   tags: ["email"],
   body: "From: alice@...\n\nQuoted message body...",
   link: {
-    scheme: "mailto",
+    scheme: "msgid",
     path: "<msg-id>",
     description: "Q3 budget review"
   },
@@ -81,7 +82,7 @@ await api.captureTodo({
 
 The headline appears as the TODO title. Tags become trailing `:email:`
 markers. The `link` field is rendered by org-vscode into a bracketed
-org link (`[[mailto:<msg-id>][Q3 budget review]]`) underneath the
+org link (`[[msgid:<msg-id>][Q3 budget review]]`) underneath the
 property drawer; the consumer never has to format the bracket form by
 hand. Properties land in the entry's `:PROPERTIES:` drawer (org-vscode
 adds `:CAPTURED:` and `:CAPTURED_BY:` automatically; user-supplied keys
