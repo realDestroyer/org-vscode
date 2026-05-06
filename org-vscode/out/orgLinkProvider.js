@@ -2,6 +2,7 @@
 
 const vscode = require("vscode");
 const path = require("path");
+const { linkTypeRegistry } = require("./api/linkTypeRegistry");
 
 function parseBracketLink(text) {
   // Supports: [[link][desc]] and [[link]]
@@ -60,8 +61,51 @@ function getDocumentLinks(document) {
     } else if (/^#/.test(linkTarget)) {
       target = buildCommandUri("org-vscode.followOrgLink", { type: "anchor", anchor: linkTarget.slice(1).trim() });
     } else {
-      // Fallback: treat as a file path
-      target = normalizeFileLinkTarget(document.uri, `file:${linkTarget}`);
+      // Custom scheme registered by an external extension via the public
+      // API? If so, ask its handler to resolve. Anything still unresolved
+      // falls through to the legacy file-path treatment.
+      const schemeMatch = linkTarget.match(/^([A-Za-z][A-Za-z0-9+\-.]*):(.*)$/);
+      let customResolved = false;
+      if (schemeMatch && linkTypeRegistry.hasType(schemeMatch[1])) {
+        const handler = linkTypeRegistry.getHandler(schemeMatch[1]);
+        try {
+          const result = handler.resolve(schemeMatch[2], {
+            filePath: document.uri.fsPath,
+            rootDir: path.dirname(document.uri.fsPath)
+          });
+          if (result && typeof result === "object") {
+            const url = typeof result.url === "string" ? result.url : "";
+            // Only accept safe target schemes from third-party handlers.
+            // Anything else is rendered as a no-op command link with a
+            // tooltip so the user still sees the link without us blindly
+            // launching whatever URI the handler returned.
+            if (url && /^(https?|mailto|vscode|vscode-insiders|command):/i.test(url)) {
+              target = vscode.Uri.parse(url);
+              customResolved = true;
+            } else {
+              target = buildCommandUri("org-vscode.followOrgLink", {
+                type: "custom-noop",
+                scheme: schemeMatch[1]
+              });
+              customResolved = true;
+            }
+            const dl = new vscode.DocumentLink(range, target);
+            const tipParts = [];
+            if (typeof result.displayText === "string" && result.displayText) tipParts.push(result.displayText);
+            if (typeof result.tooltip === "string" && result.tooltip) tipParts.push(result.tooltip);
+            tipParts.push(parsed.link);
+            dl.tooltip = tipParts.join(" \u2014 ");
+            links.push(dl);
+            continue;
+          }
+        } catch (e) {
+          console.warn(`org-vscode: link handler "${schemeMatch[1]}" threw:`, e);
+        }
+      }
+      if (!customResolved) {
+        // Fallback: treat as a file path
+        target = normalizeFileLinkTarget(document.uri, `file:${linkTarget}`);
+      }
     }
 
     const dl = new vscode.DocumentLink(range, target);

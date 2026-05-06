@@ -52,6 +52,7 @@ Org-vscode helps you manage tasks, notes, and projects in plain text `.org` file
 - Reports/tools: Export Current Tasks, Export Yearly Summary, Executive Report, Year-In-Review Dashboard
 - Customization: Syntax Color Customizer (colors + Workflow States editor) + settings for heading markers / indentation / decorations
 - Commands: Sort Headings by Scheduled Date (`Org-vscode.sortClosedTasksToTop` optional)
+- **External Capture & Link API** (opt-in, off by default): other VS Code extensions can register custom org link schemes (e.g. `[[msgid:abc@host]]`) and push structured TODO entries into your inbox after a per-extension consent prompt. There's also a built-in **Org-vscode: Capture TODO into Inbox** palette command for quick personal capture. See [docs/external-api.md](docs/external-api.md), the runnable [examples/external-consumer/](examples/external-consumer/README.md), and [SECURITY.md](SECURITY.md).
 
 See every feature in one file:
 

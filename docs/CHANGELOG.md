@@ -4,7 +4,24 @@
 
 `Added / Enhanced`
 
-- (none)
+- **External Capture & Link API (v1):** New public API surface returned from `activate()` lets other VS Code extensions (email clients, ticket trackers, browsers) feed structured TODO entries into your org inbox and register custom org link schemes (e.g. `[[msgid:abc@host]]`). Disabled by default (`Org-vscode.enableExternalCapture`); each calling extension must be explicitly approved per workspace on first use. See [docs/external-api.md](external-api.md) and the new repository-root `SECURITY.md` for the threat model and integration contract. Addresses [issue #110](https://github.com/realDestroyer/org-vscode/issues/110).
+- **Configurable src-block execution suppression:** New `Org-vscode.disableSrcExecutionInPaths` setting hides the *Execute Src Block* CodeLens (and refuses palette/keybinding execution) for files matching the configured paths. Defaults to `["inbox.org"]` so externally-captured content cannot reach the existing code-execution path.
+- **`org-vscode.captureTodo` command:** Palette/keybinding entry point that reuses the same sanitizer and formatter as the public API. When invoked from the palette it now prompts for headline + optional comma-separated tags, so the inbox is reachable without writing a consumer extension.
+- **Reference consumer extension:** Added [`examples/external-consumer/`](../examples/external-consumer/README.md) — a runnable, ~120-LOC example showing the email-capture pattern, trust prompts, validation gate, and `mailto:` link round-trip. Recommended starting point for integrators.
+- **`Org-vscode.debugExternalApi` setting:** Off by default. When enabled, the public API logs caller-identification diagnostics (call stack, known extension roots) to the Extension Host console for bug reports.
+
+`Design changes`
+
+- **`captureTodo` payload `link` is now a structured object** (`{ scheme, path, description? }`) instead of a pre-formatted bracket string. Org-vscode now owns the bracket rendering end-to-end and validates the scheme against the allowlist as a discrete field; the consumer never hand-formats `[[scheme:path][desc]]`. Built-in safe schemes are `http`, `https`, `mailto`; any other scheme must be registered via `registerLinkType` before it can be used in a captured link. `file` and `id` are explicitly forbidden. Brackets are rejected in `path` and `description` so payloads cannot break out of the rendered link form. Lands before v1 ships per discussion in [issue #110](https://github.com/realDestroyer/org-vscode/issues/110#issuecomment-4350910697).
+
+`Fixes`
+
+- External API caller identification now case-insensitive on Windows so callers from `e:\\` paths are no longer mis-reported as `"unknown"` when VS Code returns extension paths as `E:\\`. Also handles paths with spaces, anonymous/top-level frames, and async-prefixed V8 frames; longest-prefix-wins matching prevents nested example/test extensions from being mis-attributed to org-vscode itself.
+
+`Tests`
+
+- Added unit coverage for `linkTypeRegistry`, `trustStore`, `captureTodo` (sanitization, formatting, splice), and `extensionApi` (kill-switch, trust-denied paths).
+- Added regression tests for `matchCallerInStack`: Windows case-insensitive matching, longest-prefix-wins, paths with spaces, anonymous/async V8 frames, org-vscode internal-frame skipping, and the `node_modules/vscode` shim filter.
 
 
 # [2.2.25] 05-05-26
