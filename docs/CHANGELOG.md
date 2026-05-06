@@ -4,10 +4,17 @@
 
 `Added / Enhanced`
 
+- (none)
+
+
+# [2.2.26] 05-06-26
+
+`Added / Enhanced`
+
 - **External Capture & Link API (v1):** New public API surface returned from `activate()` lets other VS Code extensions (email clients, ticket trackers, browsers) feed structured TODO entries into your org inbox and register custom org link schemes (e.g. `[[msgid:abc@host]]`). Disabled by default (`Org-vscode.enableExternalCapture`); each calling extension must be explicitly approved per workspace on first use. See [docs/external-api.md](external-api.md) and the new repository-root `SECURITY.md` for the threat model and integration contract. Addresses [issue #110](https://github.com/realDestroyer/org-vscode/issues/110).
 - **Configurable src-block execution suppression:** New `Org-vscode.disableSrcExecutionInPaths` setting hides the *Execute Src Block* CodeLens (and refuses palette/keybinding execution) for files matching the configured paths. Defaults to `["inbox.org"]` so externally-captured content cannot reach the existing code-execution path.
 - **`org-vscode.captureTodo` command:** Palette/keybinding entry point that reuses the same sanitizer and formatter as the public API. When invoked from the palette it now prompts for headline + optional comma-separated tags, so the inbox is reachable without writing a consumer extension.
-- **Reference consumer extension:** Added [`examples/external-consumer/`](../examples/external-consumer/README.md) — a runnable, ~120-LOC example showing the email-capture pattern, trust prompts, validation gate, and `mailto:` link round-trip. Recommended starting point for integrators.
+- **Reference consumer extension:** Added [`examples/external-consumer/`](../examples/external-consumer/README.md) — a runnable, ~120-LOC example showing the email-capture pattern, trust prompts, validation gate, and `msgid:` link round-trip. Recommended starting point for integrators.
 - **`Org-vscode.debugExternalApi` setting:** Off by default. When enabled, the public API logs caller-identification diagnostics (call stack, known extension roots) to the Extension Host console for bug reports.
 
 `Design changes`
