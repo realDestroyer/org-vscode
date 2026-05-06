@@ -33,7 +33,11 @@ const tests = [
   require(path.join(__dirname, 'column-view.test.js')),
   require(path.join(__dirname, 'html-utils-browser.test.js')),
   require(path.join(__dirname, 'year-executive-report.test.js')),
-  require(path.join(__dirname, 'year-summary-tags.test.js'))
+  require(path.join(__dirname, 'year-summary-tags.test.js')),
+  require(path.join(__dirname, 'link-type-registry.test.js')),
+  require(path.join(__dirname, 'trust-store.test.js')),
+  require(path.join(__dirname, 'capture-todo.test.js')),
+  require(path.join(__dirname, 'extension-api.test.js'))
 ];
 
 async function main() {
