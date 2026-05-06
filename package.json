@@ -644,6 +644,41 @@
 					],
 					"default": "auto",
 					"description": "How to invoke the configured C++ compiler: auto (guess based on compiler), gcc (g++/clang++ flags), or msvc (cl.exe flags)."
+				},
+				"Org-vscode.enableExternalCapture": {
+					"type": "boolean",
+					"order": 30.0,
+					"default": false,
+					"description": "Allow other VS Code extensions to create TODO entries via the org-vscode public API (registerLinkType / captureTodo). Disabled by default; first use of the API from each extension prompts for explicit consent. Disable globally to lock the surface."
+				},
+				"Org-vscode.captureInboxFile": {
+					"type": "string",
+					"order": 30.1,
+					"default": "",
+					"description": "Path (absolute or workspace-relative) to the .org or .vsorg file that receives entries created by org-vscode.captureTodo. Defaults to <workspaceFolder>/inbox.org. The file must reside inside the current workspace."
+				},
+				"Org-vscode.captureTargetHeading": {
+					"type": "string",
+					"order": 30.2,
+					"default": "* Inbox",
+					"description": "Heading inside the inbox file under which captured entries are appended. Created if missing. Use a higher-level heading (more leading asterisks = deeper) to nest captures further."
+				},
+				"Org-vscode.disableSrcExecutionInPaths": {
+					"type": "array",
+					"order": 30.3,
+					"default": [
+						"inbox.org"
+					],
+					"items": {
+						"type": "string"
+					},
+					"description": "List of file paths (absolute or workspace-relative) where the Execute Src Block CodeLens is suppressed. Captured entries land in inbox.org by default, so it is listed here to prevent third-party content from running code via the existing CodeLens path."
+				},
+				"Org-vscode.debugExternalApi": {
+					"type": "boolean",
+					"order": 30.4,
+					"default": false,
+					"description": "When enabled, the org-vscode public API logs diagnostic detail (call stacks, known extension roots) to the Extension Host console when caller identification fails. Useful when filing bug reports against the external API."
 				}
 			}
 		},
@@ -662,6 +697,11 @@
 				"command": "org-vscode.executeSrcBlock",
 				"category": "Org-vscode",
 				"title": "Execute Src Block"
+			},
+			{
+				"command": "org-vscode.captureTodo",
+				"category": "Org-vscode",
+				"title": "Capture TODO into Inbox"
 			},
 			{
 				"command": "org-vscode.openPreviewToSide",

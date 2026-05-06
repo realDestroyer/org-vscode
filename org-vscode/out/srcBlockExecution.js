@@ -250,6 +250,19 @@ async function executeSrcBlock(arg) {
   if (!editor) return;
 
   const doc = editor.document;
+  // Defense in depth: if the active document is in the disable list,
+  // refuse to run regardless of how we got here (CodeLens, palette, key).
+  try {
+    const { isSrcExecutionDisabledFor } = require("./srcBlockCodeLens");
+    if (isSrcExecutionDisabledFor(doc.uri)) {
+      await vscode.window.showErrorMessage(
+        "org-vscode: Src block execution is disabled in this file by Org-vscode.disableSrcExecutionInPaths."
+      );
+      return;
+    }
+  } catch {
+    // If the helper cannot be loaded, do not silently allow execution.
+  }
   const lines = splitDocumentLines(doc);
   const cursorLine = requestedLine1Based != null ? Math.max(0, requestedLine1Based - 1) : (editor.selection && editor.selection.active ? editor.selection.active.line : 0);
 

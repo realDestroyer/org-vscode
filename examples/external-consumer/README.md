@@ -48,7 +48,7 @@ copy it as a starting point for real integrations such as:
      you to allow this extension. Pick "Allow always" to persist the choice.
    - **Org Consumer Example: Capture Fake Email Into Org Inbox** — pick a
      message; check that it lands under `* Inbox` with `:EMAIL_*:` properties
-     and a `[[mailto:...]]` link in the body.
+     and a structured `mailto:` link in the `link` field.
    - **Org Consumer Example: Try Malicious Payload** — three known-bad
      payloads should each be rejected with `CaptureValidationError`.
 
@@ -65,7 +65,12 @@ extension you'd resolve the message ID and reveal it in your view.
 await api.captureTodo({
   headline: "Reply to alice@example.com: Q3 budget review",
   tags: ["email"],
-  body: "From: alice@...\n\nQuoted message body...\n\n[[mailto:<msg-id>][Q3 budget review]]",
+  body: "From: alice@...\n\nQuoted message body...",
+  link: {
+    scheme: "mailto",
+    path: "<msg-id>",
+    description: "Q3 budget review"
+  },
   properties: {
     EMAIL_ID: "<msg-id>",
     EMAIL_FROM: "alice@example.com",
@@ -75,7 +80,10 @@ await api.captureTodo({
 ```
 
 The headline appears as the TODO title. Tags become trailing `:email:`
-markers. Properties land in the entry's `:PROPERTIES:` drawer (org-vscode
+markers. The `link` field is rendered by org-vscode into a bracketed
+org link (`[[mailto:<msg-id>][Q3 budget review]]`) underneath the
+property drawer; the consumer never has to format the bracket form by
+hand. Properties land in the entry's `:PROPERTIES:` drawer (org-vscode
 adds `:CAPTURED:` and `:CAPTURED_BY:` automatically; user-supplied keys
 that collide with those reserved names are rejected).
 
