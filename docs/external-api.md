@@ -227,17 +227,33 @@ interface CapturePayload {
   deadline?: string;
   properties?: Record<string, string>; // keys [A-Z][A-Z0-9_-]*; CAPTURED / CAPTURED_BY are reserved
   body?: string;                     // max 8000 chars
-  link?: string;                     // bracketed: "[[mailto:a@b][a@b]]"
+  link?: {
+    scheme: string;                  // "http" | "https" | "mailto" | a registered custom scheme
+    path: string;                    // single line, no '[' or ']', max 2000 chars
+    description?: string;            // optional, no '[' or ']', max 2000 chars
+  };
 }
 ```
+
+The `link` field is structured rather than a pre-formatted bracket string
+so org-vscode can validate `scheme` against the allowlist as a discrete
+field, sanitize `path` and `description` independently, and own the
+bracket rendering end-to-end. The captured entry receives a single
+`[[scheme:path]]` or `[[scheme:path][description]]` line beneath the
+property drawer.
 
 ### Sanitization & rejection rules
 
 - `#+BEGIN_SRC` is rejected anywhere in `headline` or `body` (defense
   against the Execute Src Block CodeLens path).
 - Links of the form `[[file:...]]`, `[[id:...]]`, `[[*heading]]`,
-  `[[#anchor]]` are rejected in `headline`, `body`, and the standalone
-  `link` field.
+  `[[#anchor]]` are rejected in `headline` and `body`.
+- `link.scheme` must be one of the built-in safe schemes (`http`,
+  `https`, `mailto`) or a scheme previously registered via
+  `registerLinkType`. `file` and `id` are explicitly forbidden even if
+  somehow registered.
+- `link.path` and `link.description` reject `[` and `]` so a malicious
+  payload cannot break out of the rendered `[[...]]` form.
 - Control characters (C0/C1) are stripped. Newlines are preserved in
   `body` only.
 - Field length caps are enforced (see source for current values).
@@ -262,7 +278,11 @@ const result = await orgApi.captureTodo({
     SUBJECT: "RFP 2026-Q2"
   },
   body: "See attached PDF; respond by EOD Friday.",
-  link: "[[mailto:rfp@example.com][rfp@example.com]]"
+  link: {
+    scheme: "mailto",
+    path: "rfp@example.com",
+    description: "rfp@example.com"
+  }
 });
 
 // result.uri is a file:// URI to the inbox; result.line is the 0-based line.

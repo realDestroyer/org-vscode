@@ -28,6 +28,7 @@ These are the features that I have either already implemented, or plan to in the
 | LaTeX fragment rendering (org-fragtog-style) | Render LaTeX fragments as “inline images” (full math fragment preview, not only symbol substitutions) | Not Started |  | realDestroyer |
 | Src block execution (Org-babel-style) | Execute `#+BEGIN_SRC` blocks and insert/update `#+RESULTS:` immediately (Python/PowerShell/Bash/JS/C++), with CodeLens + context menu | DONE | v2.2.12 | realDestroyer |
 | TODO Notifications        | Notify users of status outside VSCode (email, sms, etc.)                                   | Not Started |          | realDestroyer |
+| External Capture & Link API | Public API surface (`registerLinkType`, `captureTodo`) so third-party extensions (email clients, ticket trackers, browsers) can push structured TODO entries into the inbox and register custom org link schemes. Off by default with per-extension consent prompts. Addresses [#110](https://github.com/realDestroyer/org-vscode/issues/110). | DONE | Unreleased | realDestroyer |
 | Make Titles Unique        | Don't allow duplicate titles                                                               | Not Started |          | realDestroyer |
 | Calendar Right-Click Menu | Right-click task to create, duplicate, or delete in calendar                              | In Progress |          | realDestroyer |
 | Bulleted Lists            | Make an ordered or unordered list                                                          | In Progress |          | realDestroyer |
