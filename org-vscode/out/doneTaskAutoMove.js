@@ -29,6 +29,10 @@ function parseHeadingLevel(lineText, config) {
   const indent = (mStar ? mStar[1] : mUnicode[1]) || "";
   const starsLen = mStar ? ((mStar[2] || "").length || 0) : 0;
 
+  if (mStar) {
+    return starsLen > 0 ? starsLen : null;
+  }
+
   const spacesPerLevel = getSpacesPerLevel(config);
   const indentLevel = (spacesPerLevel > 0)
     ? (Math.floor(indent.length / spacesPerLevel) + 1)
@@ -77,15 +81,34 @@ function isDoneLikeHeadingLine(lineText, registry) {
 
 function findLineIndexNear(lines, approxIndex, targetLineText, radius = 60) {
   if (!targetLineText) return -1;
-  const start = Math.max(0, Math.min(lines.length - 1, approxIndex) - radius);
-  const end = Math.min(lines.length - 1, Math.min(lines.length - 1, approxIndex) + radius);
-  for (let i = start; i <= end; i++) {
+  const center = Math.max(0, Math.min(lines.length - 1, approxIndex));
+  for (let distance = 0; distance <= radius; distance++) {
+    const before = center - distance;
+    if (before >= 0 && lines[before] === targetLineText) return before;
+
+    if (distance === 0) continue;
+
+    const after = center + distance;
+    if (after < lines.length && lines[after] === targetLineText) return after;
+  }
+  return -1;
+}
+
+function findLineIndexInSiblingScope(lines, approxHeading, targetLineText, config) {
+  if (!approxHeading || approxHeading.level === null || !targetLineText) return -1;
+
+  const parent = findParentHeadingAbove(lines, approxHeading.line, approxHeading.level, config);
+  const scopeStartLine = parent ? (parent.line + 1) : 0;
+  const scopeEndExclusive = parent
+    ? findSubtreeEndExclusive(lines, parent.line, parent.level, config)
+    : lines.length;
+
+  for (let i = scopeStartLine; i < scopeEndExclusive; i++) {
+    const level = parseHeadingLevel(lines[i], config);
+    if (level !== approxHeading.level) continue;
     if (lines[i] === targetLineText) return i;
   }
-  // Fallback: scan whole document (rare; used when previous edits shifted far).
-  for (let i = 0; i < lines.length; i++) {
-    if (lines[i] === targetLineText) return i;
-  }
+
   return -1;
 }
 
@@ -128,15 +151,19 @@ async function applyAutoMoveDoneInternal(document, approxLineIndex, expectedHead
 
   const text = document.getText();
   const lines = text.split(/\r?\n/);
+  const approximateHeading = findNearestHeadingAtOrAbove(lines, approxLineIndex, config);
 
   let headingLineIndex = -1;
   if (expectedHeadingLineText) {
-    headingLineIndex = findLineIndexNear(lines, approxLineIndex, expectedHeadingLineText);
+    headingLineIndex = findLineIndexNear(lines, approxLineIndex, expectedHeadingLineText, 120);
+    if (headingLineIndex < 0) {
+      headingLineIndex = findLineIndexInSiblingScope(lines, approximateHeading, expectedHeadingLineText, config);
+    }
   }
 
   const heading = (headingLineIndex >= 0)
     ? { line: headingLineIndex, level: parseHeadingLevel(lines[headingLineIndex], config) }
-    : findNearestHeadingAtOrAbove(lines, approxLineIndex, config);
+    : approximateHeading;
 
   if (!heading || heading.level === null) {
     return returnNewLineNumber ? { applied: false, newLineNumber: null } : false;
@@ -332,15 +359,19 @@ function computeAutoMoveDoneEdit(document, approxLineIndex, expectedHeadingLineT
 
   const text = document.getText();
   const lines = text.split(/\r?\n/);
+  const approximateHeading = findNearestHeadingAtOrAbove(lines, approxLineIndex, config);
 
   let headingLineIndex = -1;
   if (expectedHeadingLineText) {
-    headingLineIndex = findLineIndexNear(lines, approxLineIndex, expectedHeadingLineText);
+    headingLineIndex = findLineIndexNear(lines, approxLineIndex, expectedHeadingLineText, 120);
+    if (headingLineIndex < 0) {
+      headingLineIndex = findLineIndexInSiblingScope(lines, approximateHeading, expectedHeadingLineText, config);
+    }
   }
 
   const heading = (headingLineIndex >= 0)
     ? { line: headingLineIndex, level: parseHeadingLevel(lines[headingLineIndex], config) }
-    : findNearestHeadingAtOrAbove(lines, approxLineIndex, config);
+    : approximateHeading;
 
   if (!heading || heading.level === null) return null;
   if (!isDoneLikeHeadingLine(lines[heading.line], registry)) return null;
