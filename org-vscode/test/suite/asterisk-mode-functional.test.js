@@ -127,6 +127,74 @@ suite('Asterisk-mode functional behavior', function () {
     }
   });
 
+  test('Auto-move done stays in the local sibling group when heading text is duplicated', async () => {
+    const cfg = vscode.workspace.getConfiguration('Org-vscode');
+    const workflowBefore = cfg.inspect('workflowStates') || {};
+    const sortBefore = cfg.inspect('sortClosedTasksToTop') || {};
+    const oldGlobalWorkflowStates = workflowBefore.globalValue;
+    const oldGlobalSortClosedTasksToTop = sortBefore.globalValue;
+
+    await cfg.update(
+      'workflowStates',
+      [
+        { keyword: 'TODO' },
+        { keyword: 'IN_PROGRESS' },
+        { keyword: 'DONE', isDoneLike: true, stampsClosed: true }
+      ],
+      vscode.ConfigurationTarget.Global
+    );
+    await cfg.update('sortClosedTasksToTop', true, vscode.ConfigurationTarget.Global);
+
+    await waitFor(() => {
+      const updatedWorkflowStates = vscode.workspace.getConfiguration('Org-vscode').get('workflowStates');
+      const sortClosedTasksToTop = vscode.workspace.getConfiguration('Org-vscode').get('sortClosedTasksToTop');
+      return (
+        Array.isArray(updatedWorkflowStates) &&
+        updatedWorkflowStates.length === 3 &&
+        updatedWorkflowStates[2] &&
+        updatedWorkflowStates[2].keyword === 'DONE' &&
+        sortClosedTasksToTop === true
+      );
+    });
+
+    try {
+      const contents = [
+        '  * TODO Parent A',
+        '  ** TODO Before A',
+        '  ** DONE Duplicate task',
+        '  * TODO Parent B',
+        '  ** DONE Existing done B',
+        '  ** IN_PROGRESS Duplicate task',
+        '  ** TODO After B',
+        ''
+      ].join('\n');
+
+      const uri = await writeTempVsoFile(contents);
+      const { doc, editor } = await openFileInEditor(uri);
+      setCursor(editor, 5, 0);
+
+      await vscode.commands.executeCommand('extension.toggleStatusRight');
+
+      await waitFor(() => {
+        const text = doc.getText();
+        return /  \* TODO Parent B\r?\n  \*\* DONE Existing done B\r?\n  \*\* DONE Duplicate task\r?\n\s+CLOSED: \[.*\]\r?\n  \*\* TODO After B/.test(text);
+      });
+
+      const out = doc.getText();
+      assert.ok(
+        /  \* TODO Parent A\r?\n  \*\* TODO Before A\r?\n  \*\* DONE Duplicate task/.test(out),
+        `Parent A should remain unchanged. Document was:\n${out}`
+      );
+      assert.ok(
+        /  \* TODO Parent B\r?\n  \*\* DONE Existing done B\r?\n  \*\* DONE Duplicate task\r?\n\s+CLOSED: \[.*\]\r?\n  \*\* TODO After B/.test(out),
+        `Completed task should move only within Parent B. Document was:\n${out}`
+      );
+    } finally {
+      await cfg.update('workflowStates', oldGlobalWorkflowStates, vscode.ConfigurationTarget.Global);
+      await cfg.update('sortClosedTasksToTop', oldGlobalSortClosedTasksToTop, vscode.ConfigurationTarget.Global);
+    }
+  });
+
   test('CONTINUED forwards to next day and removal cleans it up', async () => {
     const separator = ' -------------------------------------------------------------------------------------------------------------------------------';
     const contents = [
