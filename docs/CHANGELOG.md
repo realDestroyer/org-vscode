@@ -7,6 +7,17 @@
 - (none)
 
 
+# [2.2.27] 08-05-26
+
+`Fixed`
+
+- **Done-task auto-move now stays in the correct sibling group:** Completing an indented asterisk heading with `Ctrl+Right` no longer jumps the finished task into an unrelated parent section when matching child headings share the same task text elsewhere in the file.
+
+`Tests`
+
+- Added a regression test covering duplicated child heading text in indented asterisk-mode files.
+
+
 # [2.2.26] 05-06-26
 
 `Added / Enhanced`
