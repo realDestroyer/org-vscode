@@ -138,7 +138,9 @@ function extractPlainTimestamps(line) {
   }
 
   const results = [];
-  const regex = new RegExp(PLAIN_TIMESTAMP_REGEX.source, 'g');
+  // Reuse the module-level global regex; constructing one per line is costly in scan loops.
+  const regex = PLAIN_TIMESTAMP_REGEX;
+  regex.lastIndex = 0;
   let match;
   while ((match = regex.exec(line)) !== null) {
     results.push({
