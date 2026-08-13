@@ -55,6 +55,7 @@ module.exports = function () {
     let acceptedDateFormats = getAcceptedDateFormats(dateFormat);
     const registry = taskKeywordManager.getWorkflowRegistry();
     const headingStartRegex = buildHeadingStartRegex(registry);
+    const stateByKeyword = new Map((registry.states || []).map((s) => [s.keyword, s]));
     const cycleKeywords = registry.getCycleKeywords();
     const keywordToBucket = Object.fromEntries(cycleKeywords.map((k) => [k, getKeywordBucket(k, registry)]));
     const bucketClasses = ["todo", "in_progress", "continued", "done", "abandoned"];
@@ -74,6 +75,7 @@ module.exports = function () {
     let suppressReloadForFsPath = null;
     let refreshInProgress = false;
     let refreshQueued = false;
+    let refreshDebounceTimer = null;
 
     readFiles((skippedFiles) => {
       renderAgendaWebview(skippedFiles);
@@ -122,7 +124,9 @@ module.exports = function () {
       }
 
       for (const line of lines) {
-        const p = parsePlanningFromText(line);
+        const s = String(line || "");
+        if (!s.includes("CLOSED:") && !s.includes("COMPLETED:")) continue;
+        const p = parsePlanningFromText(s);
         if (p && p.closed) {
           pushCandidate(momentFromTimestampContent(p.closed, formats, true));
         }
@@ -131,7 +135,9 @@ module.exports = function () {
       // Example: - State "DONE" from "TODO" [2026-01-16 Fri 13:00]
       const stateRe = /\bState\s+"([^"]+)"(?:\s+from\s+"[^"]+")?\s+\[([^\]]+)\]/i;
       for (const line of lines) {
-        const m = String(line || "").match(stateRe);
+        const s = String(line || "");
+        if (!s.includes("State ")) continue;
+        const m = s.match(stateRe);
         if (!m) continue;
         const toKeyword = String(m[1] || "").trim().toUpperCase();
         const ts = String(m[2] || "").trim();
@@ -192,6 +198,10 @@ module.exports = function () {
     // Reads all .org files and builds agenda view HTML blocks grouped by scheduled date
     function readFiles(onComplete) {
       resetAgendaCollections();
+      // Hoisted per-scan constants; avoids re-allocating moments in the hot loop.
+      const todayStart = moment().startOf("day");
+      const todayFormatted = todayStart.format(dateFormat);
+      const todayDayName = todayStart.format("dddd");
       const dirPath = setMainDir();
       fs.readdir(dirPath, (err, items) => {
         if (err) {
@@ -232,9 +242,10 @@ module.exports = function () {
 
             for (let j = 0; j < fileText.length; j++) {
               const element = fileText[j];
+              const isHeadingStart = headingStartRegex.test(element);
 
               // Track current heading for plain timestamp display
-              if (headingStartRegex.test(element)) {
+              if (isHeadingStart) {
                 seenFirstHeading = true;
                 const normalizedHeadline = stripInlinePlanning(normalizeTagsAfterPlanning(element));
                 currentHeadingText = taskKeywordManager.cleanTaskText(stripAllTagSyntax(normalizedHeadline)).trim();
@@ -242,12 +253,13 @@ module.exports = function () {
               }
 
               // Only show visible agenda tasks (filtering is per-workflow state)
-              const planning = getPlanningForHeading(fileText, j);
-              const status = taskKeywordManager.findTaskKeyword(element);
-              const state = status ? (registry.states || []).find((s) => s.keyword === status) : null;
+              // Perf: keyword/state/planning parsing only applies to task headings.
+              const status = isHeadingStart ? taskKeywordManager.findTaskKeyword(element) : null;
+              const isTaskHeading = Boolean(status);
+              const planning = isTaskHeading ? getPlanningForHeading(fileText, j) : null;
+              const state = status ? (stateByKeyword.get(status) || null) : null;
               const agendaVis = state && state.agendaVisibility ? state.agendaVisibility : "show";
-              const isVisibleAgendaTask = Boolean(status && agendaVis === "show" && headingStartRegex.test(element));
-              const isTaskHeading = Boolean(status && headingStartRegex.test(element));
+              const isVisibleAgendaTask = Boolean(status && agendaVis === "show");
 
               // Capture indented child lines once; used for both agenda rendering and completion parsing.
               let children = [];
@@ -259,7 +271,7 @@ module.exports = function () {
                   const nextIndent = nextLine.match(/^\s*/)?.[0] || "";
                   if (nextIndent.length > baseIndent.length) {
                     children.push({ text: nextLine, lineNumber: k + 1 });
-                    if (!deadlineFromChildren) {
+                    if (!deadlineFromChildren && nextLine.includes("DEADLINE:")) {
                       const p = parsePlanningFromText(nextLine);
                       if (p && p.deadline) {
                         deadlineFromChildren = p.deadline;
@@ -375,8 +387,7 @@ module.exports = function () {
                       // Avoid rendering "Invalid date" in the UI.
                       deadlineBadge = "";
                     } else {
-                    const today = moment().startOf("day");
-                    const daysUntil = deadlineDate.diff(today, "days");
+                    const daysUntil = deadlineDate.diff(todayStart, "days");
 
                     if (daysUntil < 0) {
                       deadlineBadge = html`<span class="deadline deadline-overdue">⚠ OVERDUE: ${deadlineDate.format("MMM Do")}</span>`;
@@ -418,7 +429,7 @@ module.exports = function () {
                     convertedDateArray.push({ date: dateDiv, text: textDiv });
                   } else {
                     // If task is today or future
-                    if (scheduledMoment.isSameOrAfter(moment().startOf("day"), "day")) {
+                    if (scheduledMoment.isSameOrAfter(todayStart, "day")) {
                       const itemDateOnly = scheduledMoment.format(dateFormat);
                       const scheduledDateOnly = hasScheduled ? scheduledMoment.format(dateFormat) : "";
                       let deadlineDateOnly = "";
@@ -431,10 +442,10 @@ module.exports = function () {
                       convertedDateArray.push({ date: dateDiv, text: textDiv });
                     } else {
                       // If task is overdue
-                      let today = moment().format(dateFormat);
-                      let overdue = moment().format("dddd");
+                      let today = todayFormatted;
+                      let overdue = todayDayName;
 
-                      if (scheduledMoment.isBefore(moment().startOf("day"), "day")) {
+                      if (scheduledMoment.isBefore(todayStart, "day")) {
                         const todayClass = "[" + today + "]";
                         const lateDate = momentFromTimestampContent(getDateFromTaskText[1], acceptedDateFormats, true).format(dateFormat);
                         const itemDateOnly = lateDate;
@@ -467,7 +478,7 @@ module.exports = function () {
                       const childStatus = taskKeywordManager.findTaskKeyword(childLineText);
                       if (!childStatus) continue;
 
-                      const childState = (registry.states || []).find((s) => s.keyword === childStatus) || null;
+                      const childState = stateByKeyword.get(childStatus) || null;
                       const childAgendaVis = childState && childState.agendaVisibility ? childState.agendaVisibility : "show";
                       if (childAgendaVis !== "show") continue;
 
@@ -503,8 +514,7 @@ module.exports = function () {
                       if (childDeadlineStr) {
                         const deadlineDate = momentFromTimestampContent(childDeadlineStr, acceptedDateFormats, true);
                         if (deadlineDate.isValid()) {
-                          const today = moment().startOf("day");
-                          const daysUntil = deadlineDate.diff(today, "days");
+                          const daysUntil = deadlineDate.diff(todayStart, "days");
                           if (daysUntil < 0) {
                             childDeadlineBadge = html`<span class="deadline deadline-overdue">⚠ OVERDUE: ${deadlineDate.format("MMM Do")}</span>`;
                           } else if (daysUntil === 0) {
@@ -532,7 +542,7 @@ module.exports = function () {
                         const textDiv = html`<div class=${"panel " + undatedClass} data-item-date="" data-scheduled-date="" data-deadline-date="">${childRenderedTask}</div>`;
                         if (!unsortedObject[dateDiv]) unsortedObject[dateDiv] = "  " + textDiv;
                         else unsortedObject[dateDiv] += "  " + textDiv;
-                      } else if (childScheduledMoment.isSameOrAfter(moment().startOf("day"), "day")) {
+                      } else if (childScheduledMoment.isSameOrAfter(todayStart, "day")) {
                         const itemDateOnly = childScheduledMoment.format(dateFormat);
                         const scheduledDateOnly = childHasScheduled ? childScheduledMoment.format(dateFormat) : "";
                         let deadlineDateOnly = "";
@@ -545,8 +555,8 @@ module.exports = function () {
                         if (!unsortedObject[dateDiv]) unsortedObject[dateDiv] = "  " + textDiv;
                         else unsortedObject[dateDiv] += "  " + textDiv;
                       } else {
-                        const today = moment().format(dateFormat);
-                        const overdue = moment().format("dddd");
+                        const today = todayFormatted;
+                        const overdue = todayDayName;
                         const todayClass = "[" + today + "]";
                         const lateDate = childScheduledMoment.format(dateFormat);
                         const itemDateOnly = lateDate;
@@ -709,10 +719,27 @@ module.exports = function () {
             suppressReloadForFsPath = null;
             return;
           }
-          requestAgendaRefresh();
+          // Only org content affects the agenda; ignore unrelated saves.
+          const savedFsPath = savedDoc && savedDoc.uri ? String(savedDoc.uri.fsPath || "") : "";
+          if (!/\.(org|vsorg|org_archive)$/i.test(savedFsPath)) {
+            return;
+          }
+          // Trailing debounce: status toggles save several times in quick succession;
+          // coalesce them into one refresh after the burst settles.
+          if (refreshDebounceTimer) {
+            clearTimeout(refreshDebounceTimer);
+          }
+          refreshDebounceTimer = setTimeout(() => {
+            refreshDebounceTimer = null;
+            requestAgendaRefresh();
+          }, 300);
         });
 
         fullAgendaView.onDidDispose(() => {
+          if (refreshDebounceTimer) {
+            clearTimeout(refreshDebounceTimer);
+            refreshDebounceTimer = null;
+          }
           saveDisposable.dispose();
           fullAgendaView = null;
         });
