@@ -7,6 +7,14 @@
 - (none)
 
 
+# [2.2.28] 08-13-26
+
+`Performance`
+
+- **Agenda View is much faster on large org files:** The agenda scan now parses planning data only for task headings (instead of every line of every file), uses cached state lookups and hoisted date constants, and reuses the plain-timestamp regex. Measured ~22x faster scanning on a 20k-line file.
+- **Status toggles are responsive while the Agenda View is open:** The save-triggered agenda refresh is now debounced (300ms trailing) so the multiple saves from a single `Ctrl+Left` / `Ctrl+Right` toggle coalesce into one rescan after the command completes. Saves of non-org files no longer trigger agenda refreshes.
+
+
 # [2.2.27] 08-05-26
 
 `Fixed`
