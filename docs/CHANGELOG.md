@@ -4,6 +4,13 @@
 
 `Added / Enhanced`
 
+- (none)
+
+
+# [2.2.29] 08-22-26
+
+`Added / Enhanced`
+
 - **Workflow keywords on checkboxes:** Checkbox list items can now carry a workflow keyword (for example `- [ ] TODO Draft the plan`). `Ctrl + Right` / `Ctrl + Left` rotates the keyword in place instead of treating the line as a heading, preserving the bullet and `[ ]` marker. The cycle includes a "no keyword" step so keywords can be removed again, and rotating into a state that stamps `CLOSED` checks the box (states that are done-like but don't stamp `CLOSED`, like `ABANDONED`, leave it alone). Checkbox keywords are never counted as task headings by Agenda, Tagged Agenda, or subtree TODO statistics. Controlled by `Org-vscode.enableCheckboxKeywords`.
 - **Syntax coloring for custom workflow states:** User-defined workflow states now get their own Symbol / Keyword / Task Text rows in the Syntax Color Customizer, grouped as `<KEYWORD> Tasks (custom)`. New states appear immediately after clicking **Save Workflow** — no window reload. Because the bundled grammar can't know runtime keywords, custom-state colors are applied via editor decorations driven by the same saved settings (`Org-vscode.decorateCustomWorkflowStates`). Each custom state starts from a distinct default color.
 - **Built-in keywords on checkbox lines are syntax highlighted:** The grammar now scopes workflow keywords that follow a checkbox marker in ordered and unordered lists.
