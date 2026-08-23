@@ -550,6 +550,18 @@
 					"default": true,
 					"description": "Decorate entire task heading lines with a background color based on TODO keyword (uses your editor.tokenColorCustomizations TextMate rule background for the keyword scopes)."
 				},
+				"Org-vscode.enableCheckboxKeywords": {
+					"type": "boolean",
+					"order": 8.1,
+					"default": true,
+					"description": "Allow checkbox list items to carry a workflow keyword (for example `- [ ] TODO Write the spec`). Ctrl+Right / Ctrl+Left then rotates the keyword on the checkbox instead of treating the line as a heading."
+				},
+				"Org-vscode.decorateCustomWorkflowStates": {
+					"type": "boolean",
+					"order": 8.15,
+					"default": true,
+					"description": "Apply your Syntax Color Customizer colors to user-defined workflow states using editor decorations. Required because the bundled syntax grammar only knows the built-in keywords."
+				},
 				"Org-vscode.decorateHeadingScheduledDates": {
 					"type": "boolean",
 					"order": 8.25,

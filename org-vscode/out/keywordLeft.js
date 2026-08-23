@@ -11,6 +11,7 @@ const { computeLogbookInsertion, formatStateChangeEntry } = require("./orgLogboo
 const { normalizeBodyIndentation } = require("./indentUtils");
 const { applyAutoMoveDone } = require("./doneTaskAutoMove");
 const { findIncompleteChildTask } = require("./todoDependencies");
+const checkboxKeywords = require("./checkboxKeywords");
 
 function buildPlanningBody(planning) {
   const parts = [];
@@ -34,6 +35,7 @@ module.exports = async function () {
   const logIntoDrawer = config.get("logIntoDrawer", false);
   const logDrawerName = config.get("logDrawerName", "LOGBOOK");
   const enforceTodoDependencies = config.get("enforceTodoDependencies", false);
+  const enableCheckboxKeywords = config.get("enableCheckboxKeywords", true);
   const workflowRegistry = taskKeywordManager.getWorkflowRegistry();
 
   const { document } = activeTextEditor;
@@ -69,6 +71,17 @@ module.exports = async function () {
 
   for (const lineNumber of sortedLines) {
     const currentLine = document.lineAt(lineNumber);
+
+    if (enableCheckboxKeywords && checkboxKeywords.isCheckboxLine(currentLine.text)) {
+      const rotated = checkboxKeywords.rotateCheckboxKeyword(currentLine.text, "left", workflowRegistry);
+      if (rotated && rotated.changed) {
+        const checkboxEdit = new vscode.WorkspaceEdit();
+        checkboxEdit.replace(document.uri, currentLine.range, rotated.text);
+        await vscode.workspace.applyEdit(checkboxEdit);
+      }
+      continue;
+    }
+
     const nextLine = lineNumber + 1 < document.lineCount ? document.lineAt(lineNumber + 1) : null;
     const nextNextLine = lineNumber + 2 < document.lineCount ? document.lineAt(lineNumber + 2) : null;
 
