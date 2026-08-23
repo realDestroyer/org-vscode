@@ -38,6 +38,7 @@ Org-vscode helps you manage tasks, notes, and projects in plain text `.org` file
 	- Agenda View includes scheduled tasks, deadline-only tasks, and an optional (default-on) `[UNDATED]` section for tasks with no dates
 	- Agenda View includes a **Closed** tab (recently completed tasks grouped by completion date) and a **Range** filter (All / This week / This month / This year)
 - Checklists with hierarchical parent/child checkbox states
+- Workflow keywords on checkbox items (`- [ ] TODO ...`) that rotate in place with `Ctrl + →` / `Ctrl + ←`
 - Org-mode statistics cookies: `[/]` (fraction) and `[%]` (percent)
 - Subtree completion stats on headings (TODO subtree completion + checkbox completion)
 - Emphasis rendering for `*bold*`, `/italic/`, `_underline_`, `+strike+`
@@ -51,6 +52,7 @@ Org-vscode helps you manage tasks, notes, and projects in plain text `.org` file
 - Org table generator (command + snippets)
 - Reports/tools: Export Current Tasks, Export Yearly Summary, Executive Report, Year-In-Review Dashboard
 - Customization: Syntax Color Customizer (colors + Workflow States editor) + settings for heading markers / indentation / decorations
+- Custom workflow states get their own syntax color options in the Syntax Color Customizer, applied immediately after saving
 - Commands: Sort Headings by Scheduled Date (`Org-vscode.sortClosedTasksToTop` optional)
 - **External Capture & Link API** (opt-in, off by default): other VS Code extensions can register custom org link schemes (e.g. `[[msgid:abc@host]]`) and push structured TODO entries into your inbox after a per-extension consent prompt. There's also a built-in **Org-vscode: Capture TODO into Inbox** palette command for quick personal capture. See [docs/external-api.md](docs/external-api.md), the runnable [examples/external-consumer/](examples/external-consumer/README.md), and [SECURITY.md](SECURITY.md).
 

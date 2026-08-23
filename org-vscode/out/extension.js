@@ -49,6 +49,7 @@ const { openSyntaxColorCustomizer } = require("./syntaxColorCustomizer");
 const { openKeybindingCustomizer } = require("./keybindingCustomizer");
 const { registerUnicodeHeadingDecorations } = require("./unicodeHeadingDecorations");
 const { registerTodoLineDecorations } = require("./todoLineDecorations");
+const { registerCustomStateDecorations } = require("./customStateDecorations");
 const { registerCheckboxAutoDone } = require("./checkboxAutoDone");
 const { registerCheckboxStatsDecorations } = require("./checkboxStatsDecorations");
 const { registerMarkupCommands } = require("./markupCommands");
@@ -201,6 +202,9 @@ function activate(ctx) {
 
   // Whole-line task state highlighting (uses the user's token color customizations for background colors)
   registerTodoLineDecorations(ctx);
+
+  // Color user-defined workflow keywords (the static grammar can't know them)
+  registerCustomStateDecorations(ctx);
 
   // Automatically mark tasks DONE when all checkboxes are checked
   registerCheckboxAutoDone(ctx);

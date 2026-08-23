@@ -8,6 +8,7 @@
 
 const vscode = require("vscode");
 const workflowStates = require("./workflowStates");
+const { buildCustomStateColorEntries } = require("./workflowStateScopes");
 const { html, escapeText } = require("./htmlUtils");
 
 // Default color definitions matching the extension's configurationDefaults.
@@ -464,6 +465,31 @@ const SCOPE_GROUPS = {
 let customizerPanel = null;
 
 /**
+ * Merges the static defaults with generated entries for user-defined workflow states.
+ */
+function buildColorDefinitions(states) {
+  const custom = buildCustomStateColorEntries(states);
+  return {
+    colors: { ...DEFAULT_COLORS, ...custom.colors },
+    groups: { ...SCOPE_GROUPS, ...custom.groups }
+  };
+}
+
+function renderCustomizerPanel() {
+  if (!customizerPanel) return;
+  const nonce = getNonce();
+  const currentWorkflowStates = getCurrentWorkflowStates();
+  const definitions = buildColorDefinitions(currentWorkflowStates.states);
+  const currentColors = getCurrentColors(definitions.colors);
+  customizerPanel.webview.html = getWebviewContent(
+    nonce,
+    currentColors,
+    currentWorkflowStates,
+    definitions.groups
+  );
+}
+
+/**
  * Opens the Syntax Color Customizer webview panel
  */
 function openSyntaxColorCustomizer() {
@@ -485,10 +511,11 @@ function openSyntaxColorCustomizer() {
   const nonce = getNonce();
   
   // Load current user settings
-  const currentColors = getCurrentColors();
   const currentWorkflowStates = getCurrentWorkflowStates();
+  const definitions = buildColorDefinitions(currentWorkflowStates.states);
+  const currentColors = getCurrentColors(definitions.colors);
   
-  customizerPanel.webview.html = getWebviewContent(nonce, currentColors, currentWorkflowStates);
+  customizerPanel.webview.html = getWebviewContent(nonce, currentColors, currentWorkflowStates, definitions.groups);
 
   customizerPanel.webview.onDidReceiveMessage(async (message) => {
     try {
@@ -499,10 +526,8 @@ function openSyntaxColorCustomizer() {
           break;
         case "saveWorkflowStates":
           await saveWorkflowStates(message.states);
-          customizerPanel.webview.postMessage({
-            command: "workflowStatesUpdated",
-            payload: getCurrentWorkflowStates()
-          });
+          // Rebuild so newly added custom states immediately get color rows.
+          renderCustomizerPanel();
           vscode.window.showInformationMessage("Workflow states saved successfully!");
           break;
         case "resetToDefaults":
@@ -510,16 +535,13 @@ function openSyntaxColorCustomizer() {
           // Send updated colors back to webview
           customizerPanel.webview.postMessage({
             command: "colorsUpdated",
-            colors: DEFAULT_COLORS
+            colors: buildColorDefinitions(getCurrentWorkflowStates().states).colors
           });
           vscode.window.showInformationMessage("Colors reset to defaults!");
           break;
         case "resetWorkflowStatesToDefaults":
           await resetWorkflowStatesToDefaults();
-          customizerPanel.webview.postMessage({
-            command: "workflowStatesUpdated",
-            payload: getCurrentWorkflowStates()
-          });
+          renderCustomizerPanel();
           vscode.window.showInformationMessage("Workflow states reset to defaults!");
           break;
         case "openKeyboardShortcuts":
@@ -543,13 +565,13 @@ function openSyntaxColorCustomizer() {
 /**
  * Gets the current color settings from user configuration
  */
-function getCurrentColors() {
+function getCurrentColors(baseColors) {
   const config = vscode.workspace.getConfiguration("editor");
   const tokenColors = config.get("tokenColorCustomizations") || {};
   const textMateRules = tokenColors.textMateRules || [];
 
   // Start with defaults, overlay user customizations
-  const colors = JSON.parse(JSON.stringify(DEFAULT_COLORS));
+  const colors = JSON.parse(JSON.stringify(baseColors || DEFAULT_COLORS));
 
   const normalizeHex6 = (value) => {
     if (value === undefined || value === null) return "";
@@ -783,7 +805,9 @@ function getNonce() {
 /**
  * Generates the webview HTML content
  */
-function getWebviewContent(nonce, currentColors, currentWorkflowStates) {
+function getWebviewContent(nonce, currentColors, currentWorkflowStates, scopeGroups) {
+  const groupDefinitions = scopeGroups || SCOPE_GROUPS;
+
   function escapeCssAttrValue(value) {
     return String(value || "").replace(/\\/g, "\\\\").replace(/\"/g, "\\\"");
   }
@@ -800,9 +824,10 @@ function getWebviewContent(nonce, currentColors, currentWorkflowStates) {
 
   let previewCss = "";
 
-  const groupsHtml = Object.entries(SCOPE_GROUPS).map(([groupName, scopeNames]) => {
+  const groupsHtml = Object.entries(groupDefinitions).map(([groupName, scopeNames]) => {
     const scopesHtml = scopeNames.map(name => {
       const settings = currentColors[name];
+      if (!settings) return "";
       const technicalScope = Array.isArray(settings.scope) ? settings.scope.join(", ") : settings.scope;
       const supportsBackground =
         /\bKeyword\b/.test(name) ||
@@ -2161,7 +2186,17 @@ function getPreviewText(scopeName) {
     "Emphasis Underline": "_underline_",
     "Emphasis Strike": "+strike+"
   };
-  return previews[scopeName] || scopeName;
+  if (previews[scopeName]) return previews[scopeName];
+
+  // User-defined workflow states get generated rows, so derive a preview from the label.
+  const custom = String(scopeName || "").match(/^(.+) (Symbol|Keyword|Task Text)$/);
+  if (custom) {
+    if (custom[2] === "Keyword") return custom[1];
+    if (custom[2] === "Task Text") return "Custom state task";
+    return "◆";
+  }
+
+  return scopeName;
 }
 
 module.exports = {
