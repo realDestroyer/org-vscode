@@ -681,6 +681,30 @@ In both Agenda View and Tagged Agenda View:
 
 <img src="https://github.com/realdestroyer/org-vscode/blob/master/Images/checkbox-taggedAgenda-example.png?raw=true" width="900" />
 
+### Workflow keywords on checkboxes
+
+Checkbox items can carry their own workflow keyword, so a single checklist entry can track progress without being promoted to a heading:
+
+```org
+- [ ] TODO Draft the migration plan
+- [ ] IN_PROGRESS Review with the team
+- [X] DONE Ship it
+```
+
+Place the cursor on a checkbox line and press `Ctrl + →` / `Ctrl + ←` to rotate the keyword in place. The bullet and `[ ]` marker stay exactly where they are.
+
+Behavior:
+
+- The cycle includes a **"no keyword"** step, so you can always remove a keyword again.
+- Rotating into a state that stamps `CLOSED` (by default `DONE`) checks the box.
+- Rotating back out of that state unchecks the box.
+- States that are done-like but do **not** stamp `CLOSED` (by default `ABANDONED`) leave the box untouched, because abandoning an item is not the same as completing it.
+- Your custom workflow states work here too.
+
+Checkbox keywords are deliberately **not** treated as task headings: they never appear in Agenda View, Tagged Agenda View, or subtree TODO statistics. They remain ordinary checkbox items for checkbox counting.
+
+Set `Org-vscode.enableCheckboxKeywords` to `false` to disable this and restore the previous behavior.
+
 ---
 
 ## ⏰ Deadlines <a id="deadlines"></a>
@@ -1239,8 +1263,22 @@ Elements are grouped for easy navigation:
 * **CONTINUED Tasks** - Symbol, keyword, and task text
 * **DONE Tasks** - Symbol, keyword, and task text
 * **ABANDONED Tasks** - Symbol, keyword, and task text
+* **&lt;YOUR_STATE&gt; Tasks (custom)** - one group per user-defined workflow state
 * **Heading Decorations** - Heading SCHEDULED / DEADLINE suffix styling
 * **Other Elements** - SCHEDULED/DEADLINE/CLOSED stamps, inline tags, agenda dates, property drawers
+
+#### 🎛 Coloring your custom workflow states <a id="coloring-custom-workflow-states"></a>
+
+States you create on the **Workflow States** tab automatically get their own Symbol / Keyword / Task Text color rows.
+
+1. Open the **Workflow States** tab and add a state (for example `EXAMPLE_STATE`).
+2. Click **💾 Save Workflow**.
+3. The **Syntax Colors** tab immediately gains an **EXAMPLE_STATE Tasks (custom)** group — no window reload required.
+4. Pick your colors and click **💾 Save Colors**.
+
+Because the bundled TextMate grammar is static, it cannot know keywords you invent at runtime. Custom-state colors are therefore applied with editor decorations driven by the exact same saved settings. This is controlled by `Org-vscode.decorateCustomWorkflowStates` (on by default); turning it off leaves custom keywords uncolored.
+
+Each new custom state starts from a distinct default color so multiple custom states are easy to tell apart at a glance.
 
 #### 💾 Save & Reset <a id="save-and-reset"></a>
 

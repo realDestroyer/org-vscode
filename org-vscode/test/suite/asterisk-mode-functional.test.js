@@ -127,6 +127,55 @@ suite('Asterisk-mode functional behavior', function () {
     }
   });
 
+  test('Checkbox items rotate workflow keywords in place', async () => {
+    const contents = [
+      '* TODO Parent task',
+      '  - [ ] First checkbox',
+      '  - [ ] Second checkbox',
+      ''
+    ].join('\n');
+
+    const uri = await writeTempVsoFile(contents);
+    const { doc, editor } = await openFileInEditor(uri);
+
+    setCursor(editor, 1, 0);
+
+    await vscode.commands.executeCommand('extension.toggleStatusRight');
+    await waitFor(() => doc.lineAt(1).text === '  - [ ] TODO First checkbox');
+
+    // The bullet and marker must stay put; the line must never become a heading.
+    assert.ok(
+      !/^\s*\*/.test(doc.lineAt(1).text),
+      `Checkbox must not be converted into a heading. Got: ${doc.lineAt(1).text}`
+    );
+    assert.strictEqual(doc.lineAt(2).text, '  - [ ] Second checkbox', 'sibling checkbox must be untouched');
+
+    await vscode.commands.executeCommand('extension.toggleStatusRight');
+    await waitFor(() => doc.lineAt(1).text === '  - [ ] IN_PROGRESS First checkbox');
+
+    await vscode.commands.executeCommand('extension.toggleStatusLeft');
+    await waitFor(() => doc.lineAt(1).text === '  - [ ] TODO First checkbox');
+  });
+
+  test('Checkbox marker is checked when rotating into DONE', async () => {
+    const contents = [
+      '* TODO Parent task',
+      '  - [ ] CONTINUED Ship it',
+      ''
+    ].join('\n');
+
+    const uri = await writeTempVsoFile(contents);
+    const { doc, editor } = await openFileInEditor(uri);
+
+    setCursor(editor, 1, 0);
+
+    await vscode.commands.executeCommand('extension.toggleStatusRight');
+    await waitFor(() => doc.lineAt(1).text === '  - [X] DONE Ship it');
+
+    await vscode.commands.executeCommand('extension.toggleStatusLeft');
+    await waitFor(() => doc.lineAt(1).text === '  - [ ] CONTINUED Ship it');
+  });
+
   test('Auto-move done stays in the local sibling group when heading text is duplicated', async () => {
     const cfg = vscode.workspace.getConfiguration('Org-vscode');
     const workflowBefore = cfg.inspect('workflowStates') || {};
