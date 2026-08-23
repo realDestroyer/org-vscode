@@ -1,6 +1,6 @@
 ﻿# Roadmap
 
-Live version: 2.2.28
+Live version: 2.2.29
 
 These are the features that I have either already implemented, or plan to in the near future.
 
@@ -8,8 +8,8 @@ These are the features that I have either already implemented, or plan to in the
 
 | Feature Name              | Description                                                                                | Progress    | Version  | Author        |
 | ------------------------- | ------------------------------------------------------------------------------------------ | ----------- | -------- | ------------- |
-| Workflow keywords on checkboxes | Allow checkbox list items to carry a workflow keyword (`- [ ] TODO ...`) and rotate it in place with `Ctrl + Right` / `Ctrl + Left`, including a "no keyword" step and checkbox-state syncing on completion. | DONE | Unreleased | realDestroyer |
-| Syntax coloring for custom workflow states | Generate Symbol / Keyword / Task Text color rows for user-defined workflow states in the Syntax Color Customizer, applied immediately after saving via editor decorations. | DONE | Unreleased | realDestroyer |
+| Workflow keywords on checkboxes | Allow checkbox list items to carry a workflow keyword (`- [ ] TODO ...`) and rotate it in place with `Ctrl + Right` / `Ctrl + Left`, including a "no keyword" step and checkbox-state syncing on completion. | DONE | v2.2.29 | realDestroyer |
+| Syntax coloring for custom workflow states | Generate Symbol / Keyword / Task Text color rows for user-defined workflow states in the Syntax Color Customizer, applied immediately after saving via editor decorations. | DONE | v2.2.29 | realDestroyer |
 | External Capture & Link API | Public API surface (`registerLinkType`, `captureTodo`) so third-party extensions (email clients, ticket trackers, browsers) can push structured TODO entries into the inbox and register custom org link schemes. Off by default with per-extension consent prompts. Addresses [#110](https://github.com/realDestroyer/org-vscode/issues/110). | DONE | v2.2.26 | realDestroyer |
 | Column View (MVP) | Open a task table with sortable/filterable columns, inherited Org properties, and scope modes (global/file/subtree). | DONE | v2.2.24 | realDestroyer |
 | Agenda panel placement preservation | Keep Agenda View in its current panel/editor group when auto-refreshing after file save. | DONE | v2.2.24 | realDestroyer |
