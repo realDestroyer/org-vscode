@@ -160,20 +160,30 @@ suite('Asterisk-mode functional behavior', function () {
   test('Checkbox marker is checked when rotating into DONE', async () => {
     const contents = [
       '* TODO Parent task',
-      '  - [ ] CONTINUED Ship it',
+      '  - [ ] Parent checkbox',
+      '    - [ ] CONTINUED First child',
+      '    - [ ] CONTINUED Second child',
       ''
     ].join('\n');
 
     const uri = await writeTempVsoFile(contents);
     const { doc, editor } = await openFileInEditor(uri);
 
-    setCursor(editor, 1, 0);
+    setCursor(editor, 2, 0);
 
     await vscode.commands.executeCommand('extension.toggleStatusRight');
-    await waitFor(() => doc.lineAt(1).text === '  - [X] DONE Ship it');
+    await waitFor(() => doc.lineAt(2).text === '    - [X] DONE First child');
+    assert.strictEqual(doc.lineAt(1).text, '  - [-] Parent checkbox');
 
+    setCursor(editor, 3, 0);
+    await vscode.commands.executeCommand('extension.toggleStatusRight');
+    await waitFor(() => doc.lineAt(3).text === '    - [X] DONE Second child');
+    assert.strictEqual(doc.lineAt(1).text, '  - [X] Parent checkbox');
+
+    setCursor(editor, 2, 0);
     await vscode.commands.executeCommand('extension.toggleStatusLeft');
-    await waitFor(() => doc.lineAt(1).text === '  - [ ] CONTINUED Ship it');
+    await waitFor(() => doc.lineAt(2).text === '    - [ ] CONTINUED First child');
+    assert.strictEqual(doc.lineAt(1).text, '  - [-] Parent checkbox');
   });
 
   test('Auto-move done stays in the local sibling group when heading text is duplicated', async () => {

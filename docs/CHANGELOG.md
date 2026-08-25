@@ -4,7 +4,13 @@
 
 `Added / Enhanced`
 
-- (none)
+- **Checkbox workflow hierarchy:** Cycling a checkbox workflow item into or out of `DONE` now updates ancestor checkbox markers (`[ ]`, `[-]`, and `[X]`) through the same hierarchy logic as ordinary checkbox toggles. Statistics cookies refresh from the reconciled state, and parent task auto-completion continues to account for both checkboxes and child TODO headings.
+- **Checkbox workflow task colors:** Built-in workflow keywords and their trailing checkbox task text now receive the corresponding task-state TextMate scopes in the grammar actually shipped by the extension. Custom workflow states continue to use dynamic decorations.
+- **Statistics cookie shortcut:** Restored the statistics-cookie command contribution and added `Ctrl + Alt + K` to add, switch, or remove a cookie from a heading or list item.
+
+`Tests`
+
+- Added regressions for workflow-driven ancestor markers, child TODO completion, shipped grammar scopes, and the statistics-cookie command/keybinding contribution.
 
 
 # [2.2.29] 08-22-26

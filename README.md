@@ -93,6 +93,7 @@ Most editing shortcuts support multi-line selection: highlight multiple task lin
 | `Ctrl + Alt + S`     | Schedule a task (selection-aware)                      |
 | `Ctrl + Alt + D`     | Add deadline to task (selection-aware)                 |
 | `Ctrl + Alt + X`     | Toggle checkbox item (selection-aware)                 |
+| `Ctrl + Alt + K`     | Add, change, or remove a statistics cookie             |
 | `Alt + Shift + →`    | Smart date forward (selection-aware)                   |
 | `Alt + Shift + ←`    | Smart date backward (selection-aware)                  |
 | `Ctrl + Shift + →`   | Deadline date forward (selection-aware)                |
