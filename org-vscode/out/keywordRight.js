@@ -12,6 +12,7 @@ const { normalizeBodyIndentation } = require("./indentUtils");
 const { applyAutoMoveDone } = require("./doneTaskAutoMove");
 const { findIncompleteChildTask } = require("./todoDependencies");
 const checkboxKeywords = require("./checkboxKeywords");
+const { computeCheckboxLineChangeEdits } = require("./checkboxToggle");
 
 function buildPlanningBody(planning) {
   const parts = [];
@@ -75,8 +76,12 @@ module.exports = async function () {
     if (enableCheckboxKeywords && checkboxKeywords.isCheckboxLine(currentLine.text)) {
       const rotated = checkboxKeywords.rotateCheckboxKeyword(currentLine.text, "right", workflowRegistry);
       if (rotated && rotated.changed) {
+        const lines = document.getText().split(/\r?\n/);
+        const edits = computeCheckboxLineChangeEdits(lines, lineNumber, rotated.text);
         const checkboxEdit = new vscode.WorkspaceEdit();
-        checkboxEdit.replace(document.uri, currentLine.range, rotated.text);
+        for (const edit of edits) {
+          checkboxEdit.replace(document.uri, document.lineAt(edit.lineIndex).range, edit.newText);
+        }
         await vscode.workspace.applyEdit(checkboxEdit);
       }
       continue;

@@ -385,6 +385,8 @@
           "end": "$",
           "patterns": [
             { "include": "#org_list_checkbox" },
+            { "include": "#org_list_keyword" },
+            { "include": "#org_list_task_text" },
             { "include": "#org_emphasis" },
             { "include": "#org_links" }
           ]
@@ -399,10 +401,31 @@
           "end": "$",
           "patterns": [
             { "include": "#org_list_checkbox" },
+            { "include": "#org_list_keyword" },
+            { "include": "#org_list_task_text" },
             { "include": "#org_emphasis" },
             { "include": "#org_links" }
           ]
         }
+      ]
+    },
+    "org_list_keyword": {
+      "comment": "Workflow keyword directly after a checkbox marker, e.g. - [ ] TODO text",
+      "patterns": [
+        { "name": "keyword.control.todo.vso", "match": "(?<=\\[[ xX-]\\]\\s)TODO\\b" },
+        { "name": "keyword.control.in_progress.vso", "match": "(?<=\\[[ xX-]\\]\\s)IN_PROGRESS\\b" },
+        { "name": "keyword.control.continued.vso", "match": "(?<=\\[[ xX-]\\]\\s)CONTINUED\\b" },
+        { "name": "keyword.control.done.vso", "match": "(?<=\\[[ xX-]\\]\\s)DONE\\b" },
+        { "name": "keyword.control.abandoned.vso", "match": "(?<=\\[[ xX-]\\]\\s)ABANDONED\\b" }
+      ]
+    },
+    "org_list_task_text": {
+      "patterns": [
+        { "include": "#task_text_todo" },
+        { "include": "#task_text_in_progress" },
+        { "include": "#task_text_continued" },
+        { "include": "#task_text_done" },
+        { "include": "#task_text_abandoned" }
       ]
     },
     "org_list_checkbox": {

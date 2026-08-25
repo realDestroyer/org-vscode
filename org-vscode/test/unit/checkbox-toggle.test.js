@@ -1,7 +1,11 @@
 const assert = require('assert');
 const path = require('path');
 
-const { computeCheckboxToggleEdits, computeCheckboxBulkToggleEdits } = require(path.join(__dirname, '..', '..', 'out', 'checkboxToggle.js'));
+const {
+  computeCheckboxToggleEdits,
+  computeCheckboxLineChangeEdits,
+  computeCheckboxBulkToggleEdits
+} = require(path.join(__dirname, '..', '..', 'out', 'checkboxToggle.js'));
 
 function applyEdits(lines, edits) {
   const out = lines.slice();
@@ -73,6 +77,35 @@ function testBulkToggleUnchecksWhenAllChecked() {
   assert.strictEqual(updated[2], '  - [ ] b');
 }
 
+function testWorkflowMarkerChangeUpdatesAncestors() {
+  const lines = [
+    '* H',
+    '  - [ ] Parent',
+    '    - [ ] TODO first',
+    '    - [ ] TODO second'
+  ];
+
+  const edits = computeCheckboxLineChangeEdits(lines, 2, '    - [X] DONE first');
+  const updated = applyEdits(lines, edits);
+
+  assert.strictEqual(updated[1], '  - [-] Parent');
+  assert.strictEqual(updated[2], '    - [X] DONE first');
+}
+
+function testWorkflowKeywordOnlyChangePreservesDescendants() {
+  const lines = [
+    '* H',
+    '  - [ ] TODO Parent',
+    '    - [X] DONE child'
+  ];
+
+  const edits = computeCheckboxLineChangeEdits(lines, 1, '  - [ ] IN_PROGRESS Parent');
+  const updated = applyEdits(lines, edits);
+
+  assert.strictEqual(updated[1], '  - [ ] IN_PROGRESS Parent');
+  assert.strictEqual(updated[2], '    - [X] DONE child');
+}
+
 module.exports = {
   name: 'unit/checkbox-toggle',
   run: () => {
@@ -80,5 +113,7 @@ module.exports = {
     testToggleParentTogglesDescendants();
     testBulkToggleChecksWhenAnyUnchecked();
     testBulkToggleUnchecksWhenAllChecked();
+    testWorkflowMarkerChangeUpdatesAncestors();
+    testWorkflowKeywordOnlyChangePreservesDescendants();
   }
 };

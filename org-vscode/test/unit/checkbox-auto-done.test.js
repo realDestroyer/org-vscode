@@ -37,10 +37,23 @@ function testDoesNotAutoDoneWhenChildSubtaskIncomplete() {
   assert.deepStrictEqual(toMarkDone, [], 'Expected Parent to NOT be marked DONE while a child task is still TODO');
 }
 
+function testAutoDoneAfterChildSubtasksComplete() {
+  const lines = [
+    '* IN_PROGRESS Parent',
+    '  - [X] checklist item',
+    '  ** DONE Completed child task'
+  ];
+
+  const { toMarkDone } = computeHeadingTransitions(lines);
+
+  assert.deepStrictEqual(toMarkDone, [0], 'Expected Parent to be marked DONE after its checkbox and child task complete');
+}
+
 module.exports = {
   name: 'unit/checkbox-auto-done',
   run: () => {
     testTransitionsMarkDoneAndRevertToInProgress();
     testDoesNotAutoDoneWhenChildSubtaskIncomplete();
+    testAutoDoneAfterChildSubtasksComplete();
   }
 };

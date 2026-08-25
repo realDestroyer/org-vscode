@@ -386,6 +386,7 @@
           "patterns": [
             { "include": "#org_list_checkbox" },
             { "include": "#org_list_keyword" },
+            { "include": "#org_list_task_text" },
             { "include": "#org_emphasis" },
             { "include": "#org_links" }
           ]
@@ -401,6 +402,7 @@
           "patterns": [
             { "include": "#org_list_checkbox" },
             { "include": "#org_list_keyword" },
+            { "include": "#org_list_task_text" },
             { "include": "#org_emphasis" },
             { "include": "#org_links" }
           ]
@@ -430,6 +432,15 @@
           "name": "keyword.control.abandoned.vso",
           "match": "(?<=\\[[ xX-]\\]\\s)ABANDONED\\b"
         }
+      ]
+    },
+    "org_list_task_text": {
+      "patterns": [
+        { "include": "#task_text_todo" },
+        { "include": "#task_text_in_progress" },
+        { "include": "#task_text_continued" },
+        { "include": "#task_text_done" },
+        { "include": "#task_text_abandoned" }
       ]
     },
     "org_list_checkbox": {
