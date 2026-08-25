@@ -15,6 +15,7 @@ const tests = [
   require(path.join(__dirname, 'checkbox-auto-done.test.js')),
   require(path.join(__dirname, 'checkbox-toggle.test.js')),
   require(path.join(__dirname, 'checkbox-keywords.test.js')),
+  require(path.join(__dirname, 'checkbox-workflow-grammar.test.js')),
   require(path.join(__dirname, 'workflow-state-scopes.test.js')),
   require(path.join(__dirname, 'move-block.test.js')),
   require(path.join(__dirname, 'org-properties.test.js')),

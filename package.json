@@ -921,6 +921,11 @@
 				"title": "Toggle Checkbox Item"
 			},
 			{
+				"command": "extension.toggleCheckboxCookie",
+				"category": "Org-vscode",
+				"title": "Add, Change, or Remove Statistics Cookie"
+			},
+			{
 				"command": "extension.toggleStatusLeft",
 				"category": "Org-vscode",
 				"title": "Toggle Status Left"
@@ -1005,6 +1010,11 @@
 			{
 				"command": "extension.toggleCheckboxItem",
 				"key": "ctrl+alt+x",
+				"when": "(editorLangId == 'vso' || editorLangId == 'org' || editorLangId == 'vsorg' || editorLangId == 'org-vscode') && editorTextFocus"
+			},
+			{
+				"command": "extension.toggleCheckboxCookie",
+				"key": "ctrl+alt+k",
 				"when": "(editorLangId == 'vso' || editorLangId == 'org' || editorLangId == 'vsorg' || editorLangId == 'org-vscode') && editorTextFocus"
 			},
 			{

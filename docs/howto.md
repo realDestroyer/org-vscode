@@ -647,6 +647,8 @@ Column View stores your visible columns, sort settings, and selected scope in wo
 
 Checkbox completion stats are cookie-driven (Emacs-style): add `[/]` (fraction) or `[%]` (percent) to the end of a heading or list item to show stats (Org-vscode renders them as `[n/m]` or `[p%]`).
 
+Press `Ctrl + Alt + K` on a heading or list item to add, switch, or remove its statistics cookie.
+
 <img src="https://github.com/realdestroyer/org-vscode/blob/master/Images/checkbox-example.png?raw=true" width="900" />
 
 ### Toggle a checkbox from the keyboard
@@ -698,6 +700,7 @@ Behavior:
 - The cycle includes a **"no keyword"** step, so you can always remove a keyword again.
 - Rotating into a state that stamps `CLOSED` (by default `DONE`) checks the box.
 - Rotating back out of that state unchecks the box.
+- Marker changes update ancestor checkbox states (`[ ]`, `[-]`, and `[X]`) and statistics cookies just like the checkbox toggle command.
 - States that are done-like but do **not** stamp `CLOSED` (by default `ABANDONED`) leave the box untouched, because abandoning an item is not the same as completing it.
 - Your custom workflow states work here too.
 
