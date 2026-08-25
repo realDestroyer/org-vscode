@@ -301,6 +301,33 @@ function computeCheckboxSetEdits(lines, lineIndices0, desiredStateChar) {
 }
 
 /**
+ * Applies a rewritten checkbox line and reconciles its subtree/ancestors when
+ * the rewrite changes the checkbox marker.
+ */
+function computeCheckboxLineChangeEdits(lines, lineIndex0, newText) {
+  const safeLines = Array.isArray(lines) ? lines.slice() : [];
+  const idx = Number(lineIndex0);
+  if (!Number.isInteger(idx) || idx < 0 || idx >= safeLines.length) return [];
+
+  const previous = parseCheckboxItem(safeLines[idx]);
+  const next = parseCheckboxItem(newText);
+  if (!previous || !next) return [];
+
+  const edits = new Map([[idx, String(newText)]]);
+  safeLines[idx] = String(newText);
+
+  if (String(previous.state).toLowerCase() !== String(next.state).toLowerCase()) {
+    for (const edit of computeCheckboxSetEdits(safeLines, [idx], next.state)) {
+      edits.set(edit.lineIndex, edit.newText);
+    }
+  }
+
+  return Array.from(edits.entries())
+    .sort((a, b) => a[0] - b[0])
+    .map(([lineIndex, changedText]) => ({ lineIndex, newText: changedText }));
+}
+
+/**
  * Computes line edits to bulk-toggle checkbox items across multiple line indices.
  *
  * Rule:
@@ -331,5 +358,6 @@ function computeCheckboxBulkToggleEdits(lines, lineIndices0) {
 module.exports = {
   computeCheckboxToggleEdits,
   computeCheckboxSetEdits,
+  computeCheckboxLineChangeEdits,
   computeCheckboxBulkToggleEdits
 };

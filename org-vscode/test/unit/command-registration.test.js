@@ -98,6 +98,12 @@ function getContributedCommands(extensionRoot) {
   return commands.map((c) => c && c.command).filter(Boolean);
 }
 
+function getContributedKeybindings(extensionRoot) {
+  const pkgPath = path.join(extensionRoot, 'package.json');
+  const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
+  return (pkg.contributes && pkg.contributes.keybindings) || [];
+}
+
 function activateExtension(extensionRoot, vscodeMock) {
   const extensionPath = path.join(extensionRoot, 'out', 'extension.js');
   // Ensure we load a fresh copy for each run.
@@ -132,6 +138,12 @@ function testAllContributedCommandsAreRegistered() {
     // Spot checks for historically-regressed commands.
     assert.ok(registered.has('org-vscode.insertTable'), 'org-vscode.insertTable must be registered');
     assert.ok(registered.has('org-vscode.exportCurrentTasks'), 'org-vscode.exportCurrentTasks must be registered');
+    assert.ok(registered.has('extension.toggleCheckboxCookie'), 'statistics cookie command must be registered');
+
+    const cookieBinding = getContributedKeybindings(packageJsonRoot)
+      .find((binding) => binding.command === 'extension.toggleCheckboxCookie');
+    assert.ok(cookieBinding, 'statistics cookie command must have a contributed keybinding');
+    assert.strictEqual(cookieBinding.key, 'ctrl+alt+k');
   });
 }
 
