@@ -1,7 +1,64 @@
 const assert = require('assert');
 const path = require('path');
 
-const { computeHeadingTransitions } = require(path.join(__dirname, '..', '..', 'out', 'checkboxAutoDoneTransitions.js'));
+const {
+  computeHeadingTransitions,
+  contentChangesTouchCheckbox
+} = require(path.join(__dirname, '..', '..', 'out', 'checkboxAutoDoneTransitions.js'));
+
+function fakeDocument(lines) {
+  return {
+    lineCount: lines.length,
+    lineAt(lineNumber) {
+      return { text: lines[lineNumber] };
+    }
+  };
+}
+
+function changeAt(line, text) {
+  return {
+    text,
+    range: { start: { line }, end: { line } }
+  };
+}
+
+function testOnlyCheckboxChangesScheduleReconciliation() {
+  assert.strictEqual(
+    contentChangesTouchCheckbox(
+      fakeDocument(['* DONE - Parent task']),
+      [changeAt(0, '* DONE - Parent task')]
+    ),
+    false,
+    'heading text containing a hyphen must not schedule checkbox reconciliation'
+  );
+
+  assert.strictEqual(
+    contentChangesTouchCheckbox(
+      fakeDocument(['  CLOSED: [2026-08-26 Wed 10:00]']),
+      [changeAt(0, '\n  CLOSED: [2026-08-26 Wed 10:00]')]
+    ),
+    false,
+    'a CLOSED timestamp must not schedule checkbox reconciliation'
+  );
+
+  assert.strictEqual(
+    contentChangesTouchCheckbox(
+      fakeDocument(['  - [X] Completed item']),
+      [changeAt(0, 'X')]
+    ),
+    true,
+    'editing a checkbox marker in place must schedule reconciliation'
+  );
+
+  assert.strictEqual(
+    contentChangesTouchCheckbox(
+      fakeDocument(['  - [ ] New item']),
+      [changeAt(0, '  - [ ] New item')]
+    ),
+    true,
+    'inserting a checkbox line must schedule reconciliation'
+  );
+}
 
 function testTransitionsMarkDoneAndRevertToInProgress() {
   const lines = [
@@ -52,6 +109,7 @@ function testAutoDoneAfterChildSubtasksComplete() {
 module.exports = {
   name: 'unit/checkbox-auto-done',
   run: () => {
+    testOnlyCheckboxChangesScheduleReconciliation();
     testTransitionsMarkDoneAndRevertToInProgress();
     testDoesNotAutoDoneWhenChildSubtaskIncomplete();
     testAutoDoneAfterChildSubtasksComplete();

@@ -8,7 +8,7 @@ const continuedTaskHandler = require("./continuedTaskHandler");
 const { isPlanningLine, parsePlanningFromText, normalizeTagsAfterPlanning, stripInlinePlanning } = require("./orgTagUtils");
 const { applyRepeatersOnCompletion } = require("./repeatedTasks");
 const { computeLogbookInsertion, formatStateChangeEntry } = require("./orgLogbook");
-const { computeHeadingTransitions } = require("./checkboxAutoDoneTransitions");
+const { computeHeadingTransitions, contentChangesTouchCheckbox } = require("./checkboxAutoDoneTransitions");
 const { normalizeBodyIndentation } = require("./indentUtils");
 const { parseHeadingInfo, findSubtreeEndExclusive } = require("./moveBlockUtils");
 const { applyAutoMoveDone } = require("./doneTaskAutoMove");
@@ -424,13 +424,7 @@ function registerCheckboxAutoDone(ctx) {
 
   ctx.subscriptions.push(
     vscode.workspace.onDidChangeTextDocument((event) => {
-      // Only respond when the change likely involves checkboxes.
-      const touchesCheckbox = (event.contentChanges || []).some((c) => {
-        const text = String(c && c.text || "");
-        return text.includes("[") || text.includes("]") || text.includes("-");
-      });
-
-      if (!touchesCheckbox) return;
+      if (!contentChangesTouchCheckbox(event.document, event.contentChanges || [])) return;
       schedule(event.document);
     }),
     vscode.workspace.onDidChangeConfiguration((event) => {
