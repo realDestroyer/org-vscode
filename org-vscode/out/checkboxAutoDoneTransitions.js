@@ -22,6 +22,36 @@ function buildHeadingRegexes(registry) {
   };
 }
 const CHECKBOX_REGEX = /^\s*[-+*]\s+\[( |x|X)\]\s+/;
+const CHECKBOX_CHANGE_REGEX = /^\s*[-+*]\s+\[(?: |x|X|-)\](?:\s+|$)/;
+
+function contentChangesTouchCheckbox(document, contentChanges) {
+  if (!document || !Array.isArray(contentChanges)) return false;
+
+  return contentChanges.some((change) => {
+    const insertedLines = String(change?.text || "").split(/\r?\n/);
+    if (insertedLines.some((line) => CHECKBOX_CHANGE_REGEX.test(line))) {
+      return true;
+    }
+
+    const startLine = change?.range?.start?.line;
+    if (!Number.isInteger(startLine) || !Number.isInteger(document.lineCount)) {
+      return false;
+    }
+
+    const endLine = Math.min(
+      document.lineCount - 1,
+      startLine + Math.max(0, insertedLines.length - 1)
+    );
+
+    for (let lineNumber = Math.max(0, startLine); lineNumber <= endLine; lineNumber++) {
+      if (CHECKBOX_CHANGE_REGEX.test(document.lineAt(lineNumber).text)) {
+        return true;
+      }
+    }
+
+    return false;
+  });
+}
 
 function getHeadingLevel(match) {
   const starsOrSymbol = match[2] || "";
@@ -125,5 +155,6 @@ function computeHeadingTransitions(lines) {
 }
 
 module.exports = {
-  computeHeadingTransitions
+  computeHeadingTransitions,
+  contentChangesTouchCheckbox
 };
