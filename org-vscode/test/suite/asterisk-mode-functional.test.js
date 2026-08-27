@@ -127,6 +127,48 @@ suite('Asterisk-mode functional behavior', function () {
     }
   });
 
+  test('Explicit DONE survives checkbox auto-DONE listener debounce', async () => {
+    const cfg = vscode.workspace.getConfiguration('Org-vscode');
+    const workflowBefore = cfg.inspect('workflowStates') || {};
+    const autoDoneBefore = cfg.inspect('autoDoneWhenAllCheckboxesChecked') || {};
+    const oldGlobalWorkflowStates = workflowBefore.globalValue;
+    const oldGlobalAutoDone = autoDoneBefore.globalValue;
+
+    await cfg.update(
+      'workflowStates',
+      [
+        { keyword: 'IN_PROGRESS' },
+        { keyword: 'DONE', isDoneLike: true, stampsClosed: true }
+      ],
+      vscode.ConfigurationTarget.Global
+    );
+    await cfg.update('autoDoneWhenAllCheckboxesChecked', true, vscode.ConfigurationTarget.Global);
+
+    try {
+      const uri = await writeTempVsoFile([
+        '* IN_PROGRESS Parent - explicit completion',
+        '  - [ ] Remaining item',
+        ''
+      ].join('\n'));
+      const { doc, editor } = await openFileInEditor(uri);
+      setCursor(editor, 0, 0);
+
+      await vscode.commands.executeCommand('extension.toggleStatusRight');
+      await waitFor(() => doc.lineAt(0).text === '* DONE Parent - explicit completion');
+      await waitFor(() => doc.getText().includes('CLOSED: ['));
+      await new Promise((resolve) => setTimeout(resolve, 500));
+
+      assert.strictEqual(
+        doc.lineAt(0).text,
+        '* DONE Parent - explicit completion',
+        'checkbox auto-DONE must not reverse an explicit heading status command'
+      );
+    } finally {
+      await cfg.update('workflowStates', oldGlobalWorkflowStates, vscode.ConfigurationTarget.Global);
+      await cfg.update('autoDoneWhenAllCheckboxesChecked', oldGlobalAutoDone, vscode.ConfigurationTarget.Global);
+    }
+  });
+
   test('Checkbox items rotate workflow keywords in place', async () => {
     const contents = [
       '* TODO Parent task',

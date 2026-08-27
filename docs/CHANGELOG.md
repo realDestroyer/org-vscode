@@ -1,5 +1,16 @@
 # Change Log
 
+# [Unreleased]
+
+`Fixed`
+
+- **Explicit DONE transitions with incomplete checkboxes:** Heading status commands no longer trigger checkbox auto-DONE reconciliation merely because the heading contains a hyphen or the transition inserts a bracketed `CLOSED` timestamp. Explicitly selecting `DONE` now remains `DONE`; actual checkbox edits still auto-complete or reopen parent tasks when `Org-vscode.autoDoneWhenAllCheckboxesChecked` is enabled.
+
+`Tests`
+
+- Added unit and extension-host regressions for distinguishing checkbox-marker edits from heading and planning-line edits.
+
+
 # [2.2.30] 08-25-26
 
 `Added / Enhanced`
