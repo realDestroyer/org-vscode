@@ -71,7 +71,7 @@ function testTaskPrefixRegexMatchesBothStyles() {
 function testPredicatesUseConfig() {
   const custom = [
     { keyword: 'NEXT', isDoneLike: false },
-    { keyword: 'WON', isDoneLike: true, stampsClosed: true }
+    { keyword: 'WON', isDoneLike: true, stampsClosed: true, notePrompt: true }
   ];
 
   const registry = createWorkflowRegistry(custom);
@@ -80,6 +80,10 @@ function testPredicatesUseConfig() {
   assert.ok(!registry.isDoneLike('NEXT'));
   assert.ok(registry.isDoneLike('WON'));
   assert.ok(registry.stampsClosed('WON'));
+  assert.ok(registry.promptsForNote('WON'));
+  assert.ok(!registry.promptsForNote('NEXT'));
+  assert.strictEqual(registry.states[0].notePrompt, false);
+  assert.strictEqual(registry.states[1].notePrompt, true);
 }
 
 module.exports = {

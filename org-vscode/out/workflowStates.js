@@ -38,6 +38,7 @@ function getDefaultWorkflowStates() {
       marker: "⊙",
       isDoneLike: false,
       stampsClosed: false,
+      notePrompt: false,
       triggersForward: false,
       agendaVisibility: "show",
       taggedAgendaVisibility: "show"
@@ -47,6 +48,7 @@ function getDefaultWorkflowStates() {
       marker: "⊘",
       isDoneLike: false,
       stampsClosed: false,
+      notePrompt: false,
       triggersForward: false,
       agendaVisibility: "show",
       taggedAgendaVisibility: "show"
@@ -56,6 +58,7 @@ function getDefaultWorkflowStates() {
       marker: "⊜",
       isDoneLike: false,
       stampsClosed: false,
+      notePrompt: false,
       triggersForward: true,
       agendaVisibility: "hide",
       taggedAgendaVisibility: "hide"
@@ -65,6 +68,7 @@ function getDefaultWorkflowStates() {
       marker: "⊖",
       isDoneLike: true,
       stampsClosed: true,
+      notePrompt: false,
       triggersForward: false,
       agendaVisibility: "hide",
       taggedAgendaVisibility: "hide"
@@ -74,6 +78,7 @@ function getDefaultWorkflowStates() {
       marker: "⊗",
       isDoneLike: true,
       stampsClosed: false,
+      notePrompt: false,
       triggersForward: false,
       agendaVisibility: "hide",
       taggedAgendaVisibility: "hide"
@@ -94,6 +99,7 @@ function normalizeState(raw) {
     marker,
     isDoneLike: normalizeBoolean(raw.isDoneLike, false),
     stampsClosed: normalizeBoolean(raw.stampsClosed, false),
+    notePrompt: normalizeBoolean(raw.notePrompt, false),
     triggersForward: normalizeBoolean(raw.triggersForward, false),
     agendaVisibility: normalizeVisibility(raw.agendaVisibility, "show"),
     taggedAgendaVisibility: normalizeVisibility(raw.taggedAgendaVisibility, "show")
@@ -220,6 +226,11 @@ function createWorkflowRegistry(configValue) {
       const k = normalizeKeyword(keyword);
       const st = k ? keywordToState.get(k) : undefined;
       return !!(st && st.stampsClosed);
+    },
+    promptsForNote: (keyword) => {
+      const k = normalizeKeyword(keyword);
+      const st = k ? keywordToState.get(k) : undefined;
+      return !!(st && st.notePrompt);
     },
     triggersForward: (keyword) => {
       const k = normalizeKeyword(keyword);

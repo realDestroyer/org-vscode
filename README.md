@@ -30,7 +30,8 @@ Org-vscode helps you manage tasks, notes, and projects in plain text `.org` file
 - Optional deadline-date suffix on task headlines via decorations (`Org-vscode.decorateHeadingDeadlineDates`)
 - v2 Org-mode alignment: `:TAGS:` at end of headline, planning lines under headings, `CLOSED:` stamp
 - Align Schedules behavior is configurable (and won’t align `:PROPERTIES:` drawers)
-- Configurable TODO workflow states (`Org-vscode.workflowStates`) with per-state semantics (done-like, CLOSED stamping, carryover/forward-trigger, agenda visibility)
+- Configurable TODO workflow states (`Org-vscode.workflowStates`) with per-state semantics (done-like, CLOSED stamping, optional transition-note prompts, carryover/forward-trigger, agenda visibility)
+- Configurable Org priority cycling (`Org-vscode.priorityValues`) for star and Unicode headings, with forward and backward Command Palette commands
 - Repeating tasks via Org repeaters (`+`, `++`, `.+`) with optional `REPEAT_TO_STATE` reopen behavior
 - Optional LOGBOOK drawer logging for completion history (`Org-vscode.logIntoDrawer`, `Org-vscode.logDrawerName`)
 - Faster Agenda scanning on large `.org` files (performance improvements for big task files)
@@ -89,6 +90,7 @@ Most editing shortcuts support multi-line selection: highlight multiple task lin
 | `Ctrl + →`           | Cycle TODO keyword forward (selection-aware)           |
 | `Ctrl + ←`           | Cycle TODO keyword backward (selection-aware)          |
 | *(Command Palette)*  | Org-vscode: Set TODO State...                          |
+| *(Command Palette)*  | Cycle Priority / Cycle Priority Backward               |
 | `Shift + Alt + ↑`    | Move task block up (keeps children/subtree)            |
 | `Shift + Alt + ↓`    | Move task block down (keeps children/subtree)          |
 | `Alt + →`            | Increase heading level (selection-aware)               |

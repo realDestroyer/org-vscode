@@ -9,6 +9,8 @@ const tests = [
   require(path.join(__dirname, 'command-registration.test.js')),
   require(path.join(__dirname, 'syntax-color-customizer-webview.test.js')),
   require(path.join(__dirname, 'workflow-states.test.js')),
+  require(path.join(__dirname, 'priority-cycle.test.js')),
+  require(path.join(__dirname, 'transition-notes.test.js')),
   require(path.join(__dirname, 'indent-utils.test.js')),
   require(path.join(__dirname, 'checkbox-stats.test.js')),
   require(path.join(__dirname, 'checkbox-cookie-toggle.test.js')),

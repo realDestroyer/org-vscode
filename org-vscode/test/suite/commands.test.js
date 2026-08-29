@@ -87,6 +87,21 @@ suite('Command registration', function () {
     }
   });
 
+  test('Priority commands cycle selected Org headings and preserve other lines', async () => {
+    const document = await vscode.workspace.openTextDocument({
+      language: 'vso',
+      content: '* TODO Task :work:\n* Project heading\nBody [#A]\n'
+    });
+    const editor = await vscode.window.showTextDocument(document);
+    editor.selection = new vscode.Selection(new vscode.Position(0, 0), new vscode.Position(3, 0));
+
+    await vscode.commands.executeCommand('org-vscode.cyclePriority');
+    assert.strictEqual(document.getText(), '* TODO [#A] Task :work:\n* [#A] Project heading\nBody [#A]\n');
+
+    await vscode.commands.executeCommand('org-vscode.cyclePriorityBackward');
+    assert.strictEqual(document.getText(), '* TODO Task :work:\n* Project heading\nBody [#A]\n');
+  });
+
   test('Insert heading link creates a target ID and inserts the link', async () => {
     const targetUri = vscode.Uri.file(path.join(
       os.tmpdir(),
