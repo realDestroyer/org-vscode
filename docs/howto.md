@@ -522,6 +522,7 @@ Org-vscode includes a lightweight Live Preview (webview) so you can read your Or
 - Or use the Command Palette:
   - **Org-vscode: Open Preview**
   - **Org-vscode: Open Preview To Side**
+  - **Org-vscode: Export Current File to HTML**
 
 <img src="https://github.com/realDestroyer/org-vscode/blob/master/Images/live-preview-example.gif?raw=true" width="700" height="400" />
 
@@ -529,6 +530,8 @@ Notes:
 
 - Preview updates automatically as you type.
 - Scroll sync (editor → preview) is supported.
+- HTML export opens a save dialog and writes a standalone, script-free document that follows the browser's light or dark color preference.
+- `.org_archive` files automatically use the same Org language mode, preview, navigation, and commands as `.org` files.
 
 ---
 

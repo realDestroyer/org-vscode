@@ -1,5 +1,7 @@
 const assert = require('assert');
 const vscode = require('vscode');
+const os = require('os');
+const path = require('path');
 
 suite('Command registration', function () {
   this.timeout(60_000);
@@ -43,6 +45,46 @@ suite('Command registration', function () {
 
     const missing = uniqueIds.filter(id => !registeredCommands.includes(id));
     assert.deepStrictEqual(missing, [], `Missing keybinding commands: ${missing.join(', ')}`);
+  });
+
+  test('Export HTML writes a standalone document', async () => {
+    const source = await vscode.workspace.openTextDocument({
+      language: 'vso',
+      content: '* TODO Export example\n- [X] Finished item\n'
+    });
+    await vscode.window.showTextDocument(source);
+
+    const destination = vscode.Uri.file(path.join(
+      os.tmpdir(),
+      `org-vscode-export-${Date.now()}-${Math.random().toString(16).slice(2)}.html`
+    ));
+
+    try {
+      await vscode.commands.executeCommand('org-vscode.exportHtml', destination);
+      const output = Buffer.from(await vscode.workspace.fs.readFile(destination)).toString('utf8');
+
+      assert.ok(output.startsWith('<!DOCTYPE html>'));
+      assert.ok(output.includes('Export example'));
+      assert.ok(output.includes('<input type="checkbox" disabled checked>'));
+      assert.ok(!output.includes('acquireVsCodeApi'));
+    } finally {
+      await vscode.workspace.fs.delete(destination, { useTrash: false }).then(undefined, () => undefined);
+    }
+  });
+
+  test('.org_archive files use the Org language', async () => {
+    const archiveUri = vscode.Uri.file(path.join(
+      os.tmpdir(),
+      `org-vscode-archive-${Date.now()}-${Math.random().toString(16).slice(2)}.org_archive`
+    ));
+
+    try {
+      await vscode.workspace.fs.writeFile(archiveUri, Buffer.from('* DONE Archived example\n', 'utf8'));
+      const document = await vscode.workspace.openTextDocument(archiveUri);
+      assert.strictEqual(document.languageId, 'vso');
+    } finally {
+      await vscode.workspace.fs.delete(archiveUri, { useTrash: false }).then(undefined, () => undefined);
+    }
   });
 
   test('Migrate file to v2 rewrites legacy constructs', async () => {
