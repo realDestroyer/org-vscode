@@ -15,3 +15,7 @@ org-vscode/package-lock.json
 org-vscode/Logo.png
 org-vscode/.vscodeignore
 /.github/
+/AGENTS.md
+/CLAUDE.md
+/GEMINI.md
+/GROK.md
