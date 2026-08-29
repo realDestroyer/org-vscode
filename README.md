@@ -50,6 +50,7 @@ Org-vscode helps you manage tasks, notes, and projects in plain text `.org` file
 - Smart navigation helpers: Document Outline (headings) + clickable Org links (including `[[*heading]]`, `[[id:...]]`, `[[#target]]`, `file:`, `http(s)`, `mailto:`)
 - Workspace heading link insertion with automatic stable IDs (`Ctrl + Alt + L` / `Cmd + Alt + L`)
 - Subtree promotion/demotion and safe same-file or cross-file refile from the Command Palette
+- Org-style heading visibility cycling with `Tab` and document-wide cycling with `Shift + Tab`
 - Org link auto-completion inside `[[...]]` (including workspace-wide `id:` suggestions)
 - Property drawer helpers: set/get/delete properties (with inheritance) + ID helpers (get-or-create, set/replace)
 - Org table generator (command + snippets)
@@ -91,6 +92,8 @@ Most editing shortcuts support multi-line selection: highlight multiple task lin
 | `Alt + →`            | Increase heading level (selection-aware)               |
 | `Alt + ←`            | Decrease heading level (selection-aware)               |
 | `Alt + Enter`        | Smart insert new element (Org Meta-Return style)       |
+| `Tab`                | Cycle heading subtree visibility                       |
+| `Shift + Tab`        | Cycle document-wide heading visibility                 |
 | `Ctrl + Shift + [`   | Fold section                                           |
 | `Ctrl + Shift + ]`   | Unfold section                                         |
 | `Ctrl + Alt + S`     | Schedule a task (selection-aware)                      |

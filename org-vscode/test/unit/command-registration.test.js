@@ -22,6 +22,8 @@ function createVscodeMock() {
 
     workspace: {
       onDidChangeConfiguration: () => disposable(),
+      onDidChangeTextDocument: () => disposable(),
+      onDidCloseTextDocument: () => disposable(),
       getConfiguration: () => ({
         get: () => undefined,
         update: async () => undefined
@@ -39,6 +41,8 @@ function createVscodeMock() {
 
     window: {
       activeTextEditor: null,
+      onDidChangeActiveTextEditor: () => disposable(),
+      onDidChangeTextEditorSelection: () => disposable(),
       showInformationMessage: () => Promise.resolve(undefined),
       showErrorMessage: () => Promise.resolve(undefined),
       createWebviewPanel: () => ({

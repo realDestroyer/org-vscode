@@ -27,6 +27,10 @@
 		"onCommand:org-vscode.promoteSubtree",
 		"onCommand:org-vscode.demoteSubtree",
 		"onCommand:org-vscode.refileSubtree",
+		"onCommand:org-vscode.cycleVisibility",
+		"onCommand:org-vscode.cycleVisibilityBackward",
+		"onCommand:org-vscode.cycleGlobalVisibility",
+		"onCommand:org-vscode.cycleGlobalVisibilityBackward",
 		"onCommand:extension.viewAgenda",
 		"onCommand:extension.migrateFileToV2",
 		"onCommand:extension.createVsoFile",
@@ -789,6 +793,26 @@
 				"title": "Refile Subtree..."
 			},
 			{
+				"command": "org-vscode.cycleVisibility",
+				"category": "Org-vscode",
+				"title": "Cycle Subtree Visibility"
+			},
+			{
+				"command": "org-vscode.cycleVisibilityBackward",
+				"category": "Org-vscode",
+				"title": "Cycle Subtree Visibility Backward"
+			},
+			{
+				"command": "org-vscode.cycleGlobalVisibility",
+				"category": "Org-vscode",
+				"title": "Cycle Global Visibility"
+			},
+			{
+				"command": "org-vscode.cycleGlobalVisibilityBackward",
+				"category": "Org-vscode",
+				"title": "Cycle Global Visibility Backward"
+			},
+			{
 				"command": "org-vscode.setRepeater",
 				"category": "Org-vscode",
 				"title": "Set Repeater..."
@@ -1030,6 +1054,16 @@
 			}
 		],
 		"keybindings": [
+			{
+				"command": "org-vscode.cycleVisibility",
+				"key": "tab",
+				"when": "org-vscode.cursorOnHeading && editorTextFocus && !editorHasSelection && !editorHasMultipleSelections && !suggestWidgetVisible && !renameInputVisible && !inSnippetMode && !inlineSuggestionVisible && !editorTabMovesFocus"
+			},
+			{
+				"command": "org-vscode.cycleGlobalVisibility",
+				"key": "shift+tab",
+				"when": "org-vscode.cursorOnHeading && editorTextFocus && !editorHasSelection && !editorHasMultipleSelections && !suggestWidgetVisible && !renameInputVisible && !inSnippetMode && !inlineSuggestionVisible && !editorTabMovesFocus"
+			},
 			{
 				"command": "org-vscode.openPreviewToSide",
 				"key": "ctrl+alt+p",

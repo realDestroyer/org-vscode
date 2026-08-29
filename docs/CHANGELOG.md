@@ -1,5 +1,16 @@
 # Change Log
 
+# Unreleased
+
+`Added / Enhanced`
+
+- **Org visibility cycling:** `Tab` on a heading now cycles the current subtree through folded, direct-children, and fully expanded states. `Shift+Tab` provides the equivalent document-wide cycle, with backward commands available from the Command Palette. Non-heading Tab behavior remains delegated to VS Code.
+
+`Tests`
+
+- Registered the previously dormant heading-folding unit suite and added cycle-plan plus extension-host command coverage.
+
+
 # [2.2.34] 08-29-26
 
 `Added / Enhanced`
