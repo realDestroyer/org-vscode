@@ -697,6 +697,36 @@
 					},
 					"description": "List of file paths (absolute or workspace-relative) where the Execute Src Block CodeLens is suppressed. Captured entries land in inbox.org by default, so it is listed here to prevent third-party content from running code via the existing CodeLens path."
 				},
+				"Org-vscode.headingCodeLens.enabled": {
+					"type": "boolean",
+					"order": 8.2,
+					"default": false,
+					"description": "Show configurable action links above Org headings. Files listed in disableSrcExecutionInPaths remain lens-free."
+				},
+				"Org-vscode.headingCodeLens.actions": {
+					"type": "array",
+					"order": 8.21,
+					"default": [
+						"status",
+						"schedule",
+						"deadline"
+					],
+					"uniqueItems": true,
+					"items": {
+						"type": "string",
+						"enum": [
+							"status",
+							"schedule",
+							"deadline",
+							"tags",
+							"property",
+							"promote",
+							"demote",
+							"refile"
+						]
+					},
+					"description": "Heading actions shown when heading CodeLens is enabled."
+				},
 				"Org-vscode.debugExternalApi": {
 					"type": "boolean",
 					"order": 30.4,

@@ -237,6 +237,30 @@ suite('Command registration', function () {
     assert.strictEqual(document.lineAt(5).text, '* Existing');
   });
 
+  test('Heading CodeLens is opt-in and uses configured actions', async () => {
+    const uri = vscode.Uri.file(path.join(os.tmpdir(), `org-vscode-codelens-${Date.now()}.org`));
+    const config = vscode.workspace.getConfiguration('Org-vscode');
+    const previousEnabled = config.get('headingCodeLens.enabled');
+    const previousActions = config.get('headingCodeLens.actions');
+    await vscode.workspace.fs.writeFile(uri, Buffer.from('* TODO First\nbody\n* TODO Second\n'));
+    try {
+      await config.update('headingCodeLens.enabled', true, vscode.ConfigurationTarget.Global);
+      await config.update('headingCodeLens.actions', ['status', 'property'], vscode.ConfigurationTarget.Global);
+      const document = await vscode.workspace.openTextDocument(uri);
+      const editor = await vscode.window.showTextDocument(document);
+      const lenses = await vscode.commands.executeCommand('vscode.executeCodeLensProvider', uri);
+      assert.strictEqual(lenses.length, 4);
+      assert.deepStrictEqual(lenses.map((lens) => lens.command.arguments[0].action), ['status', 'property', 'status', 'property']);
+      const stale = lenses[0].command.arguments[0];
+      await editor.edit((editBuilder) => editBuilder.insert(new vscode.Position(0, 0), 'changed '));
+      assert.strictEqual(await vscode.commands.executeCommand('org-vscode.runHeadingAction', stale), false);
+    } finally {
+      await config.update('headingCodeLens.actions', previousActions, vscode.ConfigurationTarget.Global);
+      await config.update('headingCodeLens.enabled', previousEnabled, vscode.ConfigurationTarget.Global);
+      await vscode.workspace.fs.delete(uri, { useTrash: false }).then(undefined, () => undefined);
+    }
+  });
+
   test('Context action advances the exact timestamp under the cursor', async () => {
     const document = await vscode.workspace.openTextDocument({
       language: 'vso',

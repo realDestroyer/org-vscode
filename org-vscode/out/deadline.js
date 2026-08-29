@@ -8,7 +8,7 @@ const { normalizeBodyIndentation } = require("./indentUtils");
 
 module.exports = function () {
     const { activeTextEditor } = vscode.window;
-    if (!activeTextEditor || activeTextEditor.document.languageId !== "vso") {
+    if (!activeTextEditor || !["vso", "org", "vsorg", "org-vscode"].includes(activeTextEditor.document.languageId)) {
         return;
     }
     const { document } = activeTextEditor;
