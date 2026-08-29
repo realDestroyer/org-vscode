@@ -9,6 +9,11 @@ out/**
 src/**
 
 # Repo-only content
+.github/**
+AGENTS.md
+CLAUDE.md
+GEMINI.md
+GROK.md
 Test Org Files/**
 Test Files/**
 Issues/**
