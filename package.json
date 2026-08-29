@@ -697,7 +697,7 @@
 				},
 				"Org-vscode.enableExternalCapture": {
 					"type": "boolean",
-					"order": 30.0,
+					"order": 30,
 					"default": false,
 					"description": "Allow other VS Code extensions to create TODO entries via the org-vscode public API (registerLinkType / captureTodo). Disabled by default; first use of the API from each extension prompts for explicit consent. Disable globally to lock the surface."
 				},
@@ -1388,6 +1388,7 @@
 		"htm": "3.1.1",
 		"jsonc-parser": "^3.3.1",
 		"klaw": "^3.0.0",
+		"mermaid": "^11.17.2",
 		"moment": "^2.29.4"
 	},
 	"__metadata": {

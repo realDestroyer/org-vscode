@@ -33,6 +33,15 @@ function main() {
     console.warn(`[copy-media] htm not found: ${htmSource}`);
   }
 
+  const mermaidSource = path.join(repoRoot, "node_modules", "mermaid", "dist", "mermaid.min.js");
+  const mermaidDest = path.join(mediaDestDir, "mermaid.min.js");
+  if (fs.existsSync(mermaidSource)) {
+    fs.copyFileSync(mermaidSource, mermaidDest);
+    console.log(`[copy-media] Copied mermaid.min.js to: ${mermaidDest}`);
+  } else {
+    console.warn(`[copy-media] Mermaid not found: ${mermaidSource}`);
+  }
+
   if (!fs.existsSync(mediaSourceDir)) {
     console.warn(`[copy-media] Source media folder not found: ${mediaSourceDir}`);
     console.warn("[copy-media] Skipping media copy.");
