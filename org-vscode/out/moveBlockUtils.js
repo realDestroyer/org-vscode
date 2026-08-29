@@ -3,7 +3,7 @@
 const DEFAULT_UNICODE_MARKERS = ["⊙", "⊘", "⊜", "⊖", "⊗"];
 const STAR_HEADING_REGEX = /^\s*(\*+)\s/;
 // Match day headings with either active <...> or inactive [...] timestamps
-const DAY_HEADING_REGEX = /^\s*\*\s*[<\[]\d{4}-\d{2}-\d{2}\b/;
+const DAY_HEADING_REGEX = /^\s*\*\s*[<\[]\d{2,4}-\d{2}-\d{2,4}\b/;
 
 function getIndent(line) {
   return line.match(/^\s*/)?.[0].length || 0;
@@ -12,6 +12,13 @@ function getIndent(line) {
 function isUnicodeHeading(line, unicodeMarkers = DEFAULT_UNICODE_MARKERS) {
   const trimmed = String(line || "").trimStart();
   return unicodeMarkers.some((marker) => trimmed.startsWith(`${marker} `));
+}
+
+function isUnicodeDayHeading(line, unicodeMarkers = DEFAULT_UNICODE_MARKERS) {
+  const trimmed = String(line || "").trimStart();
+  const marker = unicodeMarkers.find((candidate) => trimmed.startsWith(`${candidate} `));
+  if (!marker) return false;
+  return /^[<[]\d{2,4}-\d{2}-\d{2,4}\b/.test(trimmed.slice(marker.length).trimStart());
 }
 
 function parseHeadingInfo(line, unicodeMarkers) {
@@ -31,7 +38,7 @@ function parseHeadingInfo(line, unicodeMarkers) {
       kind: "unicode",
       indent,
       starCount: null,
-      isDayHeading: false
+      isDayHeading: isUnicodeDayHeading(line, unicodeMarkers)
     };
   }
 

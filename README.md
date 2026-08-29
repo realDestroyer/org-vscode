@@ -52,6 +52,7 @@ Org-vscode helps you manage tasks, notes, and projects in plain text `.org` file
 - Subtree promotion/demotion and safe same-file or cross-file refile from the Command Palette
 - Org-style heading visibility cycling with `Tab` and document-wide cycling with `Shift + Tab`
 - Bindable context actions and structure-aware `Ctrl + Enter` insertion
+- Optional configurable action links above Org headings
 - Org link auto-completion inside `[[...]]` (including workspace-wide `id:` suggestions)
 - Property drawer helpers: set/get/delete properties (with inheritance) + ID helpers (get-or-create, set/replace)
 - Org table generator (command + snippets)

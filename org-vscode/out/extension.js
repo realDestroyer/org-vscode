@@ -75,6 +75,7 @@ const { registerPropertyCommands } = require("./propertyCommands");
 const { computeDesiredIndentForNewLine } = require("./indentUtils");
 const { executeSrcBlock } = require("./srcBlockExecution");
 const { registerSrcBlockCodeLens } = require("./srcBlockCodeLens");
+const { registerHeadingCodeLens } = require("./headingCodeLens");
 const setRepeater = require("./setRepeater");
 const taskKeywordManager = require("./taskKeywordManager");
 const { sortHeadingsByScheduledDate } = require("./sortHeadingsByScheduledDate");
@@ -337,6 +338,9 @@ function activate(ctx) {
 
   // CodeLens for executing #+BEGIN_SRC blocks
   registerSrcBlockCodeLens(ctx);
+
+  // Optional actions above Org headings.
+  registerHeadingCodeLens(ctx);
 
   // Register real-time formatter for " " after typing an asterisk heading
   ctx.subscriptions.push(

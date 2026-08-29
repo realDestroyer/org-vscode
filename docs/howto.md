@@ -23,6 +23,7 @@
 * [↔️ Subtree structure and refile](#subtree-structure-and-refile)
 * [Heading visibility cycling](#heading-visibility-cycling)
 * [Context action and structural insertion](#context-action-and-structural-insertion)
+* [Heading CodeLens actions](#heading-codelens-actions)
 * [🧾 Properties & IDs](#properties--ids)
 * [🪟 Preview (Live HTML/Markdown/etc.)](#preview-live-html)
 * [∑ Math Symbol Decorations](#math-symbol-decorations)
@@ -460,6 +461,14 @@ On body text, lists, tables, selections, suggestion widgets, and rename inputs, 
 Run `Org-vscode: Execute Context Action` (or assign it a personal keybinding) to act at the cursor: toggle a checkbox marker, follow a link, advance a timestamp, cycle a heading workflow state, or insert the next list/table structure. No default chord is assigned because Org's traditional `Ctrl+C Ctrl+C` chord would override VS Code's Copy command.
 
 Press `Ctrl+Enter` (`Cmd+Enter` on macOS) to insert a matching sibling after the current heading subtree, list-item subtree, checkbox item, or table row.
+
+---
+
+## Heading CodeLens actions <a id="heading-codelens-actions"></a>
+
+Enable `Org-vscode.headingCodeLens.enabled` to show action links above headings. Choose the visible links with `Org-vscode.headingCodeLens.actions`: TODO state, schedule, deadline, tags, property, promote, demote, or refile. The default action set is TODO, schedule, and deadline.
+
+Files listed in `Org-vscode.disableSrcExecutionInPaths` do not show heading or source-block CodeLens actions.
 
 ---
 
