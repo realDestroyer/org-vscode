@@ -30,39 +30,34 @@ const vscode = require("vscode");
 const { parseHeadingLine } = require("./orgSymbolProvider");
 
 function buildFoldingRanges(lines) {
-  const ranges = [];
-  // Cache parsed levels so we don't reparse a line twice.
-  const levels = new Array(lines.length).fill(null);
+  const safeLines = Array.isArray(lines) ? lines : [];
+  const levels = new Array(safeLines.length).fill(null);
+  const endLines = new Array(safeLines.length).fill(null);
+  const lastContentAtOrBefore = new Array(safeLines.length).fill(-1);
+  const openHeadings = [];
+  let lastContentLine = -1;
 
-  for (let i = 0; i < lines.length; i += 1) {
-    const parsed = parseHeadingLine(lines[i]);
+  for (let line = 0; line < safeLines.length; line += 1) {
+    if (String(safeLines[line] || "").trim()) lastContentLine = line;
+    lastContentAtOrBefore[line] = lastContentLine;
+
+    const parsed = parseHeadingLine(safeLines[line]);
     if (!parsed) continue;
-    levels[i] = parsed.level;
+    levels[line] = parsed.level;
+
+    while (openHeadings.length && levels[openHeadings[openHeadings.length - 1]] >= parsed.level) {
+      endLines[openHeadings.pop()] = line - 1;
+    }
+    openHeadings.push(line);
   }
 
-  for (let i = 0; i < lines.length; i += 1) {
-    const level = levels[i];
-    if (level === null) continue;
+  while (openHeadings.length) endLines[openHeadings.pop()] = safeLines.length - 1;
 
-    // Walk forward to find the end of this heading's section.
-    let endLine = lines.length - 1;
-    for (let j = i + 1; j < lines.length; j += 1) {
-      const otherLevel = levels[j];
-      if (otherLevel !== null && otherLevel <= level) {
-        endLine = j - 1;
-        break;
-      }
-    }
-
-    // Trim trailing blank lines so the fold stops at real content.
-    while (endLine > i && lines[endLine].trim() === "") {
-      endLine -= 1;
-    }
-
-    // VS Code requires startLine < endLine for a folding range to render.
-    if (endLine > i) {
-      ranges.push(new vscode.FoldingRange(i, endLine, vscode.FoldingRangeKind.Region));
-    }
+  const ranges = [];
+  for (let line = 0; line < safeLines.length; line += 1) {
+    if (levels[line] === null || endLines[line] === null) continue;
+    const endLine = lastContentAtOrBefore[endLines[line]];
+    if (endLine > line) ranges.push(new vscode.FoldingRange(line, endLine, vscode.FoldingRangeKind.Region));
   }
 
   return ranges;

@@ -37,10 +37,11 @@ async function requestTransitionNote(options = {}) {
   return { prompted: true, cancelled: false, note: normalizeTransitionNote(input) };
 }
 
-function computeTransitionLogbookInsertion(lines, headingLineIndex, options = {}) {
+function computeTransitionLogbookInsertion(linesOrProvider, headingLineIndex, options = {}) {
   const shouldLogCompletion = options.logIntoDrawer && options.completionTransition;
   if (!options.prompted && !shouldLogCompletion) return { changed: false };
 
+  const lines = typeof linesOrProvider === "function" ? linesOrProvider() : linesOrProvider;
   const entry = formatTransitionNoteEntry(options);
   return computeLogbookInsertion(lines, headingLineIndex, {
     drawerName: options.drawerName,

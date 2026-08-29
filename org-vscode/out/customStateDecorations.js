@@ -127,6 +127,7 @@ function registerCustomStateDecorations(ctx) {
 
   /** @type {Map<string, { symbol?: any, keyword?: any, taskText?: any }>} */
   const decorationTypes = new Map();
+  let decorationTypesDirty = true;
   let pendingTimer = null;
 
   function disposeTypes() {
@@ -160,11 +161,9 @@ function registerCustomStateDecorations(ctx) {
 
       if (Object.keys(group).length) {
         decorationTypes.set(descriptor.keyword, group);
-        for (const type of Object.values(group)) {
-          ctx.subscriptions.push(type);
-        }
       }
     }
+    decorationTypesDirty = false;
   }
 
   function clearEditor(editor) {
@@ -185,7 +184,7 @@ function registerCustomStateDecorations(ctx) {
     }
 
     const registry = taskKeywordManager.getWorkflowRegistry();
-    rebuildDecorationTypes(registry);
+    if (decorationTypesDirty) rebuildDecorationTypes(registry);
     if (!decorationTypes.size) return;
 
     /** @type {Map<any, any[]>} */
@@ -241,6 +240,7 @@ function registerCustomStateDecorations(ctx) {
   scheduleApply(vscode.window.activeTextEditor);
 
   ctx.subscriptions.push(
+    { dispose: disposeTypes },
     vscode.window.onDidChangeActiveTextEditor((editor) => scheduleApply(editor)),
     vscode.window.onDidChangeTextEditorVisibleRanges((event) => {
       if (event.textEditor === vscode.window.activeTextEditor) {
@@ -259,6 +259,7 @@ function registerCustomStateDecorations(ctx) {
         event.affectsConfiguration("Org-vscode.workflowStates") ||
         event.affectsConfiguration("editor.tokenColorCustomizations")
       ) {
+        decorationTypesDirty = true;
         scheduleApply(vscode.window.activeTextEditor);
       }
     })

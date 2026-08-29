@@ -2,6 +2,7 @@ const assert = require('assert');
 const path = require('path');
 
 const {
+  computeMetaReturn,
   computeSmartInsertNewElement
 } = require(path.join(__dirname, '..', '..', 'out', 'smartInsertNewElement.js'));
 
@@ -78,6 +79,45 @@ function testCustomUnicodeMarkerInsertsAfterSubtree() {
   assert.strictEqual(plan.newLineText, '! ');
 }
 
+function testMetaReturnInsertsBeforeHeadingAtItsPrefix() {
+  const plan = computeMetaReturn(['* Current', 'body'], 0, 0);
+  assert.deepStrictEqual(plan, {
+    insertBeforeLineIndex: 0,
+    newLineText: '* ',
+    cursorColumn: 2
+  });
+}
+
+function testMetaReturnSplitsHeadingAtCursor() {
+  const plan = computeMetaReturn(['* First second'], 0, 7);
+  assert.deepStrictEqual(plan, {
+    insertBeforeLineIndex: 1,
+    newLineText: '* second',
+    replaceCurrentLineText: '* First',
+    cursorColumn: 2
+  });
+}
+
+function testMetaReturnDoesNotSkipListSubtree() {
+  const plan = computeMetaReturn(['- first', '  - child', '- second'], 0, 7);
+  assert.strictEqual(plan.insertBeforeLineIndex, 1);
+  assert.strictEqual(plan.newLineText, '- ');
+}
+
+function testMetaReturnPreservesOrderedNumberWhenInsertingBefore() {
+  const plan = computeMetaReturn(['8. current'], 0, 0);
+  assert.strictEqual(plan.insertBeforeLineIndex, 0);
+  assert.strictEqual(plan.newLineText, '8. ');
+}
+
+function testMetaReturnTurnsBodyLineIntoHeadingAtLineStart() {
+  const plan = computeMetaReturn(['** Parent', 'ordinary text'], 1, 0);
+  assert.deepStrictEqual(plan, {
+    replaceCurrentLineText: '** ordinary text',
+    cursorColumn: 3
+  });
+}
+
 module.exports = {
   name: 'unit/smart-insert-new-element',
   run: () => {
@@ -87,5 +127,10 @@ module.exports = {
     testOrderedListIncrements();
     testTableRowInsertsEmptyRow();
     testCustomUnicodeMarkerInsertsAfterSubtree();
+    testMetaReturnInsertsBeforeHeadingAtItsPrefix();
+    testMetaReturnSplitsHeadingAtCursor();
+    testMetaReturnDoesNotSkipListSubtree();
+    testMetaReturnPreservesOrderedNumberWhenInsertingBefore();
+    testMetaReturnTurnsBodyLineIntoHeadingAtLineStart();
   }
 };

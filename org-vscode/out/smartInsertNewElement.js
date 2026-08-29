@@ -224,6 +224,66 @@ function computeSmartInsertNewElement(lines, cursorLineIndex, unicodeMarkers) {
   };
 }
 
+function computeMetaReturn(lines, cursorLineIndex, cursorCharacter, unicodeMarkers) {
+  const safeLines = Array.isArray(lines) ? lines : [];
+  const lineIndex = Math.max(0, Number(cursorLineIndex) || 0);
+  const current = String(safeLines[lineIndex] ?? "");
+  const character = Math.max(0, Math.min(current.length, Number(cursorCharacter) || 0));
+
+  if (TABLE_ROW_REGEX.test(current)) {
+    return computeSmartInsertNewElement(safeLines, lineIndex, unicodeMarkers);
+  }
+
+  const list = parseListItemForInsert(current);
+  const heading = parseHeadingLineForInsert(current, unicodeMarkers);
+  let prefix = null;
+  if (list) {
+    prefix = list.isCheckbox
+      ? `${list.leading}${list.bullet} [ ] `
+      : `${list.leading}${list.bullet} `;
+  } else if (heading) {
+    prefix = `${heading.leading}${heading.marker} `;
+  }
+
+  if (prefix) {
+    if (character <= prefix.length) {
+      const ordered = current.match(ORDERED_LIST_ITEM_REGEX);
+      const beforePrefix = ordered
+        ? `${ordered[1] || ""}${ordered[2]}${ordered[3] || "."} `
+        : prefix;
+      return {
+        insertBeforeLineIndex: lineIndex,
+        newLineText: beforePrefix,
+        cursorColumn: beforePrefix.length
+      };
+    }
+
+    return {
+      insertBeforeLineIndex: lineIndex + 1,
+      newLineText: `${prefix}${current.slice(character).trimStart()}`,
+      replaceCurrentLineText: current.slice(0, character).trimEnd(),
+      cursorColumn: prefix.length
+    };
+  }
+
+  const nearestHeading = findNearestHeadingLineIndex(safeLines, lineIndex, unicodeMarkers);
+  const parent = nearestHeading == null ? null : parseHeadingLineForInsert(safeLines[nearestHeading], unicodeMarkers);
+  const headingPrefix = parent ? `${parent.leading}${parent.marker} ` : "* ";
+  if (character === 0) {
+    return {
+      replaceCurrentLineText: `${headingPrefix}${current.trimStart()}`,
+      cursorColumn: headingPrefix.length
+    };
+  }
+
+  return {
+    insertBeforeLineIndex: lineIndex + 1,
+    newLineText: `${headingPrefix}${current.slice(character).trimStart()}`,
+    replaceCurrentLineText: current.slice(0, character).trimEnd(),
+    cursorColumn: headingPrefix.length
+  };
+}
+
 function computeInsertEditForDocument(document, insertBeforeLineIndex, newLineText) {
   const vs = getVscode();
   if (!vs) {
@@ -251,7 +311,7 @@ function computeInsertEditForDocument(document, insertBeforeLineIndex, newLineTe
   };
 }
 
-async function insertNewElement() {
+async function applyInsertCommand(computePlan) {
   const vs = getVscode();
   if (!vs) return;
 
@@ -262,29 +322,52 @@ async function insertNewElement() {
 
   const doc = editor.document;
   const cursorLine = editor.selection.active.line;
+  const cursorCharacter = editor.selection.active.character;
   const lines = doc.getText().split(/\r?\n/);
 
   const taskKeywordManager = require("./taskKeywordManager");
   const markers = taskKeywordManager.getWorkflowRegistry().states.map((state) => state.marker).filter(Boolean);
-  const plan = computeSmartInsertNewElement(lines, cursorLine, markers);
-  if (!plan || !plan.newLineText) {
+  const plan = computePlan(lines, cursorLine, cursorCharacter, markers);
+  if (!plan) {
     return;
   }
 
-  const editPlan = computeInsertEditForDocument(doc, plan.insertBeforeLineIndex, plan.newLineText);
+  const editPlan = plan.newLineText == null
+    ? null
+    : computeInsertEditForDocument(doc, plan.insertBeforeLineIndex, plan.newLineText);
 
   const ok = await editor.edit((eb) => {
-    eb.insert(editPlan.insertPosition, editPlan.insertText);
+    if (plan.replaceCurrentLineText != null) {
+      eb.replace(doc.lineAt(cursorLine).range, plan.replaceCurrentLineText);
+    }
+    if (editPlan) {
+      eb.insert(editPlan.insertPosition, editPlan.insertText);
+    }
   });
 
   if (!ok) return;
 
-  const newPos = new vs.Position(editPlan.insertedLineIndex, plan.cursorColumn);
+  const targetLine = editPlan ? editPlan.insertedLineIndex : cursorLine;
+  const newPos = new vs.Position(targetLine, plan.cursorColumn);
   editor.selection = new vs.Selection(newPos, newPos);
   editor.revealRange(new vs.Range(newPos, newPos));
 }
 
+async function insertNewElement() {
+  return applyInsertCommand((lines, line, character, markers) => (
+    computeMetaReturn(lines, line, character, markers)
+  ));
+}
+
+async function insertStructureAtEnd() {
+  return applyInsertCommand((lines, line, _character, markers) => (
+    computeSmartInsertNewElement(lines, line, markers)
+  ));
+}
+
 module.exports = {
   insertNewElement,
+  insertStructureAtEnd,
+  computeMetaReturn,
   computeSmartInsertNewElement
 };

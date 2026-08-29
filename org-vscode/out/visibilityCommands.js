@@ -5,6 +5,7 @@ const {
   buildGlobalVisibilityPlan,
   buildVisibilityPlan
 } = require("./orgFoldingProvider");
+const { parseHeadingLine } = require("./orgSymbolProvider");
 
 const localStates = new WeakMap();
 const globalStates = new WeakMap();
@@ -100,7 +101,7 @@ function updateCursorContext(editor = vscode.window.activeTextEditor) {
   const onHeading = Boolean(
     editor &&
     isOrgDocument(editor.document) &&
-    buildVisibilityPlan(getDocumentLines(editor.document), editor.selection.active.line, "subtree")
+    parseHeadingLine(editor.document.lineAt(editor.selection.active.line).text)
   );
   return vscode.commands.executeCommand("setContext", "org-vscode.cursorOnHeading", onHeading);
 }

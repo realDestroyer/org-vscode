@@ -4,6 +4,8 @@ const { PLANNING_STRIP_RE } = require("./orgTagUtils");
 
 const { createWorkflowRegistry } = require("./workflowStates");
 
+let cachedParserState = null;
+
 function getVscode() {
   try {
     return require("vscode");
@@ -24,8 +26,8 @@ function getWorkflowStatesConfigValue() {
   }
 }
 
-function getWorkflowRegistry() {
-  return createWorkflowRegistry(getWorkflowStatesConfigValue());
+function invalidateHeadingParserCache() {
+  cachedParserState = null;
 }
 
 function buildUnicodeHeadingRegexFromRegistry(registry) {
@@ -46,11 +48,21 @@ function buildUnicodeHeadingRegexFromRegistry(registry) {
   return new RegExp(`^(\\s*)(?:${markerAlt})\\s+(.*)$`);
 }
 
+function getParserState() {
+  if (!cachedParserState) {
+    const registry = createWorkflowRegistry(getWorkflowStatesConfigValue());
+    cachedParserState = {
+      registry,
+      unicodeHeadingRe: buildUnicodeHeadingRegexFromRegistry(registry)
+    };
+  }
+  return cachedParserState;
+}
+
 function parseHeadingLine(text) {
   if (typeof text !== "string") return null;
 
-  const registry = getWorkflowRegistry();
-  const unicodeHeadingRe = buildUnicodeHeadingRegexFromRegistry(registry);
+  const { registry, unicodeHeadingRe } = getParserState();
 
   // Asterisk headings (Org classic)
   // Example: "*** TODO [#A] My title :tag1:tag2: SCHEDULED: <...>"
@@ -58,7 +70,7 @@ function parseHeadingLine(text) {
   if (star) {
     const level = star[1].length;
     const rawRest = star[2];
-    const title = extractHeadingTitle(rawRest);
+    const title = extractHeadingTitle(rawRest, registry);
     return { level, title };
   }
 
@@ -68,17 +80,15 @@ function parseHeadingLine(text) {
   if (uni) {
     const leading = uni[1] || "";
     const level = Math.floor(leading.length / 2) + 1;
-    const title = extractHeadingTitle(uni[2]);
+    const title = extractHeadingTitle(uni[2], registry);
     return { level, title };
   }
 
   return null;
 }
 
-function extractHeadingTitle(rest) {
+function extractHeadingTitle(rest, registry = getParserState().registry) {
   let out = String(rest || "");
-
-  const registry = getWorkflowRegistry();
 
   // Leading TODO keyword
   const maybeStatus = out.match(/^([A-Z_]+)\b\s+(.*)$/);
@@ -150,11 +160,17 @@ function registerOrgSymbolProvider(ctx) {
   if (!vscode) return;
   const selector = [{ language: "vso", scheme: "file" }, { language: "org", scheme: "file" }, { language: "vsorg", scheme: "file" }, { language: "org-vscode", scheme: "file" }];
   ctx.subscriptions.push(vscode.languages.registerDocumentSymbolProvider(selector, new OrgDocumentSymbolProvider()));
+  if (vscode.workspace?.onDidChangeConfiguration) {
+    ctx.subscriptions.push(vscode.workspace.onDidChangeConfiguration((event) => {
+      if (event.affectsConfiguration("Org-vscode.workflowStates")) invalidateHeadingParserCache();
+    }));
+  }
 }
 
 module.exports = {
   OrgDocumentSymbolProvider,
   registerOrgSymbolProvider,
+  invalidateHeadingParserCache,
   parseHeadingLine,
   extractHeadingTitle,
   buildSymbolsFromLines

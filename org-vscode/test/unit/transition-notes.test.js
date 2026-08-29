@@ -106,10 +106,39 @@ function testEntryFormattingAndSingleInsertion() {
   ]);
 }
 
+function testDocumentLinesAreLoadedOnlyWhenLogging() {
+  let loads = 0;
+  const provideLines = () => {
+    loads += 1;
+    return ['* TODO Task'];
+  };
+
+  assert.deepStrictEqual(
+    computeTransitionLogbookInsertion(provideLines, 0, {
+      prompted: false,
+      completionTransition: false,
+      logIntoDrawer: true
+    }),
+    { changed: false }
+  );
+  assert.strictEqual(loads, 0);
+
+  computeTransitionLogbookInsertion(provideLines, 0, {
+    prompted: false,
+    completionTransition: true,
+    logIntoDrawer: true,
+    fromKeyword: 'TODO',
+    toKeyword: 'DONE',
+    timestamp: '2026-08-28 Fri 09:30'
+  });
+  assert.strictEqual(loads, 1);
+}
+
 module.exports = {
   name: 'unit/transition-notes',
   run: async () => {
     await testPromptNormalizationAndCancellation();
     testEntryFormattingAndSingleInsertion();
+    testDocumentLinesAreLoadedOnlyWhenLogging();
   }
 };

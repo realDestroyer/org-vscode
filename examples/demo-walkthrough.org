@@ -345,9 +345,10 @@
 
 # 27) Smart insert new element (Alt+Enter)
 # Try Alt+Enter in a few places:
-# - On a heading line: inserts a new heading
-# - On a list item: inserts a new list item
+# - In a heading/list prefix: inserts a new item before it
+# - In heading/list text: splits the item at the cursor
 # - In a table row: inserts a new row
+# Try Ctrl+Enter to insert after the complete current subtree instead.
 * TODO Try Alt+Enter on this heading :EDITING:
 
   - List item A

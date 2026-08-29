@@ -152,6 +152,7 @@ function registerTodoLineDecorations(ctx) {
   }
 
   const decorationTypes = new Map();
+  let decorationTypesDirty = true;
   let pendingTimer = null;
 
   function disposeTypes() {
@@ -183,9 +184,7 @@ function registerTodoLineDecorations(ctx) {
       );
     }
 
-    for (const type of decorationTypes.values()) {
-      ctx.subscriptions.push(type);
-    }
+    decorationTypesDirty = false;
   }
 
   function clearEditor(editor) {
@@ -206,9 +205,7 @@ function registerTodoLineDecorations(ctx) {
       return;
     }
 
-    // Refresh types on every apply so changes to tokenColorCustomizations/backgrounds
-    // show up without needing reload.
-    rebuildDecorationTypes();
+    if (decorationTypesDirty) rebuildDecorationTypes();
 
     const enabledStatuses = new Set(decorationTypes.keys());
     const byStatus = computeLineRanges(editor, enabledStatuses);
@@ -235,6 +232,7 @@ function registerTodoLineDecorations(ctx) {
   scheduleApply(vscode.window.activeTextEditor);
 
   ctx.subscriptions.push(
+    { dispose: disposeTypes },
     vscode.window.onDidChangeActiveTextEditor((editor) => scheduleApply(editor)),
     vscode.window.onDidChangeTextEditorVisibleRanges((event) => {
       if (event.textEditor === vscode.window.activeTextEditor) {
@@ -252,6 +250,7 @@ function registerTodoLineDecorations(ctx) {
         event.affectsConfiguration("Org-vscode.decorateTodoStateLines") ||
         event.affectsConfiguration("editor.tokenColorCustomizations")
       ) {
+        decorationTypesDirty = true;
         scheduleApply(vscode.window.activeTextEditor);
       }
     })

@@ -217,7 +217,7 @@ suite('Command registration', function () {
     assert.strictEqual(document.getText(), original);
   });
 
-  test('Context action toggles checkboxes and inserts table rows', async () => {
+  test('Context action toggles checkboxes and aligns tables', async () => {
     const checkboxDocument = await vscode.workspace.openTextDocument({
       language: 'vso',
       content: '- [ ] Context checkbox\n'
@@ -230,12 +230,13 @@ suite('Command registration', function () {
 
     const tableDocument = await vscode.workspace.openTextDocument({
       language: 'vso',
-      content: '| A | B |\n'
+      content: '| A|Long |\n|x| y|\n'
     });
     editor = await vscode.window.showTextDocument(tableDocument);
     editor.selection = new vscode.Selection(new vscode.Position(0, 2), new vscode.Position(0, 2));
     assert.strictEqual(await vscode.commands.executeCommand('org-vscode.contextAction'), 'table');
-    assert.strictEqual(tableDocument.lineAt(1).text, '|   |   |');
+    assert.strictEqual(tableDocument.lineAt(0).text, '| A | Long |');
+    assert.strictEqual(tableDocument.lineAt(1).text, '| x | y    |');
   });
 
   test('Insert Structure at End places a sibling after the complete subtree', async () => {
@@ -250,6 +251,21 @@ suite('Command registration', function () {
 
     assert.strictEqual(document.lineAt(4).text, '* ');
     assert.strictEqual(document.lineAt(5).text, '* Existing');
+  });
+
+  test('Meta-Return splits a heading at the cursor without skipping its subtree', async () => {
+    const document = await vscode.workspace.openTextDocument({
+      language: 'vso',
+      content: '* First second\n** Existing child\n'
+    });
+    const editor = await vscode.window.showTextDocument(document);
+    editor.selection = new vscode.Selection(new vscode.Position(0, 7), new vscode.Position(0, 7));
+
+    await vscode.commands.executeCommand('org-vscode.insertNewElement');
+
+    assert.strictEqual(document.lineAt(0).text, '* First');
+    assert.strictEqual(document.lineAt(1).text, '* second');
+    assert.strictEqual(document.lineAt(2).text, '** Existing child');
   });
 
   test('Heading CodeLens is opt-in and uses configured actions', async () => {
@@ -276,16 +292,16 @@ suite('Command registration', function () {
     }
   });
 
-  test('Context action advances the exact timestamp under the cursor', async () => {
+  test('Context action repairs the weekday of the exact timestamp under the cursor', async () => {
     const document = await vscode.workspace.openTextDocument({
       language: 'vso',
-      content: 'DEADLINE: <2026-08-29 Sat> CLOSED: [2026-08-27 Thu]\n'
+      content: 'DEADLINE: <2026-08-29 Mon> CLOSED: [2026-08-27 Thu]\n'
     });
     const editor = await vscode.window.showTextDocument(document);
     editor.selection = new vscode.Selection(new vscode.Position(0, 14), new vscode.Position(0, 14));
 
     assert.strictEqual(await vscode.commands.executeCommand('org-vscode.contextAction'), 'timestamp');
-    assert.strictEqual(document.lineAt(0).text, 'DEADLINE: <2026-08-30 Sun> CLOSED: [2026-08-27 Thu]');
+    assert.strictEqual(document.lineAt(0).text, 'DEADLINE: <2026-08-29 Sat> CLOSED: [2026-08-27 Thu]');
   });
 
   test('Context action honors a configured non-ISO date format', async () => {
@@ -293,12 +309,12 @@ suite('Command registration', function () {
     const previousDateFormat = config.get('dateFormat');
     await config.update('dateFormat', 'DD-MM-YYYY', vscode.ConfigurationTarget.Global);
     try {
-      const document = await vscode.workspace.openTextDocument({ language: 'vso', content: '<29-08-2026 Sat>\n' });
+      const document = await vscode.workspace.openTextDocument({ language: 'vso', content: '<29-08-2026 Mon>\n' });
       const editor = await vscode.window.showTextDocument(document);
       editor.selection = new vscode.Selection(new vscode.Position(0, 5), new vscode.Position(0, 5));
 
       assert.strictEqual(await vscode.commands.executeCommand('org-vscode.contextAction'), 'timestamp');
-      assert.strictEqual(document.lineAt(0).text, '<30-08-2026 Sun>');
+      assert.strictEqual(document.lineAt(0).text, '<29-08-2026 Sat>');
     } finally {
       await config.update('dateFormat', previousDateFormat, vscode.ConfigurationTarget.Global);
     }

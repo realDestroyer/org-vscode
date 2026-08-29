@@ -1,6 +1,18 @@
 # Change Log
 
-# Unreleased
+# [2.3.1] 08-28-26
+
+`Changed`
+
+- **Emacs Org command parity:** `Alt+Enter` now follows `M-RET` (`org-meta-return`) cursor semantics, including insertion before an item and splitting headings or list items. `Ctrl+Enter` / `Cmd+Enter` remains the distinct `C-RET`-style command that inserts after the current structure. Execute Context Action now follows core `C-c C-c` behavior by toggling checkboxes, aligning tables, renumbering ordered lists, and repairing timestamp weekday names.
+
+`Performance`
+
+- **Faster workflow cycling:** Removed the redundant save before each keyword rotation. A cycle now performs one save after its edit instead of invoking save-triggered agenda and workspace-index refreshes both before and after the change.
+- **Large-file editing:** Ordinary workflow transitions no longer split the entire document unless checkbox, dependency, repeater, or LOGBOOK processing actually needs it. Cursor heading detection now examines only the active line.
+- **Lower decoration overhead:** TODO and custom-state decoration types are cached until their color or workflow configuration changes, and disabled visual features no longer enqueue decoration work after every edit.
+- **Linear heading folding:** Folding ranges are now planned in one stack-based pass instead of repeatedly scanning forward from every heading.
+- **Cached heading parsing:** Folding, symbols, and visibility now reuse the compiled workflow-marker parser until workflow settings change, avoiding thousands of configuration reads and registry builds on large documents.
 
 # [2.3.0] 08-29-26
 
