@@ -202,6 +202,69 @@ suite('Command registration', function () {
     assert.strictEqual(document.getText(), original);
   });
 
+  test('Context action toggles checkboxes and inserts table rows', async () => {
+    const checkboxDocument = await vscode.workspace.openTextDocument({
+      language: 'vso',
+      content: '- [ ] Context checkbox\n'
+    });
+    let editor = await vscode.window.showTextDocument(checkboxDocument);
+    editor.selection = new vscode.Selection(new vscode.Position(0, 3), new vscode.Position(0, 3));
+    assert.strictEqual(await vscode.commands.executeCommand('org-vscode.contextAction'), 'checkbox');
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    assert.ok(checkboxDocument.lineAt(0).text.startsWith('- [X]'));
+
+    const tableDocument = await vscode.workspace.openTextDocument({
+      language: 'vso',
+      content: '| A | B |\n'
+    });
+    editor = await vscode.window.showTextDocument(tableDocument);
+    editor.selection = new vscode.Selection(new vscode.Position(0, 2), new vscode.Position(0, 2));
+    assert.strictEqual(await vscode.commands.executeCommand('org-vscode.contextAction'), 'table');
+    assert.strictEqual(tableDocument.lineAt(1).text, '|   |   |');
+  });
+
+  test('Insert Structure at End places a sibling after the complete subtree', async () => {
+    const document = await vscode.workspace.openTextDocument({
+      language: 'vso',
+      content: '* Parent\nbody\n** Child\nchild body\n* Existing\n'
+    });
+    const editor = await vscode.window.showTextDocument(document);
+    editor.selection = new vscode.Selection(new vscode.Position(0, 0), new vscode.Position(0, 0));
+
+    await vscode.commands.executeCommand('org-vscode.insertStructureAtEnd');
+
+    assert.strictEqual(document.lineAt(4).text, '* ');
+    assert.strictEqual(document.lineAt(5).text, '* Existing');
+  });
+
+  test('Context action advances the exact timestamp under the cursor', async () => {
+    const document = await vscode.workspace.openTextDocument({
+      language: 'vso',
+      content: 'DEADLINE: <2026-08-29 Sat> CLOSED: [2026-08-27 Thu]\n'
+    });
+    const editor = await vscode.window.showTextDocument(document);
+    editor.selection = new vscode.Selection(new vscode.Position(0, 14), new vscode.Position(0, 14));
+
+    assert.strictEqual(await vscode.commands.executeCommand('org-vscode.contextAction'), 'timestamp');
+    assert.strictEqual(document.lineAt(0).text, 'DEADLINE: <2026-08-30 Sun> CLOSED: [2026-08-27 Thu]');
+  });
+
+  test('Context action honors a configured non-ISO date format', async () => {
+    const config = vscode.workspace.getConfiguration('Org-vscode');
+    const previousDateFormat = config.get('dateFormat');
+    await config.update('dateFormat', 'DD-MM-YYYY', vscode.ConfigurationTarget.Global);
+    try {
+      const document = await vscode.workspace.openTextDocument({ language: 'vso', content: '<29-08-2026 Sat>\n' });
+      const editor = await vscode.window.showTextDocument(document);
+      editor.selection = new vscode.Selection(new vscode.Position(0, 5), new vscode.Position(0, 5));
+
+      assert.strictEqual(await vscode.commands.executeCommand('org-vscode.contextAction'), 'timestamp');
+      assert.strictEqual(document.lineAt(0).text, '<30-08-2026 Sun>');
+    } finally {
+      await config.update('dateFormat', previousDateFormat, vscode.ConfigurationTarget.Global);
+    }
+  });
+
   test('File search links reveal headings in another Org file', async () => {
     const targetUri = vscode.Uri.file(path.join(
       os.tmpdir(),

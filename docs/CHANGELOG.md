@@ -5,10 +5,11 @@
 `Added / Enhanced`
 
 - **Org visibility cycling:** `Tab` on a heading now cycles the current subtree through folded, direct-children, and fully expanded states. `Shift+Tab` provides the equivalent document-wide cycle, with backward commands available from the Command Palette. Non-heading Tab behavior remains delegated to VS Code.
+- **Context action and structural insertion:** Added the bindable `Org-vscode: Execute Context Action` command for checkboxes, links, timestamps, headings, lists, and tables without overriding Copy. Added `Ctrl+Enter` (`Cmd+Enter` on macOS) to insert a matching heading, list item, checkbox, or table row after the current structure.
 
 `Tests`
 
-- Registered the previously dormant heading-folding unit suite and added cycle-plan plus extension-host command coverage.
+- Registered the previously dormant heading-folding unit suite and added cycle-plan, context-classification, command dispatch, and extension-host coverage.
 
 
 # [2.2.34] 08-29-26

@@ -63,6 +63,7 @@ const { registerOrgLinkDecorations } = require("./orgLinkDecorations");
 const { registerOrgSymbolProvider } = require("./orgSymbolProvider");
 const { registerOrgFoldingProvider } = require("./orgFoldingProvider");
 const { registerVisibilityCommands } = require("./visibilityCommands");
+const { registerContextActions } = require("./contextActions");
 const { registerOrgCompletionProvider } = require("./orgCompletionProvider");
 const { registerOrgPreview } = require("./orgPreview");
 const { migrateFileToV2 } = require("./migrateFileToV2");
@@ -196,6 +197,7 @@ function activate(ctx) {
   registerOrgSymbolProvider(ctx);
   registerOrgFoldingProvider(ctx);
   registerVisibilityCommands(ctx);
+  registerContextActions(ctx);
   registerOrgCompletionProvider(ctx);
 
   // Render [[link][desc]] as just `desc` (decorations only)

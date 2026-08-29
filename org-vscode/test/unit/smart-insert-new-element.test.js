@@ -72,6 +72,12 @@ function testTableRowInsertsEmptyRow() {
   assert.strictEqual(plan.newLineText, '|   |   |');
 }
 
+function testCustomUnicodeMarkerInsertsAfterSubtree() {
+  const plan = computeSmartInsertNewElement(['! Parent', '  ~ Child', '* Next'], 0, ['!', '~']);
+  assert.strictEqual(plan.insertBeforeLineIndex, 2);
+  assert.strictEqual(plan.newLineText, '! ');
+}
+
 module.exports = {
   name: 'unit/smart-insert-new-element',
   run: () => {
@@ -80,5 +86,6 @@ module.exports = {
     testCheckboxListItemInsertsUnchecked();
     testOrderedListIncrements();
     testTableRowInsertsEmptyRow();
+    testCustomUnicodeMarkerInsertsAfterSubtree();
   }
 };

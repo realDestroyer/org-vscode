@@ -66,7 +66,7 @@ function smartDateAdjust(forward = true) {
         edit.replace(document.uri, line.range, newText);
     }
 
-    vscode.workspace.applyEdit(edit);
+    return vscode.workspace.applyEdit(edit);
 }
 
 function computeSmartDateReplacements(getLineText, lineCount, targetLines, forward, dateFormat, acceptedDateFormats) {
@@ -136,11 +136,11 @@ function computeSmartDateReplacements(getLineText, lineCount, targetLines, forwa
 }
 
 function smartDateForward() {
-    smartDateAdjust(true);
+    return smartDateAdjust(true);
 }
 
 function smartDateBackward() {
-    smartDateAdjust(false);
+    return smartDateAdjust(false);
 }
 
 module.exports = {
