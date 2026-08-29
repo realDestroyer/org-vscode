@@ -20,6 +20,7 @@
 * [🔖 Create a Header](#create-a-header)
 * [🧩 Org-vscode Snippets](#org-vscode-snippets)
 * [🔎 Org syntax + links](#org-syntax--links)
+* [↔️ Subtree structure and refile](#subtree-structure-and-refile)
 * [🧾 Properties & IDs](#properties--ids)
 * [🪟 Preview (Live HTML/Markdown/etc.)](#preview-live-html)
 * [∑ Math Symbol Decorations](#math-symbol-decorations)
@@ -429,6 +430,18 @@ Examples:
 ```
 
 <img src="https://github.com/realDestroyer/org-vscode/blob/master/Images/links-example.jpg?raw=true" width="900" />
+
+---
+
+## ↔️ Subtree structure and refile <a id="subtree-structure-and-refile"></a>
+
+Place the cursor on a heading or anywhere in its body, then use the Command Palette:
+
+- **Org-vscode: Promote Subtree** moves the heading and every nested heading up one level.
+- **Org-vscode: Demote Subtree** moves the heading and every nested heading down one level.
+- **Org-vscode: Refile Subtree...** moves the complete subtree beneath a workspace heading, including headings in another Org file.
+
+Refile preserves body text and relative child levels, adjusts the moved root beneath its destination, and rejects the moving heading and its descendants as targets. Cross-file source and destination changes are applied together and remain unsaved editor changes until you save them.
 
 ---
 
