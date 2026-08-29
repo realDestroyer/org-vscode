@@ -2,7 +2,7 @@
 	"name": "org-vscode",
 	"displayName": "org-vscode",
 	"description": "Quickly create todo lists, take notes, plan projects and organize your thoughts.",
-	"version": "2.2.33",
+	"version": "2.2.34",
 	"repository": "https://www.github.com/realDestroyer/org-vscode",
 	"icon": "Images/org-vscode-logo.png",
 	"publisher": "realDestroyer",
@@ -24,6 +24,9 @@
 		"onCommand:org-vscode.openPreviewToSide",
 		"onCommand:org-vscode.exportHtml",
 		"onCommand:org-vscode.insertHeadingLink",
+		"onCommand:org-vscode.promoteSubtree",
+		"onCommand:org-vscode.demoteSubtree",
+		"onCommand:org-vscode.refileSubtree",
 		"onCommand:extension.viewAgenda",
 		"onCommand:extension.migrateFileToV2",
 		"onCommand:extension.createVsoFile",
@@ -769,6 +772,21 @@
 				"category": "Org-vscode",
 				"title": "Insert Link to Heading",
 				"icon": "$(link)"
+			},
+			{
+				"command": "org-vscode.promoteSubtree",
+				"category": "Org-vscode",
+				"title": "Promote Subtree"
+			},
+			{
+				"command": "org-vscode.demoteSubtree",
+				"category": "Org-vscode",
+				"title": "Demote Subtree"
+			},
+			{
+				"command": "org-vscode.refileSubtree",
+				"category": "Org-vscode",
+				"title": "Refile Subtree..."
 			},
 			{
 				"command": "org-vscode.setRepeater",

@@ -18,6 +18,7 @@ const tests = [
   require(path.join(__dirname, 'checkbox-workflow-grammar.test.js')),
   require(path.join(__dirname, 'workflow-state-scopes.test.js')),
   require(path.join(__dirname, 'move-block.test.js')),
+  require(path.join(__dirname, 'subtree-structure.test.js')),
   require(path.join(__dirname, 'org-properties.test.js')),
   require(path.join(__dirname, 'smart-insert-new-element.test.js')),
   require(path.join(__dirname, 'math-decorations-map.test.js')),

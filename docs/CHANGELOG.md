@@ -1,5 +1,17 @@
 # Change Log
 
+# [2.2.34] 08-29-26
+
+`Added / Enhanced`
+
+- **Subtree structure commands:** Added **Promote Subtree** and **Demote Subtree** commands that adjust every heading in the selected subtree while preserving body text, drawers, and relative hierarchy.
+- **Workspace refile:** Added **Refile Subtree...** with workspace heading search, safe same-file and cross-file moves, automatic level adjustment beneath the destination, self/descendant rejection, and atomic workspace edits.
+
+`Tests`
+
+- Added unit coverage for star and Unicode subtree transforms, hierarchy preservation, level bounds, invalid targets, and final-newline handling, plus extension-host coverage for promotion and same-file/cross-file refile.
+
+
 # [2.2.33] 08-29-26
 
 `Added / Enhanced`

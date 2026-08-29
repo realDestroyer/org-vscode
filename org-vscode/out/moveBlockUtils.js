@@ -1,6 +1,6 @@
 "use strict";
 
-const UNICODE_HEADING_REGEX = /^\s*[⊙⊘⊜⊖⊗]\s/;
+const DEFAULT_UNICODE_MARKERS = ["⊙", "⊘", "⊜", "⊖", "⊗"];
 const STAR_HEADING_REGEX = /^\s*(\*+)\s/;
 // Match day headings with either active <...> or inactive [...] timestamps
 const DAY_HEADING_REGEX = /^\s*\*\s*[<\[]\d{4}-\d{2}-\d{2}\b/;
@@ -9,7 +9,12 @@ function getIndent(line) {
   return line.match(/^\s*/)?.[0].length || 0;
 }
 
-function parseHeadingInfo(line) {
+function isUnicodeHeading(line, unicodeMarkers = DEFAULT_UNICODE_MARKERS) {
+  const trimmed = String(line || "").trimStart();
+  return unicodeMarkers.some((marker) => trimmed.startsWith(`${marker} `));
+}
+
+function parseHeadingInfo(line, unicodeMarkers) {
   const indent = getIndent(line);
   const starMatch = line.match(STAR_HEADING_REGEX);
   if (starMatch) {
@@ -21,7 +26,7 @@ function parseHeadingInfo(line) {
     };
   }
 
-  if (UNICODE_HEADING_REGEX.test(line)) {
+  if (isUnicodeHeading(line, unicodeMarkers)) {
     return {
       kind: "unicode",
       indent,
@@ -54,17 +59,17 @@ function isOutsideSubtree(nextInfo, currentInfo) {
   return nextInfo.indent <= currentInfo.indent;
 }
 
-function findNearestHeadingStart(lines, cursorLine) {
+function findNearestHeadingStart(lines, cursorLine, unicodeMarkers) {
   for (let i = Math.min(cursorLine, lines.length - 1); i >= 0; i--) {
-    const info = parseHeadingInfo(lines[i]);
+    const info = parseHeadingInfo(lines[i], unicodeMarkers);
     if (info) return { startLine: i, info };
   }
   return null;
 }
 
-function findSubtreeEndExclusive(lines, startLine, startInfo) {
+function findSubtreeEndExclusive(lines, startLine, startInfo, unicodeMarkers) {
   for (let i = startLine + 1; i < lines.length; i++) {
-    const info = parseHeadingInfo(lines[i]);
+    const info = parseHeadingInfo(lines[i], unicodeMarkers);
     if (info && isOutsideSubtree(info, startInfo)) {
       return i;
     }
