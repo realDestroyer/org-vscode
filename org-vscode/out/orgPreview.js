@@ -1,8 +1,11 @@
 "use strict";
 
 const vscode = require("vscode");
+const fs = require("fs");
 const path = require("path");
 const { html, h, SafeHtml, escapeText, escapeAttr } = require("./htmlUtils");
+
+const MERMAID_FILE_NAME = "mermaid.min.js";
 
 function getNonce() {
   const possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
@@ -16,6 +19,64 @@ function getNonce() {
 function isOrgDoc(editor) {
   if (!editor || !editor.document) return false;
   return ["vso", "org", "org-vscode", "vsorg"].includes(editor.document.languageId);
+}
+
+function readMermaidRuntime() {
+  const candidates = [
+    path.join(__dirname, "..", "media", MERMAID_FILE_NAME),
+    path.join(__dirname, "..", "..", "media", MERMAID_FILE_NAME),
+    path.join(__dirname, "..", "node_modules", "mermaid", "dist", MERMAID_FILE_NAME),
+    path.join(__dirname, "..", "..", "node_modules", "mermaid", "dist", MERMAID_FILE_NAME)
+  ];
+  const runtimePath = candidates.find((candidate) => fs.existsSync(candidate));
+  if (!runtimePath) {
+    throw new Error("Packaged Mermaid runtime was not found.");
+  }
+  return fs.readFileSync(runtimePath, "utf8").replace(/<\/script/gi, "<\\/script");
+}
+
+function getMermaidInitializer(themeExpression) {
+  return `
+    (() => {
+      if (!globalThis.mermaid) return;
+      let generation = 0;
+      let currentTheme = '';
+      const renderAll = () => {
+        const theme = ${themeExpression};
+        if (theme === currentTheme && generation > 0) return;
+        currentTheme = theme;
+        generation += 1;
+        const renderGeneration = generation;
+        mermaid.initialize({ startOnLoad: false, securityLevel: 'strict', theme });
+        document.querySelectorAll('.org-mermaid').forEach(async (diagram, index) => {
+          const sourceElement = diagram.querySelector('.org-mermaid-source');
+          const renderTarget = diagram.querySelector('.org-mermaid-render');
+          if (!sourceElement || !renderTarget) return;
+          const renderId = 'org-mermaid-' + renderGeneration + '-' + index;
+          try {
+            const result = await mermaid.render(renderId, sourceElement.textContent || '');
+            if (renderGeneration !== generation) return;
+            renderTarget.innerHTML = result.svg;
+            renderTarget.removeAttribute('aria-hidden');
+            sourceElement.hidden = true;
+          } catch (error) {
+            document.getElementById('d' + renderId)?.remove();
+            if (renderGeneration !== generation) return;
+            renderTarget.replaceChildren();
+            renderTarget.setAttribute('aria-hidden', 'true');
+            sourceElement.hidden = false;
+          }
+        });
+      };
+      renderAll();
+      new MutationObserver(renderAll).observe(document.body, { attributes: true, attributeFilter: ['class'] });
+      window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', renderAll);
+    })();`;
+}
+
+function containsMermaidSourceBlock(documentText) {
+  return String(documentText || "").split(/\r?\n/)
+    .some((line) => /^\s*#\+BEGIN_SRC\s+mermaid(?:\s+.*)?$/i.test(line));
 }
 
 function renderOrgToHtml(documentText) {
@@ -47,11 +108,8 @@ function renderOrgToHtml(documentText) {
     const line = lines[i];
     const lineNo = i + 1;
     const trimmed = line.trim();
-
-    // Always include a marker at each line so scroll sync is deterministic.
     const marker = html`<span class="line-marker" data-line=${lineNo}></span>`;
 
-    // Export HTML block: include raw HTML
     if (!inSrc && !inExportHtml && /^\s*#\+BEGIN_EXPORT\s+html\s*$/i.test(line)) {
       closeLists();
       closeTable();
@@ -70,18 +128,24 @@ function renderOrgToHtml(documentText) {
     }
 
     // Src blocks
-    const beginSrc = line.match(/^\s*#\+BEGIN_SRC\s*(\S+)?\s*$/i);
+    const mermaidBegin = line.match(/^\s*#\+BEGIN_SRC\s+(mermaid)(?:\s+.*)?$/i);
+    const beginSrc = mermaidBegin || line.match(/^\s*#\+BEGIN_SRC\s*(\S+)?\s*$/i);
     if (!inSrc && beginSrc) {
       closeLists();
       closeTable();
       inSrc = true;
       srcLang = (beginSrc[1] || "").toLowerCase();
-      out.push(`<pre class="org-src"><code data-lang="${escapeAttr(srcLang)}">${marker}`);
+      if (srcLang === "mermaid") out.push('<div class="org-mermaid">');
+      const sourceClass = srcLang === "mermaid" ? "org-src org-mermaid-source" : "org-src";
+      out.push(`<pre class="${sourceClass}"><code data-lang="${escapeAttr(srcLang)}">${marker}`);
       continue;
     }
     if (inSrc) {
       if (/^\s*#\+END_SRC\s*$/i.test(line)) {
         out.push(`${marker}</code></pre>`);
+        if (srcLang === "mermaid") {
+          out.push('<div class="org-mermaid-render" aria-hidden="true"></div></div>');
+        }
         inSrc = false;
         srcLang = "";
       } else {
@@ -159,8 +223,12 @@ function renderOrgToHtml(documentText) {
   return new SafeHtml(out.join("\n"));
 }
 
-function getPreviewHtml(webview, nonce, bodyHtml) {
+function getPreviewHtml(webview, nonce, bodyHtml, mermaidScriptUri, hasMermaid = false) {
   const csp = `default-src 'none'; img-src ${webview.cspSource} https: data:; style-src ${webview.cspSource} 'unsafe-inline'; script-src ${webview.cspSource} 'nonce-${nonce}'; font-src ${webview.cspSource} https: data:`;
+  const mermaidScripts = hasMermaid
+    ? `<script nonce="${nonce}" src="${escapeAttr(mermaidScriptUri)}"></script>
+  <script nonce="${nonce}">${getMermaidInitializer("document.body.classList.contains('vscode-dark') || document.body.classList.contains('vscode-high-contrast') ? 'dark' : 'default'")}</script>`
+    : "";
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -176,6 +244,7 @@ function getPreviewHtml(webview, nonce, bodyHtml) {
     .org-list{margin:.3em 0 .6em 1.2em; padding:0;}
     .org-list li{margin:.15em 0;}
     .org-src{background:var(--vscode-textCodeBlock-background); padding:10px; overflow:auto; border-radius:2px;}
+    .org-mermaid-render{overflow:auto;}
     .org-table{border-collapse:collapse; margin:.4em 0;}
     .org-table td{border:1px solid var(--vscode-editorWidget-border); padding:2px 6px;}
     .line-marker{display:inline-block; width:0; height:0;}
@@ -184,6 +253,7 @@ function getPreviewHtml(webview, nonce, bodyHtml) {
 </head>
 <body>
   <div id="root">${bodyHtml}</div>
+  ${mermaidScripts}
   <script nonce="${nonce}">
     const vscode = acquireVsCodeApi();
     function scrollToLine(line){
@@ -203,12 +273,19 @@ function getPreviewHtml(webview, nonce, bodyHtml) {
 </html>`;
 }
 
-function getStandaloneHtml(bodyHtml, title = "Org Document") {
+function getStandaloneHtml(bodyHtml, title = "Org Document", hasMermaid = false) {
+  const nonce = hasMermaid ? getNonce() : "";
+  const mermaidRuntime = hasMermaid ? readMermaidRuntime() : "";
+  const scriptPolicy = hasMermaid ? ` script-src 'nonce-${nonce}';` : "";
+  const mermaidScripts = hasMermaid
+    ? `<script nonce="${nonce}">${mermaidRuntime}</script>
+  <script nonce="${nonce}" data-org-mermaid-initializer>${getMermaidInitializer("window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'default'")}</script>`
+    : "";
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src https: data:; style-src 'unsafe-inline';" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data:; style-src 'unsafe-inline';${scriptPolicy}" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>${escapeText(title)}</title>
   <style>
@@ -220,6 +297,7 @@ function getStandaloneHtml(bodyHtml, title = "Org Document") {
     .org-list{margin:.3em 0 .6em 1.2em; padding:0;}
     .org-list li{margin:.15em 0;}
     .org-src{background:var(--code-background); padding:10px; overflow:auto; border-radius:2px;}
+    .org-mermaid-render{overflow:auto;}
     .org-table{border-collapse:collapse; margin:.4em 0;}
     .org-table td{border:1px solid var(--border); padding:2px 6px;}
     .line-marker{display:none;}
@@ -228,12 +306,13 @@ function getStandaloneHtml(bodyHtml, title = "Org Document") {
 </head>
 <body>
   <main>${bodyHtml}</main>
+  ${mermaidScripts}
 </body>
 </html>`;
 }
 
 function renderStandaloneHtml(documentText, title) {
-  return getStandaloneHtml(renderOrgToHtml(documentText), title);
+  return getStandaloneHtml(renderOrgToHtml(documentText), title, containsMermaidSourceBlock(documentText));
 }
 
 async function exportActiveDocument(destinationOverride) {
@@ -296,7 +375,8 @@ class OrgPreviewManager {
       viewColumn,
       {
         enableScripts: true,
-        retainContextWhenHidden: true
+        retainContextWhenHidden: true,
+        localResourceRoots: [vscode.Uri.joinPath(this.ctx.extensionUri, "media")]
       }
     );
 
@@ -316,7 +396,16 @@ class OrgPreviewManager {
 
     const body = renderOrgToHtml(doc.getText());
     const nonce = getNonce();
-    this.panel.webview.html = getPreviewHtml(this.panel.webview, nonce, body);
+    const mermaidUri = this.panel.webview.asWebviewUri(
+      vscode.Uri.joinPath(this.ctx.extensionUri, "media", MERMAID_FILE_NAME)
+    );
+    this.panel.webview.html = getPreviewHtml(
+      this.panel.webview,
+      nonce,
+      body,
+      mermaidUri,
+      containsMermaidSourceBlock(doc.getText())
+    );
   }
 
   scheduleRefresh() {
@@ -381,5 +470,6 @@ function registerOrgPreview(ctx) {
 module.exports = {
   registerOrgPreview,
   renderOrgToHtml,
-  renderStandaloneHtml
+  renderStandaloneHtml,
+  getPreviewHtml
 };

@@ -578,7 +578,8 @@ Notes:
 
 - Preview updates automatically as you type.
 - Scroll sync (editor → preview) is supported.
-- HTML export opens a save dialog and writes a standalone, script-free document that follows the browser's light or dark color preference.
+- `#+BEGIN_SRC mermaid` blocks render as diagrams with the current light or dark theme. Invalid diagrams keep their readable source visible.
+- HTML export opens a save dialog and writes one self-contained offline document. Mermaid diagrams use an embedded local runtime; no CDN or network script is required.
 - `.org_archive` files automatically use the same Org language mode, preview, navigation, and commands as `.org` files.
 
 ---

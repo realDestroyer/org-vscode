@@ -9,10 +9,11 @@
 - **Context action and structural insertion:** Added the bindable `Org-vscode: Execute Context Action` command for checkboxes, links, timestamps, headings, lists, and tables without overriding Copy. Added `Ctrl+Enter` (`Cmd+Enter` on macOS) to insert a matching heading, list item, checkbox, or table row after the current structure.
 - **Priority cycling:** Added selection-aware forward and backward commands for cycling configurable Org priority cookies on star and configured Unicode headings.
 - **TODO transition notes:** Workflow states can opt into single-line note prompts with `notePrompt`. Prompted transitions write newest-first LOGBOOK entries using existing drawer settings, while cancellation and automation suppression preserve noninteractive behavior.
+- **Mermaid preview and export:** `#+BEGIN_SRC mermaid` blocks now render independently in live preview and standalone HTML export using the packaged Mermaid runtime, strict Mermaid security, local-only script loading, and readable source fallback when a diagram is malformed.
 
 `Tests`
 
-- Registered the previously dormant heading-folding unit suite and added cycle-plan, context-classification, command dispatch, priority, workflow-note normalization/formatting, and extension-host coverage.
+- Registered the previously dormant heading-folding unit suite and added cycle-plan, context-classification, command dispatch, priority, workflow-note normalization/formatting, Mermaid security/fallback, and extension-host coverage.
 
 
 # [2.2.34] 08-29-26
