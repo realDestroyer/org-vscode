@@ -1,6 +1,6 @@
 ﻿# Roadmap
 
-Live version: 2.2.33
+Live version: 2.2.34
 
 These are the features that I have either already implemented, or plan to in the near future.
 
@@ -27,7 +27,8 @@ These are the features that I have either already implemented, or plan to in the
 | Export Current File to HTML | Export the current Org document to a standalone HTML file using the existing preview renderer and a save dialog that defaults beside the source file. | DONE | v2.2.32 | realDestroyer |
 | `.org_archive` File Support | Recognize `.org_archive` files as Org documents for language mode, preview, navigation, and commands. | DONE | v2.2.32 | realDestroyer |
 | Unified Heading Link Insertion | Search workspace headings, create stable target IDs when needed, insert canonical ID links, and resolve heading/anchor searches in linked files. | DONE | v2.2.33 | realDestroyer |
-| Subtree Structure Commands | Org-like subtree ops (promote/demote subtree, cut/copy/paste subtree, refile/move subtree) with selection support and safe formatting. | Not Started |  | realDestroyer |
+| Subtree Promote/Demote + Refile | Promote or demote complete subtrees and safely refile them beneath same-file or cross-file workspace headings. | DONE | v2.2.34 | realDestroyer |
+| Subtree Cut/Copy/Paste | Add explicit structure-aware cut, copy, and paste commands with selection support. | Not Started |  | realDestroyer |
 | Right-edge planning display | Show SCHEDULED/DEADLINE/CLOSED in a right-aligned “column” without horizontal scrolling. Note: not possible with plain editor decorations; likely needs an alternative UI approach (e.g., hover/inset/codelens/status surface). | Not Started |  | realDestroyer |
 | LaTeX fragment rendering (org-fragtog-style) | Render LaTeX fragments as “inline images” (full math fragment preview, not only symbol substitutions) | Not Started |  | realDestroyer |
 | Src block execution (Org-babel-style) | Execute `#+BEGIN_SRC` blocks and insert/update `#+RESULTS:` immediately (Python/PowerShell/Bash/JS/C++), with CodeLens + context menu | DONE | v2.2.12 | realDestroyer |
