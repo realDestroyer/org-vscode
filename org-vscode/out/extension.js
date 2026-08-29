@@ -58,6 +58,7 @@ const { registerMathDecorations } = require("./mathDecorations");
 const { registerHeadingScheduledDecorations, registerHeadingDeadlineDecorations, registerHeadingClosedDecorations } = require("./headingScheduledDecorations");
 const { registerOrgLinkProvider } = require("./orgLinkProvider");
 const { registerOrgLinkCommands } = require("./orgLinkCommands");
+const { registerSubtreeCommands } = require("./subtreeCommands");
 const { registerOrgLinkDecorations } = require("./orgLinkDecorations");
 const { registerOrgSymbolProvider } = require("./orgSymbolProvider");
 const { registerOrgFoldingProvider } = require("./orgFoldingProvider");
@@ -239,6 +240,9 @@ function activate(ctx) {
 
   // Search workspace headings, ensure stable IDs, and insert canonical links.
   registerOrgLinkCommands(ctx);
+
+  // Promote, demote, and refile complete heading subtrees.
+  registerSubtreeCommands(ctx);
 
   // Date format changes are not auto-applied to existing files because swapping
   // MM-DD and DD-MM can be ambiguous (e.g. 04-05-2026). Provide an explicit command instead.

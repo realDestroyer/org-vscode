@@ -49,6 +49,7 @@ Org-vscode helps you manage tasks, notes, and projects in plain text `.org` file
 - Math symbol decorations (experimental): renders common LaTeX commands (e.g. `\alpha`) as Unicode glyphs while editing
 - Smart navigation helpers: Document Outline (headings) + clickable Org links (including `[[*heading]]`, `[[id:...]]`, `[[#target]]`, `file:`, `http(s)`, `mailto:`)
 - Workspace heading link insertion with automatic stable IDs (`Ctrl + Alt + L` / `Cmd + Alt + L`)
+- Subtree promotion/demotion and safe same-file or cross-file refile from the Command Palette
 - Org link auto-completion inside `[[...]]` (including workspace-wide `id:` suggestions)
 - Property drawer helpers: set/get/delete properties (with inheritance) + ID helpers (get-or-create, set/replace)
 - Org table generator (command + snippets)
@@ -108,6 +109,7 @@ Most editing shortcuts support multi-line selection: highlight multiple task lin
 | `Ctrl + Shift + C`   | Open the Calendar View                                 |
 | `Ctrl + Alt + P`     | Open Live Preview to the side                          |
 | `Ctrl + Alt + L`     | Insert link to a workspace heading                     |
+| *(Command Palette)*  | Promote, demote, or refile the current subtree         |
 | *(Command Palette)*  | Export Current File to HTML                            |
 | `Ctrl + Shift + E`   | Export all active (non-DONE) tasks to CurrentTasks.org |
 | `Ctrl + Alt + M`     | Show popup message (GitHub link)                       |

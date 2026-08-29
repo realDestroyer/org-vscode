@@ -127,6 +127,63 @@ suite('Command registration', function () {
     assert.ok(output.endsWith(`Related: [[id:${id}][Local target]]`));
   });
 
+  test('Promote subtree adjusts every nested heading and preserves body content', async () => {
+    const document = await vscode.workspace.openTextDocument({
+      language: 'vso',
+      content: '* Parent\n** Moving\nbody\n*** Child\n* Sibling\n'
+    });
+    const editor = await vscode.window.showTextDocument(document);
+    const cursor = new vscode.Position(2, 2);
+    editor.selection = new vscode.Selection(cursor, cursor);
+
+    await vscode.commands.executeCommand('org-vscode.promoteSubtree');
+
+    assert.strictEqual(editor.document.getText(), '* Parent\n* Moving\nbody\n** Child\n* Sibling\n');
+  });
+
+  test('Refile subtree within one document adjusts target indexes safely', async () => {
+    const document = await vscode.workspace.openTextDocument({
+      language: 'vso',
+      content: '* Moving\n** Child\n* Destination\n** Existing\n'
+    });
+    const editor = await vscode.window.showTextDocument(document);
+    const cursor = new vscode.Position(0, 0);
+    editor.selection = new vscode.Selection(cursor, cursor);
+
+    await vscode.commands.executeCommand('org-vscode.refileSubtree', { uri: document.uri, line: 2 });
+
+    assert.strictEqual(
+      editor.document.getText(),
+      '* Destination\n** Existing\n** Moving\n*** Child\n'
+    );
+  });
+
+  test('Refile subtree updates source and destination documents together', async () => {
+    const targetUri = vscode.Uri.file(path.join(
+      os.tmpdir(),
+      `org-vscode-refile-target-${Date.now()}-${Math.random().toString(16).slice(2)}.org`
+    ));
+
+    try {
+      await vscode.workspace.fs.writeFile(targetUri, Buffer.from('* Destination\n** Existing\n', 'utf8'));
+      const source = await vscode.workspace.openTextDocument({
+        language: 'vso',
+        content: '* Moving\nbody\n** Child\n* Remains\n'
+      });
+      const editor = await vscode.window.showTextDocument(source);
+      const cursor = new vscode.Position(1, 0);
+      editor.selection = new vscode.Selection(cursor, cursor);
+
+      await vscode.commands.executeCommand('org-vscode.refileSubtree', { uri: targetUri, line: 0 });
+
+      const target = await vscode.workspace.openTextDocument(targetUri);
+      assert.strictEqual(source.getText(), '* Remains\n');
+      assert.strictEqual(target.getText(), '* Destination\n** Existing\n** Moving\nbody\n*** Child\n');
+    } finally {
+      await vscode.workspace.fs.delete(targetUri, { useTrash: false }).then(undefined, () => undefined);
+    }
+  });
+
   test('File search links reveal headings in another Org file', async () => {
     const targetUri = vscode.Uri.file(path.join(
       os.tmpdir(),
