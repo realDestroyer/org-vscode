@@ -31,6 +31,8 @@
 		"onCommand:org-vscode.cycleVisibilityBackward",
 		"onCommand:org-vscode.cycleGlobalVisibility",
 		"onCommand:org-vscode.cycleGlobalVisibilityBackward",
+		"onCommand:org-vscode.cyclePriority",
+		"onCommand:org-vscode.cyclePriorityBackward",
 		"onCommand:org-vscode.contextAction",
 		"onCommand:org-vscode.insertStructureAtEnd",
 		"onCommand:extension.viewAgenda",
@@ -463,6 +465,7 @@
 							"marker": "⊙",
 							"isDoneLike": false,
 							"stampsClosed": false,
+							"notePrompt": false,
 							"triggersForward": false,
 							"agendaVisibility": "show",
 							"taggedAgendaVisibility": "show"
@@ -472,6 +475,7 @@
 							"marker": "⊘",
 							"isDoneLike": false,
 							"stampsClosed": false,
+							"notePrompt": false,
 							"triggersForward": false,
 							"agendaVisibility": "show",
 							"taggedAgendaVisibility": "show"
@@ -481,6 +485,7 @@
 							"marker": "⊜",
 							"isDoneLike": false,
 							"stampsClosed": false,
+							"notePrompt": false,
 							"triggersForward": true,
 							"agendaVisibility": "hide",
 							"taggedAgendaVisibility": "hide"
@@ -490,6 +495,7 @@
 							"marker": "⊖",
 							"isDoneLike": true,
 							"stampsClosed": true,
+							"notePrompt": false,
 							"triggersForward": false,
 							"agendaVisibility": "hide",
 							"taggedAgendaVisibility": "hide"
@@ -499,6 +505,7 @@
 							"marker": "⊗",
 							"isDoneLike": true,
 							"stampsClosed": false,
+							"notePrompt": false,
 							"triggersForward": false,
 							"agendaVisibility": "hide",
 							"taggedAgendaVisibility": "hide"
@@ -528,6 +535,11 @@
 								"default": false,
 								"description": "When switching into this state, add a CLOSED: timestamp (if supported by the command/view)."
 							},
+							"notePrompt": {
+								"type": "boolean",
+								"default": false,
+								"description": "Prompt for an optional LOGBOOK note when interactively transitioning into this state."
+							},
 							"triggersForward": {
 								"type": "boolean",
 								"default": false,
@@ -554,6 +566,21 @@
 						}
 					},
 					"description": "Ordered list of workflow states. Leave unset to use the extension defaults."
+				},
+				"Org-vscode.priorityValues": {
+					"scope": "window",
+					"type": "array",
+					"order": 7.2,
+					"default": [
+						"A",
+						"B",
+						"C"
+					],
+					"items": {
+						"type": "string",
+						"pattern": "^[A-Z0-9]$"
+					},
+					"description": "Ordered one-character uppercase alphanumeric values used by priority cycling. Invalid and duplicate values are ignored at runtime."
 				},
 				"Org-vscode.decorateTodoStateLines": {
 					"type": "boolean",
@@ -1038,6 +1065,16 @@
 				"command": "extension.setTodoState",
 				"category": "Org-vscode",
 				"title": "Set TODO State..."
+			},
+			{
+				"command": "org-vscode.cyclePriority",
+				"category": "Org-vscode",
+				"title": "Cycle Priority"
+			},
+			{
+				"command": "org-vscode.cyclePriorityBackward",
+				"category": "Org-vscode",
+				"title": "Cycle Priority Backward"
 			},
 			{
 				"command": "extension.increment",

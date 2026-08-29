@@ -7,10 +7,12 @@
 - **Heading CodeLens actions:** Added optional, configurable action links above headings for TODO state, scheduling, deadlines, tags, properties, promotion, demotion, and refiling. Lenses reuse existing commands and are suppressed on source-execution-denied files.
 - **Org visibility cycling:** `Tab` on a heading now cycles the current subtree through folded, direct-children, and fully expanded states. `Shift+Tab` provides the equivalent document-wide cycle, with backward commands available from the Command Palette. Non-heading Tab behavior remains delegated to VS Code.
 - **Context action and structural insertion:** Added the bindable `Org-vscode: Execute Context Action` command for checkboxes, links, timestamps, headings, lists, and tables without overriding Copy. Added `Ctrl+Enter` (`Cmd+Enter` on macOS) to insert a matching heading, list item, checkbox, or table row after the current structure.
+- **Priority cycling:** Added selection-aware forward and backward commands for cycling configurable Org priority cookies on star and configured Unicode headings.
+- **TODO transition notes:** Workflow states can opt into single-line note prompts with `notePrompt`. Prompted transitions write newest-first LOGBOOK entries using existing drawer settings, while cancellation and automation suppression preserve noninteractive behavior.
 
 `Tests`
 
-- Registered the previously dormant heading-folding unit suite and added cycle-plan, context-classification, command dispatch, and extension-host coverage.
+- Registered the previously dormant heading-folding unit suite and added cycle-plan, context-classification, command dispatch, priority, workflow-note normalization/formatting, and extension-host coverage.
 
 
 # [2.2.34] 08-29-26

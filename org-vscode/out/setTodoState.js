@@ -8,6 +8,7 @@ const { normalizeBodyIndentation } = require("./indentUtils");
 const { applyAutoMoveDone } = require("./doneTaskAutoMove");
 const { findIncompleteChildTask } = require("./todoDependencies");
 const { mergePlanningFromNearbyLines } = require("./planningMerge");
+const { requestTransitionNote, computeTransitionLogbookInsertion } = require("./transitionNotes");
 
 function buildPlanningBody(planning) {
   const parts = [];
@@ -89,12 +90,12 @@ function computeTodoStateChange(params) {
   };
 }
 
-async function setTodoState() {
+async function setTodoState(commandOptions = {}) {
   const vscode = require("vscode");
   await vscode.commands.executeCommand("workbench.action.files.save");
 
   const { activeTextEditor } = vscode.window;
-  if (!activeTextEditor || activeTextEditor.document.languageId !== "vso") return;
+  if (!activeTextEditor || !["vso", "org", "vsorg", "org-vscode"].includes(activeTextEditor.document.languageId)) return;
 
   const config = vscode.workspace.getConfiguration("Org-vscode");
   const headingMarkerStyle = config.get("headingMarkerStyle", "unicode");
@@ -203,7 +204,35 @@ async function setTodoState() {
       }
     }
 
+    const transitionTimestamp = moment().format(`${dateFormat} ddd HH:mm`);
+    const transitionNote = await requestTransitionNote({
+      fromKeyword: priorKeyword,
+      toKeyword: targetKeyword,
+      workflowRegistry,
+      suppressNotePrompt: commandOptions.suppressNotePrompt === true,
+      showInputBox: (options) => vscode.window.showInputBox(options)
+    });
+    if (transitionNote.cancelled) continue;
+
     const workspaceEdit = new vscode.WorkspaceEdit();
+
+    const lines = document.getText().split(/\r?\n/);
+    const logbookInsertion = computeTransitionLogbookInsertion(lines, lineNumber, {
+      prompted: transitionNote.prompted,
+      completionTransition: workflowRegistry.isDoneLike(targetKeyword)
+        && workflowRegistry.stampsClosed(targetKeyword)
+        && !workflowRegistry.isDoneLike(priorKeyword),
+      logIntoDrawer,
+      fromKeyword: priorKeyword,
+      toKeyword: targetKeyword,
+      timestamp: transitionTimestamp,
+      note: transitionNote.note,
+      drawerName: logDrawerName,
+      bodyIndent
+    });
+    if (logbookInsertion.changed) {
+      workspaceEdit.insert(document.uri, new vscode.Position(logbookInsertion.lineIndex, 0), logbookInsertion.text);
+    }
 
     // Handle forward-trigger transitions (default: CONTINUED)
     if (workflowRegistry.triggersForward(effectiveKeyword) && !workflowRegistry.triggersForward(currentKeyword)) {

@@ -37,6 +37,7 @@
 * [📼 Partial Demo](#partial-demo)
 * [🔤 Unicode Headings](#unicode-headings-based-on-asterisk-level)
 * [🔁 Cycle Task Statuses](#cycle-task-statuses)
+* [Priority cycling and transition notes](#priority-cycling-and-transition-notes)
 * [📒 LOGBOOK (State Change History)](#logbook)
 * [⏱ Clocking + Clock Table](#clocking--clock-table)
 * [🏷 Inline Tags & Tag Filtering](#inline-tags--tag-filtering)
@@ -238,6 +239,7 @@ You can edit this setting either:
   - **Marker**: optional symbol shown when using Unicode heading markers
   - **Done-like**: counts as “done” for reports/exports
   - **Stamps CLOSED**: writes a `CLOSED:` timestamp when entering the state
+  - **Prompt Note**: asks for an optional LOGBOOK note when entering the state
   - **Triggers Forward**: marks the “carryover/forward-trigger” state (default is `CONTINUED`)
   - **Agenda / Tagged Agenda**: whether this state appears in those views
 4. Reorder states with ↑ / ↓ to change your cycle order.
@@ -249,6 +251,7 @@ You can edit this setting either:
 - Each state can optionally define semantics like:
   - **done-like** (used by exports/reports)
   - **CLOSED stamping** when transitioning into the state
+  - **transition-note prompting** with `notePrompt: true`
   - **carryover/forward-trigger** behavior (default: `CONTINUED`)
   - **Agenda / Tagged Agenda visibility**
 
@@ -953,6 +956,24 @@ Default task states (when you do not override `workflowStates`):
 * The task line is automatically updated in the source file.
 * If switching **into a state that stamps CLOSED** (default: `DONE`), a `CLOSED:` timestamp is inserted on the next line.
 * If switching **out of a CLOSED-stamping state**, the `CLOSED:` line is removed.
+
+---
+
+## Priority cycling and transition notes <a id="priority-cycling-and-transition-notes"></a>
+
+Run **Org-vscode: Cycle Priority** or **Org-vscode: Cycle Priority Backward** on a star heading or configured Unicode heading. Both commands support selections and multiple cursors and have no default keybinding.
+
+Priority values are configurable and cycle through a no-priority step:
+
+```json
+"Org-vscode.priorityValues": ["A", "B", "C"]
+```
+
+Forward cycling follows no cookie -> `[#A]` -> `[#B]` -> `[#C]` -> no cookie. Backward cycling follows the reverse order. Values must be unique, one-character uppercase letters or digits; invalid and duplicate values are ignored.
+
+To request a note when entering a workflow state, add `"notePrompt": true` to that state. `Ctrl+Right`, `Ctrl+Left`, and **Set TODO State...** then prompt only when the state actually changes. Canceling aborts that task transition; submitting a blank note still records the state change. Prompted entries are written newest-first using the configured `logDrawerName`, `bodyIndentation`, and `dateFormat`, even when `logIntoDrawer` is disabled.
+
+Automation can call the state commands with `{ "suppressNotePrompt": true }` to transition without prompting.
 
 ---
 

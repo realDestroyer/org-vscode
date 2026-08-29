@@ -1420,6 +1420,7 @@ function getWebviewContent(nonce, currentColors, currentWorkflowStates, scopeGro
               <th class="cell-small">Marker</th>
               <th class="cell-small">Done-like</th>
               <th class="cell-small">Stamps CLOSED</th>
+              <th class="cell-small">Prompt Note</th>
               <th class="cell-small">Triggers Forward</th>
               <th class="cell-small">Agenda</th>
               <th class="cell-small">Tagged Agenda</th>
@@ -1734,6 +1735,11 @@ function getWebviewContent(nonce, currentColors, currentWorkflowStates, scopeGro
           closedInput.classList.add('wf-stampsClosed');
           tdClosed.appendChild(closedInput);
 
+          const tdNote = document.createElement('td');
+          const noteInput = createCheckbox(!!state.notePrompt);
+          noteInput.classList.add('wf-notePrompt');
+          tdNote.appendChild(noteInput);
+
           const tdForward = document.createElement('td');
           const forwardInput = createCheckbox(!!state.triggersForward);
           forwardInput.classList.add('wf-triggersForward');
@@ -1802,6 +1808,7 @@ function getWebviewContent(nonce, currentColors, currentWorkflowStates, scopeGro
           tr.appendChild(tdMarker);
           tr.appendChild(tdDone);
           tr.appendChild(tdClosed);
+          tr.appendChild(tdNote);
           tr.appendChild(tdForward);
           tr.appendChild(tdAgenda);
           tr.appendChild(tdTagged);
@@ -1813,7 +1820,7 @@ function getWebviewContent(nonce, currentColors, currentWorkflowStates, scopeGro
         if (states.length === 0) {
           const tr = document.createElement('tr');
           const td = document.createElement('td');
-          td.colSpan = 8;
+          td.colSpan = 9;
           td.textContent = 'No workflow states configured.';
           td.classList.add('workflow-empty');
           tr.appendChild(td);
@@ -1834,6 +1841,7 @@ function getWebviewContent(nonce, currentColors, currentWorkflowStates, scopeGro
             marker: marker,
             isDoneLike: !!row.querySelector('.wf-isDoneLike')?.checked,
             stampsClosed: !!row.querySelector('.wf-stampsClosed')?.checked,
+            notePrompt: !!row.querySelector('.wf-notePrompt')?.checked,
             triggersForward: !!row.querySelector('.wf-triggersForward')?.checked,
             agendaVisibility: row.querySelector('.wf-agendaVisibility')?.value || 'show',
             taggedAgendaVisibility: row.querySelector('.wf-taggedAgendaVisibility')?.value || 'show'
@@ -2013,6 +2021,7 @@ function getWebviewContent(nonce, currentColors, currentWorkflowStates, scopeGro
             marker: '',
             isDoneLike: false,
             stampsClosed: false,
+            notePrompt: false,
             triggersForward: false,
             agendaVisibility: 'show',
             taggedAgendaVisibility: 'show'

@@ -7,7 +7,7 @@ const moment = require("moment");
 const { isPlanningLine, parsePlanningFromText, normalizeTagsAfterPlanning, stripInlinePlanning } = require("./orgTagUtils");
 const { mergePlanningFromNearbyLines } = require("./planningMerge");
 const { applyRepeatersOnCompletion } = require("./repeatedTasks");
-const { computeLogbookInsertion, formatStateChangeEntry } = require("./orgLogbook");
+const { requestTransitionNote, computeTransitionLogbookInsertion } = require("./transitionNotes");
 const { normalizeBodyIndentation } = require("./indentUtils");
 const { applyAutoMoveDone } = require("./doneTaskAutoMove");
 const { findIncompleteChildTask } = require("./todoDependencies");
@@ -23,7 +23,7 @@ function buildPlanningBody(planning) {
   return parts.join("  ");
 }
 
-module.exports = async function () {
+module.exports = async function (commandOptions = {}) {
   await vscode.commands.executeCommand("workbench.action.files.save");
 
   const { activeTextEditor } = vscode.window;
@@ -131,6 +131,15 @@ module.exports = async function () {
       }
     }
 
+    const transitionNote = await requestTransitionNote({
+      fromKeyword: currentKeyword,
+      toKeyword: rotatedKeyword,
+      workflowRegistry,
+      suppressNotePrompt: commandOptions.suppressNotePrompt === true,
+      showInputBox: (options) => vscode.window.showInputBox(options)
+    });
+    if (transitionNote.cancelled) continue;
+
     // Upsert/remove CLOSED in the planning line (preferred: single planning line under the headline).
     if (completionStampsClosed) {
       mergedPlanning.closed = completionTimestamp;
@@ -138,28 +147,24 @@ module.exports = async function () {
       mergedPlanning.closed = null;
     }
 
+    const lines = document.getText().split(/\r?\n/);
+    const logbookInsertion = computeTransitionLogbookInsertion(lines, lineNumber, {
+      prompted: transitionNote.prompted,
+      completionTransition: completionTransition && completionStampsClosed,
+      logIntoDrawer,
+      fromKeyword: currentKeyword,
+      toKeyword: rotatedKeyword,
+      timestamp: completionTimestamp,
+      note: transitionNote.note,
+      drawerName: logDrawerName,
+      bodyIndent
+    });
+    if (logbookInsertion.changed) {
+      workspaceEdit.insert(document.uri, new vscode.Position(logbookInsertion.lineIndex, 0), logbookInsertion.text);
+    }
+
     // If this was a completion transition and the task has repeaters, reschedule and reopen.
     if (completionTransition) {
-      const lines = document.getText().split(/\r?\n/);
-
-      // Org-mode style logging into a drawer (LOGBOOK) for completion transitions.
-      if (logIntoDrawer && completionStampsClosed) {
-        const entry = formatStateChangeEntry({
-          fromKeyword: currentKeyword,
-          toKeyword: rotatedKeyword,
-          timestamp: completionTimestamp
-        });
-        if (entry) {
-          const ins = computeLogbookInsertion(lines, lineNumber, {
-            drawerName: logDrawerName,
-            bodyIndent,
-            entry
-          });
-          if (ins && ins.changed && typeof ins.lineIndex === "number" && typeof ins.text === "string") {
-            workspaceEdit.insert(document.uri, new vscode.Position(ins.lineIndex, 0), ins.text);
-          }
-        }
-      }
 
       const repeated = applyRepeatersOnCompletion({
         lines,
