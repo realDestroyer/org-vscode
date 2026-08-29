@@ -19,6 +19,7 @@ const tests = [
   require(path.join(__dirname, 'checkbox-keywords.test.js')),
   require(path.join(__dirname, 'checkbox-workflow-grammar.test.js')),
   require(path.join(__dirname, 'workflow-state-scopes.test.js')),
+  require(path.join(__dirname, 'org-symbol-provider.test.js')),
   require(path.join(__dirname, 'heading-folding.test.js')),
   require(path.join(__dirname, 'context-actions.test.js')),
   require(path.join(__dirname, 'heading-codelens.test.js')),

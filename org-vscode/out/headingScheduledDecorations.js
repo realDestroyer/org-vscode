@@ -365,7 +365,7 @@ function registerHeadingScheduledDecorations(ctx) {
     }),
     vscode.workspace.onDidChangeTextDocument((event) => {
       const active = vscode.window.activeTextEditor;
-      if (active && event.document.uri.toString() === active.document.uri.toString()) {
+      if (active && shouldDecorateScheduled(active) && event.document.uri.toString() === active.document.uri.toString()) {
         scheduleApply(active);
       }
     }),
@@ -461,7 +461,7 @@ function registerHeadingDeadlineDecorations(ctx) {
     }),
     vscode.workspace.onDidChangeTextDocument((event) => {
       const active = vscode.window.activeTextEditor;
-      if (active && event.document.uri.toString() === active.document.uri.toString()) {
+      if (active && shouldDecorateDeadline(active) && event.document.uri.toString() === active.document.uri.toString()) {
         scheduleApply(active);
       }
     }),
@@ -556,7 +556,7 @@ function registerHeadingClosedDecorations(ctx) {
     }),
     vscode.workspace.onDidChangeTextDocument((event) => {
       const active = vscode.window.activeTextEditor;
-      if (active && event.document.uri.toString() === active.document.uri.toString()) {
+      if (active && shouldDecorateClosed(active) && event.document.uri.toString() === active.document.uri.toString()) {
         scheduleApply(active);
       }
     }),

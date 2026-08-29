@@ -24,8 +24,6 @@ function buildPlanningBody(planning) {
 }
 
 module.exports = async function (commandOptions = {}) {
-  await vscode.commands.executeCommand("workbench.action.files.save");
-
   const { activeTextEditor } = vscode.window;
   if (!activeTextEditor || !["vso", "org", "vsorg", "org-vscode"].includes(activeTextEditor.document.languageId)) return;
 
@@ -72,11 +70,16 @@ module.exports = async function (commandOptions = {}) {
 
   for (const lineNumber of sortedLines) {
     const currentLine = document.lineAt(lineNumber);
+    let documentLines = null;
+    const getDocumentLines = () => {
+      if (!documentLines) documentLines = document.getText().split(/\r?\n/);
+      return documentLines;
+    };
 
     if (enableCheckboxKeywords && checkboxKeywords.isCheckboxLine(currentLine.text)) {
       const rotated = checkboxKeywords.rotateCheckboxKeyword(currentLine.text, "right", workflowRegistry);
       if (rotated && rotated.changed) {
-        const lines = document.getText().split(/\r?\n/);
+        const lines = getDocumentLines();
         const edits = computeCheckboxLineChangeEdits(lines, lineNumber, rotated.text);
         const checkboxEdit = new vscode.WorkspaceEdit();
         for (const edit of edits) {
@@ -123,7 +126,7 @@ module.exports = async function (commandOptions = {}) {
     const workspaceEdit = new vscode.WorkspaceEdit();
 
     if (enforceTodoDependencies && workflowRegistry.isDoneLike(nextKeyword) && !workflowRegistry.isDoneLike(currentKeyword)) {
-      const currentLines = document.getText().split(/\r?\n/);
+      const currentLines = getDocumentLines();
       const blocker = findIncompleteChildTask(currentLines, lineNumber, workflowRegistry);
       if (blocker) {
         dependencyBlocks.push({ parentLine: lineNumber + 1, blocker });
@@ -147,8 +150,7 @@ module.exports = async function (commandOptions = {}) {
       mergedPlanning.closed = null;
     }
 
-    const lines = document.getText().split(/\r?\n/);
-    const logbookInsertion = computeTransitionLogbookInsertion(lines, lineNumber, {
+    const logbookInsertion = computeTransitionLogbookInsertion(getDocumentLines, lineNumber, {
       prompted: transitionNote.prompted,
       completionTransition: completionTransition && completionStampsClosed,
       logIntoDrawer,
@@ -167,7 +169,7 @@ module.exports = async function (commandOptions = {}) {
     if (completionTransition) {
 
       const repeated = applyRepeatersOnCompletion({
-        lines,
+        lines: getDocumentLines(),
         headingLineIndex: lineNumber,
         planning: mergedPlanning,
         workflowRegistry,

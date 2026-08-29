@@ -501,9 +501,9 @@ On body text, lists, tables, selections, suggestion widgets, and rename inputs, 
 
 ## Context action and structural insertion <a id="context-action-and-structural-insertion"></a>
 
-Run `Org-vscode: Execute Context Action` (or assign it a personal keybinding) to act at the cursor: toggle a checkbox marker, follow a link, advance a timestamp, cycle a heading workflow state, or insert the next list/table structure. No default chord is assigned because Org's traditional `Ctrl+C Ctrl+C` chord would override VS Code's Copy command.
+Run `Org-vscode: Execute Context Action` (or assign it a personal keybinding) for the core behavior of Emacs Org's context-sensitive `C-c C-c`: toggle a checkbox, align a table, renumber an ordered list, or repair the weekday in a timestamp. No default chord is assigned because `Ctrl+C Ctrl+C` would override VS Code's Copy command.
 
-Press `Ctrl+Enter` (`Cmd+Enter` on macOS) to insert a matching sibling after the current heading subtree, list-item subtree, checkbox item, or table row.
+Press `Alt+Enter` for Emacs-style Meta-Return (`M-RET`): insert before a heading/list item when the cursor is in its prefix, split it at the cursor, or create a context-matching element. Press `Ctrl+Enter` (`Cmd+Enter` on macOS) for the distinct `C-RET` behavior that inserts a matching sibling after the current heading subtree, list-item subtree, checkbox item, or table row.
 
 ---
 

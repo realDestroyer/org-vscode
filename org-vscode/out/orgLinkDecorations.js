@@ -172,7 +172,7 @@ function registerOrgLinkDecorations(ctx) {
     }),
     vscode.workspace.onDidChangeTextDocument((event) => {
       const active = vscode.window.activeTextEditor;
-      if (active && event.document.uri.toString() === active.document.uri.toString()) {
+      if (active && shouldDecorate(active) && event.document.uri.toString() === active.document.uri.toString()) {
         scheduleApply(active);
       }
     }),

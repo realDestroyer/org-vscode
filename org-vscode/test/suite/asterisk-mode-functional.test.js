@@ -87,6 +87,24 @@ suite('Asterisk-mode functional behavior', function () {
     await waitFor(() => !doc.getText().includes('CLOSED: ['));
   });
 
+  test('Keyword cycling saves once for a non-completion transition', async () => {
+    const uri = await writeTempVsoFile('* TODO Save once\n');
+    const { doc, editor } = await openFileInEditor(uri);
+    let saveCount = 0;
+    const saveListener = vscode.workspace.onDidSaveTextDocument((savedDocument) => {
+      if (savedDocument.uri.toString() === uri.toString()) saveCount += 1;
+    });
+
+    try {
+      setCursor(editor, 0, 0);
+      await vscode.commands.executeCommand('extension.toggleStatusRight');
+      await waitFor(() => doc.getText().includes('* IN_PROGRESS Save once'));
+      assert.strictEqual(saveCount, 1);
+    } finally {
+      saveListener.dispose();
+    }
+  });
+
   test('Custom workflowStates drive status cycling and CLOSED stamping', async () => {
     const cfg = vscode.workspace.getConfiguration('Org-vscode');
     const before = cfg.inspect('workflowStates') || {};
