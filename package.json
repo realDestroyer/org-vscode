@@ -22,6 +22,7 @@
 		"onLanguage:vso",
 		"onCommand:org-vscode.openPreview",
 		"onCommand:org-vscode.openPreviewToSide",
+		"onCommand:org-vscode.exportHtml",
 		"onCommand:extension.viewAgenda",
 		"onCommand:extension.migrateFileToV2",
 		"onCommand:extension.createVsoFile",
@@ -718,7 +719,14 @@
 			{
 				"command": "org-vscode.openPreviewToSide",
 				"category": "Org-vscode",
-				"title": "Open Preview to Side"
+				"title": "Open Preview to Side",
+				"icon": "$(open-preview)"
+			},
+			{
+				"command": "org-vscode.exportHtml",
+				"category": "Org-vscode",
+				"title": "Export Current File to HTML",
+				"icon": "$(save-as)"
 			},
 			{
 				"command": "org-vscode.insertNewElement",
@@ -1145,6 +1153,18 @@
 			}
 		],
 		"menus": {
+			"editor/title": [
+				{
+					"command": "org-vscode.openPreviewToSide",
+					"group": "navigation@20",
+					"when": "editorLangId == 'vso'"
+				},
+				{
+					"command": "org-vscode.exportHtml",
+					"group": "navigation@21",
+					"when": "editorLangId == 'vso'"
+				}
+			],
 			"editor/context": [
 				{
 					"command": "org-vscode.executeSrcBlock",
@@ -1166,6 +1186,7 @@
 				],
 				"extensions": [
 					".org",
+					".org_archive",
 					".vsorg",
 					".vso"
 				],
