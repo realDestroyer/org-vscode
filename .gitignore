@@ -14,3 +14,4 @@ org-vscode/tsconfig.json
 org-vscode/package-lock.json
 org-vscode/Logo.png
 org-vscode/.vscodeignore
+/.github/
