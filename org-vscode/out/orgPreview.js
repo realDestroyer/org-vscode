@@ -1,6 +1,7 @@
 "use strict";
 
 const vscode = require("vscode");
+const path = require("path");
 const { html, h, SafeHtml, escapeText, escapeAttr } = require("./htmlUtils");
 
 function getNonce() {
@@ -202,6 +203,69 @@ function getPreviewHtml(webview, nonce, bodyHtml) {
 </html>`;
 }
 
+function getStandaloneHtml(bodyHtml, title = "Org Document") {
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src https: data:; style-src 'unsafe-inline';" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>${escapeText(title)}</title>
+  <style>
+    :root{color-scheme:light dark; --foreground:#24292f; --background:#ffffff; --border:#d0d7de; --code-background:#f6f8fa;}
+    @media (prefers-color-scheme:dark){:root{--foreground:#e6edf3; --background:#0d1117; --border:#30363d; --code-background:#161b22;}}
+    body{box-sizing:border-box; max-width:960px; margin:0 auto; padding:32px; color:var(--foreground); background:var(--background); font-family:ui-sans-serif,system-ui,sans-serif; font-size:16px; line-height:1.5;}
+    .org-heading{margin:1.2em 0 .4em;}
+    .org-paragraph{margin:.3em 0; white-space:pre-wrap;}
+    .org-list{margin:.3em 0 .6em 1.2em; padding:0;}
+    .org-list li{margin:.15em 0;}
+    .org-src{background:var(--code-background); padding:10px; overflow:auto; border-radius:2px;}
+    .org-table{border-collapse:collapse; margin:.4em 0;}
+    .org-table td{border:1px solid var(--border); padding:2px 6px;}
+    .line-marker{display:none;}
+    .org-export-html{margin:.4em 0;}
+  </style>
+</head>
+<body>
+  <main>${bodyHtml}</main>
+</body>
+</html>`;
+}
+
+function renderStandaloneHtml(documentText, title) {
+  return getStandaloneHtml(renderOrgToHtml(documentText), title);
+}
+
+async function exportActiveDocument(destinationOverride) {
+  const editor = vscode.window.activeTextEditor;
+  if (!isOrgDoc(editor)) {
+    vscode.window.showInformationMessage("Org-vscode: Open an Org file to export.");
+    return;
+  }
+
+  const document = editor.document;
+  const sourcePath = document.uri.scheme === "file" ? document.uri.fsPath : "";
+  const sourceName = sourcePath ? path.basename(sourcePath, path.extname(sourcePath)) : "org-document";
+  const defaultUri = sourcePath
+    ? vscode.Uri.file(path.join(path.dirname(sourcePath), `${sourceName}.html`))
+    : undefined;
+
+  const destination = destinationOverride || await vscode.window.showSaveDialog({
+    defaultUri,
+    filters: { "HTML Documents": ["html", "htm"] },
+    saveLabel: "Export HTML"
+  });
+  if (!destination) return;
+
+  const output = renderStandaloneHtml(document.getText(), sourceName);
+  try {
+    await vscode.workspace.fs.writeFile(destination, Buffer.from(output, "utf8"));
+    vscode.window.showInformationMessage(`Org-vscode: Exported HTML to ${destination.fsPath || destination.toString()}`);
+  } catch (error) {
+    vscode.window.showErrorMessage(`Org-vscode: Failed to export HTML: ${error.message}`);
+  }
+}
+
 class OrgPreviewManager {
   constructor(ctx) {
     this.ctx = ctx;
@@ -275,7 +339,8 @@ function registerOrgPreview(ctx) {
 
   ctx.subscriptions.push(
     vscode.commands.registerCommand("org-vscode.openPreview", () => manager.open(vscode.ViewColumn.One)),
-    vscode.commands.registerCommand("org-vscode.openPreviewToSide", () => manager.open(vscode.ViewColumn.Beside))
+    vscode.commands.registerCommand("org-vscode.openPreviewToSide", () => manager.open(vscode.ViewColumn.Beside)),
+    vscode.commands.registerCommand("org-vscode.exportHtml", exportActiveDocument)
   );
 
   if (vscode.workspace && typeof vscode.workspace.onDidChangeTextDocument === "function") {
@@ -314,5 +379,7 @@ function registerOrgPreview(ctx) {
 }
 
 module.exports = {
-  registerOrgPreview
+  registerOrgPreview,
+  renderOrgToHtml,
+  renderStandaloneHtml
 };

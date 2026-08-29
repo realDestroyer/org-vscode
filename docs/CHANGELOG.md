@@ -1,5 +1,17 @@
 # Change Log
 
+# [Unreleased]
+
+`Added / Enhanced`
+
+- **Standalone HTML export:** Added **Org-vscode: Export Current File to HTML**. It reuses the live-preview renderer, opens a save dialog beside the source file by default, and writes a portable, script-free HTML document with light/dark color support.
+- **Full `.org_archive` language support:** Archive files now automatically activate the Org language mode, grammar, outline, preview, navigation, and command contributions.
+
+`Tests`
+
+- Added unit coverage for standalone rendering and manifest contributions, plus extension-host coverage for real HTML file output and `.org_archive` language recognition.
+
+
 # [2.2.31] 08-26-26
 
 `Fixed`

@@ -104,6 +104,10 @@ function getContributedKeybindings(extensionRoot) {
   return (pkg.contributes && pkg.contributes.keybindings) || [];
 }
 
+function getPackageManifest(extensionRoot) {
+  return JSON.parse(fs.readFileSync(path.join(extensionRoot, 'package.json'), 'utf8'));
+}
+
 function activateExtension(extensionRoot, vscodeMock) {
   const extensionPath = path.join(extensionRoot, 'out', 'extension.js');
   // Ensure we load a fresh copy for each run.
@@ -138,7 +142,20 @@ function testAllContributedCommandsAreRegistered() {
     // Spot checks for historically-regressed commands.
     assert.ok(registered.has('org-vscode.insertTable'), 'org-vscode.insertTable must be registered');
     assert.ok(registered.has('org-vscode.exportCurrentTasks'), 'org-vscode.exportCurrentTasks must be registered');
+    assert.ok(registered.has('org-vscode.exportHtml'), 'standalone HTML export command must be registered');
     assert.ok(registered.has('extension.toggleCheckboxCookie'), 'statistics cookie command must be registered');
+
+    const manifest = getPackageManifest(packageJsonRoot);
+    const vsoLanguage = (manifest.contributes.languages || []).find((language) => language.id === 'vso');
+    assert.ok(vsoLanguage.extensions.includes('.org_archive'), '.org_archive must activate the vso language');
+    assert.ok(
+      manifest.activationEvents.includes('onCommand:org-vscode.exportHtml'),
+      'standalone HTML export must activate the extension'
+    );
+    assert.ok(
+      (manifest.contributes.menus['editor/title'] || []).some((item) => item.command === 'org-vscode.exportHtml'),
+      'standalone HTML export must be available from the editor title menu'
+    );
 
     const cookieBinding = getContributedKeybindings(packageJsonRoot)
       .find((binding) => binding.command === 'extension.toggleCheckboxCookie');
