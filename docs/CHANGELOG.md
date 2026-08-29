@@ -1,6 +1,6 @@
 # Change Log
 
-# [Unreleased]
+# [2.2.33] 08-29-26
 
 `Added / Enhanced`
 
