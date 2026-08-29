@@ -61,7 +61,12 @@ function loadFolding() {
   }
 }
 
-const { buildFoldingRanges } = loadFolding();
+const {
+  buildFoldingRanges,
+  buildGlobalVisibilityPlan,
+  buildVisibilityPlan,
+  getNextVisibilityState
+} = loadFolding();
 
 function testUnindentedBodyFoldsUnderHeading() {
   // RexxMagnus's case from issue #111: body lines flush-left, not
@@ -140,6 +145,28 @@ function testUnicodeHeadingsAlsoFold() {
   assert.deepStrictEqual([ranges[1].start, ranges[1].end], [2, 3]);
 }
 
+function testLocalVisibilityCyclePlansDirectChildren() {
+  const lines = ['* Parent', 'body', '** Child A', '*** Grandchild', '** Child B', '* Sibling'];
+  const folded = buildVisibilityPlan(lines, 0, 'subtree');
+  assert.deepStrictEqual(folded, { state: 'folded', headingLine: 0, childLines: [] });
+
+  const children = buildVisibilityPlan(lines, 0, folded.state);
+  assert.deepStrictEqual(children, { state: 'children', headingLine: 0, childLines: [2, 4] });
+
+  const subtree = buildVisibilityPlan(lines, 0, children.state);
+  assert.deepStrictEqual(subtree, { state: 'subtree', headingLine: 0, childLines: [] });
+  assert.strictEqual(buildVisibilityPlan(lines, 1, 'subtree'), null);
+}
+
+function testReverseAndGlobalVisibilityCycles() {
+  assert.strictEqual(getNextVisibilityState('subtree', true), 'children');
+  assert.strictEqual(getNextVisibilityState('children', true), 'folded');
+
+  const lines = ['* A', '** A1', '*** A1a', '* B', '** B1'];
+  const plan = buildGlobalVisibilityPlan(lines, 'folded');
+  assert.deepStrictEqual(plan, { state: 'children', rootLines: [0, 3], childLines: [1, 4] });
+}
+
 module.exports = {
   name: "unit/heading-folding",
   run() {
@@ -148,5 +175,7 @@ module.exports = {
     testTrailingBlankLinesAreTrimmed();
     testNestedLevelsCollapseCorrectly();
     testUnicodeHeadingsAlsoFold();
+    testLocalVisibilityCyclePlansDirectChildren();
+    testReverseAndGlobalVisibilityCycles();
   }
 };

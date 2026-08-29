@@ -68,6 +68,66 @@ function buildFoldingRanges(lines) {
   return ranges;
 }
 
+const VISIBILITY_STATES = ["folded", "children", "subtree"];
+
+function collectHeadingLevels(lines) {
+  return lines.map((line) => parseHeadingLine(line)?.level ?? null);
+}
+
+function findDirectChildHeadingLines(lines, headingLine) {
+  const levels = collectHeadingLevels(lines);
+  const parentLevel = levels[headingLine];
+  if (parentLevel === null || parentLevel === undefined) return [];
+
+  const children = [];
+  for (let line = headingLine + 1; line < levels.length; line += 1) {
+    const level = levels[line];
+    if (level === null) continue;
+    if (level <= parentLevel) break;
+    if (level === parentLevel + 1) children.push(line);
+  }
+  return children;
+}
+
+function getNextVisibilityState(currentState, reverse = false) {
+  const currentIndex = VISIBILITY_STATES.indexOf(currentState);
+  const normalizedIndex = currentIndex >= 0 ? currentIndex : VISIBILITY_STATES.indexOf("subtree");
+  const delta = reverse ? -1 : 1;
+  return VISIBILITY_STATES[(normalizedIndex + delta + VISIBILITY_STATES.length) % VISIBILITY_STATES.length];
+}
+
+function buildVisibilityPlan(lines, headingLine, currentState, reverse = false) {
+  if (!parseHeadingLine(lines?.[headingLine])) return null;
+
+  const nextState = getNextVisibilityState(currentState, reverse);
+  return {
+    state: nextState,
+    headingLine,
+    childLines: nextState === "children" ? findDirectChildHeadingLines(lines, headingLine) : []
+  };
+}
+
+function buildGlobalVisibilityPlan(lines, currentState, reverse = false) {
+  const levels = collectHeadingLevels(lines || []);
+  const headingLevels = levels.filter((level) => level !== null);
+  if (!headingLevels.length) return null;
+
+  const minimumLevel = Math.min(...headingLevels);
+  const rootLines = [];
+  const childLines = [];
+  for (let line = 0; line < levels.length; line += 1) {
+    if (levels[line] === minimumLevel) rootLines.push(line);
+    if (levels[line] === minimumLevel + 1) childLines.push(line);
+  }
+
+  const nextState = getNextVisibilityState(currentState, reverse);
+  return {
+    state: nextState,
+    rootLines,
+    childLines: nextState === "children" ? childLines : []
+  };
+}
+
 class OrgHeadingFoldingProvider {
   provideFoldingRanges(document) {
     try {
@@ -101,5 +161,9 @@ function registerOrgFoldingProvider(ctx) {
 module.exports = {
   OrgHeadingFoldingProvider,
   registerOrgFoldingProvider,
-  buildFoldingRanges
+  buildFoldingRanges,
+  buildGlobalVisibilityPlan,
+  buildVisibilityPlan,
+  findDirectChildHeadingLines,
+  getNextVisibilityState
 };

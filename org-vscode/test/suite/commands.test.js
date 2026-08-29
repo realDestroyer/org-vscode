@@ -184,6 +184,24 @@ suite('Command registration', function () {
     }
   });
 
+  test('Visibility commands cycle heading state without changing document text', async () => {
+    const document = await vscode.workspace.openTextDocument({
+      language: 'vso',
+      content: '* Parent\nbody\n** Child\nchild body\n*** Grandchild\n'
+    });
+    const editor = await vscode.window.showTextDocument(document);
+    editor.selection = new vscode.Selection(new vscode.Position(0, 0), new vscode.Position(0, 0));
+    const original = document.getText();
+
+    assert.strictEqual(await vscode.commands.executeCommand('org-vscode.cycleVisibility'), 'folded');
+    assert.strictEqual(await vscode.commands.executeCommand('org-vscode.cycleVisibility'), 'children');
+    assert.strictEqual(await vscode.commands.executeCommand('org-vscode.cycleVisibility'), 'subtree');
+    assert.strictEqual(await vscode.commands.executeCommand('org-vscode.cycleGlobalVisibility'), 'folded');
+    assert.strictEqual(await vscode.commands.executeCommand('org-vscode.cycleGlobalVisibility'), 'children');
+    assert.strictEqual(await vscode.commands.executeCommand('org-vscode.cycleGlobalVisibility'), 'subtree');
+    assert.strictEqual(document.getText(), original);
+  });
+
   test('File search links reveal headings in another Org file', async () => {
     const targetUri = vscode.Uri.file(path.join(
       os.tmpdir(),

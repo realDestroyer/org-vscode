@@ -21,6 +21,7 @@
 * [🧩 Org-vscode Snippets](#org-vscode-snippets)
 * [🔎 Org syntax + links](#org-syntax--links)
 * [↔️ Subtree structure and refile](#subtree-structure-and-refile)
+* [Heading visibility cycling](#heading-visibility-cycling)
 * [🧾 Properties & IDs](#properties--ids)
 * [🪟 Preview (Live HTML/Markdown/etc.)](#preview-live-html)
 * [∑ Math Symbol Decorations](#math-symbol-decorations)
@@ -442,6 +443,14 @@ Place the cursor on a heading or anywhere in its body, then use the Command Pale
 - **Org-vscode: Refile Subtree...** moves the complete subtree beneath a workspace heading, including headings in another Org file.
 
 Refile preserves body text and relative child levels, adjusts the moved root beneath its destination, and rejects the moving heading and its descendants as targets. Cross-file source and destination changes are applied together and remain unsaved editor changes until you save them.
+
+---
+
+## Heading visibility cycling <a id="heading-visibility-cycling"></a>
+
+With the cursor on a heading, press `Tab` to rotate its display through folded, direct children, and the complete subtree. Press `Shift+Tab` on a heading to cycle the same three states across the document. The Command Palette also exposes forward and backward local/global visibility commands.
+
+On body text, lists, tables, selections, suggestion widgets, and rename inputs, Org-vscode leaves Tab handling to VS Code.
 
 ---
 
