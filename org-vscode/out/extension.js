@@ -67,6 +67,8 @@ const { registerVisibilityCommands } = require("./visibilityCommands");
 const { registerContextActions } = require("./contextActions");
 const { registerOrgCompletionProvider } = require("./orgCompletionProvider");
 const { registerOrgPreview } = require("./orgPreview");
+const { createWorkspaceIndexService } = require("./workspaceIndex");
+const { registerWorkspacePerspectives } = require("./workspacePerspectives");
 const { migrateFileToV2 } = require("./migrateFileToV2");
 const { insertCheckboxItem } = require("./insertCheckboxItem");
 const { toggleCheckboxCookie } = require("./toggleCheckboxCookie");
@@ -194,6 +196,9 @@ function numOfSpaces(asterisk) {
 // Extension Activation
 // ─────────────────────────────────────────────────────────────
 function activate(ctx) {
+  const workspaceIndex = createWorkspaceIndexService(ctx);
+  registerWorkspacePerspectives(ctx, workspaceIndex);
+
   // Org-like navigation primitives
   registerOrgLinkProvider(ctx);
   registerOrgSymbolProvider(ctx);
@@ -239,7 +244,7 @@ function activate(ctx) {
   registerHeadingClosedDecorations(ctx);
 
   // Live preview webview (MVP) + editor -> preview scroll sync
-  registerOrgPreview(ctx);
+  registerOrgPreview(ctx, workspaceIndex);
 
   // Emacs-like property drawer commands (set/get/delete)
   registerPropertyCommands(ctx);

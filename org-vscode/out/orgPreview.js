@@ -79,7 +79,37 @@ function containsMermaidSourceBlock(documentText) {
     .some((line) => /^\s*#\+BEGIN_SRC\s+mermaid(?:\s+.*)?$/i.test(line));
 }
 
-function renderOrgToHtml(documentText) {
+function renderQueryBlock(source, options, marker) {
+  if (options.standalone) {
+    return html`<div class="org-query org-query-inert">${marker}Workspace query results require the live preview.</div>`;
+  }
+  if (!options.workspaceQueriesAvailable || typeof options.query !== "function") {
+    return html`<div class="org-query org-query-inert">${marker}Workspace query results are unavailable because workspace indexing is disabled.</div>`;
+  }
+
+  let response;
+  try {
+    response = options.query(source);
+  } catch (error) {
+    response = { results: [], errors: [error && error.message ? error.message : "Query failed"] };
+  }
+  if (!response || !Array.isArray(response.errors) || response.errors.length) {
+    const message = response && Array.isArray(response.errors) ? response.errors.join("; ") : "Invalid query";
+    return html`<div class="org-query org-query-error">${marker}Invalid workspace query: ${message}</div>`;
+  }
+  if (!response.results.length) {
+    return html`<div class="org-query org-query-empty">${marker}No matching headings.</div>`;
+  }
+
+  const items = response.results.map((record) => {
+    const status = record.status ? ` [${record.status}]` : "";
+    const tags = record.tags && record.tags.length ? ` :${record.tags.join(":")}:` : "";
+    return html`<li>${record.path}:${record.line + 1} ${record.title}${status}${tags}</li>`;
+  });
+  return html`<div class="org-query">${marker}<ul>${items}</ul></div>`;
+}
+
+function renderOrgToHtml(documentText, options = {}) {
   // Minimal Org→HTML renderer (MVP): headings, lists, checkboxes, code blocks, tables, and export html blocks.
   // This is intentionally conservative; we can replace it later with a full Org parser.
   const lines = documentText.split(/\r?\n/);
@@ -124,6 +154,24 @@ function renderOrgToHtml(documentText) {
       } else {
         out.push(marker + line); // Raw HTML intentionally unescaped
       }
+      continue;
+    }
+
+    if (!inSrc && /^\s*#\+BEGIN_QUERY\s*$/i.test(line)) {
+      closeLists();
+      closeTable();
+      const queryLines = [];
+      let end = i + 1;
+      while (end < lines.length && !/^\s*#\+END_QUERY\s*$/i.test(lines[end])) {
+        queryLines.push(lines[end]);
+        end++;
+      }
+      if (end >= lines.length) {
+        out.push(html`<div class="org-query org-query-error">${marker}Invalid workspace query: missing #+END_QUERY</div>`);
+      } else {
+        out.push(renderQueryBlock(queryLines.join("\n"), options, marker));
+      }
+      i = end < lines.length ? end : lines.length - 1;
       continue;
     }
 
@@ -249,6 +297,10 @@ function getPreviewHtml(webview, nonce, bodyHtml, mermaidScriptUri, hasMermaid =
     .org-table td{border:1px solid var(--vscode-editorWidget-border); padding:2px 6px;}
     .line-marker{display:inline-block; width:0; height:0;}
     .org-export-html{margin:.4em 0;}
+    .org-query{margin:.5em 0; padding:.5em .75em; border-left:3px solid var(--vscode-editorWidget-border);}
+    .org-query ul{margin:.2em 0; padding-left:1.5em;}
+    .org-query-error{color:var(--vscode-errorForeground);}
+    .org-query-inert,.org-query-empty{color:var(--vscode-descriptionForeground);}
   </style>
 </head>
 <body>
@@ -302,6 +354,7 @@ function getStandaloneHtml(bodyHtml, title = "Org Document", hasMermaid = false)
     .org-table td{border:1px solid var(--border); padding:2px 6px;}
     .line-marker{display:none;}
     .org-export-html{margin:.4em 0;}
+    .org-query{margin:.5em 0; padding:.5em .75em; border-left:3px solid var(--border);}
   </style>
 </head>
 <body>
@@ -312,7 +365,7 @@ function getStandaloneHtml(bodyHtml, title = "Org Document", hasMermaid = false)
 }
 
 function renderStandaloneHtml(documentText, title) {
-  return getStandaloneHtml(renderOrgToHtml(documentText), title, containsMermaidSourceBlock(documentText));
+  return getStandaloneHtml(renderOrgToHtml(documentText, { standalone: true }), title, containsMermaidSourceBlock(documentText));
 }
 
 async function exportActiveDocument(destinationOverride) {
@@ -346,8 +399,9 @@ async function exportActiveDocument(destinationOverride) {
 }
 
 class OrgPreviewManager {
-  constructor(ctx) {
+  constructor(ctx, indexService) {
     this.ctx = ctx;
+    this.indexService = indexService;
     this.panel = null;
     this.targetUri = null;
     this.pendingTimer = null;
@@ -394,7 +448,10 @@ class OrgPreviewManager {
     const doc = vscode.workspace.textDocuments.find((d) => d.uri.toString() === this.targetUri.toString());
     if (!doc) return;
 
-    const body = renderOrgToHtml(doc.getText());
+    const body = renderOrgToHtml(doc.getText(), {
+      workspaceQueriesAvailable: Boolean(this.indexService && this.indexService.enabled),
+      query: this.indexService ? (source) => this.indexService.query(source) : undefined
+    });
     const nonce = getNonce();
     const mermaidUri = this.panel.webview.asWebviewUri(
       vscode.Uri.joinPath(this.ctx.extensionUri, "media", MERMAID_FILE_NAME)
@@ -423,8 +480,12 @@ class OrgPreviewManager {
   }
 }
 
-function registerOrgPreview(ctx) {
-  const manager = new OrgPreviewManager(ctx);
+function registerOrgPreview(ctx, indexService) {
+  const manager = new OrgPreviewManager(ctx, indexService);
+
+  if (indexService && typeof indexService.onDidChange === "function") {
+    ctx.subscriptions.push(indexService.onDidChange(() => manager.scheduleRefresh()));
+  }
 
   ctx.subscriptions.push(
     vscode.commands.registerCommand("org-vscode.openPreview", () => manager.open(vscode.ViewColumn.One)),

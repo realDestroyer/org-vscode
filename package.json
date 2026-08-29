@@ -52,7 +52,11 @@
 		"onCommand:org-vscode.archiveSubtree",
 		"onCommand:org-vscode.clockIn",
 		"onCommand:org-vscode.clockOut",
-		"onCommand:org-vscode.updateClockTable"
+		"onCommand:org-vscode.updateClockTable",
+		"onCommand:org-vscode.rebuildWorkspaceIndex",
+		"onCommand:org-vscode.refreshPerspectives",
+		"onCommand:org-vscode.openIndexedHeading",
+		"onView:org-vscode.perspectives"
 	],
 	"keywords": [
 		"todo",
@@ -759,10 +763,98 @@
 					"order": 30.4,
 					"default": false,
 					"description": "When enabled, the org-vscode public API logs diagnostic detail (call stacks, known extension roots) to the Extension Host console when caller identification fails. Useful when filing bug reports against the external API."
+				},
+				"Org-vscode.workspaceIndex.enabled": {
+					"type": "boolean",
+					"order": 40,
+					"default": false,
+					"description": "Enable the private workspace heading index, query blocks, and saved perspectives."
+				},
+				"Org-vscode.workspaceIndex.persistence": {
+					"type": "boolean",
+					"order": 40.1,
+					"default": true,
+					"description": "Persist the heading-only index in VS Code global storage for faster startup. No index file is written into the workspace."
+				},
+				"Org-vscode.workspaceIndex.resultLimit": {
+					"type": "number",
+					"order": 40.2,
+					"default": 100,
+					"minimum": 1,
+					"maximum": 500,
+					"multipleOf": 1,
+					"description": "Maximum number of results returned by workspace queries and perspectives."
+				},
+				"Org-vscode.workspaceIndex.exclude": {
+					"type": "array",
+					"order": 40.3,
+					"default": [
+						"**/node_modules/**",
+						"**/.git/**",
+						"**/.vscode-test/**"
+					],
+					"items": { "type": "string" },
+					"description": "Additional glob patterns excluded from workspace index scans. Built-in exclusions always apply."
+				},
+				"Org-vscode.workspaceIndex.includeArchives": {
+					"type": "boolean",
+					"order": 40.4,
+					"default": false,
+					"description": "Include archive files and archive folders in the workspace heading index."
+				},
+				"Org-vscode.workspaceIndex.perspectives": {
+					"type": "array",
+					"order": 40.5,
+					"default": [],
+					"items": {
+						"type": "object",
+						"required": ["name", "query"],
+						"additionalProperties": false,
+						"properties": {
+							"name": { "type": "string", "minLength": 1 },
+							"query": { "type": "string" }
+						}
+					},
+					"description": "Named workspace queries shown in the Org Perspectives Explorer view."
 				}
 			}
 		},
+		"views": {
+			"explorer": [
+				{
+					"id": "org-vscode.perspectives",
+					"name": "Org Perspectives"
+				}
+			]
+		},
+		"viewsWelcome": [
+			{
+				"view": "org-vscode.perspectives",
+				"contents": "Workspace indexing is disabled. Enable Org-vscode.workspaceIndex.enabled in Settings.",
+				"when": "!config.Org-vscode.workspaceIndex.enabled"
+			},
+			{
+				"view": "org-vscode.perspectives",
+				"contents": "Add named queries to Org-vscode.workspaceIndex.perspectives in Settings.",
+				"when": "config.Org-vscode.workspaceIndex.enabled && !org-vscode.hasPerspectives"
+			}
+		],
 		"commands": [
+			{
+				"command": "org-vscode.rebuildWorkspaceIndex",
+				"category": "Org-vscode",
+				"title": "Rebuild Workspace Index"
+			},
+			{
+				"command": "org-vscode.refreshPerspectives",
+				"category": "Org-vscode",
+				"title": "Refresh Perspectives"
+			},
+			{
+				"command": "org-vscode.openIndexedHeading",
+				"category": "Org-vscode",
+				"title": "Open Indexed Heading"
+			},
 			{
 				"command": "extension.setFolderPath",
 				"category": "Org-vscode",

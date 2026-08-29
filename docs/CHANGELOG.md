@@ -10,10 +10,11 @@
 - **Priority cycling:** Added selection-aware forward and backward commands for cycling configurable Org priority cookies on star and configured Unicode headings.
 - **TODO transition notes:** Workflow states can opt into single-line note prompts with `notePrompt`. Prompted transitions write newest-first LOGBOOK entries using existing drawer settings, while cancellation and automation suppression preserve noninteractive behavior.
 - **Mermaid preview and export:** `#+BEGIN_SRC mermaid` blocks now render independently in live preview and standalone HTML export using the packaged Mermaid runtime, strict Mermaid security, local-only script loading, and readable source fallback when a diagram is malformed.
+- **Workspace index and declarative queries:** Added an opt-in, heading-only workspace index with privacy-local persistence, strict `#+BEGIN_QUERY` live-preview blocks, saved Explorer perspectives, archive/exclude controls, guarded local navigation, and deterministic capped results. Standalone exports never include private workspace query data. Addresses #125.
 
 `Tests`
 
-- Registered the previously dormant heading-folding unit suite and added cycle-plan, context-classification, command dispatch, priority, workflow-note normalization/formatting, Mermaid security/fallback, and extension-host coverage.
+- Registered the previously dormant heading-folding unit suite and added cycle-plan, context-classification, command dispatch, priority, workflow-note normalization/formatting, Mermaid security/fallback, workspace index/query grammar, schema, limits, deterministic ordering, injection safety, performance, preview escaping, and manifest coverage.
 
 
 # [2.2.34] 08-29-26
