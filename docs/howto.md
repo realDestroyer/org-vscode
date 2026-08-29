@@ -606,14 +606,6 @@ This is intentionally lightweight (not a full LaTeX renderer). For org-fragtog-s
 
 ## 📂 Open a File by Tags or Titles <a id="open-a-file-by-tags-or-titles"></a>
 
-Workspace heading link search can optionally match Chinese titles by Pinyin full spelling or initials without creating a persistent index:
-
-```json
-"Org-vscode.enablePinyinHeadingSearch": true
-```
-
-For example, `zhongwenbiaoti` or `zwbt` matches `中文标题`. Ordinary Latin and fuzzy QuickPick matching is unchanged when the option is disabled.
-
 You can open a file using either:
 
 * **`Org-vscode: Open By Title`**

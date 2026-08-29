@@ -4,7 +4,6 @@ const vscode = require("vscode");
 const crypto = require("crypto");
 const path = require("path");
 const { ensureIdInLines } = require("./orgProperties");
-const { buildPinyinAliases } = require("./pinyinHeadingSearch");
 const {
   ORG_FILE_GLOB,
   ORG_FILE_EXCLUDE_GLOB,
@@ -62,21 +61,16 @@ async function collectWorkspaceHeadingTargets() {
   return targets;
 }
 
-function createTargetPick(target, pinyinSearchEnabled = false) {
+function createTargetPick(target) {
   const relativePath = target.uri.scheme === "file"
     ? vscode.workspace.asRelativePath(target.uri, false)
     : path.basename(target.uri.path || target.uri.toString());
-  const pick = {
+  return {
     label: `$(symbol-namespace) ${target.title}`,
     description: `${relativePath}:${target.line + 1}`,
     detail: target.id ? `Existing ID: ${target.id}` : "An ID will be created",
     target
   };
-  if (pinyinSearchEnabled) {
-    const aliases = buildPinyinAliases(target.title, { enabled: true });
-    if (aliases.length) pick.detail += ` | Pinyin: ${aliases.join(" ")}`;
-  }
-  return pick;
 }
 
 async function chooseHeadingTarget(targetOverride) {
@@ -88,11 +82,8 @@ async function chooseHeadingTarget(targetOverride) {
     return null;
   }
 
-  const pinyinSearchEnabled = vscode.workspace
-    .getConfiguration("Org-vscode")
-    .get("enablePinyinHeadingSearch", false);
   const picks = targets
-    .map((target) => createTargetPick(target, pinyinSearchEnabled))
+    .map(createTargetPick)
     .sort((left, right) => left.label.localeCompare(right.label) || left.description.localeCompare(right.description));
   const picked = await vscode.window.showQuickPick(picks, {
     placeHolder: "Select an Org heading to link",

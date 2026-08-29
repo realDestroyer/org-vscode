@@ -730,12 +730,6 @@
 					"default": false,
 					"description": "Show configurable action links above Org headings. Files listed in disableSrcExecutionInPaths remain lens-free."
 				},
-				"Org-vscode.enablePinyinHeadingSearch": {
-					"type": "boolean",
-					"order": 8.19,
-					"default": false,
-					"description": "Add Pinyin full-spelling and initials aliases to workspace heading QuickPick search. Disabled by default and does not create a persistent index."
-				},
 				"Org-vscode.headingCodeLens.actions": {
 					"type": "array",
 					"order": 8.21,
@@ -1395,8 +1389,7 @@
 		"jsonc-parser": "^3.3.1",
 		"klaw": "^3.0.0",
 		"mermaid": "^11.17.2",
-		"moment": "^2.29.4",
-		"pinyin-pro": "^3.29.3"
+		"moment": "^2.29.4"
 	},
 	"__metadata": {
 		"installedTimestamp": 1764861597190,
