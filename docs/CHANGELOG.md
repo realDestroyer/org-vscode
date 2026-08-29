@@ -1,5 +1,17 @@
 # Change Log
 
+# [Unreleased]
+
+`Added / Enhanced`
+
+- **Unified heading link insertion:** Added **Org-vscode: Insert Link to Heading** (`Ctrl+Alt+L`, `Cmd+Alt+L` on macOS) with workspace heading search, duplicate-title disambiguation, automatic target `:ID:` creation, and canonical `[[id:...][title]]` insertion.
+- **Richer Org link navigation:** `file:path::*heading` and `file:path::#anchor` links now open and reveal their target. Heading, ID, classic target, and `CUSTOM_ID` navigation share one resolver, and workspace ID scans now include `.org_archive` files and dirty open documents.
+
+`Tests`
+
+- Added unit coverage for heading collection, ID-link formatting, and target resolution, plus extension-host coverage for cross-file ID persistence, same-document cursor stability, and file-search navigation.
+
+
 # [2.2.32] 08-29-26
 
 `Added / Enhanced`

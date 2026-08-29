@@ -87,6 +87,84 @@ suite('Command registration', function () {
     }
   });
 
+  test('Insert heading link creates a target ID and inserts the link', async () => {
+    const targetUri = vscode.Uri.file(path.join(
+      os.tmpdir(),
+      `org-vscode-link-target-${Date.now()}-${Math.random().toString(16).slice(2)}.org`
+    ));
+
+    try {
+      await vscode.workspace.fs.writeFile(targetUri, Buffer.from('* TODO Synthetic target\nTarget body\n', 'utf8'));
+      const source = await vscode.workspace.openTextDocument({ language: 'vso', content: 'See: ' });
+      const editor = await vscode.window.showTextDocument(source);
+      editor.selection = new vscode.Selection(new vscode.Position(0, 5), new vscode.Position(0, 5));
+
+      await vscode.commands.executeCommand('org-vscode.insertHeadingLink', { uri: targetUri, line: 0 });
+
+      const targetText = Buffer.from(await vscode.workspace.fs.readFile(targetUri)).toString('utf8');
+      const id = targetText.match(/^\s*:ID:\s*(\S+)\s*$/m)?.[1];
+      assert.ok(id, 'Selected target should receive an ID property');
+      assert.strictEqual(editor.document.getText(), `See: [[id:${id}][Synthetic target]]`);
+    } finally {
+      await vscode.workspace.fs.delete(targetUri, { useTrash: false }).then(undefined, () => undefined);
+    }
+  });
+
+  test('Insert heading link preserves the insertion point in the target document', async () => {
+    const document = await vscode.workspace.openTextDocument({
+      language: 'vso',
+      content: '* TODO Local target\nBody\n\nRelated: '
+    });
+    const editor = await vscode.window.showTextDocument(document);
+    const insertion = new vscode.Position(3, 'Related: '.length);
+    editor.selection = new vscode.Selection(insertion, insertion);
+
+    await vscode.commands.executeCommand('org-vscode.insertHeadingLink', { uri: document.uri, line: 0 });
+
+    const output = editor.document.getText();
+    const id = output.match(/^\s*:ID:\s*(\S+)\s*$/m)?.[1];
+    assert.ok(id, 'Local target should receive an ID property');
+    assert.ok(output.endsWith(`Related: [[id:${id}][Local target]]`));
+  });
+
+  test('File search links reveal headings in another Org file', async () => {
+    const targetUri = vscode.Uri.file(path.join(
+      os.tmpdir(),
+      `org-vscode-file-link-${Date.now()}-${Math.random().toString(16).slice(2)}.org_archive`
+    ));
+    const sourceUri = vscode.Uri.file(path.join(
+      os.tmpdir(),
+      `org-vscode-file-link-source-${Date.now()}-${Math.random().toString(16).slice(2)}.org`
+    ));
+
+    try {
+      await vscode.workspace.fs.writeFile(targetUri, Buffer.from('* TODO Destination heading\nBody\n', 'utf8'));
+      const sourceContent = `* Source\n[[file:${path.basename(targetUri.fsPath)}::*Destination heading]]\n`;
+      await vscode.workspace.fs.writeFile(sourceUri, Buffer.from(sourceContent, 'utf8'));
+      const source = await vscode.workspace.openTextDocument(sourceUri);
+      await vscode.window.showTextDocument(source);
+
+      const links = await vscode.commands.executeCommand('vscode.executeLinkProvider', sourceUri);
+      assert.ok(
+        links.some((link) => link.target?.scheme === 'command' && link.target.toString().includes('followOrgLink')),
+        'File search suffix should resolve through the Org link navigation command'
+      );
+
+      await vscode.commands.executeCommand('org-vscode.followOrgLink', {
+        type: 'file-search',
+        file: `file:${path.basename(targetUri.fsPath)}`,
+        search: '*Destination heading'
+      });
+
+      assert.strictEqual(vscode.window.activeTextEditor.document.uri.toString(), targetUri.toString());
+      assert.strictEqual(vscode.window.activeTextEditor.selection.active.line, 0);
+    } finally {
+      await vscode.commands.executeCommand('workbench.action.closeActiveEditor');
+      await vscode.workspace.fs.delete(targetUri, { useTrash: false }).then(undefined, () => undefined);
+      await vscode.workspace.fs.delete(sourceUri, { useTrash: false }).then(undefined, () => undefined);
+    }
+  });
+
   test('Migrate file to v2 rewrites legacy constructs', async () => {
     const ext = vscode.extensions.getExtension('realDestroyer.org-vscode');
     assert.ok(ext, 'Extension realDestroyer.org-vscode not found in test host');

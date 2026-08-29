@@ -64,7 +64,7 @@ async function collectWorkspaceIds() {
   }
 
   workspaceIdCache.inFlight = (async () => {
-    const patterns = "**/*.{org,vsorg,vso}";
+    const patterns = "**/*.{org,org_archive,vsorg,vso}";
     const exclude = "**/{node_modules,.vscode-test}/**";
     const files = await vscode.workspace.findFiles(patterns, exclude);
 

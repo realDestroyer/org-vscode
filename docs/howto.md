@@ -406,6 +406,9 @@ Priority: [#A]
 
 - Follow `[[links]]` with Ctrl+Click (Windows/Linux) / Cmd+Click (Mac).
 - Type `[[` (or `[[id:`) to get link completions.
+- Run **Org-vscode: Insert Link to Heading** (`Ctrl+Alt+L`, or `Cmd+Alt+L` on macOS) to search headings across the workspace and insert a stable `id:` link.
+  - If the target has no `:ID:`, Org-vscode creates one in its property drawer.
+  - Clean cross-file targets are saved so the new link resolves immediately. Existing dirty target buffers remain dirty and are not auto-saved.
 
 Optional UI enhancement:
 
@@ -418,6 +421,8 @@ Examples:
 ```org
 [[https://example.com][External link]]
 [[file:./notes.org][Local file]]
+[[file:./notes.org::*A Heading][Heading in another file]]
+[[file:./notes.org::#demo-anchor][Anchor in another file]]
 [[*A Heading In This File]]
 [[id:01234567-89ab-cdef-0123-456789abcdef]]
 [[#demo-anchor]]

@@ -57,6 +57,7 @@ const { registerOrgEmphasisDecorations } = require("./orgEmphasisDecorations");
 const { registerMathDecorations } = require("./mathDecorations");
 const { registerHeadingScheduledDecorations, registerHeadingDeadlineDecorations, registerHeadingClosedDecorations } = require("./headingScheduledDecorations");
 const { registerOrgLinkProvider } = require("./orgLinkProvider");
+const { registerOrgLinkCommands } = require("./orgLinkCommands");
 const { registerOrgLinkDecorations } = require("./orgLinkDecorations");
 const { registerOrgSymbolProvider } = require("./orgSymbolProvider");
 const { registerOrgFoldingProvider } = require("./orgFoldingProvider");
@@ -235,6 +236,9 @@ function activate(ctx) {
 
   // Emacs-like property drawer commands (set/get/delete)
   registerPropertyCommands(ctx);
+
+  // Search workspace headings, ensure stable IDs, and insert canonical links.
+  registerOrgLinkCommands(ctx);
 
   // Date format changes are not auto-applied to existing files because swapping
   // MM-DD and DD-MM can be ambiguous (e.g. 04-05-2026). Provide an explicit command instead.

@@ -23,6 +23,7 @@
 		"onCommand:org-vscode.openPreview",
 		"onCommand:org-vscode.openPreviewToSide",
 		"onCommand:org-vscode.exportHtml",
+		"onCommand:org-vscode.insertHeadingLink",
 		"onCommand:extension.viewAgenda",
 		"onCommand:extension.migrateFileToV2",
 		"onCommand:extension.createVsoFile",
@@ -764,6 +765,12 @@
 				"title": "Get or Create ID"
 			},
 			{
+				"command": "org-vscode.insertHeadingLink",
+				"category": "Org-vscode",
+				"title": "Insert Link to Heading",
+				"icon": "$(link)"
+			},
+			{
 				"command": "org-vscode.setRepeater",
 				"category": "Org-vscode",
 				"title": "Set Repeater..."
@@ -1011,6 +1018,12 @@
 				"when": "(editorLangId == 'vso' || editorLangId == 'org' || editorLangId == 'vsorg' || editorLangId == 'org-vscode') && editorTextFocus"
 			},
 			{
+				"command": "org-vscode.insertHeadingLink",
+				"key": "ctrl+alt+l",
+				"mac": "cmd+alt+l",
+				"when": "(editorLangId == 'vso' || editorLangId == 'org' || editorLangId == 'vsorg' || editorLangId == 'org-vscode') && editorTextFocus"
+			},
+			{
 				"command": "org-vscode.insertNewElement",
 				"key": "alt+enter",
 				"when": "(editorLangId == 'vso' || editorLangId == 'org' || editorLangId == 'vsorg' || editorLangId == 'org-vscode') && editorTextFocus"
@@ -1162,6 +1175,11 @@
 				{
 					"command": "org-vscode.exportHtml",
 					"group": "navigation@21",
+					"when": "editorLangId == 'vso'"
+				},
+				{
+					"command": "org-vscode.insertHeadingLink",
+					"group": "navigation@22",
 					"when": "editorLangId == 'vso'"
 				}
 			],
