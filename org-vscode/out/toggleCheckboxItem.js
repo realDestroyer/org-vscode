@@ -5,7 +5,7 @@ const { computeCheckboxToggleEdits, computeCheckboxBulkToggleEdits } = require("
 
 function toggleCheckboxItemAtCursor() {
   const editor = vscode.window.activeTextEditor;
-  if (!editor || !editor.document || editor.document.languageId !== "vso") {
+  if (!editor || !editor.document || !["vso", "org", "vsorg", "org-vscode"].includes(editor.document.languageId)) {
     return;
   }
 
@@ -40,7 +40,7 @@ function toggleCheckboxItemAtCursor() {
     return;
   }
 
-  editor.edit((editBuilder) => {
+  return editor.edit((editBuilder) => {
     for (const e of edits) {
       if (e.lineIndex < 0 || e.lineIndex >= doc.lineCount) continue;
       editBuilder.replace(doc.lineAt(e.lineIndex).range, e.newText);

@@ -31,6 +31,8 @@
 		"onCommand:org-vscode.cycleVisibilityBackward",
 		"onCommand:org-vscode.cycleGlobalVisibility",
 		"onCommand:org-vscode.cycleGlobalVisibilityBackward",
+		"onCommand:org-vscode.contextAction",
+		"onCommand:org-vscode.insertStructureAtEnd",
 		"onCommand:extension.viewAgenda",
 		"onCommand:extension.migrateFileToV2",
 		"onCommand:extension.createVsoFile",
@@ -813,6 +815,16 @@
 				"title": "Cycle Global Visibility Backward"
 			},
 			{
+				"command": "org-vscode.contextAction",
+				"category": "Org-vscode",
+				"title": "Execute Context Action"
+			},
+			{
+				"command": "org-vscode.insertStructureAtEnd",
+				"category": "Org-vscode",
+				"title": "Insert Structure at End"
+			},
+			{
 				"command": "org-vscode.setRepeater",
 				"category": "Org-vscode",
 				"title": "Set Repeater..."
@@ -1054,6 +1066,12 @@
 			}
 		],
 		"keybindings": [
+			{
+				"command": "org-vscode.insertStructureAtEnd",
+				"key": "ctrl+enter",
+				"mac": "cmd+enter",
+				"when": "(editorLangId == 'vso' || editorLangId == 'org' || editorLangId == 'vsorg' || editorLangId == 'org-vscode') && editorTextFocus && !editorHasSelection"
+			},
 			{
 				"command": "org-vscode.cycleVisibility",
 				"key": "tab",

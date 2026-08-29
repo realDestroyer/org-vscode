@@ -24,12 +24,13 @@ const ORDERED_LIST_ITEM_REGEX = /^(\s*)(\d+)([.)])\s+(.*)$/;
 
 const CHECKBOX_ITEM_REGEX = /^(\s*)((?:[-+])|(?:\d+[.)]))\s+\[( |x|X|-)\]\s*(.*)$/;
 const TABLE_ROW_REGEX = /^(\s*)\|/;
+const DEFAULT_UNICODE_MARKERS = ["⊙", "⊘", "⊖", "⊜", "⊗"];
 
 function isOrgLanguageId(languageId) {
   return ORG_LANG_IDS.has(String(languageId || ""));
 }
 
-function parseHeadingLineForInsert(text) {
+function parseHeadingLineForInsert(text, unicodeMarkers = DEFAULT_UNICODE_MARKERS) {
   const s = String(text || "");
 
   const star = s.match(STAR_HEADING_REGEX);
@@ -45,6 +46,12 @@ function parseHeadingLineForInsert(text) {
     const symbol = uni[2] || "⊙";
     const level = Math.floor(leading.length / 2) + 1;
     return { kind: "heading", style: "unicode", level, leading, marker: symbol };
+  }
+
+  const leading = s.match(/^\s*/)?.[0] || "";
+  const marker = unicodeMarkers.find((candidate) => s.slice(leading.length).startsWith(`${candidate} `));
+  if (marker) {
+    return { kind: "heading", style: "unicode", level: Math.floor(leading.length / 2) + 1, leading, marker };
   }
 
   return null;
@@ -87,12 +94,12 @@ function countOrgTableColumns(lineText) {
   return Math.max(1, parts.length - 2);
 }
 
-function isHeadingLine(text) {
-  return Boolean(parseHeadingLineForInsert(text));
+function isHeadingLine(text, unicodeMarkers) {
+  return Boolean(parseHeadingLineForInsert(text, unicodeMarkers));
 }
 
-function getHeadingLevel(text) {
-  const parsed = parseHeadingLineForInsert(text);
+function getHeadingLevel(text, unicodeMarkers) {
+  const parsed = parseHeadingLineForInsert(text, unicodeMarkers);
   return parsed ? Math.max(1, parsed.level) : null;
 }
 
@@ -105,14 +112,14 @@ function getIndentLength(text) {
   return m ? m[0].length : 0;
 }
 
-function findHeadingSubtreeEndExclusive(lines, headingLineIndex, headingLevel) {
+function findHeadingSubtreeEndExclusive(lines, headingLineIndex, headingLevel, unicodeMarkers) {
   const safeLines = Array.isArray(lines) ? lines : [];
   const start = Math.max(0, Number(headingLineIndex) || 0);
   const level = Math.max(1, Number(headingLevel) || 1);
 
   for (let i = start + 1; i < safeLines.length; i++) {
     const l = safeLines[i];
-    const lvl = getHeadingLevel(l);
+    const lvl = getHeadingLevel(l, unicodeMarkers);
     if (lvl != null && lvl <= level) {
       return i;
     }
@@ -121,14 +128,14 @@ function findHeadingSubtreeEndExclusive(lines, headingLineIndex, headingLevel) {
   return safeLines.length;
 }
 
-function findListItemSubtreeEndExclusive(lines, listLineIndex, baseIndent) {
+function findListItemSubtreeEndExclusive(lines, listLineIndex, baseIndent, unicodeMarkers) {
   const safeLines = Array.isArray(lines) ? lines : [];
   const start = Math.max(0, Number(listLineIndex) || 0);
   const indent = Math.max(0, Number(baseIndent) || 0);
 
   for (let i = start + 1; i < safeLines.length; i++) {
     const l = safeLines[i];
-    if (isHeadingLine(l)) {
+    if (isHeadingLine(l, unicodeMarkers)) {
       return i;
     }
     if (isListItemLine(l) && getIndentLength(l) <= indent) {
@@ -139,15 +146,15 @@ function findListItemSubtreeEndExclusive(lines, listLineIndex, baseIndent) {
   return safeLines.length;
 }
 
-function findNearestHeadingLineIndex(lines, fromLineIndex) {
+function findNearestHeadingLineIndex(lines, fromLineIndex, unicodeMarkers) {
   const safeLines = Array.isArray(lines) ? lines : [];
   for (let i = Math.max(0, Number(fromLineIndex) || 0); i >= 0; i--) {
-    if (isHeadingLine(safeLines[i])) return i;
+    if (isHeadingLine(safeLines[i], unicodeMarkers)) return i;
   }
   return null;
 }
 
-function computeSmartInsertNewElement(lines, cursorLineIndex) {
+function computeSmartInsertNewElement(lines, cursorLineIndex, unicodeMarkers) {
   const safeLines = Array.isArray(lines) ? lines : [];
   const lineIndex = Math.max(0, Number(cursorLineIndex) || 0);
   const current = safeLines[lineIndex] ?? "";
@@ -169,7 +176,7 @@ function computeSmartInsertNewElement(lines, cursorLineIndex) {
   // 2) List item: insert a new sibling item after this item's subtree.
   const list = parseListItemForInsert(current);
   if (list) {
-    const subtreeEnd = findListItemSubtreeEndExclusive(safeLines, lineIndex, list.leading.length);
+    const subtreeEnd = findListItemSubtreeEndExclusive(safeLines, lineIndex, list.leading.length, unicodeMarkers);
     const bullet = list.bullet;
     const newLineText = list.isCheckbox
       ? `${list.leading}${bullet} [ ] `
@@ -183,9 +190,9 @@ function computeSmartInsertNewElement(lines, cursorLineIndex) {
   }
 
   // 3) Heading line: insert new sibling heading after this subtree.
-  const heading = parseHeadingLineForInsert(current);
+  const heading = parseHeadingLineForInsert(current, unicodeMarkers);
   if (heading) {
-    const subtreeEnd = findHeadingSubtreeEndExclusive(safeLines, lineIndex, heading.level);
+    const subtreeEnd = findHeadingSubtreeEndExclusive(safeLines, lineIndex, heading.level, unicodeMarkers);
     const newLineText = `${heading.leading}${heading.marker} `;
     return {
       insertBeforeLineIndex: subtreeEnd,
@@ -195,11 +202,11 @@ function computeSmartInsertNewElement(lines, cursorLineIndex) {
   }
 
   // 4) Plain text: use nearest heading context if present.
-  const nearestHeading = findNearestHeadingLineIndex(safeLines, lineIndex);
+  const nearestHeading = findNearestHeadingLineIndex(safeLines, lineIndex, unicodeMarkers);
   if (nearestHeading != null) {
-    const h = parseHeadingLineForInsert(safeLines[nearestHeading]);
+    const h = parseHeadingLineForInsert(safeLines[nearestHeading], unicodeMarkers);
     if (h) {
-      const subtreeEnd = findHeadingSubtreeEndExclusive(safeLines, nearestHeading, h.level);
+      const subtreeEnd = findHeadingSubtreeEndExclusive(safeLines, nearestHeading, h.level, unicodeMarkers);
       const newLineText = `${h.leading}${h.marker} `;
       return {
         insertBeforeLineIndex: subtreeEnd,
@@ -257,7 +264,9 @@ async function insertNewElement() {
   const cursorLine = editor.selection.active.line;
   const lines = doc.getText().split(/\r?\n/);
 
-  const plan = computeSmartInsertNewElement(lines, cursorLine);
+  const taskKeywordManager = require("./taskKeywordManager");
+  const markers = taskKeywordManager.getWorkflowRegistry().states.map((state) => state.marker).filter(Boolean);
+  const plan = computeSmartInsertNewElement(lines, cursorLine, markers);
   if (!plan || !plan.newLineText) {
     return;
   }

@@ -27,7 +27,7 @@ module.exports = async function () {
   await vscode.commands.executeCommand("workbench.action.files.save");
 
   const { activeTextEditor } = vscode.window;
-  if (!activeTextEditor || activeTextEditor.document.languageId !== "vso") return;
+  if (!activeTextEditor || !["vso", "org", "vsorg", "org-vscode"].includes(activeTextEditor.document.languageId)) return;
 
   const config = vscode.workspace.getConfiguration("Org-vscode");
   const headingMarkerStyle = config.get("headingMarkerStyle", "unicode");

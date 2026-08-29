@@ -22,6 +22,7 @@
 * [🔎 Org syntax + links](#org-syntax--links)
 * [↔️ Subtree structure and refile](#subtree-structure-and-refile)
 * [Heading visibility cycling](#heading-visibility-cycling)
+* [Context action and structural insertion](#context-action-and-structural-insertion)
 * [🧾 Properties & IDs](#properties--ids)
 * [🪟 Preview (Live HTML/Markdown/etc.)](#preview-live-html)
 * [∑ Math Symbol Decorations](#math-symbol-decorations)
@@ -451,6 +452,14 @@ Refile preserves body text and relative child levels, adjusts the moved root ben
 With the cursor on a heading, press `Tab` to rotate its display through folded, direct children, and the complete subtree. Press `Shift+Tab` on a heading to cycle the same three states across the document. The Command Palette also exposes forward and backward local/global visibility commands.
 
 On body text, lists, tables, selections, suggestion widgets, and rename inputs, Org-vscode leaves Tab handling to VS Code.
+
+---
+
+## Context action and structural insertion <a id="context-action-and-structural-insertion"></a>
+
+Run `Org-vscode: Execute Context Action` (or assign it a personal keybinding) to act at the cursor: toggle a checkbox marker, follow a link, advance a timestamp, cycle a heading workflow state, or insert the next list/table structure. No default chord is assigned because Org's traditional `Ctrl+C Ctrl+C` chord would override VS Code's Copy command.
+
+Press `Ctrl+Enter` (`Cmd+Enter` on macOS) to insert a matching sibling after the current heading subtree, list-item subtree, checkbox item, or table row.
 
 ---
 
