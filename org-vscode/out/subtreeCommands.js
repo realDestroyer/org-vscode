@@ -4,6 +4,7 @@ const vscode = require("vscode");
 const path = require("path");
 const { collectWorkspaceHeadingTargets } = require("./orgLinkCommands");
 const { collectHeadingTargets } = require("./orgLinkTargets");
+const taskKeywordManager = require("./taskKeywordManager");
 const {
   computeRefilePlan,
   computeSubtreeLevelResult
@@ -19,8 +20,15 @@ function getLines(document) {
 
 function getSpacesPerLevel() {
   const raw = vscode.workspace.getConfiguration("Org-vscode").get("adjustHeadingIndentation", 2);
-  if (typeof raw === "boolean") return raw ? 2 : 1;
-  return Math.max(1, Math.floor(Number(raw) || 2));
+  if (typeof raw === "boolean") return raw ? 2 : 0;
+  const numeric = Number(raw);
+  return Number.isFinite(numeric) ? Math.max(0, Math.floor(numeric)) : 2;
+}
+
+function getUnicodeMarkers() {
+  return taskKeywordManager.getWorkflowRegistry().states
+    .map((state) => state.marker)
+    .filter((marker) => typeof marker === "string" && marker.length > 0);
 }
 
 function getWholeDocumentRange(document) {
@@ -47,7 +55,8 @@ async function changeSubtreeLevel(delta) {
     getLines(editor.document),
     editor.selection.active.line,
     delta,
-    getSpacesPerLevel()
+    getSpacesPerLevel(),
+    getUnicodeMarkers()
   );
   if (!result) {
     vscode.window.showWarningMessage(delta < 0
@@ -107,7 +116,15 @@ async function refileSubtree(targetOverride) {
 
   const sourceDocument = sourceEditor.document;
   const sourceLines = getLines(sourceDocument);
-  const preliminary = computeSubtreeLevelResult(sourceLines, sourceEditor.selection.active.line, 1, getSpacesPerLevel());
+  const sourceVersion = sourceDocument.version;
+  const sourceCursorLine = sourceEditor.selection.active.line;
+  const preliminary = computeSubtreeLevelResult(
+    sourceLines,
+    sourceCursorLine,
+    1,
+    getSpacesPerLevel(),
+    getUnicodeMarkers()
+  );
   if (!preliminary) {
     vscode.window.showWarningMessage("Org-vscode: No movable subtree found at the cursor.");
     return false;
@@ -121,11 +138,26 @@ async function refileSubtree(targetOverride) {
   );
   if (!target) return false;
 
-  const targetDocument = await vscode.workspace.openTextDocument(target.uri);
+  if (sourceDocument.version !== sourceVersion) {
+    vscode.window.showWarningMessage("Org-vscode: The source changed while selecting a target. Run Refile Subtree again.");
+    return false;
+  }
+
+  let targetDocument;
+  try {
+    targetDocument = await vscode.workspace.openTextDocument(target.uri);
+  } catch {
+    vscode.window.showWarningMessage("Org-vscode: The selected refile target could not be opened.");
+    return false;
+  }
+  if (!isOrgDocument(targetDocument)) {
+    vscode.window.showWarningMessage("Org-vscode: Refile targets must be Org documents.");
+    return false;
+  }
   const targetLines = getLines(targetDocument);
   const currentTarget = collectHeadingTargets(targetLines, targetDocument.uri)
     .find((candidate) => candidate.line === target.line);
-  if (!currentTarget) {
+  if (!currentTarget || (target.title && currentTarget.title !== target.title)) {
     vscode.window.showWarningMessage("Org-vscode: The selected refile target no longer exists.");
     return false;
   }
@@ -133,11 +165,12 @@ async function refileSubtree(targetOverride) {
   const sameDocument = sourceDocument.uri.toString() === targetDocument.uri.toString();
   const plan = computeRefilePlan(
     sourceLines,
-    sourceEditor.selection.active.line,
+    sourceCursorLine,
     targetLines,
     currentTarget.line,
     sameDocument,
-    getSpacesPerLevel()
+    getSpacesPerLevel(),
+    getUnicodeMarkers()
   );
   if (!plan) {
     vscode.window.showWarningMessage("Org-vscode: A subtree cannot be refiled into itself or one of its descendants.");

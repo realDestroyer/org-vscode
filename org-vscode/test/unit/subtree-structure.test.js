@@ -21,6 +21,16 @@ function testUnicodeSubtreeUsesConfiguredIndentation() {
   assert.deepStrictEqual(result.updatedLines, ['⊖ Parent', '    ⊙ Child', '      ⊘ Grandchild', '⊖ Sibling']);
 }
 
+function testUnicodeSubtreeSupportsConfiguredMarkers() {
+  const lines = ['! Parent', '  ~ Child', '! Sibling'];
+  const result = computeSubtreeLevelResult(lines, 1, 1, 2, ['!', '~']);
+  assert.deepStrictEqual(result.updatedLines, ['! Parent', '    ~ Child', '! Sibling']);
+}
+
+function testUnicodeSubtreeHonorsDisabledLevelAdjustment() {
+  assert.strictEqual(computeSubtreeLevelResult(['! Parent'], 0, 1, 0, ['!']), null);
+}
+
 function testPromotionRejectsTopLevelUnderflow() {
   assert.strictEqual(computeSubtreeLevelResult(['* Parent', '** Child'], 0, -1), null);
 }
@@ -53,6 +63,8 @@ module.exports = {
   run: () => {
     testPromoteAndDemoteWholeStarSubtree();
     testUnicodeSubtreeUsesConfiguredIndentation();
+    testUnicodeSubtreeSupportsConfiguredMarkers();
+    testUnicodeSubtreeHonorsDisabledLevelAdjustment();
     testPromotionRejectsTopLevelUnderflow();
     testRefileRelevelsAndPreservesContent();
     testRefileExcludesFinalNewlineSentinels();
