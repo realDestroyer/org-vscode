@@ -1,6 +1,6 @@
 ﻿# Roadmap
 
-Live version: 2.2.34
+Live version: 2.3.0
 
 These are the features that I have either already implemented, or plan to in the near future.
 
@@ -20,12 +20,12 @@ These are the features that I have either already implemented, or plan to in the
 | Clocktable syntax scopes + customizer support | Add dedicated clocktable token scopes and expose independent Syntax Color Customizer controls (including background colors). | DONE | v2.2.23 | realDestroyer |
 | Agenda View: deadlines + undated | Agenda View includes DEADLINE-only tasks and an optional (default-on) `[UNDATED]` section for tasks with no dates. | DONE | v2.2.14 | realDestroyer |
 | Agenda View: recently closed | Add an Agenda View tab/filter that shows recently completed tasks, bucketed by `CLOSED` date (daily groups). Should interpret `CLOSED:` stamps and LOGBOOK entries for repeated tasks so the most recent completion is used. | DONE | v2.2.17 | realDestroyer |
-| Embedded Query Blocks | Support an in-file `#+BEGIN_QUERY ... #+END_QUERY` block that renders a live/updatable list of matching headings (workspace-wide) into the preview (Org-QL/Dataview-style). | DONE (Unreleased) | Next bundled release | realDestroyer |
-| Workspace Index Cache (Optional) | Optional privacy-local JSON index for heading lookup, declarative query blocks, and saved Explorer perspectives. Addresses [#125](https://github.com/realDestroyer/org-vscode/issues/125). | DONE (Unreleased) | Next bundled release | realDestroyer |
-| Context Action + Structural Insert | Context-aware checkbox/link/timestamp/heading/list/table actions plus end-of-structure insertion. | DONE (Unreleased) | Next bundled release | realDestroyer |
-| Heading CodeLens Actions | Optional CodeLens above headings for common operations (toggle TODO, schedule/deadline, set tags/properties, promote/demote) without memorizing keybindings. | DONE (Unreleased) | Next bundled release | realDestroyer |
-| Priority cycling + TODO transition notes | Cycle configurable `[#A]`-style priorities and optionally prompt for LOGBOOK notes when entering selected workflow states. Addresses [#134](https://github.com/realDestroyer/org-vscode/issues/134). | DONE (Unreleased) | Next bundled release | realDestroyer |
-| Mermaid Preview + Standalone Export | Render `#+BEGIN_SRC mermaid` blocks securely in live preview and self-contained offline HTML exports with per-diagram source fallback. Addresses [#135](https://github.com/realDestroyer/org-vscode/issues/135). | DONE (Unreleased) | Next bundled release | realDestroyer |
+| Embedded Query Blocks | Support an in-file `#+BEGIN_QUERY ... #+END_QUERY` block that renders a live/updatable list of matching headings (workspace-wide) into the preview (Org-QL/Dataview-style). | DONE | v2.3.0 | realDestroyer |
+| Workspace Index Cache (Optional) | Optional privacy-local JSON index for heading lookup, declarative query blocks, and saved Explorer perspectives. Addresses [#125](https://github.com/realDestroyer/org-vscode/issues/125). | DONE | v2.3.0 | realDestroyer |
+| Context Action + Structural Insert | Context-aware checkbox/link/timestamp/heading/list/table actions plus end-of-structure insertion. | DONE | v2.3.0 | realDestroyer |
+| Heading CodeLens Actions | Optional CodeLens above headings for common operations (toggle TODO, schedule/deadline, set tags/properties, promote/demote) without memorizing keybindings. | DONE | v2.3.0 | realDestroyer |
+| Priority cycling + TODO transition notes | Cycle configurable `[#A]`-style priorities and optionally prompt for LOGBOOK notes when entering selected workflow states. Addresses [#134](https://github.com/realDestroyer/org-vscode/issues/134). | DONE | v2.3.0 | realDestroyer |
+| Mermaid Preview + Standalone Export | Render `#+BEGIN_SRC mermaid` blocks securely in live preview and self-contained offline HTML exports with per-diagram source fallback. Addresses [#135](https://github.com/realDestroyer/org-vscode/issues/135). | DONE | v2.3.0 | realDestroyer |
 | Export Current File to HTML | Export the current Org document to a standalone HTML file using the existing preview renderer and a save dialog that defaults beside the source file. | DONE | v2.2.32 | realDestroyer |
 | `.org_archive` File Support | Recognize `.org_archive` files as Org documents for language mode, preview, navigation, and commands. | DONE | v2.2.32 | realDestroyer |
 | Unified Heading Link Insertion | Search workspace headings, create stable target IDs when needed, insert canonical ID links, and resolve heading/anchor searches in linked files. | DONE | v2.2.33 | realDestroyer |
@@ -40,7 +40,7 @@ These are the features that I have either already implemented, or plan to in the
 | Bulleted Lists            | Make an ordered or unordered list                                                          | In Progress |          | realDestroyer |
 | TODO Tracking             | Show TODO completion on the up-most level                                                  | In Progress |          | realDestroyer |
 | JIRA Integration          | Allow tasks to be pushed to JIRA (Epic, Story, Issues, sub-tasks, etc.)                    | In Progress |          | realDestroyer |
-| Smart TAB folding behavior | Context-aware local and document-wide heading visibility cycling while preserving native Tab behavior outside headings. | DONE (Unreleased) | Next bundled release | realDestroyer |
+| Smart TAB folding behavior | Context-aware local and document-wide heading visibility cycling while preserving native Tab behavior outside headings. | DONE | v2.3.0 | realDestroyer |
 | Insert link utilities | Insert link command + richer link editing utilities | Not Started | v2.3.0 | realDestroyer |
 | LOGBOOK drawer logging | Optional Org-style state-change history entries written into a drawer (default: `LOGBOOK`) on completion transitions. | DONE | v2.2.9 | realDestroyer |
 | Agenda View performance | Improve Agenda View load times on large `.org` files (faster parsing + caching + lazy rendering). | DONE | v2.2.9 | realDestroyer |

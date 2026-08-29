@@ -2,6 +2,8 @@
 
 # Unreleased
 
+# [2.3.0] 08-29-26
+
 `Added / Enhanced`
 
 - **Heading CodeLens actions:** Added optional, configurable action links above headings for TODO state, scheduling, deadlines, tags, properties, promotion, demotion, and refiling. Lenses reuse existing commands and are suppressed on source-execution-denied files.

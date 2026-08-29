@@ -154,7 +154,7 @@ function testAllContributedCommandsAreRegistered() {
     assert.ok(registered.has('extension.toggleCheckboxCookie'), 'statistics cookie command must be registered');
 
     const manifest = getPackageManifest(packageJsonRoot);
-    assert.strictEqual(manifest.version, '2.2.34', 'feature work must preserve the current release version');
+    assert.strictEqual(manifest.version, '2.3.0', 'manifest must match the consolidated release version');
     const settings = manifest.contributes.configuration.properties;
     assert.strictEqual(settings['Org-vscode.workspaceIndex.enabled'].default, false);
     assert.strictEqual(settings['Org-vscode.workspaceIndex.persistence'].default, true);
