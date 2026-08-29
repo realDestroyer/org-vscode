@@ -143,6 +143,7 @@ function testAllContributedCommandsAreRegistered() {
     assert.ok(registered.has('org-vscode.insertTable'), 'org-vscode.insertTable must be registered');
     assert.ok(registered.has('org-vscode.exportCurrentTasks'), 'org-vscode.exportCurrentTasks must be registered');
     assert.ok(registered.has('org-vscode.exportHtml'), 'standalone HTML export command must be registered');
+    assert.ok(registered.has('org-vscode.insertHeadingLink'), 'heading link insertion command must be registered');
     assert.ok(registered.has('extension.toggleCheckboxCookie'), 'statistics cookie command must be registered');
 
     const manifest = getPackageManifest(packageJsonRoot);
@@ -151,6 +152,10 @@ function testAllContributedCommandsAreRegistered() {
     assert.ok(
       manifest.activationEvents.includes('onCommand:org-vscode.exportHtml'),
       'standalone HTML export must activate the extension'
+    );
+    assert.ok(
+      manifest.activationEvents.includes('onCommand:org-vscode.insertHeadingLink'),
+      'heading link insertion must activate the extension'
     );
     assert.ok(
       (manifest.contributes.menus['editor/title'] || []).some((item) => item.command === 'org-vscode.exportHtml'),

@@ -3,6 +3,13 @@
 const vscode = require("vscode");
 const path = require("path");
 const { linkTypeRegistry } = require("./api/linkTypeRegistry");
+const {
+  ORG_FILE_GLOB,
+  ORG_FILE_EXCLUDE_GLOB,
+  findOrgTargetLine,
+  parseFileLinkTarget,
+  parseFileSearch
+} = require("./orgLinkTargets");
 
 function parseBracketLink(text) {
   // Supports: [[link][desc]] and [[link]]
@@ -53,7 +60,15 @@ function getDocumentLinks(document) {
     if (/^https?:\/\//i.test(linkTarget) || /^mailto:/i.test(linkTarget)) {
       target = vscode.Uri.parse(linkTarget);
     } else if (/^file:/i.test(linkTarget)) {
-      target = normalizeFileLinkTarget(document.uri, linkTarget);
+      const fileLink = parseFileLinkTarget(linkTarget);
+      const searchTarget = parseFileSearch(fileLink?.search);
+      target = searchTarget
+        ? buildCommandUri("org-vscode.followOrgLink", {
+            type: "file-search",
+            file: fileLink.fileTarget,
+            search: fileLink.search
+          })
+        : normalizeFileLinkTarget(document.uri, fileLink?.fileTarget || linkTarget);
     } else if (/^id:/i.test(linkTarget)) {
       target = buildCommandUri("org-vscode.followOrgLink", { type: "id", id: linkTarget.slice(3).trim() });
     } else if (/^\*/.test(linkTarget)) {
@@ -134,45 +149,31 @@ async function followOrgLink(args) {
 
   if (payload.type === "heading" && payload.heading) {
     const target = String(payload.heading).trim();
-    for (let i = 0; i < document.lineCount; i++) {
-      const text = document.lineAt(i).text;
-      const star = text.match(/^\s*\*+\s+(.*)$/);
-      if (!star) continue;
-      const title = star[1].replace(/\s+:(?:[A-Za-z0-9_@#%\-]+:)+\s*$/g, "").trim();
-      if (title === target || title.endsWith(` ${target}`)) {
-        const pos = new vscode.Position(i, 0);
-        editor.selection = new vscode.Selection(pos, pos);
-        editor.revealRange(new vscode.Range(pos, pos), vscode.TextEditorRevealType.InCenter);
-        return;
-      }
-    }
+    const line = findOrgTargetLine(document.getText().split(/\r?\n/), { type: "heading", value: target });
+    if (line != null) return revealLine(editor, line);
     vscode.window.showInformationMessage(`Heading not found: ${target}`);
     return;
   }
 
   if (payload.type === "id" && payload.id) {
     const id = String(payload.id).trim();
-    const patterns = "**/*.{org,vsorg,vso}";
-    const files = await vscode.workspace.findFiles(patterns, "**/node_modules/**");
+    const documents = new Map();
+    for (const openDocument of vscode.workspace.textDocuments || []) {
+      documents.set(openDocument.uri.toString(), openDocument);
+    }
+    for (const uri of await vscode.workspace.findFiles(ORG_FILE_GLOB, ORG_FILE_EXCLUDE_GLOB)) {
+      if (!documents.has(uri.toString())) documents.set(uri.toString(), uri);
+    }
 
-    for (const uri of files) {
+    for (const candidate of documents.values()) {
       try {
-        const data = await vscode.workspace.fs.readFile(uri);
-        const content = Buffer.from(data).toString("utf8");
-        if (!content.includes(id)) continue;
-
-        const lines = content.split(/\r?\n/);
-        for (let i = 0; i < lines.length; i++) {
-          const m = lines[i].match(/^\s*:ID:\s*(\S+)\s*$/);
-          if (m && m[1] === id) {
-            const doc = await vscode.workspace.openTextDocument(uri);
-            const ed = await vscode.window.showTextDocument(doc);
-            const pos = new vscode.Position(i, 0);
-            ed.selection = new vscode.Selection(pos, pos);
-            ed.revealRange(new vscode.Range(pos, pos), vscode.TextEditorRevealType.InCenter);
-            return;
-          }
-        }
+        const candidateDocument = candidate.getText
+          ? candidate
+          : await vscode.workspace.openTextDocument(candidate);
+        const line = findOrgTargetLine(candidateDocument.getText().split(/\r?\n/), { type: "id", value: id });
+        if (line == null) continue;
+        const targetEditor = await vscode.window.showTextDocument(candidateDocument);
+        return revealLine(targetEditor, line);
       } catch {
         // ignore
       }
@@ -184,36 +185,42 @@ async function followOrgLink(args) {
 
   if (payload.type === "anchor" && payload.anchor) {
     const target = String(payload.anchor).trim();
-    for (let i = 0; i < document.lineCount; i++) {
-      const text = document.lineAt(i).text;
-
-      // Targets like <<my-target>>
-      if (new RegExp(`<<\\s*${escapeForRegExp(target)}\\s*>>`).test(text)) {
-        const pos = new vscode.Position(i, 0);
-        editor.selection = new vscode.Selection(pos, pos);
-        editor.revealRange(new vscode.Range(pos, pos), vscode.TextEditorRevealType.InCenter);
-        return;
-      }
-
-      // Properties like :CUSTOM_ID: my-target
-      const m = text.match(/^\s*:CUSTOM_ID:\s*(\S+)\s*$/);
-      if (m && m[1] === target) {
-        const pos = new vscode.Position(i, 0);
-        editor.selection = new vscode.Selection(pos, pos);
-        editor.revealRange(new vscode.Range(pos, pos), vscode.TextEditorRevealType.InCenter);
-        return;
-      }
-    }
-
+    const line = findOrgTargetLine(document.getText().split(/\r?\n/), { type: "anchor", value: target });
+    if (line != null) return revealLine(editor, line);
     vscode.window.showInformationMessage(`Target not found: ${target}`);
     return;
+  }
+
+  if (payload.type === "file-search" && payload.file && payload.search) {
+    const targetUri = normalizeFileLinkTarget(document.uri, payload.file);
+    const searchTarget = parseFileSearch(payload.search);
+    if (!searchTarget) {
+      vscode.window.showInformationMessage(`Unsupported file search: ${payload.search}`);
+      return;
+    }
+
+    try {
+      const targetDocument = await vscode.workspace.openTextDocument(targetUri);
+      const line = findOrgTargetLine(targetDocument.getText().split(/\r?\n/), searchTarget);
+      if (line == null) {
+        vscode.window.showInformationMessage(`Target not found in ${path.basename(targetUri.fsPath)}: ${payload.search}`);
+        return;
+      }
+      const targetEditor = await vscode.window.showTextDocument(targetDocument);
+      return revealLine(targetEditor, line);
+    } catch (error) {
+      vscode.window.showErrorMessage(`Org-vscode: Failed to open linked file: ${error.message}`);
+      return;
+    }
   }
 
   vscode.window.showInformationMessage("Unsupported org link.");
 }
 
-function escapeForRegExp(text) {
-  return String(text).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+function revealLine(editor, line) {
+  const position = new vscode.Position(line, 0);
+  editor.selection = new vscode.Selection(position, position);
+  editor.revealRange(new vscode.Range(position, position), vscode.TextEditorRevealType.InCenter);
 }
 
 class OrgDocumentLinkProvider {
