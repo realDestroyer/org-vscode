@@ -49,9 +49,25 @@ function computeTransitionLogbookInsertion(lines, headingLineIndex, options = {}
   });
 }
 
+function applyTransitionLogbookInsertion(lines, headingLineIndex, options = {}) {
+  const insertion = computeTransitionLogbookInsertion(lines, headingLineIndex, options);
+  if (!insertion.changed) return false;
+
+  const insertedLines = insertion.text
+    .replace(/^\n/, "")
+    .replace(/\n$/, "")
+    .split("\n");
+  const lineIndex = insertion.lineIndex === lines.length && lines[lines.length - 1] === ""
+    ? insertion.lineIndex - 1
+    : insertion.lineIndex;
+  lines.splice(lineIndex, 0, ...insertedLines);
+  return true;
+}
+
 module.exports = {
   normalizeTransitionNote,
   formatTransitionNoteEntry,
   requestTransitionNote,
-  computeTransitionLogbookInsertion
+  computeTransitionLogbookInsertion,
+  applyTransitionLogbookInsertion
 };

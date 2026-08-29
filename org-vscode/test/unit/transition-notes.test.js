@@ -5,7 +5,8 @@ const {
   normalizeTransitionNote,
   formatTransitionNoteEntry,
   requestTransitionNote,
-  computeTransitionLogbookInsertion
+  computeTransitionLogbookInsertion,
+  applyTransitionLogbookInsertion
 } = require(path.join(__dirname, '..', '..', 'out', 'transitionNotes.js'));
 const { createWorkflowRegistry } = require(path.join(__dirname, '..', '..', 'out', 'workflowStates.js'));
 
@@ -71,8 +72,38 @@ function testEntryFormattingAndSingleInsertion() {
   assert.strictEqual(insertion.lineIndex, 1);
   assert.strictEqual(
     insertion.text,
-    '    :HISTORY:\n    - State "WAITING" from "TODO" [2026-08-28 Fri 09:30] \\\\ Need input\n    :END:\n'
+    '\n    :HISTORY:\n    - State "WAITING" from "TODO" [2026-08-28 Fri 09:30] \\\\ Need input\n    :END:\n'
   );
+
+  const sourceLines = ['* WAITING Task'];
+  assert.strictEqual(applyTransitionLogbookInsertion(sourceLines, 0, {
+    prompted: true,
+    fromKeyword: 'TODO',
+    toKeyword: 'WAITING',
+    timestamp: '2026-08-28 Fri 09:30',
+    note: 'Need input'
+  }), true);
+  assert.deepStrictEqual(sourceLines, [
+    '* WAITING Task',
+    '  :LOGBOOK:',
+    '  - State "WAITING" from "TODO" [2026-08-28 Fri 09:30] \\\\ Need input',
+    '  :END:'
+  ]);
+
+  const sourceLinesWithTrailingNewline = ['* WAITING Task', ''];
+  applyTransitionLogbookInsertion(sourceLinesWithTrailingNewline, 0, {
+    prompted: true,
+    fromKeyword: 'TODO',
+    toKeyword: 'WAITING',
+    timestamp: '2026-08-28 Fri 09:30'
+  });
+  assert.deepStrictEqual(sourceLinesWithTrailingNewline, [
+    '* WAITING Task',
+    '  :LOGBOOK:',
+    '  - State "WAITING" from "TODO" [2026-08-28 Fri 09:30]',
+    '  :END:',
+    ''
+  ]);
 }
 
 module.exports = {

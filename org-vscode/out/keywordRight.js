@@ -7,7 +7,7 @@ const moment = require("moment");
 const { isPlanningLine, parsePlanningFromText, normalizeTagsAfterPlanning, stripInlinePlanning } = require("./orgTagUtils");
 const { mergePlanningFromNearbyLines } = require("./planningMerge");
 const { applyRepeatersOnCompletion } = require("./repeatedTasks");
-const { requestTransitionNote, computeTransitionLogbookInsertion } = require("./transitionNotes");
+const { requestTransitionNote, computeTransitionLogbookInsertion, applyTransitionLogbookInsertion } = require("./transitionNotes");
 const { normalizeBodyIndentation } = require("./indentUtils");
 const { applyAutoMoveDone } = require("./doneTaskAutoMove");
 const { findIncompleteChildTask } = require("./todoDependencies");
@@ -246,7 +246,18 @@ module.exports = async function (commandOptions = {}) {
           cleanedText,
           nextKeyword,
           stampsClosed: completionStampsClosed,
-          headingMarkerStyle
+          headingMarkerStyle,
+          transitionLogbook: {
+            prompted: transitionNote.prompted,
+            completionTransition: completionTransition && completionStampsClosed,
+            logIntoDrawer,
+            fromKeyword: currentKeyword,
+            toKeyword: rotatedKeyword,
+            timestamp: completionTimestamp,
+            note: transitionNote.note,
+            drawerName: logDrawerName,
+            bodyIndent
+          }
         });
       }
     }
@@ -310,6 +321,8 @@ module.exports = async function (commandOptions = {}) {
         } else if (hasClosed) {
           originalLines.splice(i + 1, 1);
         }
+
+        applyTransitionLogbookInsertion(originalLines, i, change.transitionLogbook);
 
         fs.writeFileSync(fullPath, originalLines.join("\n"), "utf8");
         break;

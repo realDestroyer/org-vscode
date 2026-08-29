@@ -64,7 +64,8 @@ function computeLogbookInsertion(lines, headingLineIndex, options = {}) {
   }
 
   // Otherwise, create a new LOGBOOK drawer at the computed insertion point.
-  const text = `${defaultDrawerIndent}:${drawerName}:\n${defaultDrawerIndent}- ${entry}\n${defaultDrawerIndent}:END:\n`;
+  const leadingNewline = i === arr.length && arr[arr.length - 1] !== "" ? "\n" : "";
+  const text = `${leadingNewline}${defaultDrawerIndent}:${drawerName}:\n${defaultDrawerIndent}- ${entry}\n${defaultDrawerIndent}:END:\n`;
   return { changed: true, lineIndex: i, text };
 }
 

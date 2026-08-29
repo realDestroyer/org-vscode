@@ -971,7 +971,7 @@ Priority values are configurable and cycle through a no-priority step:
 
 Forward cycling follows no cookie -> `[#A]` -> `[#B]` -> `[#C]` -> no cookie. Backward cycling follows the reverse order. Values must be unique, one-character uppercase letters or digits; invalid and duplicate values are ignored.
 
-To request a note when entering a workflow state, add `"notePrompt": true` to that state. `Ctrl+Right`, `Ctrl+Left`, and **Set TODO State...** then prompt only when the state actually changes. Canceling aborts that task transition; submitting a blank note still records the state change. Prompted entries are written newest-first using the configured `logDrawerName`, `bodyIndentation`, and `dateFormat`, even when `logIntoDrawer` is disabled.
+To request a note when entering a workflow state, add `"notePrompt": true` to that state. For heading task transitions, `Ctrl+Right`, `Ctrl+Left`, and **Set TODO State...** then prompt only when the state actually changes. Canceling aborts that task transition; submitting a blank note still records the state change. Prompted entries are written newest-first using the configured `logDrawerName`, `bodyIndentation`, and `dateFormat`, even when `logIntoDrawer` is disabled. Checkbox keyword cycling remains inline and does not create heading LOGBOOK entries.
 
 Automation can call the state commands with `{ "suppressNotePrompt": true }` to transition without prompting.
 

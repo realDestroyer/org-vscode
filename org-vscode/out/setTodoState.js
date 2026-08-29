@@ -8,7 +8,7 @@ const { normalizeBodyIndentation } = require("./indentUtils");
 const { applyAutoMoveDone } = require("./doneTaskAutoMove");
 const { findIncompleteChildTask } = require("./todoDependencies");
 const { mergePlanningFromNearbyLines } = require("./planningMerge");
-const { requestTransitionNote, computeTransitionLogbookInsertion } = require("./transitionNotes");
+const { requestTransitionNote, computeTransitionLogbookInsertion, applyTransitionLogbookInsertion } = require("./transitionNotes");
 
 function buildPlanningBody(planning) {
   const parts = [];
@@ -290,7 +290,20 @@ async function setTodoState(commandOptions = {}) {
           cleanedText,
           nextKeyword: effectiveKeyword,
           stampsClosed: workflowRegistry.isDoneLike(effectiveKeyword) && workflowRegistry.stampsClosed(effectiveKeyword),
-          headingMarkerStyle
+          headingMarkerStyle,
+          transitionLogbook: {
+            prompted: transitionNote.prompted,
+            completionTransition: workflowRegistry.isDoneLike(targetKeyword)
+              && workflowRegistry.stampsClosed(targetKeyword)
+              && !workflowRegistry.isDoneLike(priorKeyword),
+            logIntoDrawer,
+            fromKeyword: priorKeyword,
+            toKeyword: targetKeyword,
+            timestamp: transitionTimestamp,
+            note: transitionNote.note,
+            drawerName: logDrawerName,
+            bodyIndent
+          }
         });
       }
     }
@@ -354,6 +367,8 @@ async function setTodoState(commandOptions = {}) {
         } else if (hasClosed) {
           originalLines.splice(i + 1, 1);
         }
+
+        applyTransitionLogbookInsertion(originalLines, i, change.transitionLogbook);
 
         fs.writeFileSync(fullPath, originalLines.join("\n"), "utf8");
         break;
