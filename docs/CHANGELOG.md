@@ -4,6 +4,8 @@
 
 `Added / Enhanced`
 
+- **Optional Pinyin heading search:** Workspace heading link search can match Chinese titles by full Pinyin spelling or initials when `Org-vscode.enablePinyinHeadingSearch` is enabled. The option is off by default and uses no persistent index.
+
 - **Heading CodeLens actions:** Added optional, configurable action links above headings for TODO state, scheduling, deadlines, tags, properties, promotion, demotion, and refiling. Lenses reuse existing commands and are suppressed on source-execution-denied files.
 - **Org visibility cycling:** `Tab` on a heading now cycles the current subtree through folded, direct-children, and fully expanded states. `Shift+Tab` provides the equivalent document-wide cycle, with backward commands available from the Command Palette. Non-heading Tab behavior remains delegated to VS Code.
 - **Context action and structural insertion:** Added the bindable `Org-vscode: Execute Context Action` command for checkboxes, links, timestamps, headings, lists, and tables without overriding Copy. Added `Ctrl+Enter` (`Cmd+Enter` on macOS) to insert a matching heading, list item, checkbox, or table row after the current structure.
