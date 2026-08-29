@@ -32,6 +32,7 @@ Org-vscode helps you manage tasks, notes, and projects in plain text `.org` file
 - Align Schedules behavior is configurable (and won’t align `:PROPERTIES:` drawers)
 - Configurable TODO workflow states (`Org-vscode.workflowStates`) with per-state semantics (done-like, CLOSED stamping, optional transition-note prompts, carryover/forward-trigger, agenda visibility)
 - Configurable Org priority cycling (`Org-vscode.priorityValues`) for star and Unicode headings, with forward and backward Command Palette commands
+- Optional private workspace heading index, declarative `#+BEGIN_QUERY` preview blocks, and saved Explorer perspectives (`Org-vscode.workspaceIndex.enabled`)
 - Repeating tasks via Org repeaters (`+`, `++`, `.+`) with optional `REPEAT_TO_STATE` reopen behavior
 - Optional LOGBOOK drawer logging for completion history (`Org-vscode.logIntoDrawer`, `Org-vscode.logDrawerName`)
 - Faster Agenda scanning on large `.org` files (performance improvements for big task files)

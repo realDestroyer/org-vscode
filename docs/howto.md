@@ -26,6 +26,7 @@
 * [Heading CodeLens actions](#heading-codelens-actions)
 * [🧾 Properties & IDs](#properties--ids)
 * [🪟 Preview (Live HTML/Markdown/etc.)](#preview-live-html)
+* [Workspace queries and perspectives](#workspace-queries-and-perspectives)
 * [∑ Math Symbol Decorations](#math-symbol-decorations)
 * [📂 Open a File by Tags or Titles](#open-a-file-by-tags-or-titles)
 * [📅 Agenda View & Scheduling](#agenda-view--scheduling)
@@ -53,6 +54,45 @@
 ## ⚙️ Extension Settings <a id="extension-settings"></a>
 
 This section covers the most common editor/formatting settings so you can keep Org-vscode fast to navigate and predictable to edit.
+
+### Workspace queries and perspectives <a id="workspace-queries-and-perspectives"></a>
+
+Workspace queries are disabled by default. Enable them with:
+
+```json
+"Org-vscode.workspaceIndex.enabled": true
+```
+
+The index stores headings only: workspace-relative file/URI identifiers, heading line and level, title, status, tags, planning dates, and archive state. It does not store body text or properties. When persistence is enabled (the default), the cache is written only under VS Code global storage, never into the workspace. Set `Org-vscode.workspaceIndex.persistence` to `false` for memory-only operation.
+
+Embed a live query in an Org document:
+
+```org
+#+BEGIN_QUERY
+status: TODO
+tag: WORK
+scheduled-before: 2026-09-30
+archived: false
+limit: 25
+#+END_QUERY
+```
+
+Each nonblank line must contain exactly one `key: value`. Allowed keys are `text`, `status`, `tag`, `file`, `scheduled-before`, `scheduled-after`, `deadline-before`, `deadline-after`, `archived`, and `limit`. Text and file values use case-insensitive literal substring matching. Status and tag values use case-insensitive exact matching. Dates must be ISO `YYYY-MM-DD`; before/after comparisons are exclusive. `archived` accepts only `true` or `false`. All clauses use AND semantics, and `limit` cannot exceed `Org-vscode.workspaceIndex.resultLimit` (maximum 500).
+
+Standalone HTML exports show an inert query note and never include workspace results. Unknown keys and invalid values render an escaped error; query values are never evaluated as code or regular expressions.
+
+Saved perspectives appear in the **Org Perspectives** Explorer view:
+
+```json
+"Org-vscode.workspaceIndex.perspectives": [
+  {
+    "name": "Upcoming work",
+    "query": "status: TODO\ntag: WORK\ndeadline-before: 2026-10-01\nlimit: 50"
+  }
+]
+```
+
+Use **Org-vscode: Rebuild Workspace Index** after changing files outside VS Code, or **Org-vscode: Refresh Perspectives** to refresh the tree display. Archive files are excluded unless `Org-vscode.workspaceIndex.includeArchives` is enabled. Scans always skip generated `CurrentTasks.org`, dotfiles, `node_modules`, `.git`, and `.vscode-test`, plus patterns in `Org-vscode.workspaceIndex.exclude`.
 
 - Jump to: [Org-mode compatibility](#org-mode-compatibility), [Indentation & auto-indent](#indentation-and-auto-indent), [Settings screenshots](#settings-screenshots)
 

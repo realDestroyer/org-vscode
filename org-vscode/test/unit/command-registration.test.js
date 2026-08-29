@@ -148,9 +148,24 @@ function testAllContributedCommandsAreRegistered() {
     assert.ok(registered.has('org-vscode.exportCurrentTasks'), 'org-vscode.exportCurrentTasks must be registered');
     assert.ok(registered.has('org-vscode.exportHtml'), 'standalone HTML export command must be registered');
     assert.ok(registered.has('org-vscode.insertHeadingLink'), 'heading link insertion command must be registered');
+    assert.ok(registered.has('org-vscode.rebuildWorkspaceIndex'), 'workspace index rebuild command must be registered');
+    assert.ok(registered.has('org-vscode.refreshPerspectives'), 'perspectives refresh command must be registered');
+    assert.ok(registered.has('org-vscode.openIndexedHeading'), 'indexed heading open command must be registered');
     assert.ok(registered.has('extension.toggleCheckboxCookie'), 'statistics cookie command must be registered');
 
     const manifest = getPackageManifest(packageJsonRoot);
+    assert.strictEqual(manifest.version, '2.2.34', 'feature work must preserve the current release version');
+    const settings = manifest.contributes.configuration.properties;
+    assert.strictEqual(settings['Org-vscode.workspaceIndex.enabled'].default, false);
+    assert.strictEqual(settings['Org-vscode.workspaceIndex.persistence'].default, true);
+    assert.strictEqual(settings['Org-vscode.workspaceIndex.resultLimit'].default, 100);
+    assert.strictEqual(settings['Org-vscode.workspaceIndex.resultLimit'].maximum, 500);
+    assert.strictEqual(settings['Org-vscode.workspaceIndex.includeArchives'].default, false);
+    assert.ok(Array.isArray(settings['Org-vscode.workspaceIndex.perspectives'].default));
+    assert.ok(
+      (manifest.contributes.views.explorer || []).some((view) => view.id === 'org-vscode.perspectives'),
+      'perspectives Explorer view must be contributed'
+    );
     const vsoLanguage = (manifest.contributes.languages || []).find((language) => language.id === 'vso');
     assert.ok(vsoLanguage.extensions.includes('.org_archive'), '.org_archive must activate the vso language');
     assert.ok(

@@ -4,15 +4,18 @@ const Module = require('module');
 
 function loadPreviewModule() {
   const originalLoad = Module._load;
+  const previewPath = path.join(__dirname, '..', '..', 'out', 'orgPreview.js');
+  delete require.cache[require.resolve(previewPath)];
   Module._load = function (request, parent, isMain) {
     if (request === 'vscode') return {};
     return originalLoad.call(this, request, parent, isMain);
   };
 
   try {
-    return require(path.join(__dirname, '..', '..', 'out', 'orgPreview.js'));
+    return require(previewPath);
   } finally {
     Module._load = originalLoad;
+    delete require.cache[require.resolve(previewPath)];
   }
 }
 
@@ -106,6 +109,37 @@ function testRendersStandaloneDocument() {
   );
   assert.ok(!spoofedPreview.includes('src="vscode-webview-resource:/media/mermaid.min.js"'));
   assert.ok(!spoofedPreview.includes("securityLevel: 'strict'"));
+
+  const querySource = [
+    '#+BEGIN_QUERY',
+    'text: <script>alert(1)</script>',
+    '#+END_QUERY'
+  ].join('\n');
+  const queryBody = String(renderOrgToHtml(querySource, {
+    workspaceQueriesAvailable: true,
+    query: () => ({
+      errors: [],
+      results: [{ path: 'notes/tasks.org', line: 2, title: '<img onerror=alert(1)>', status: 'TODO', tags: ['<WORK>'] }]
+    })
+  }));
+  assert.ok(queryBody.includes('notes/tasks.org:3'));
+  assert.ok(queryBody.includes('&lt;img onerror=alert(1)&gt;'));
+  assert.ok(queryBody.includes('&lt;WORK&gt;'));
+  assert.ok(!queryBody.includes('<img onerror'));
+  assert.ok(!queryBody.includes('text:'));
+
+  const invalidQuery = String(renderOrgToHtml('#+BEGIN_QUERY\nwat: <b>bad</b>\n#+END_QUERY', {
+    workspaceQueriesAvailable: true,
+    query: () => ({ results: [], errors: ['Unknown <b>key</b>'] })
+  }));
+  assert.ok(invalidQuery.includes('Unknown &lt;b&gt;key&lt;/b&gt;'));
+  assert.ok(!invalidQuery.includes('<b>key</b>'));
+
+  const standaloneQuery = renderStandaloneHtml(querySource, 'Queries');
+  assert.ok(standaloneQuery.includes('Workspace query results require the live preview.'));
+  assert.ok(!standaloneQuery.includes('alert(1)'));
+  assert.ok(renderStandaloneHtml('#+BEGIN_QUERY\nstatus: TODO', 'Broken query')
+    .includes('missing #+END_QUERY'));
 }
 
 module.exports = {

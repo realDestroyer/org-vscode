@@ -1,9 +1,16 @@
 "use strict";
 
-const vscode = require("vscode");
 const { PLANNING_STRIP_RE } = require("./orgTagUtils");
 
 const { createWorkflowRegistry } = require("./workflowStates");
+
+function getVscode() {
+  try {
+    return require("vscode");
+  } catch {
+    return null;
+  }
+}
 
 function escapeRegExp(text) {
   return String(text).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -11,7 +18,7 @@ function escapeRegExp(text) {
 
 function getWorkflowStatesConfigValue() {
   try {
-    return vscode.workspace.getConfiguration("Org-vscode").get("workflowStates");
+    return getVscode()?.workspace?.getConfiguration("Org-vscode").get("workflowStates");
   } catch {
     return undefined;
   }
@@ -92,6 +99,8 @@ function extractHeadingTitle(rest) {
 }
 
 function buildSymbolsFromLines(lines, uri) {
+  const vscode = getVscode();
+  if (!vscode) return [];
   const root = [];
   const stack = []; // { level, symbol }
 
@@ -137,6 +146,8 @@ class OrgDocumentSymbolProvider {
 }
 
 function registerOrgSymbolProvider(ctx) {
+  const vscode = getVscode();
+  if (!vscode) return;
   const selector = [{ language: "vso", scheme: "file" }, { language: "org", scheme: "file" }, { language: "vsorg", scheme: "file" }, { language: "org-vscode", scheme: "file" }];
   ctx.subscriptions.push(vscode.languages.registerDocumentSymbolProvider(selector, new OrgDocumentSymbolProvider()));
 }
