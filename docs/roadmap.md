@@ -38,7 +38,7 @@ These are the features that I have either already implemented, or plan to in the
 | Bulleted Lists            | Make an ordered or unordered list                                                          | In Progress |          | realDestroyer |
 | TODO Tracking             | Show TODO completion on the up-most level                                                  | In Progress |          | realDestroyer |
 | JIRA Integration          | Allow tasks to be pushed to JIRA (Epic, Story, Issues, sub-tasks, etc.)                    | In Progress |          | realDestroyer |
-| Smart TAB folding behavior | Context-aware folding across headings/lists/blocks/properties (Emacs-style feel) | Not Started | v2.3.0 | realDestroyer |
+| Smart TAB folding behavior | Context-aware local and document-wide heading visibility cycling while preserving native Tab behavior outside headings. | DONE (Unreleased) | Next bundled release | realDestroyer |
 | Insert link utilities | Insert link command + richer link editing utilities | Not Started | v2.3.0 | realDestroyer |
 | LOGBOOK drawer logging | Optional Org-style state-change history entries written into a drawer (default: `LOGBOOK`) on completion transitions. | DONE | v2.2.9 | realDestroyer |
 | Agenda View performance | Improve Agenda View load times on large `.org` files (faster parsing + caching + lazy rendering). | DONE | v2.2.9 | realDestroyer |
