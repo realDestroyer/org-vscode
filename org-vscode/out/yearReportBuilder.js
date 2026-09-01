@@ -1,6 +1,7 @@
 const path = require("path");
 const moment = require("moment");
 const { html, SafeHtml, escapeText } = require("./htmlUtils");
+const { toDateKey } = require("./yearDateUtils");
 
 const ORG_SYMBOL_REGEX = /\s*[⊙⊖⊘⊜⊗]\s*/g;
 
@@ -280,8 +281,10 @@ function flattenTasks(days = []) {
   let id = 1;
   days.forEach(day => {
     (day.tasks || []).forEach(task => {
-      const scheduledMoment = moment(task.scheduled || day.date, ["MM-DD-YYYY", "YYYY-MM-DD"], true);
-      const dayMoment = moment(day.date, ["MM-DD-YYYY", "YYYY-MM-DD"], true);
+      const dayKey = toDateKey(day.date);
+      const monthKey = toDateKey(task.scheduled) || dayKey;
+      const monthMoment = monthKey ? moment(monthKey, "YYYY-MM-DD", true) : null;
+      const dayMoment = dayKey ? moment(dayKey, "YYYY-MM-DD", true) : null;
       tasks.push({
         id: id++,
         date: day.date,
@@ -293,9 +296,9 @@ function flattenTasks(days = []) {
         completed: task.completed,
         notes: task.notes || [],
         lineNumber: task.lineNumber || null,
-        monthKey: scheduledMoment.isValid() ? scheduledMoment.format("YYYY-MM") : "unscheduled",
-        monthLabel: scheduledMoment.isValid() ? scheduledMoment.format("MMM") : "Unscheduled",
-        timestamp: dayMoment.isValid() ? dayMoment.valueOf() : 0
+        monthKey: monthMoment ? monthMoment.format("YYYY-MM") : "unscheduled",
+        monthLabel: monthMoment ? monthMoment.format("MMM") : "Unscheduled",
+        timestamp: dayMoment ? dayMoment.valueOf() : 0
       });
     });
   });

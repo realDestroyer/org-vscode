@@ -48,6 +48,7 @@ const tests = [
   require(path.join(__dirname, 'org-link-targets.test.js')),
   require(path.join(__dirname, 'year-executive-report.test.js')),
   require(path.join(__dirname, 'year-summary-tags.test.js')),
+  require(path.join(__dirname, 'year-summary-formats.test.js')),
   require(path.join(__dirname, 'link-type-registry.test.js')),
   require(path.join(__dirname, 'trust-store.test.js')),
   require(path.join(__dirname, 'capture-todo.test.js')),

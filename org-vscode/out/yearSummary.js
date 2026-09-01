@@ -4,6 +4,7 @@ const path = require("path");
 const moment = require("moment");
 const { getAllTagsFromLine, stripAllTagSyntax, isPlanningLine, parsePlanningFromText, PLANNING_STRIP_RE, normalizeTagsAfterPlanning } = require("./orgTagUtils");
 const taskKeywordManager = require("./taskKeywordManager");
+const { toDateKey } = require("./yearDateUtils");
 
 const ORG_SYMBOL_REGEX = /\s*[⊙⊖⊘⊜⊗]\s*/g;
 const FORMULA_PREFIX_REGEX = /^[=+\-@]/;
@@ -11,6 +12,35 @@ const CLOSED_LINE_REGEX = /^(?:CLOSED|COMPLETED):\s*\[(.*?)\](.*)$/i;
 
 function escapeRegExp(text) {
   return String(text).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+/**
+ * Files that group work under day headings own their tasks directly. Files that
+ * list tasks at the top level get synthetic day buckets derived from each task's
+ * own planning stamps so both layouts produce the same shape.
+ */
+function resolveSyntheticDay(metadata, buckets, days) {
+  const dateKey = toDateKey(metadata.scheduled)
+    || toDateKey(metadata.completed)
+    || toDateKey(metadata.deadline);
+  const bucketKey = dateKey || "undated";
+
+  const existing = buckets.get(bucketKey);
+  if (existing) {
+    return existing;
+  }
+
+  const day = {
+    line: "",
+    date: dateKey,
+    weekday: dateKey ? moment(dateKey, "YYYY-MM-DD", true).format("ddd") : "",
+    tasks: [],
+    synthetic: true,
+    undated: !dateKey
+  };
+  buckets.set(bucketKey, day);
+  days.push(day);
+  return day;
 }
 
 function buildHeadingStartRegex(registry) {
@@ -89,6 +119,7 @@ function parseOrgContent(raw) {
   const registry = taskKeywordManager.getWorkflowRegistry();
   const headingStartRegex = buildHeadingStartRegex(registry);
   const days = [];
+  const syntheticDays = new Map();
   let currentDay = null;
   let currentTask = null;
 
@@ -109,7 +140,7 @@ function parseOrgContent(raw) {
     }
 
     const keyword = taskKeywordManager.findTaskKeyword(line);
-    if (keyword && currentDay && headingStartRegex.test(line)) {
+    if (keyword && headingStartRegex.test(line)) {
       const nextLine = (index + 1 < lines.length) ? lines[index + 1] : "";
       const combined = isPlanningLine(nextLine) ? `${line}\n${nextLine}` : line;
       const metadata = extractMetadata(combined);
@@ -124,7 +155,8 @@ function parseOrgContent(raw) {
         notes: [],
         lineNumber: index + 1
       };
-      currentDay.tasks.push(currentTask);
+      const owner = currentDay || resolveSyntheticDay(metadata, syntheticDays, days);
+      owner.tasks.push(currentTask);
       return;
     }
 
@@ -246,18 +278,20 @@ function filterDaysToYear(days, year) {
   const out = [];
 
   list.forEach(day => {
-    const dayMoment = moment(day.date, ["MM-DD-YYYY", "YYYY-MM-DD"], true);
-    if (!dayMoment.isValid() || dayMoment.year() !== selectedYear) {
+    const dayKey = toDateKey(day.date);
+    if (dayKey) {
+      if (Number(dayKey.slice(0, 4)) !== selectedYear) {
+        return;
+      }
+    } else if (!day.undated) {
+      // Day headings we cannot date are dropped; undated task buckets are kept.
       return;
     }
 
     const filteredTasks = (day.tasks || []).filter(task => {
-      const scheduledValue = task?.scheduled ? String(task.scheduled) : "";
-      if (scheduledValue) {
-        const scheduledMoment = moment(scheduledValue, ["MM-DD-YYYY", "YYYY-MM-DD"], true);
-        if (scheduledMoment.isValid()) {
-          return scheduledMoment.year() === selectedYear;
-        }
+      const scheduledKey = toDateKey(task?.scheduled);
+      if (scheduledKey) {
+        return Number(scheduledKey.slice(0, 4)) === selectedYear;
       }
       // Unscheduled tasks inherit their day heading's year.
       return true;
@@ -289,8 +323,8 @@ function buildAggregates(days, registry) {
       task.tags.forEach(tag => {
         aggregates.perTag[tag] = (aggregates.perTag[tag] || 0) + 1;
       });
-      const monthKey = moment(task.scheduled || day.date, ["MM-DD-YYYY", "YYYY-MM-DD"], true);
-      const bucket = monthKey.isValid() ? monthKey.format("YYYY-MM") : "unscheduled";
+      const monthSource = toDateKey(task.scheduled) || toDateKey(day.date);
+      const bucket = monthSource ? monthSource.slice(0, 7) : "unscheduled";
       aggregates.perMonth[bucket] = (aggregates.perMonth[bucket] || 0) + 1;
     });
   });
@@ -365,5 +399,6 @@ module.exports = {
   parseOrgContent,
   pickOrgFile,
   ensureReportDirectory,
-  buildCsv
+  buildCsv,
+  toDateKey
 };
