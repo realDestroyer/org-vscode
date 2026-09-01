@@ -1,5 +1,32 @@
 # Change Log
 
+# [2.4.0] 08-31-26
+
+`Added`
+
+- **Year-in-Review analytics tab:** A new Analytics view surfaces delivery health, cycle time, tracked time, quarterly rollups, consistency, carryover chains, project rollups, tag pairings, file hygiene, year-over-year comparison, and review-ready bullets. Every list entry jumps to its source heading.
+- **Delivery and cycle-time metrics:** On-time rate, average days late, still-overdue items, and worst misses are computed from `DEADLINE` and `CLOSED` stamps. Cycle time reports average, median, and 90th-percentile days from `SCHEDULED` to `CLOSED`, plus measured `LOGBOOK` state spans.
+- **Tracked time from CLOCK entries:** `CLOCK: [start]--[end]` ranges and `=> H:MM` totals roll up into total hours, hours per tag, hours per month, and the quarterly view.
+- **Carryover chain analysis:** Repeatedly forwarded tasks are grouped into chains showing how many times an item moved, its first and last appearance, and whether it was ever completed.
+- **Project rollups from task hierarchy:** Nested headings now record parent, depth, and child counts, producing per-project completion percentages.
+- **File hygiene panel:** Counts and lists undated tasks, past-due open items, stale in-progress work, and untagged tasks.
+- **Year picker:** Files spanning several years no longer hide the extra data. The dashboard lists every year found and reloads on selection instead of silently filtering to one.
+- **Review bullets and ranked wins:** Completed work is grouped by tag into achievement lines, and highlights are ranked by subtask count, tracked time, notes, priority, and deadline performance instead of file order.
+- **Priorities and progress cookies:** `[#A]` priorities and `[n/m]` / `[n%]` cookies are captured during parsing.
+- **Year-in-Review settings:** `Org-vscode.yearReview.highlightLimit`, `Org-vscode.yearReview.staleTaskDays`, and `Org-vscode.yearReview.writeReportsOnOpen`.
+
+`Changed`
+
+- **Opening the dashboard is read-only:** JSON, CSV, Markdown, and HTML report files are now generated on demand when you use an export button rather than being written every time the dashboard opens. Set `Org-vscode.yearReview.writeReportsOnOpen` to restore the previous behavior.
+- **Executive reports include the new insight sections** in both Markdown and HTML output.
+
+`Fixed`
+
+- **Org files without day headings now populate the dashboard.** Task collection previously required a `* [MM-DD-YYYY Day] ---` heading, so files that list tasks at the top level produced an empty report. Tasks now fall back to day buckets derived from their own planning stamps.
+- **Weekday and time suffixed timestamps are no longer treated as unscheduled.** `<2026-01-13 Tue 15:00>` and prose stamps such as `2nd January 2025, 9:42:00 am` now normalize correctly in month, heatmap, and timeline grouping.
+- **Drawer contents stay out of task notes.** `:LOGBOOK:` and `:PROPERTIES:` blocks are parsed into structured data instead of being appended as note text.
+- **LOGBOOK spans are measured correctly** for the newest-first ordering Org writes.
+
 # [2.3.1] 08-28-26
 
 `Changed`

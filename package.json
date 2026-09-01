@@ -2,7 +2,7 @@
 	"name": "org-vscode",
 	"displayName": "org-vscode",
 	"description": "Quickly create todo lists, take notes, plan projects and organize your thoughts.",
-	"version": "2.3.1",
+	"version": "2.4.0",
 	"repository": "https://www.github.com/realDestroyer/org-vscode",
 	"icon": "Images/org-vscode-logo.png",
 	"publisher": "realDestroyer",
@@ -658,6 +658,27 @@
 					"default": false,
 					"description": "When enabled, only active timestamps <YYYY-MM-DD...> appear in agenda and calendar views (standard Org behavior where inactive [...] timestamps are reference-only). When disabled (default), both <...> and [...] timestamps appear in agenda views for backward compatibility with older org-vscode files."
 				},
+				"Org-vscode.yearReview.highlightLimit": {
+					"type": "number",
+					"order": 12,
+					"default": 10,
+					"minimum": 1,
+					"maximum": 100,
+					"description": "How many items to list in Year-in-Review highlight sections (notable wins, carryover watch, in-progress focus)."
+				},
+				"Org-vscode.yearReview.staleTaskDays": {
+					"type": "number",
+					"order": 12.1,
+					"default": 30,
+					"minimum": 1,
+					"description": "Days after a scheduled date before an unfinished in-progress task is flagged as stale in the Year-in-Review hygiene panel."
+				},
+				"Org-vscode.yearReview.writeReportsOnOpen": {
+					"type": "boolean",
+					"order": 12.2,
+					"default": false,
+					"description": "Write JSON/CSV/Markdown/HTML report files as soon as the Year-in-Review dashboard opens. When disabled, files are generated on demand when you use the export buttons."
+				},
 				"Org-vscode.srcExecution.pythonCommand": {
 					"type": "string",
 					"order": 20,
@@ -793,7 +814,9 @@
 						"**/.git/**",
 						"**/.vscode-test/**"
 					],
-					"items": { "type": "string" },
+					"items": {
+						"type": "string"
+					},
 					"description": "Additional glob patterns excluded from workspace index scans. Built-in exclusions always apply."
 				},
 				"Org-vscode.workspaceIndex.includeArchives": {
@@ -808,11 +831,19 @@
 					"default": [],
 					"items": {
 						"type": "object",
-						"required": ["name", "query"],
+						"required": [
+							"name",
+							"query"
+						],
 						"additionalProperties": false,
 						"properties": {
-							"name": { "type": "string", "minLength": 1 },
-							"query": { "type": "string" }
+							"name": {
+								"type": "string",
+								"minLength": 1
+							},
+							"query": {
+								"type": "string"
+							}
 						}
 					},
 					"description": "Named workspace queries shown in the Org Perspectives Explorer view."

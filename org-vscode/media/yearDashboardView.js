@@ -22,6 +22,9 @@
     sourceName: document.getElementById("source-name"),
     generatedAt: document.getElementById("generated-at"),
     folderNote: document.getElementById("folder-note"),
+    yearSelect: document.getElementById("year-select"),
+    analyticsStats: document.getElementById("analytics-stats"),
+    analyticsGrid: document.getElementById("analytics-grid"),
     statusFilter: document.getElementById("status-filter"),
     heatmapSearch: document.getElementById("heatmap-search"),
     heatmapLimit: document.getElementById("heatmap-limit"),
@@ -63,6 +66,15 @@
     }
     render();
   });
+
+  if (elements.yearSelect) {
+    elements.yearSelect.addEventListener("change", () => {
+      const year = Number(elements.yearSelect.value);
+      if (!Number.isNaN(year)) {
+        vscode.postMessage({ command: "selectYear", year });
+      }
+    });
+  }
 
   tabButtons.forEach((button) => {
     button.addEventListener("click", () => switchView(button.dataset.tab));
@@ -125,10 +137,12 @@
     }
     renderMeta();
     renderStats();
+    renderYearPicker();
     populateStatusOptions();
     renderTimeline();
     renderHeatmap();
     renderTasks();
+    renderAnalytics();
     renderActiveFilters();
     toggleDownloads();
     if (state.activeView === "raw") {
@@ -180,6 +194,90 @@
       .join("");
     elements.statusFilter.value = current && statuses.has(current) ? current : "ALL";
     state.filters.status = elements.statusFilter.value;
+  }
+
+  function renderYearPicker() {
+    if (!elements.yearSelect) {
+      return;
+    }
+    const { model } = state.payload;
+    const years = (model.availableYears || []).slice();
+    if (!years.some(entry => Number(entry.year) === Number(model.year))) {
+      years.push({ year: model.year, taskCount: model.totals.total });
+    }
+    years.sort((a, b) => Number(b.year) - Number(a.year));
+
+    elements.yearSelect.innerHTML = years
+      .map(entry => html`<option value="${String(entry.year)}">${String(entry.year)} (${formatNumber(entry.taskCount)})</option>`)
+      .join("");
+    elements.yearSelect.value = String(model.year);
+    elements.yearSelect.disabled = years.length < 2;
+  }
+
+  function renderAnalytics() {
+    if (!elements.analyticsGrid) {
+      return;
+    }
+    const { model } = state.payload;
+    const totals = model.totals || {};
+
+    if (elements.analyticsStats) {
+      const cards = [
+        { label: "On-time Rate", value: `${totals.onTimeRate || 0}%`, hint: "Deadlines met" },
+        { label: "Avg Cycle", value: `${totals.avgCycleDays || 0}d`, hint: "Scheduled to closed" },
+        { label: "Hours Tracked", value: formatNumber(totals.hoursTracked), hint: "From CLOCK entries" },
+        { label: "Carryover Chains", value: formatNumber(totals.carryoverChains), hint: "Forwarded threads" }
+      ];
+      elements.analyticsStats.innerHTML = cards
+        .map(card => html`<div class="stat"><span class="stat-label">${card.label}</span><span class="stat-value">${card.value}</span><span class="stat-hint">${card.hint}</span></div>`)
+        .join("");
+    }
+
+    const sections = (model.insightSections || []).slice();
+    const bullets = model.metrics?.resumeBullets || [];
+    if (bullets.length) {
+      sections.push({
+        title: "Review Bullets",
+        stats: [],
+        list: bullets.map(bullet => ({
+          label: `${bullet.tag} — ${bullet.count} item${bullet.count === 1 ? "" : "s"}`,
+          detail: bullet.examples.join("; ")
+        }))
+      });
+    }
+
+    if (!sections.length) {
+      elements.analyticsGrid.innerHTML = html`<p class="empty-state">No analytics available for this year.</p>`;
+      return;
+    }
+
+    elements.analyticsGrid.innerHTML = sections
+      .map(section => {
+        const chips = (section.stats || [])
+          .map(stat => html`<div class="metric-chip"><strong>${String(stat.value)}</strong><span>${stat.label}</span></div>`)
+          .join("");
+        const items = (section.list || [])
+          .map(item => {
+            const body = html`<span class="metric-label">${item.label}</span><span class="metric-detail">${item.detail || ""}</span>`;
+            return item.lineNumber
+              ? html`<li><button data-line="${String(item.lineNumber)}">${raw(body)}</button></li>`
+              : html`<li>${raw(body)}</li>`;
+          })
+          .join("");
+        const chipBlock = chips ? html`<div class="metric-chips">${raw(chips)}</div>` : "";
+        const listBlock = items ? html`<ul class="metric-list">${raw(items)}</ul>` : "";
+        return html`<section class="panel"><h2>${section.title}</h2>${raw(chipBlock)}${raw(listBlock)}</section>`;
+      })
+      .join("");
+
+    elements.analyticsGrid.querySelectorAll("button[data-line]").forEach(button => {
+      button.addEventListener("click", () => {
+        const lineNumber = Number(button.dataset.line);
+        if (!Number.isNaN(lineNumber)) {
+          vscode.postMessage({ command: "openTask", lineNumber });
+        }
+      });
+    });
   }
 
   function renderTimeline() {
@@ -368,17 +466,11 @@
   }
 
   function toggleDownloads() {
-    const buttons = [
-      { id: "download-csv", key: "csv" },
-      { id: "open-csv-file", key: "csv" },
-      { id: "download-md", key: "markdown" },
-      { id: "download-html", key: "html" }
-    ];
-    buttons.forEach(btn => {
-      const el = document.getElementById(btn.id);
-      const available = Boolean(state.payload?.artifacts?.[btn.key]);
+    // Report files are generated on demand, so exports stay available at all times.
+    ["download-csv", "open-csv-file", "download-md", "download-html", "reveal-folder"].forEach(id => {
+      const el = document.getElementById(id);
       if (el) {
-        el.disabled = !available;
+        el.disabled = false;
       }
     });
   }

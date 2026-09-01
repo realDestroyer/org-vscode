@@ -1,7 +1,7 @@
 const vscode = require("vscode");
 const fs = require("fs");
 const path = require("path");
-const { pickOrgFile, parseOrgContent, exportYearSummaryForFile } = require("./yearSummary");
+const { pickOrgFile, parseOrgContent, exportYearSummaryForFile, buildCsv } = require("./yearSummary");
 const { generateExecutiveReportForFile } = require("./yearExecutiveReport");
 const { buildDashboardModel } = require("./yearReportBuilder");
 
@@ -37,18 +37,13 @@ async function openYearInReview() {
   }
 }
 
-async function prepareDashboardForFile(orgPath) {
+async function prepareDashboardForFile(orgPath, options = {}) {
   const raw = fs.readFileSync(orgPath, "utf-8");
-  const parsed = parseOrgContent(raw);
+  const parsed = parseOrgContent(raw, options);
   if (!parsed.days.length) {
     vscode.window.showWarningMessage("No day headings or tasks were detected in that Org file.");
     return;
   }
-
-  const [summaryArtifacts, execArtifacts] = await Promise.all([
-    exportYearSummaryForFile(orgPath, parsed),
-    generateExecutiveReportForFile(orgPath, parsed)
-  ]);
 
   const dashboardModel = buildDashboardModel(orgPath, parsed);
   const normalizedModel = {
@@ -60,27 +55,52 @@ async function prepareDashboardForFile(orgPath) {
 
   let csvText = "";
   try {
-    csvText = fs.readFileSync(summaryArtifacts.csvPath, "utf-8");
+    csvText = buildCsv(parsed.days);
   } catch (error) {
-    console.error("org-vscode: unable to read CSV for dashboard", error);
+    console.error("org-vscode: unable to build CSV for dashboard", error);
   }
 
   dashboardState = {
     orgPath,
+    parsed,
     model: normalizedModel,
-    artifacts: {
-      csv: summaryArtifacts.csvPath,
-      json: summaryArtifacts.jsonPath,
-      markdown: execArtifacts.markdownPath,
-      html: execArtifacts.htmlPath,
-      folder: summaryArtifacts.reportDir
-    },
+    artifacts: null,
     csvText
   };
+
+  if (parsed.settings && parsed.settings.writeReportsOnOpen) {
+    await ensureArtifacts();
+  }
 
   const panel = ensureDashboardPanel();
   panel.title = `Year in Review (${normalizedModel.year})`;
   pushDashboardData(panel);
+}
+
+/** Report files are written on demand so opening the dashboard stays read-only. */
+async function ensureArtifacts() {
+  if (!dashboardState) {
+    return null;
+  }
+  if (dashboardState.artifacts) {
+    return dashboardState.artifacts;
+  }
+
+  const [summaryArtifacts, execArtifacts] = await Promise.all([
+    exportYearSummaryForFile(dashboardState.orgPath, dashboardState.parsed),
+    generateExecutiveReportForFile(dashboardState.orgPath, dashboardState.parsed)
+  ]);
+
+  dashboardState.artifacts = {
+    csv: summaryArtifacts.csvPath,
+    json: summaryArtifacts.jsonPath,
+    markdown: execArtifacts.markdownPath,
+    html: execArtifacts.htmlPath,
+    folder: summaryArtifacts.reportDir
+  };
+
+  pushDashboardData();
+  return dashboardState.artifacts;
 }
 
 function ensureDashboardPanel() {
@@ -117,6 +137,9 @@ function ensureDashboardPanel() {
       case "openTask":
         openTaskLocation(message.lineNumber);
         break;
+      case "selectYear":
+        changeDashboardYear(message.year);
+        break;
       case "revealFolder":
         revealReportFolder();
         break;
@@ -139,7 +162,7 @@ function pushDashboardData(targetPanel) {
   }
   const payload = {
     model: dashboardState.model,
-    artifacts: dashboardState.artifacts,
+    artifacts: dashboardState.artifacts || {},
     csv: dashboardState.csvText || ""
   };
   const panel = targetPanel || dashboardPanel;
@@ -148,12 +171,33 @@ function pushDashboardData(targetPanel) {
   }
 }
 
-async function openArtifact(kind) {
-  if (!dashboardState || !dashboardState.artifacts) {
-    vscode.window.showWarningMessage("Dashboard artifacts are not ready yet.");
+async function changeDashboardYear(year) {
+  const requested = Number(year);
+  if (!dashboardState || !Number.isInteger(requested)) {
     return;
   }
-  const target = dashboardState.artifacts[kind];
+  try {
+    await prepareDashboardForFile(dashboardState.orgPath, { year: requested });
+  } catch (error) {
+    vscode.window.showErrorMessage(`Unable to switch year: ${error.message}`);
+  }
+}
+
+async function openArtifact(kind) {
+  if (!dashboardState) {
+    vscode.window.showWarningMessage("Dashboard data is not ready yet.");
+    return;
+  }
+
+  let artifacts;
+  try {
+    artifacts = await ensureArtifacts();
+  } catch (error) {
+    vscode.window.showErrorMessage(`Unable to generate report files: ${error.message}`);
+    return;
+  }
+
+  const target = artifacts && artifacts[kind];
   if (!target) {
     vscode.window.showWarningMessage("Artifact not available for this report.");
     return;
@@ -200,11 +244,7 @@ async function openTaskLocation(lineNumber) {
 }
 
 function revealReportFolder() {
-  if (!dashboardState?.artifacts?.folder) {
-    return;
-  }
-  const uri = vscode.Uri.file(dashboardState.artifacts.folder);
-  vscode.commands.executeCommand("revealFileInOS", uri);
+  openArtifact("folder");
 }
 
 function getDashboardHtml(webview, nonce) {
@@ -387,6 +427,75 @@ function getDashboardHtml(webview, nonce) {
       text-transform: uppercase;
       letter-spacing: 0.16rem;
       color: var(--accent);
+    }
+    .analytics-panels {
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    }
+    .year-picker {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12rem;
+      color: var(--muted);
+    }
+    .year-picker select {
+      background: rgba(8, 15, 28, 0.9);
+      color: var(--text);
+      border: 1px solid var(--panel-border);
+      border-radius: 8px;
+      padding: 4px 8px;
+    }
+    .metric-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+    .metric-chip {
+      background: rgba(56, 189, 248, 0.12);
+      border: 1px solid var(--panel-border);
+      border-radius: 10px;
+      padding: 6px 10px;
+      min-width: 92px;
+    }
+    .metric-chip strong {
+      display: block;
+      font-size: 1.05rem;
+    }
+    .metric-chip span {
+      font-size: 0.68rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08rem;
+      color: var(--muted);
+    }
+    .metric-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: grid;
+      gap: 6px;
+      max-height: 320px;
+      overflow: auto;
+    }
+    .metric-list li {
+      display: grid;
+      gap: 2px;
+      padding: 6px 8px;
+      border-radius: 8px;
+      background: rgba(148, 163, 184, 0.08);
+    }
+    .metric-list .metric-detail {
+      font-size: 0.72rem;
+      color: var(--muted);
+    }
+    .metric-list button {
+      all: unset;
+      cursor: pointer;
+      display: grid;
+      gap: 2px;
+      width: 100%;
     }
     canvas {
       width: 100%;
@@ -761,6 +870,9 @@ function getDashboardHtml(webview, nonce) {
         <p id="folder-note" class="muted"></p>
       </div>
       <div class="actions">
+        <label class="year-picker" for="year-select">Year
+          <select id="year-select" aria-label="Review year"></select>
+        </label>
         <button id="open-source">Open Org File</button>
         <button id="reveal-folder" class="ghost">Reveal Report Folder</button>
         <button id="download-csv" class="ghost">CSV</button>
@@ -771,6 +883,7 @@ function getDashboardHtml(webview, nonce) {
 
     <nav class="tabs" id="view-tabs">
       <button class="tab active" data-tab="insights">Insights</button>
+      <button class="tab" data-tab="analytics">Analytics</button>
       <button class="tab" data-tab="raw">Raw Tasks</button>
     </nav>
 
@@ -816,6 +929,11 @@ function getDashboardHtml(webview, nonce) {
           <div class="task-list" id="task-list"></div>
         </article>
       </section>
+    </section>
+
+    <section class="view hidden" data-view="analytics" id="view-analytics">
+      <section class="stats" id="analytics-stats"></section>
+      <section class="panels analytics-panels" id="analytics-grid"></section>
     </section>
 
     <section class="view hidden" data-view="raw" id="view-raw">

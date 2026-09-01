@@ -5,13 +5,54 @@ const moment = require("moment");
 const { getAllTagsFromLine, stripAllTagSyntax, isPlanningLine, parsePlanningFromText, PLANNING_STRIP_RE, normalizeTagsAfterPlanning } = require("./orgTagUtils");
 const taskKeywordManager = require("./taskKeywordManager");
 const { toDateKey } = require("./yearDateUtils");
+const { buildYearMetrics, buildYearComparison } = require("./yearMetrics");
 
 const ORG_SYMBOL_REGEX = /\s*[⊙⊖⊘⊜⊗]\s*/g;
 const FORMULA_PREFIX_REGEX = /^[=+\-@]/;
 const CLOSED_LINE_REGEX = /^(?:CLOSED|COMPLETED):\s*\[(.*?)\](.*)$/i;
+const DRAWER_START_REGEX = /^:([A-Za-z][A-Za-z0-9_-]*):\s*$/;
+const DRAWER_END_REGEX = /^:END:\s*$/i;
+const LOGBOOK_STATE_REGEX = /^-\s*State\s+"([^"]*)"\s+from\s+"([^"]*)"\s*(?:\[([^\]]+)\])?/i;
+const CLOCK_REGEX = /^-?\s*CLOCK:\s*[[<]([^\]>]+)[\]>]\s*(?:--\s*[[<]([^\]>]+)[\]>])?\s*(?:=>\s*(-?\d+):(\d{2}))?/i;
+const PRIORITY_REGEX = /\[#([A-Za-z0-9])\]/;
+const COOKIE_FRACTION_REGEX = /\[(\d+)\/(\d+)\]/;
+const COOKIE_PERCENT_REGEX = /\[(\d+)%\]/;
+const CLOCK_STAMP_FORMATS = ["YYYY-MM-DD ddd HH:mm", "YYYY-MM-DD HH:mm", "MM-DD-YYYY ddd HH:mm", "MM-DD-YYYY HH:mm"];
 
 function escapeRegExp(text) {
   return String(text).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+/** Heading rank so `**` nests under `*`, and deeper indentation nests under the same star count. */
+function headingRank(line) {
+  const text = String(line || "");
+  const indent = (text.match(/^\s*/) || [""])[0].length;
+  const stars = (text.match(/^\s*(\*+)/) || ["", ""])[1].length;
+  return {
+    level: stars || 1,
+    rank: (stars || 1) + Math.min(indent, 60) / 100
+  };
+}
+
+function parseClockLine(text) {
+  const match = String(text || "").match(CLOCK_REGEX);
+  if (!match) {
+    return null;
+  }
+
+  const [, startRaw, endRaw, hours, minutes] = match;
+  if (hours !== undefined && minutes !== undefined) {
+    const signed = Number(hours) * 60 + (Number(hours) < 0 ? -Number(minutes) : Number(minutes));
+    return { start: startRaw, end: endRaw || null, minutes: signed };
+  }
+
+  const start = moment(String(startRaw).trim(), CLOCK_STAMP_FORMATS, true);
+  const end = endRaw ? moment(String(endRaw).trim(), CLOCK_STAMP_FORMATS, true) : null;
+  if (start.isValid() && end && end.isValid()) {
+    return { start: startRaw, end: endRaw, minutes: Math.max(end.diff(start, "minutes"), 0) };
+  }
+
+  return { start: startRaw, end: endRaw || null, minutes: 0 };
 }
 
 /**
@@ -113,17 +154,50 @@ async function ensureReportDirectory(sourcePath, year) {
   return reportsDir;
 }
 
-function parseOrgContent(raw) {
+function readYearReviewSettings() {
+  const defaults = { highlightLimit: 10, staleTaskDays: 30, writeReportsOnOpen: false };
+  try {
+    const config = vscode.workspace.getConfiguration("Org-vscode");
+    const read = (key, fallback) => {
+      const value = config.get(`yearReview.${key}`);
+      return value === undefined || value === null ? fallback : value;
+    };
+    return {
+      highlightLimit: Number(read("highlightLimit", defaults.highlightLimit)) || defaults.highlightLimit,
+      staleTaskDays: Number(read("staleTaskDays", defaults.staleTaskDays)) || defaults.staleTaskDays,
+      writeReportsOnOpen: Boolean(read("writeReportsOnOpen", defaults.writeReportsOnOpen))
+    };
+  } catch (error) {
+    return defaults;
+  }
+}
+
+function parseOrgContent(raw, options = {}) {
   const lines = raw.split(/\r?\n/);
   const dayRegex = /^\s*(?:⊘|\*+)\s*\[(\d{2,4}-\d{2}-\d{2,4})(?:\s+([A-Za-z]{3}))?.*$/;
   const registry = taskKeywordManager.getWorkflowRegistry();
   const headingStartRegex = buildHeadingStartRegex(registry);
   const days = [];
   const syntheticDays = new Map();
+  const headingStack = [];
   let currentDay = null;
   let currentTask = null;
+  let openDrawer = null;
 
   lines.forEach((line, index) => {
+    const trimmed = line.trim();
+
+    if (openDrawer) {
+      if (DRAWER_END_REGEX.test(trimmed)) {
+        openDrawer = null;
+        return;
+      }
+      if (currentTask) {
+        collectDrawerLine(currentTask, openDrawer, trimmed);
+      }
+      return;
+    }
+
     const dayMatch = line.match(dayRegex);
     if (dayMatch) {
       const dayDate = dayMatch[1];
@@ -136,6 +210,7 @@ function parseOrgContent(raw) {
       };
       days.push(currentDay);
       currentTask = null;
+      headingStack.length = 0;
       return;
     }
 
@@ -144,6 +219,13 @@ function parseOrgContent(raw) {
       const nextLine = (index + 1 < lines.length) ? lines[index + 1] : "";
       const combined = isPlanningLine(nextLine) ? `${line}\n${nextLine}` : line;
       const metadata = extractMetadata(combined);
+      const { level, rank } = headingRank(line);
+
+      while (headingStack.length && headingStack[headingStack.length - 1].rank >= rank) {
+        headingStack.pop();
+      }
+      const parent = headingStack.length ? headingStack[headingStack.length - 1].task : null;
+
       currentTask = {
         line: line.trim(),
         status: keyword,
@@ -152,16 +234,45 @@ function parseOrgContent(raw) {
         scheduled: metadata.scheduled,
         completed: metadata.completed,
         deadline: metadata.deadline,
+        priority: metadata.priority,
+        progress: metadata.progress,
+        level,
+        parentLine: parent ? parent.lineNumber : null,
+        childCount: 0,
+        stateChanges: [],
+        clockEntries: [],
+        clockMinutes: 0,
         notes: [],
         lineNumber: index + 1
       };
+      if (parent) {
+        parent.childCount += 1;
+      }
+      headingStack.push({ rank, task: currentTask });
+
       const owner = currentDay || resolveSyntheticDay(metadata, syntheticDays, days);
       owner.tasks.push(currentTask);
       return;
     }
 
-    const trimmed = line.trim();
-    if (currentTask && trimmed) {
+    if (!trimmed) {
+      return;
+    }
+
+    const drawerMatch = trimmed.match(DRAWER_START_REGEX);
+    if (drawerMatch && !DRAWER_END_REGEX.test(trimmed)) {
+      openDrawer = drawerMatch[1].toUpperCase();
+      return;
+    }
+
+    if (currentTask) {
+      const clock = parseClockLine(trimmed);
+      if (clock) {
+        currentTask.clockEntries.push(clock);
+        currentTask.clockMinutes += clock.minutes;
+        return;
+      }
+
       const completedLineMatch = trimmed.match(CLOSED_LINE_REGEX);
       if (completedLineMatch) {
         if (!currentTask.completed) {
@@ -178,11 +289,13 @@ function parseOrgContent(raw) {
     }
   });
 
-  const year = deriveYear(days, lines);
+  const availableYears = collectAvailableYears(days);
+  const settings = readYearReviewSettings();
+  const requestedYear = Number(options.year);
+  const year = Number.isInteger(requestedYear) ? requestedYear : deriveYear(days, lines);
 
   // Mixed-year files are common (e.g. a 2025 file with a few 2024 carryover items).
-  // The Year-in-Review dashboard assumes a single year, so we filter parsed content
-  // down to the derived year to keep the heatmap/month filters consistent.
+  // The dashboard shows one year at a time; availableYears lets callers switch.
   const filteredDays = filterDaysToYear(days, year);
   const aggregates = buildAggregates(filteredDays, registry);
   const workflowMeta = {
@@ -197,7 +310,48 @@ function parseOrgContent(raw) {
     .filter((s) => s && !s.isDoneLike && !s.triggersForward && s.keyword !== cycle[0])
     .map((s) => s.keyword);
 
-  return { days: filteredDays, year, aggregates, workflowMeta };
+  const metrics = buildYearMetrics(filteredDays, workflowMeta, year, settings);
+  const yearComparison = buildYearComparison(days, workflowMeta);
+
+  return { days: filteredDays, year, availableYears, aggregates, workflowMeta, metrics, yearComparison, settings };
+}
+
+function collectDrawerLine(task, drawerName, trimmed) {
+  const clock = parseClockLine(trimmed);
+  if (clock) {
+    task.clockEntries.push(clock);
+    task.clockMinutes += clock.minutes;
+    return;
+  }
+
+  if (drawerName === "LOGBOOK") {
+    const stateMatch = trimmed.match(LOGBOOK_STATE_REGEX);
+    if (stateMatch) {
+      task.stateChanges.push({
+        to: stateMatch[1] || "",
+        from: stateMatch[2] || "",
+        at: (stateMatch[3] || "").trim()
+      });
+    }
+  }
+}
+
+function collectAvailableYears(days) {
+  const counts = new Map();
+  (days || []).forEach(day => {
+    (day.tasks || []).forEach(task => {
+      const key = toDateKey(task.scheduled) || toDateKey(day.date) || toDateKey(task.completed);
+      if (!key) {
+        return;
+      }
+      const year = Number(key.slice(0, 4));
+      counts.set(year, (counts.get(year) || 0) + 1);
+    });
+  });
+
+  return Array.from(counts.entries())
+    .map(([year, taskCount]) => ({ year, taskCount }))
+    .sort((a, b) => b.year - a.year);
 }
 
 function extractMetadata(line) {
@@ -206,8 +360,25 @@ function extractMetadata(line) {
   const tags = getAllTagsFromLine(cleaned);
   const planning = parsePlanningFromText(cleaned);
 
+  const priorityMatch = cleaned.match(PRIORITY_REGEX);
+  const fractionMatch = cleaned.match(COOKIE_FRACTION_REGEX);
+  const percentMatch = cleaned.match(COOKIE_PERCENT_REGEX);
+
+  let progress = null;
+  if (fractionMatch) {
+    const done = Number(fractionMatch[1]);
+    const total = Number(fractionMatch[2]);
+    progress = { done, total, percent: total ? Math.round((done / total) * 100) : 0 };
+  } else if (percentMatch) {
+    progress = { done: null, total: null, percent: Number(percentMatch[1]) };
+  }
+
   const title = stripAllTagSyntax(cleaned)
     .replace(new RegExp(PLANNING_STRIP_RE.source, "g"), "")
+    .replace(new RegExp(PRIORITY_REGEX.source, "g"), "")
+    .replace(new RegExp(COOKIE_FRACTION_REGEX.source, "g"), "")
+    .replace(new RegExp(COOKIE_PERCENT_REGEX.source, "g"), "")
+    .replace(/\s{2,}/g, " ")
     .replace(/:+\s*$/, "")
     .trim();
 
@@ -216,7 +387,9 @@ function extractMetadata(line) {
     tags,
     scheduled: planning.scheduled,
     completed: planning.closed,
-    deadline: planning.deadline
+    deadline: planning.deadline,
+    priority: priorityMatch ? priorityMatch[1].toUpperCase() : null,
+    progress
   };
 }
 
@@ -348,20 +521,24 @@ function buildAggregates(days, registry) {
 }
 
 function buildCsv(days) {
-  const header = ["date", "weekday", "status", "title", "tags", "scheduled", "deadline", "completed", "notes"].join(",");
+  const header = ["date", "weekday", "status", "priority", "title", "tags", "scheduled", "deadline", "completed", "hours", "subtasks", "notes"].join(",");
   const rows = [header];
 
   days.forEach(day => {
     day.tasks.forEach(task => {
+      const hours = Number(task.clockMinutes) ? (Number(task.clockMinutes) / 60).toFixed(2) : "";
       const row = [
         day.date,
         day.weekday,
         task.status,
+        task.priority || "",
         task.title,
         task.tags.join("|"),
         task.scheduled,
         task.deadline,
         task.completed,
+        hours,
+        task.childCount || "",
         task.notes.join(" | ")
       ].map(value => escapeCsv(sanitizeForCsv(value)));
       rows.push(row.join(","));
