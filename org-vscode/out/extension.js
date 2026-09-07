@@ -28,7 +28,6 @@ const scheduling = require("./scheduling");
 const deadline = require("./deadline");
 const agenda = require("./agenda/agenda");
 const { moveDateForward, moveDateBackward } = require("./rescheduleTask");
-const { smartDateForward, smartDateBackward } = require("./smartDateAdjust");
 const { deadlineDateForward, deadlineDateBackward } = require("./deadlineDateAdjust");
 const { alignSchedules } = require("./alignSchedules");
 const { insertDateStamp } = require("./insertDateStamp");
@@ -289,8 +288,6 @@ function activate(ctx) {
   ctx.subscriptions.push(vscode.commands.registerCommand("extension.convertDatesInActiveFile", convertDatesInActiveFile));
   ctx.subscriptions.push(vscode.commands.registerCommand("extension.rescheduleTaskForward", moveDateForward));
   ctx.subscriptions.push(vscode.commands.registerCommand("extension.rescheduleTaskBackward", moveDateBackward));
-  ctx.subscriptions.push(vscode.commands.registerCommand("extension.smartDateForward", smartDateForward));
-  ctx.subscriptions.push(vscode.commands.registerCommand("extension.smartDateBackward", smartDateBackward));
   ctx.subscriptions.push(vscode.commands.registerCommand("extension.deadlineDateForward", deadlineDateForward));
   ctx.subscriptions.push(vscode.commands.registerCommand("extension.deadlineDateBackward", deadlineDateBackward));
   ctx.subscriptions.push(vscode.commands.registerCommand("org-vscode.setRepeater", setRepeater));
