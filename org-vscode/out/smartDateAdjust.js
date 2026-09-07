@@ -1,6 +1,5 @@
-const { isPlanningLine, getAcceptedDateFormats } = require("./orgTagUtils");
-const { transformDayHeadingDate } = require("./incrementDate");
-const { transformScheduledDate } = require("./rescheduleTask");
+const { getAcceptedDateFormats } = require("./orgTagUtils");
+const { computeDateStampReplacements } = require("./dateStampAdjust");
 
 /**
  * Smart date adjustment - detects what type of date is on the current line
@@ -27,9 +26,11 @@ function smartDateAdjust(forward = true) {
         ? editor.selections
         : [editor.selection];
     const targetLines = new Set();
+    const cursorPositions = new Map();
     for (const selection of selections) {
         if (selection.isEmpty) {
             targetLines.add(selection.active.line);
+            cursorPositions.set(selection.active.line, selection.active.character);
             continue;
         }
         const startLine = Math.min(selection.start.line, selection.end.line);
@@ -39,12 +40,13 @@ function smartDateAdjust(forward = true) {
         }
         for (let line = startLine; line <= endLine; line++) {
             targetLines.add(line);
+            cursorPositions.set(line, line === selection.active.line ? selection.active.character : 0);
         }
     }
     const { replacements, warnedParse } = computeSmartDateReplacements(
         (lineNumber) => document.lineAt(lineNumber).text,
-        document.lineCount,
         targetLines,
+        cursorPositions,
         forward,
         dateFormat,
         acceptedDateFormats
@@ -55,7 +57,7 @@ function smartDateAdjust(forward = true) {
             vscode.window.showWarningMessage(`Could not parse one or more dates using format ${dateFormat}.`);
         }
         else {
-            vscode.window.showWarningMessage("No day heading or SCHEDULED date found on selected line(s).");
+            vscode.window.showWarningMessage("No date stamp found on selected line(s).");
         }
         return;
     }
@@ -69,70 +71,18 @@ function smartDateAdjust(forward = true) {
     return vscode.workspace.applyEdit(edit);
 }
 
-function computeSmartDateReplacements(getLineText, lineCount, targetLines, forward, dateFormat, acceptedDateFormats) {
-    const sortedLines = Array.from(targetLines).sort((a, b) => b - a);
-    const replacements = new Map();
-    const replacedLines = new Set();
-    let warnedParse = false;
-
-    for (const lineNumber of sortedLines) {
-        if (replacedLines.has(lineNumber)) {
-            continue;
-        }
-
-        const text = getLineText(lineNumber);
-        const nextLineText = (lineNumber + 1 < lineCount) ? getLineText(lineNumber + 1) : "";
-
-        // Try day heading first
-        const dayResult = transformDayHeadingDate(text, forward, dateFormat, acceptedDateFormats);
-        if (dayResult.parseError) {
-            warnedParse = true;
-            continue;
-        }
-        if (dayResult.text !== null) {
-            replacedLines.add(lineNumber);
-            if (dayResult.text !== text) {
-                replacements.set(lineNumber, dayResult.text);
-            }
-            continue;
-        }
-
-        // Try SCHEDULED on current line
-        const schedResult = transformScheduledDate(text, forward, dateFormat, acceptedDateFormats);
-        if (schedResult.parseError) {
-            warnedParse = true;
-            continue;
-        }
-        if (schedResult.text !== null) {
-            replacedLines.add(lineNumber);
-            if (schedResult.text !== text) {
-                replacements.set(lineNumber, schedResult.text);
-            }
-            continue;
-        }
-
-        // Emacs-style: scheduled stamp on the immediate planning line
-        if (isPlanningLine(nextLineText)) {
-            const planningLineNumber = lineNumber + 1;
-            if (replacedLines.has(planningLineNumber)) {
-                continue;
-            }
-
-            const planningResult = transformScheduledDate(nextLineText, forward, dateFormat, acceptedDateFormats);
-            if (planningResult.parseError) {
-                warnedParse = true;
-                continue;
-            }
-            if (planningResult.text !== null) {
-                replacedLines.add(planningLineNumber);
-                if (planningResult.text !== nextLineText) {
-                    replacements.set(planningLineNumber, planningResult.text);
-                }
-            }
-        }
+function computeSmartDateReplacements(getLineText, targetLines, cursorPositions, forward, dateFormat, acceptedDateFormats) {
+    if (typeof targetLines === "number") {
+        return computeDateStampReplacements(
+            getLineText,
+            cursorPositions,
+            new Map(),
+            forward,
+            dateFormat,
+            acceptedDateFormats
+        );
     }
-
-    return { replacements, warnedParse };
+    return computeDateStampReplacements(getLineText, targetLines, cursorPositions, forward, dateFormat, acceptedDateFormats);
 }
 
 function smartDateForward() {

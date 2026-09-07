@@ -1,5 +1,17 @@
 # Change Log
 
+# [2.4.1] 09-07-26
+
+`Changed`
+
+- **Unified date adjustment commands:** `Increment Date Stamp` and `Decrement Date Stamp` now use one cursor-aware implementation, replacing the separate Smart Date behavior. The commands update the nearest active or inactive timestamp on the line, including inline headline dates, journal text, `SCHEDULED` / `DEADLINE` / `CLOSED` planning lines, and timestamps with weekday or time portions.
+- **Emacs-style date movement:** `Alt+Shift+Right` and `Alt+Shift+Left` now invoke the general increment/decrement commands. Selecting a task heading still updates its immediate planning line when that is where the timestamp lives.
+
+`Fixed`
+
+- **Date stamps in ordinary journal lines** no longer produce `No date stamp found on selected line(s).` when the timestamp is not immediately after the heading stars.
+- **Inactive timestamps and date rollover** preserve their bracket type, time, repeater, warning, and corrected weekday while moving across month and year boundaries.
+
 # [2.4.0] 08-31-26
 
 `Added`

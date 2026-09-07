@@ -2,7 +2,7 @@
 	"name": "org-vscode",
 	"displayName": "org-vscode",
 	"description": "Quickly create todo lists, take notes, plan projects and organize your thoughts.",
-	"version": "2.4.0",
+	"version": "2.4.1",
 	"repository": "https://www.github.com/realDestroyer/org-vscode",
 	"icon": "Images/org-vscode-logo.png",
 	"publisher": "realDestroyer",
@@ -1055,16 +1055,6 @@
 				"title": "Reschedule Task Backward"
 			},
 			{
-				"command": "extension.smartDateForward",
-				"category": "Org-vscode",
-				"title": "Smart Date Forward (Day Heading or SCHEDULED)"
-			},
-			{
-				"command": "extension.smartDateBackward",
-				"category": "Org-vscode",
-				"title": "Smart Date Backward (Day Heading or SCHEDULED)"
-			},
-			{
 				"command": "extension.deadlineDateForward",
 				"category": "Org-vscode",
 				"title": "Deadline Date Forward"
@@ -1307,14 +1297,6 @@
 				"command": "-extension.decrementDate"
 			},
 			{
-				"key": "alt+shift+right",
-				"command": "-extension.rescheduleTaskForward"
-			},
-			{
-				"key": "alt+shift+left",
-				"command": "-extension.rescheduleTaskBackward"
-			},
-			{
 				"command": "extension.toggleStatusRight",
 				"key": "ctrl+right",
 				"when": "(editorLangId == 'vso' || editorLangId == 'org' || editorLangId == 'vsorg' || editorLangId == 'org-vscode') && editorTextFocus"
@@ -1336,12 +1318,12 @@
 			},
 			{
 				"key": "alt+shift+right",
-				"command": "extension.smartDateForward",
+				"command": "extension.incrementDate",
 				"when": "(editorLangId == 'vso' || editorLangId == 'org' || editorLangId == 'vsorg' || editorLangId == 'org-vscode') && editorTextFocus"
 			},
 			{
 				"key": "alt+shift+left",
-				"command": "extension.smartDateBackward",
+				"command": "extension.decrementDate",
 				"when": "(editorLangId == 'vso' || editorLangId == 'org' || editorLangId == 'vsorg' || editorLangId == 'org-vscode') && editorTextFocus"
 			},
 			{
