@@ -1,5 +1,12 @@
 # Change Log
 
+# [2.4.2] 10-04-26
+
+`Fixed`
+
+- **TODO keyword cycling preserves unchanged planning lines.** Cycling a task without changing its planning state no longer rewrites an inactive `SCHEDULED` timestamp as active or collapses a separate `DEADLINE` line. Planning lines are still updated when a transition adds/removes `CLOSED`, advances a repeater, or forwards a task.
+- **Regression coverage for separate planning lines:** Added extension-host tests for inactive `MM-DD-YYYY` dates and active weekday timestamps while cycling both right and left.
+
 # [2.4.1] 09-07-26
 
 `Changed`
