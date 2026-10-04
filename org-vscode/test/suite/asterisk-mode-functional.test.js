@@ -87,6 +87,42 @@ suite('Asterisk-mode functional behavior', function () {
     await waitFor(() => !doc.getText().includes('CLOSED: ['));
   });
 
+  test('Cycling a task preserves separate SCHEDULED and DEADLINE lines', async () => {
+    const contents = [
+      '* TODO TEST',
+      '  SCHEDULED: [09-27-2026]',
+      '  DEADLINE: [2026-09-28]'
+    ].join('\n');
+    const uri = await writeTempVsoFile(contents);
+    const { doc, editor } = await openFileInEditor(uri);
+
+    setCursor(editor, 0, 0);
+    await vscode.commands.executeCommand('extension.toggleStatusRight');
+
+    await waitFor(() => doc.lineAt(0).text === '* IN_PROGRESS TEST');
+    assert.strictEqual(doc.lineAt(1).text, '  SCHEDULED: [09-27-2026]');
+    assert.strictEqual(doc.lineAt(2).text, '  DEADLINE: [2026-09-28]');
+
+    await vscode.commands.executeCommand('extension.toggleStatusLeft');
+    await waitFor(() => doc.lineAt(0).text === '* TODO TEST');
+    assert.strictEqual(doc.lineAt(1).text, '  SCHEDULED: [09-27-2026]');
+    assert.strictEqual(doc.lineAt(2).text, '  DEADLINE: [2026-09-28]');
+
+    const activeContents = [
+      '* TODO Active date',
+      '  SCHEDULED: <2026-09-27 Sun>',
+      '  DEADLINE: <2026-09-28 Mon>'
+    ].join('\n');
+    const activeUri = await writeTempVsoFile(activeContents);
+    const active = await openFileInEditor(activeUri);
+    setCursor(active.editor, 0, 0);
+
+    await vscode.commands.executeCommand('extension.toggleStatusRight');
+    await waitFor(() => active.doc.lineAt(0).text === '* IN_PROGRESS Active date');
+    assert.strictEqual(active.doc.lineAt(1).text, '  SCHEDULED: <2026-09-27 Sun>');
+    assert.strictEqual(active.doc.lineAt(2).text, '  DEADLINE: <2026-09-28 Mon>');
+  });
+
   test('Keyword cycling saves once for a non-completion transition', async () => {
     const uri = await writeTempVsoFile('* TODO Save once\n');
     const { doc, editor } = await openFileInEditor(uri);
