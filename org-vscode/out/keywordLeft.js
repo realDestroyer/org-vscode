@@ -143,10 +143,13 @@ module.exports = async function (commandOptions = {}) {
     });
     if (transitionNote.cancelled) continue;
 
+    let planningChanged = false;
     // Upsert/remove CLOSED in the planning line.
     if (completionStampsClosed) {
+      planningChanged = mergedPlanning.closed !== completionTimestamp;
       mergedPlanning.closed = completionTimestamp;
     } else if (workflowRegistry.stampsClosed(currentKeyword)) {
+      planningChanged = Boolean(mergedPlanning.closed);
       mergedPlanning.closed = null;
     }
 
@@ -178,6 +181,7 @@ module.exports = async function (commandOptions = {}) {
       });
 
       if (repeated && repeated.didRepeat) {
+        planningChanged = true;
         mergedPlanning.scheduled = repeated.planning.scheduled;
         mergedPlanning.deadline = repeated.planning.deadline;
 
@@ -185,6 +189,10 @@ module.exports = async function (commandOptions = {}) {
           nextKeyword = repeated.repeatToStateKeyword;
         }
       }
+    }
+
+    if (workflowRegistry.triggersForward(nextKeyword) !== workflowRegistry.triggersForward(currentKeyword)) {
+      planningChanged = true;
     }
 
     let newLine = taskKeywordManager.buildTaskLine(leadingSpaces, nextKeyword, cleanedText, { headingMarkerStyle, starPrefix });
@@ -207,25 +215,27 @@ module.exports = async function (commandOptions = {}) {
 
     workspaceEdit.replace(document.uri, currentLine.range, newLine);
 
-    if (planningBody) {
-      if (nextLine && isPlanningLine(nextLine.text)) {
-        workspaceEdit.replace(document.uri, nextLine.range, `${planningIndent}${planningBody}`);
-        if (nextNextLine && isPlanningLine(nextNextLine.text)) {
-          workspaceEdit.delete(document.uri, nextNextLine.rangeIncludingLineBreak);
+    if (planningChanged) {
+      if (planningBody) {
+        if (nextLine && isPlanningLine(nextLine.text)) {
+          workspaceEdit.replace(document.uri, nextLine.range, `${planningIndent}${planningBody}`);
+          if (nextNextLine && isPlanningLine(nextNextLine.text)) {
+            workspaceEdit.delete(document.uri, nextNextLine.rangeIncludingLineBreak);
+          }
+        } else {
+          // Only collapse a next-next planning line if it's separated by a blank line.
+          // Otherwise, it may belong to the next sibling headline (multi-line selections).
+          if (nextLine && !nextLine.text.trim() && nextNextLine && isPlanningLine(nextNextLine.text)) {
+            workspaceEdit.delete(document.uri, nextNextLine.rangeIncludingLineBreak);
+          }
+          workspaceEdit.insert(document.uri, currentLine.range.end, `\n${planningIndent}${planningBody}`);
         }
       } else {
-        // Only collapse a next-next planning line if it's separated by a blank line.
-        // Otherwise, it may belong to the next sibling headline (multi-line selections).
-        if (nextLine && !nextLine.text.trim() && nextNextLine && isPlanningLine(nextNextLine.text)) {
+        if (nextLine && isPlanningLine(nextLine.text)) {
+          workspaceEdit.delete(document.uri, nextLine.rangeIncludingLineBreak);
+        } else if (nextLine && !nextLine.text.trim() && nextNextLine && isPlanningLine(nextNextLine.text) && (nextNextLine.text.includes("CLOSED") || nextNextLine.text.includes("COMPLETED"))) {
           workspaceEdit.delete(document.uri, nextNextLine.rangeIncludingLineBreak);
         }
-        workspaceEdit.insert(document.uri, currentLine.range.end, `\n${planningIndent}${planningBody}`);
-      }
-    } else {
-      if (nextLine && isPlanningLine(nextLine.text)) {
-        workspaceEdit.delete(document.uri, nextLine.rangeIncludingLineBreak);
-      } else if (nextLine && !nextLine.text.trim() && nextNextLine && isPlanningLine(nextNextLine.text) && (nextNextLine.text.includes("CLOSED") || nextNextLine.text.includes("COMPLETED"))) {
-        workspaceEdit.delete(document.uri, nextNextLine.rangeIncludingLineBreak);
       }
     }
 
