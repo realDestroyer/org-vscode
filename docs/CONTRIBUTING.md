@@ -51,30 +51,27 @@ This repo bundles the extension into `dist/extension.js`. For a release, ensure 
       - `docs/howto.md` / `docs/roadmap.md` (as needed)
 
 3. **Bump version**
-    - Update the version in:
-       - `org-vscode/package.json`
-       - `org-vscode/org-vscode/package.json` (dev/test copy)
+    - Update `package.json` and the matching root version fields in `package-lock.json`.
 
 4. **Bundle + test**
-    - From `org-vscode/`:
+    - From the repository root:
        - `npm run bundle`
-   - From `org-vscode/org-vscode/` (dev/test copy):
       - `npm run test:unit`
       - `npm test`
 
 5. **Package VSIX**
-    - From `org-vscode/`:
-       - `npx vsce package`
+    - From the repository root:
+       - `npx vsce package --readme-path README.md --changelog-path docs/CHANGELOG.md`
 
 6. **Publish to VS Code Marketplace**
     - Requires a VSCE publisher token configured for `realDestroyer`.
-    - From `org-vscode/`:
-       - `npx vsce publish`
+    - From the repository root, publish the VSIX created in step 5:
+       - `npx vsce publish --packagePath org-vscode-<version>.vsix`
 
 7. **Publish to OpenVSX**
     - Requires an OpenVSX token (commonly via `OVSX_PAT`).
-    - From `org-vscode/`:
-       - `npx ovsx publish -p $env:OVSX_PAT`
+    - From the repository root, publish the same VSIX:
+       - `npx ovsx publish org-vscode-<version>.vsix -p $env:OVSX_PAT`
 
 8. **Update the Latest Release in GitHub**
     - Upload the latest .vsix to GitHub "Latest Release"

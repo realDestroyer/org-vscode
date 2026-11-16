@@ -1,5 +1,12 @@
 # Change Log
 
+# [2.4.3] 11-15-26
+
+`Fixed`
+
+- **Scheduling command discoverability:** `Schedule a Task` is now available in the Command Palette and activates the extension when invoked.
+- **Long-link wrapping:** Hidden URL payloads in rendered Org links no longer reserve extra wrapped rows when editor word wrap is enabled.
+
 # [2.4.2] 10-04-26
 
 `Fixed`
