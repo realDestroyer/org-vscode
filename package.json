@@ -41,6 +41,7 @@
 		"onCommand:extension.openSyntaxColorCustomizer",
 		"onCommand:extension.openKeybindingCustomizer",
 		"onCommand:extension.openColumnView",
+		"onCommand:extension.scheduling",
 		"onCommand:orgMode.exportYearSummary",
 		"onCommand:orgMode.generateExecutiveReport",
 		"onCommand:orgMode.openYearInReview",
@@ -1123,6 +1124,11 @@
 				"command": "extension.alignSchedules",
 				"category": "Org-vscode",
 				"title": "Align Scheduled Tasks"
+			},
+			{
+				"command": "extension.scheduling",
+				"category": "Org-vscode",
+				"title": "Schedule a Task"
 			},
 			{
 				"command": "extension.deadline",

@@ -47,6 +47,7 @@ const tests = [
   require(path.join(__dirname, 'workspace-index-query.test.js')),
   require(path.join(__dirname, 'workspace-index-service.test.js')),
   require(path.join(__dirname, 'org-link-targets.test.js')),
+  require(path.join(__dirname, 'org-link-decorations.test.js')),
   require(path.join(__dirname, 'year-executive-report.test.js')),
   require(path.join(__dirname, 'year-summary-tags.test.js')),
   require(path.join(__dirname, 'year-summary-formats.test.js')),

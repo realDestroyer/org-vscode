@@ -118,7 +118,8 @@ function registerOrgLinkDecorations(ctx) {
   const markerDecorationType = vscode.window.createTextEditorDecorationType({});
   const hideDecorationType = vscode.window.createTextEditorDecorationType({
     color: "transparent",
-    textDecoration: "none; font-size: 0;"
+    textDecoration: "none; font-size: 0;",
+    letterSpacing: "-1ch"
   });
 
   ctx.subscriptions.push(markerDecorationType, hideDecorationType);

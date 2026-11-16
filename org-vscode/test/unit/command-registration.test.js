@@ -154,6 +154,15 @@ function testAllContributedCommandsAreRegistered() {
     assert.ok(registered.has('extension.toggleCheckboxCookie'), 'statistics cookie command must be registered');
 
     const manifest = getPackageManifest(packageJsonRoot);
+    const schedulingCommand = manifest.contributes.commands.find(
+      (command) => command.command === 'extension.scheduling'
+    );
+    assert.ok(schedulingCommand, 'scheduling command must be contributed to the Command Palette');
+    assert.strictEqual(schedulingCommand.title, 'Schedule a Task');
+    assert.ok(
+      manifest.activationEvents.includes('onCommand:extension.scheduling'),
+      'scheduling command must activate the extension from the Command Palette'
+    );
     assert.strictEqual(manifest.version, require(path.join(packageJsonRoot, 'package.json')).version, 'manifest must match package.json');
     const settings = manifest.contributes.configuration.properties;
     assert.strictEqual(settings['Org-vscode.workspaceIndex.enabled'].default, false);
