@@ -2,7 +2,7 @@ const assert = require('assert');
 const path = require('path');
 const moment = require('moment');
 
-const { getAcceptedDateFormats, SCHEDULED_REGEX, buildScheduledReplacement, getMatchingScheduledOnLine, rescheduleScheduledForHeadingByIndex } = require(path.join(__dirname, '..', '..', 'out', 'orgTagUtils.js'));
+const { getAcceptedDateFormats, SCHEDULED_REGEX, buildScheduledReplacement, getMatchingScheduledOnLine, rescheduleScheduledForHeadingByIndex } = require(path.join(__dirname, '..', '..', 'src', 'orgTagUtils.js'));
 
 // Test that SCHEDULED_REGEX correctly matches various formats
 // Capture groups: (1) open-bracket, (2) date, (3) dayname, (4) time-start, (5) time-end,

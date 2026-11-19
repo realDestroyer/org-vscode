@@ -4,7 +4,7 @@ const path = require('path');
 const {
   normalizePriorityValues,
   cyclePriorityOnHeadingLine
-} = require(path.join(__dirname, '..', '..', 'out', 'priorityCycle.js'));
+} = require(path.join(__dirname, '..', '..', 'src', 'priorityCycle.js'));
 
 function cycle(text, direction = 'forward') {
   return cyclePriorityOnHeadingLine(text, {

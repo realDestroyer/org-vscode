@@ -16,7 +16,7 @@ const {
   getAcceptedDateFormats,
   buildScheduledReplacement,
   getMatchingScheduledOnLine
-} = require(path.join(__dirname, '..', '..', 'out', 'orgTagUtils.js'));
+} = require(path.join(__dirname, '..', '..', 'src', 'orgTagUtils.js'));
 
 // ============================================================================
 // SCHEDULED_REGEX Tests

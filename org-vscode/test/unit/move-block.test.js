@@ -1,7 +1,7 @@
 const assert = require('assert');
 const path = require('path');
 
-const { computeMoveBlockResult } = require(path.join(__dirname, '..', '..', 'out', 'moveBlockUtils.js'));
+const { computeMoveBlockResult } = require(path.join(__dirname, '..', '..', 'src', 'moveBlockUtils.js'));
 
 function testMoveDownMovesWholeSubtreeFromInsideDrawer() {
   const lines = [

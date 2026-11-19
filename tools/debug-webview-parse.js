@@ -117,7 +117,7 @@ function main() {
   };
 
   try {
-    const modulePath = path.join(__dirname, '..', 'org-vscode', 'out', 'syntaxColorCustomizer.js');
+    const modulePath = path.join(__dirname, '..', 'org-vscode', 'src', 'syntaxColorCustomizer.js');
     delete require.cache[require.resolve(modulePath)];
 
     const customizer = require(modulePath);

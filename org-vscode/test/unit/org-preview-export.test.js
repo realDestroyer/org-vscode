@@ -4,7 +4,7 @@ const Module = require('module');
 
 function loadPreviewModule() {
   const originalLoad = Module._load;
-  const previewPath = path.join(__dirname, '..', '..', 'out', 'orgPreview.js');
+  const previewPath = path.join(__dirname, '..', '..', 'src', 'orgPreview.js');
   delete require.cache[require.resolve(previewPath)];
   Module._load = function (request, parent, isMain) {
     if (request === 'vscode') return {};

@@ -20,7 +20,7 @@ function loadProvider() {
     }
   };
   const originalRequire = Module.prototype.require;
-  const target = require.resolve(path.join(__dirname, "..", "..", "out", "orgSymbolProvider.js"));
+  const target = require.resolve(path.join(__dirname, "..", "..", "src", "orgSymbolProvider.js"));
   delete require.cache[target];
   Module.prototype.require = function patchedRequire(request) {
     if (request === "vscode") return vscodeMock;

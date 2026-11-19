@@ -4,7 +4,7 @@ const path = require('path');
 const {
   computeHeadingTransitions,
   contentChangesTouchCheckbox
-} = require(path.join(__dirname, '..', '..', 'out', 'checkboxAutoDoneTransitions.js'));
+} = require(path.join(__dirname, '..', '..', 'src', 'checkboxAutoDoneTransitions.js'));
 
 function fakeDocument(lines) {
   return {

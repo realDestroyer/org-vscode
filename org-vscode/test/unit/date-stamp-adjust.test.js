@@ -1,12 +1,12 @@
 const assert = require('assert');
 const path = require('path');
 
-const { getAcceptedDateFormats } = require(path.join(__dirname, '..', '..', 'out', 'orgTagUtils.js'));
+const { getAcceptedDateFormats } = require(path.join(__dirname, '..', '..', 'src', 'orgTagUtils.js'));
 const {
   chooseTimestamp,
   computeDateStampReplacements,
   findTimestampCandidates
-} = require(path.join(__dirname, '..', '..', 'out', 'dateStampAdjust.js'));
+} = require(path.join(__dirname, '..', '..', 'src', 'dateStampAdjust.js'));
 
 const dateFormat = 'YYYY-MM-DD';
 const accepted = getAcceptedDateFormats(dateFormat);

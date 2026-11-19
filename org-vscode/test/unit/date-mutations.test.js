@@ -1,10 +1,10 @@
 const assert = require('assert');
 const path = require('path');
 
-const { getAcceptedDateFormats } = require(path.join(__dirname, '..', '..', 'out', 'orgTagUtils.js'));
-const { transformDayHeadingDate } = require(path.join(__dirname, '..', '..', 'out', 'incrementDate.js'));
-const { transformScheduledDate } = require(path.join(__dirname, '..', '..', 'out', 'rescheduleTask.js'));
-const { transformDeadlineDate } = require(path.join(__dirname, '..', '..', 'out', 'deadlineDateAdjust.js'));
+const { getAcceptedDateFormats } = require(path.join(__dirname, '..', '..', 'src', 'orgTagUtils.js'));
+const { transformDayHeadingDate } = require(path.join(__dirname, '..', '..', 'src', 'incrementDate.js'));
+const { transformScheduledDate } = require(path.join(__dirname, '..', '..', 'src', 'rescheduleTask.js'));
+const { transformDeadlineDate } = require(path.join(__dirname, '..', '..', 'src', 'deadlineDateAdjust.js'));
 
 // ============================================================================
 // transformDayHeadingDate Tests (from incrementDate.js)

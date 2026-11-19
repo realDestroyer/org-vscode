@@ -1,9 +1,9 @@
 const assert = require('assert');
 const path = require('path');
 
-const { getAcceptedDateFormats } = require(path.join(__dirname, '..', '..', 'out', 'orgTagUtils.js'));
-const { computeSmartDateReplacements } = require(path.join(__dirname, '..', '..', 'out', 'smartDateAdjust.js'));
-const { computeRescheduleReplacements } = require(path.join(__dirname, '..', '..', 'out', 'rescheduleTask.js'));
+const { getAcceptedDateFormats } = require(path.join(__dirname, '..', '..', 'src', 'orgTagUtils.js'));
+const { computeSmartDateReplacements } = require(path.join(__dirname, '..', '..', 'src', 'smartDateAdjust.js'));
+const { computeRescheduleReplacements } = require(path.join(__dirname, '..', '..', 'src', 'rescheduleTask.js'));
 
 function makeGetLineText(lines) {
   return (lineNumber) => (lineNumber >= 0 && lineNumber < lines.length) ? lines[lineNumber] : '';

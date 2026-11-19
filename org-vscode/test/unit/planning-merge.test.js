@@ -1,7 +1,7 @@
 const assert = require('assert');
 
-const { createWorkflowRegistry } = require('../../out/workflowStates');
-const { mergePlanningFromNearbyLines } = require('../../out/planningMerge');
+const { createWorkflowRegistry } = require('../../src/workflowStates');
+const { mergePlanningFromNearbyLines } = require('../../src/planningMerge');
 
 module.exports = {
   name: 'planning-merge',

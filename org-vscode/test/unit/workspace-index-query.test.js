@@ -1,8 +1,8 @@
 const assert = require('assert');
 const path = require('path');
 
-const core = require(path.join(__dirname, '..', '..', 'out', 'workspaceIndexCore.js'));
-const { MAX_QUERY_LENGTH, parseQuery, runQuery, validatePerspectives } = require(path.join(__dirname, '..', '..', 'out', 'orgQuery.js'));
+const core = require(path.join(__dirname, '..', '..', 'src', 'workspaceIndexCore.js'));
+const { MAX_QUERY_LENGTH, parseQuery, runQuery, validatePerspectives } = require(path.join(__dirname, '..', '..', 'src', 'orgQuery.js'));
 
 function record(overrides = {}) {
   return {

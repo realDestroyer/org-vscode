@@ -50,7 +50,7 @@ npm test
 ```
 
 - [`package.json`](../package.json) is the extension manifest and defines the build and test commands.
-- [`org-vscode/out/`](../org-vscode/out/) is the editable JavaScript source despite its name. Do not edit the generated `dist/extension.js`.
+- [`org-vscode/src/`](../org-vscode/src/) is the editable JavaScript source. Do not edit the generated `dist/extension.js`.
 - [`org-vscode/test/`](../org-vscode/test/) contains unit and extension-host tests. `npm test` builds the extension and runs the host suite with a pinned VS Code version and separate settings/extensions directories. On Windows, the [test runner](../org-vscode/test/runTest.js) uses `_orgvscode_testlink` and `_orgvscode_vscode_test` at the root of the repository's drive.
 - `npm run bundle` refreshes `dist/extension.js`, `media/`, and `snippets/`. Edit webview assets and snippets in [`org-vscode/media/`](../org-vscode/media/) and [`org-vscode/snippets/`](../org-vscode/snippets/), not their generated copies.
 - Use **Run and Debug → Extension** to build and open an Extension Development Host. Use sample files from [`examples/`](../examples/) to reproduce issues; keep personal Org files out of commits, test fixtures, and screenshots.

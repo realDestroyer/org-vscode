@@ -29,7 +29,7 @@ module.exports = {
   name: 'unit/year-summary-formats',
   run() {
     return withMockedVscode(() => {
-      const { parseOrgContent, toDateKey } = require(path.join(__dirname, '..', '..', 'out', 'yearSummary.js'));
+      const { parseOrgContent, toDateKey } = require(path.join(__dirname, '..', '..', 'src', 'yearSummary.js'));
 
       assert.strictEqual(toDateKey('<2026-01-13 Tue 15:00>'), '2026-01-13', 'Weekday/time suffixes should not defeat parsing');
       assert.strictEqual(toDateKey('01-02-2025'), '2025-01-02', 'Day-heading order should normalize');

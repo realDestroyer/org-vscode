@@ -2,26 +2,26 @@ const assert = require('assert');
 
 suite('Tag match-string parsing (Emacs style)', function () {
   test('AND (+A+B) requires all tags', () => {
-    const { matchesTagMatchString } = require('../../out/orgTagUtils');
+    const { matchesTagMatchString } = require('../../src/orgTagUtils');
     assert.strictEqual(matchesTagMatchString('+A+B', ['A']), false);
     assert.strictEqual(matchesTagMatchString('+A+B', ['A', 'B']), true);
   });
 
   test('NOT (-A) excludes tags', () => {
-    const { matchesTagMatchString } = require('../../out/orgTagUtils');
+    const { matchesTagMatchString } = require('../../src/orgTagUtils');
     assert.strictEqual(matchesTagMatchString('+A-B', ['A', 'B']), false);
     assert.strictEqual(matchesTagMatchString('+A-B', ['A']), true);
   });
 
   test('OR (A|B) matches either side', () => {
-    const { matchesTagMatchString } = require('../../out/orgTagUtils');
+    const { matchesTagMatchString } = require('../../src/orgTagUtils');
     assert.strictEqual(matchesTagMatchString('A|B', ['A']), true);
     assert.strictEqual(matchesTagMatchString('A|B', ['B']), true);
     assert.strictEqual(matchesTagMatchString('A|B', ['C']), false);
   });
 
   test('Compat any:/all:/comma are normalized', () => {
-    const { normalizeTagMatchInput, matchesTagMatchString } = require('../../out/orgTagUtils');
+    const { normalizeTagMatchInput, matchesTagMatchString } = require('../../src/orgTagUtils');
 
     assert.strictEqual(normalizeTagMatchInput('any:a,b'), 'A|B');
     assert.strictEqual(normalizeTagMatchInput('all:a,b'), '+A+B');
@@ -33,7 +33,7 @@ suite('Tag match-string parsing (Emacs style)', function () {
   });
 
   test('Hyphenated tag names are normalized to underscores', () => {
-    const { normalizeTag, uniqueUpper, matchesTagMatchString } = require('../../out/orgTagUtils');
+    const { normalizeTag, uniqueUpper, matchesTagMatchString } = require('../../src/orgTagUtils');
 
     assert.strictEqual(normalizeTag('test-tag'), 'TEST_TAG');
     assert.deepStrictEqual(uniqueUpper(['test-tag']), ['TEST_TAG']);
@@ -43,7 +43,7 @@ suite('Tag match-string parsing (Emacs style)', function () {
   });
 
   test('Group tags expand to members (#+TAGS: [ GTD : ... ])', () => {
-    const { parseTagGroupsFromText, matchesTagMatchString } = require('../../out/orgTagUtils');
+    const { parseTagGroupsFromText, matchesTagMatchString } = require('../../src/orgTagUtils');
 
     const fileText = [
       '#+TAGS: [ GTD : Control Persp ]',

@@ -2,7 +2,7 @@ const assert = require('assert');
 const path = require('path');
 const moment = require('moment');
 
-const { getAcceptedDateFormats } = require(path.join(__dirname, '..', '..', 'out', 'orgTagUtils.js'));
+const { getAcceptedDateFormats } = require(path.join(__dirname, '..', '..', 'src', 'orgTagUtils.js'));
 
 function testParsingWithDddYYYYMMDD() {
   const formats = getAcceptedDateFormats('YYYY-MM-DD');

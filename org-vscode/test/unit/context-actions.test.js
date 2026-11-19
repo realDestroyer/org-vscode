@@ -2,7 +2,7 @@ const assert = require('assert');
 const path = require('path');
 
 const { alignOrgTableLines, classifyContext, commandForContext, renumberOrderedListLines } = require(
-  path.join(__dirname, '..', '..', 'out', 'contextActionUtils.js')
+  path.join(__dirname, '..', '..', 'src', 'contextActionUtils.js')
 );
 
 module.exports = {

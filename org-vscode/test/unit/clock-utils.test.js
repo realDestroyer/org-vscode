@@ -4,7 +4,7 @@ const {
   closeClockLine,
   formatDuration,
   computeClockTableRows
-} = require('../../out/clockUtils');
+} = require('../../src/clockUtils');
 
 function testParseAndCloseClockLine() {
   const parsed = parseClockLine('  CLOCK: [2026-04-09 Thu 09:00]');

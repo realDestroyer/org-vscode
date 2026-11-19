@@ -58,7 +58,7 @@ async function run() {
   };
 
   const originalLoad = Module._load;
-  const modulePath = path.join(__dirname, '..', '..', 'out', 'workspaceIndex.js');
+  const modulePath = path.join(__dirname, '..', '..', 'src', 'workspaceIndex.js');
   delete require.cache[require.resolve(modulePath)];
   Module._load = function (request, parent, isMain) {
     if (request === 'vscode') return vscodeMock;

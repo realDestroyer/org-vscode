@@ -113,7 +113,7 @@ function getPackageManifest(extensionRoot) {
 }
 
 function activateExtension(extensionRoot, vscodeMock) {
-  const extensionPath = path.join(extensionRoot, 'out', 'extension.js');
+  const extensionPath = path.join(extensionRoot, 'src', 'extension.js');
   // Ensure we load a fresh copy for each run.
   delete require.cache[require.resolve(extensionPath)];
 

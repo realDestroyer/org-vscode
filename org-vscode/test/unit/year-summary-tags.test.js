@@ -4,7 +4,7 @@ const path = require('path');
 module.exports = {
   name: 'unit/year-summary-tags',
   run() {
-    const { parseOrgContent } = require(path.join(__dirname, '..', '..', 'out', 'yearSummary.js'));
+    const { parseOrgContent } = require(path.join(__dirname, '..', '..', 'src', 'yearSummary.js'));
 
     const raw = [
       '* [2026-01-02 Fri] Day',

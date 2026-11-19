@@ -8,7 +8,7 @@ const {
   getPropertyFromLines,
   getPropertyFromLinesWithInheritance,
   ensureIdInLines
-} = require(path.join(__dirname, '..', '..', 'out', 'orgProperties.js'));
+} = require(path.join(__dirname, '..', '..', 'src', 'orgProperties.js'));
 
 function testInsertsNewDrawerUnderHeading() {
   const lines = [

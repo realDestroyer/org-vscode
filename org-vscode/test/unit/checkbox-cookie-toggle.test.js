@@ -4,7 +4,7 @@ const path = require('path');
 const {
   upsertCheckboxCookieInHeadline,
   removeCheckboxCookieFromHeadline
-} = require(path.join(__dirname, '..', '..', 'out', 'toggleCheckboxCookie.js'));
+} = require(path.join(__dirname, '..', '..', 'src', 'toggleCheckboxCookie.js'));
 
 function testUpsertCookiePlacementBeforeTags() {
   const line = '* Heading :WORK:HOME:';

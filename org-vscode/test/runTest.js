@@ -39,7 +39,7 @@ async function main() {
     // through it.
     // Repo layout:
     // - <repoRoot>/package.json is the published extension manifest
-    // - <repoRoot>/org-vscode/out contains the compiled extension sources
+    // - <repoRoot>/org-vscode/src contains the editable JavaScript sources
     // This test runner lives under <repoRoot>/org-vscode/test.
     const repoRoot = path.resolve(__dirname, '..', '..');
     const driveRoot = path.parse(repoRoot).root;

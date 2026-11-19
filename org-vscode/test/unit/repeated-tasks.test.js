@@ -1,8 +1,8 @@
 const assert = require('assert');
 const moment = require('moment');
 
-const { createWorkflowRegistry } = require('../../out/workflowStates');
-const { shiftTimestampContent, applyRepeatersOnCompletion } = require('../../out/repeatedTasks');
+const { createWorkflowRegistry } = require('../../src/workflowStates');
+const { shiftTimestampContent, applyRepeatersOnCompletion } = require('../../src/repeatedTasks');
 
 module.exports = {
   name: 'repeated-tasks',
