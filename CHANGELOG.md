@@ -1,6 +1,1071 @@
-﻿# Moved
+# Change Log
 
-The changelog has moved to: docs/CHANGELOG.md
+# [2.4.3] 11-15-26
 
-- GitHub: https://github.com/realdestroyer/org-vscode/blob/master/docs/CHANGELOG.md
+`Fixed`
 
+- **Scheduling command discoverability:** `Schedule a Task` is now available in the Command Palette and activates the extension when invoked.
+- **Long-link wrapping:** Hidden URL payloads in rendered Org links no longer reserve extra wrapped rows when editor word wrap is enabled.
+
+# [2.4.2] 10-04-26
+
+`Fixed`
+
+- **TODO keyword cycling preserves unchanged planning lines.** Cycling a task without changing its planning state no longer rewrites an inactive `SCHEDULED` timestamp as active or collapses a separate `DEADLINE` line. Planning lines are still updated when a transition adds/removes `CLOSED`, advances a repeater, or forwards a task.
+- **Regression coverage for separate planning lines:** Added extension-host tests for inactive `MM-DD-YYYY` dates and active weekday timestamps while cycling both right and left.
+
+# [2.4.1] 09-07-26
+
+`Changed`
+
+- **Unified date adjustment commands:** `Increment Date Stamp` and `Decrement Date Stamp` now use one cursor-aware implementation, replacing the separate Smart Date behavior. The commands update the nearest active or inactive timestamp on the line, including inline headline dates, journal text, `SCHEDULED` / `DEADLINE` / `CLOSED` planning lines, and timestamps with weekday or time portions.
+- **Emacs-style date movement:** `Alt+Shift+Right` and `Alt+Shift+Left` now invoke the general increment/decrement commands. Selecting a task heading still updates its immediate planning line when that is where the timestamp lives.
+
+`Fixed`
+
+- **Date stamps in ordinary journal lines** no longer produce `No date stamp found on selected line(s).` when the timestamp is not immediately after the heading stars.
+- **Inactive timestamps and date rollover** preserve their bracket type, time, repeater, warning, and corrected weekday while moving across month and year boundaries.
+
+# [2.4.0] 08-31-26
+
+`Added`
+
+- **Year-in-Review analytics tab:** A new Analytics view surfaces delivery health, cycle time, tracked time, quarterly rollups, consistency, carryover chains, project rollups, tag pairings, file hygiene, year-over-year comparison, and review-ready bullets. Every list entry jumps to its source heading.
+- **Delivery and cycle-time metrics:** On-time rate, average days late, still-overdue items, and worst misses are computed from `DEADLINE` and `CLOSED` stamps. Cycle time reports average, median, and 90th-percentile days from `SCHEDULED` to `CLOSED`, plus measured `LOGBOOK` state spans.
+- **Tracked time from CLOCK entries:** `CLOCK: [start]--[end]` ranges and `=> H:MM` totals roll up into total hours, hours per tag, hours per month, and the quarterly view.
+- **Carryover chain analysis:** Repeatedly forwarded tasks are grouped into chains showing how many times an item moved, its first and last appearance, and whether it was ever completed.
+- **Project rollups from task hierarchy:** Nested headings now record parent, depth, and child counts, producing per-project completion percentages.
+- **File hygiene panel:** Counts and lists undated tasks, past-due open items, stale in-progress work, and untagged tasks.
+- **Year picker:** Files spanning several years no longer hide the extra data. The dashboard lists every year found and reloads on selection instead of silently filtering to one.
+- **Review bullets and ranked wins:** Completed work is grouped by tag into achievement lines, and highlights are ranked by subtask count, tracked time, notes, priority, and deadline performance instead of file order.
+- **Priorities and progress cookies:** `[#A]` priorities and `[n/m]` / `[n%]` cookies are captured during parsing.
+- **Year-in-Review settings:** `Org-vscode.yearReview.highlightLimit`, `Org-vscode.yearReview.staleTaskDays`, and `Org-vscode.yearReview.writeReportsOnOpen`.
+
+`Changed`
+
+- **Opening the dashboard is read-only:** JSON, CSV, Markdown, and HTML report files are now generated on demand when you use an export button rather than being written every time the dashboard opens. Set `Org-vscode.yearReview.writeReportsOnOpen` to restore the previous behavior.
+- **Executive reports include the new insight sections** in both Markdown and HTML output.
+
+`Fixed`
+
+- **Org files without day headings now populate the dashboard.** Task collection previously required a `* [MM-DD-YYYY Day] ---` heading, so files that list tasks at the top level produced an empty report. Tasks now fall back to day buckets derived from their own planning stamps.
+- **Weekday and time suffixed timestamps are no longer treated as unscheduled.** `<2026-01-13 Tue 15:00>` and prose stamps such as `2nd January 2025, 9:42:00 am` now normalize correctly in month, heatmap, and timeline grouping.
+- **Drawer contents stay out of task notes.** `:LOGBOOK:` and `:PROPERTIES:` blocks are parsed into structured data instead of being appended as note text.
+- **LOGBOOK spans are measured correctly** for the newest-first ordering Org writes.
+
+# [2.3.1] 08-28-26
+
+`Changed`
+
+- **Emacs Org command parity:** `Alt+Enter` now follows `M-RET` (`org-meta-return`) cursor semantics, including insertion before an item and splitting headings or list items. `Ctrl+Enter` / `Cmd+Enter` remains the distinct `C-RET`-style command that inserts after the current structure. Execute Context Action now follows core `C-c C-c` behavior by toggling checkboxes, aligning tables, renumbering ordered lists, and repairing timestamp weekday names.
+
+`Performance`
+
+- **Faster workflow cycling:** Removed the redundant save before each keyword rotation. A cycle now performs one save after its edit instead of invoking save-triggered agenda and workspace-index refreshes both before and after the change.
+- **Large-file editing:** Ordinary workflow transitions no longer split the entire document unless checkbox, dependency, repeater, or LOGBOOK processing actually needs it. Cursor heading detection now examines only the active line.
+- **Lower decoration overhead:** TODO and custom-state decoration types are cached until their color or workflow configuration changes, and disabled visual features no longer enqueue decoration work after every edit.
+- **Linear heading folding:** Folding ranges are now planned in one stack-based pass instead of repeatedly scanning forward from every heading.
+- **Cached heading parsing:** Folding, symbols, and visibility now reuse the compiled workflow-marker parser until workflow settings change, avoiding thousands of configuration reads and registry builds on large documents.
+
+# [2.3.0] 08-29-26
+
+`Added / Enhanced`
+
+- **Heading CodeLens actions:** Added optional, configurable action links above headings for TODO state, scheduling, deadlines, tags, properties, promotion, demotion, and refiling. Lenses reuse existing commands and are suppressed on source-execution-denied files.
+- **Org visibility cycling:** `Tab` on a heading now cycles the current subtree through folded, direct-children, and fully expanded states. `Shift+Tab` provides the equivalent document-wide cycle, with backward commands available from the Command Palette. Non-heading Tab behavior remains delegated to VS Code.
+- **Context action and structural insertion:** Added the bindable `Org-vscode: Execute Context Action` command for checkboxes, links, timestamps, headings, lists, and tables without overriding Copy. Added `Ctrl+Enter` (`Cmd+Enter` on macOS) to insert a matching heading, list item, checkbox, or table row after the current structure.
+- **Priority cycling:** Added selection-aware forward and backward commands for cycling configurable Org priority cookies on star and configured Unicode headings.
+- **TODO transition notes:** Workflow states can opt into single-line note prompts with `notePrompt`. Prompted transitions write newest-first LOGBOOK entries using existing drawer settings, while cancellation and automation suppression preserve noninteractive behavior.
+- **Mermaid preview and export:** `#+BEGIN_SRC mermaid` blocks now render independently in live preview and standalone HTML export using the packaged Mermaid runtime, strict Mermaid security, local-only script loading, and readable source fallback when a diagram is malformed.
+- **Workspace index and declarative queries:** Added an opt-in, heading-only workspace index with privacy-local persistence, strict `#+BEGIN_QUERY` live-preview blocks, saved Explorer perspectives, archive/exclude controls, guarded local navigation, and deterministic capped results. Standalone exports never include private workspace query data. Addresses #125.
+
+`Tests`
+
+- Registered the previously dormant heading-folding unit suite and added cycle-plan, context-classification, command dispatch, priority, workflow-note normalization/formatting, Mermaid security/fallback, workspace index/query grammar, schema, limits, deterministic ordering, injection safety, performance, preview escaping, and manifest coverage.
+
+
+# [2.2.34] 08-29-26
+
+`Added / Enhanced`
+
+- **Subtree structure commands:** Added **Promote Subtree** and **Demote Subtree** commands that adjust every heading in the selected subtree while preserving body text, drawers, and relative hierarchy.
+- **Workspace refile:** Added **Refile Subtree...** with workspace heading search, safe same-file and cross-file moves, automatic level adjustment beneath the destination, self/descendant rejection, and atomic workspace edits.
+
+`Tests`
+
+- Added unit coverage for star and Unicode subtree transforms, hierarchy preservation, level bounds, invalid targets, and final-newline handling, plus extension-host coverage for promotion and same-file/cross-file refile.
+
+
+# [2.2.33] 08-29-26
+
+`Added / Enhanced`
+
+- **Unified heading link insertion:** Added **Org-vscode: Insert Link to Heading** (`Ctrl+Alt+L`, `Cmd+Alt+L` on macOS) with workspace heading search, duplicate-title disambiguation, automatic target `:ID:` creation, and canonical `[[id:...][title]]` insertion.
+- **Richer Org link navigation:** `file:path::*heading` and `file:path::#anchor` links now open and reveal their target. Heading, ID, classic target, and `CUSTOM_ID` navigation share one resolver, and workspace ID scans now include `.org_archive` files and dirty open documents.
+
+`Tests`
+
+- Added unit coverage for heading collection, ID-link formatting, and target resolution, plus extension-host coverage for cross-file ID persistence, same-document cursor stability, and file-search navigation.
+
+
+# [2.2.32] 08-29-26
+
+`Added / Enhanced`
+
+- **Standalone HTML export:** Added **Org-vscode: Export Current File to HTML**. It reuses the live-preview renderer, opens a save dialog beside the source file by default, and writes a portable, script-free HTML document with light/dark color support.
+- **Full `.org_archive` language support:** Archive files now automatically activate the Org language mode, grammar, outline, preview, navigation, and command contributions.
+
+`Tests`
+
+- Added unit coverage for standalone rendering and manifest contributions, plus extension-host coverage for real HTML file output and `.org_archive` language recognition.
+
+
+# [2.2.31] 08-26-26
+
+`Fixed`
+
+- **Explicit DONE transitions with incomplete checkboxes:** Heading status commands no longer trigger checkbox auto-DONE reconciliation merely because the heading contains a hyphen or the transition inserts a bracketed `CLOSED` timestamp. Explicitly selecting `DONE` now remains `DONE`; actual checkbox edits still auto-complete or reopen parent tasks when `Org-vscode.autoDoneWhenAllCheckboxesChecked` is enabled.
+
+`Tests`
+
+- Added unit and extension-host regressions for distinguishing checkbox-marker edits from heading and planning-line edits.
+
+
+# [2.2.30] 08-25-26
+
+`Added / Enhanced`
+
+- **Checkbox workflow hierarchy:** Cycling a checkbox workflow item into or out of `DONE` now updates ancestor checkbox markers (`[ ]`, `[-]`, and `[X]`) through the same hierarchy logic as ordinary checkbox toggles. Statistics cookies refresh from the reconciled state, and parent task auto-completion continues to account for both checkboxes and child TODO headings.
+- **Checkbox workflow task colors:** Built-in workflow keywords and their trailing checkbox task text now receive the corresponding task-state TextMate scopes in the grammar actually shipped by the extension. Custom workflow states continue to use dynamic decorations.
+- **Statistics cookie shortcut:** Restored the statistics-cookie command contribution and added `Ctrl + Alt + K` to add, switch, or remove a cookie from a heading or list item.
+
+`Tests`
+
+- Added regressions for workflow-driven ancestor markers, child TODO completion, shipped grammar scopes, and the statistics-cookie command/keybinding contribution.
+
+
+# [2.2.29] 08-22-26
+
+`Added / Enhanced`
+
+- **Workflow keywords on checkboxes:** Checkbox list items can now carry a workflow keyword (for example `- [ ] TODO Draft the plan`). `Ctrl + Right` / `Ctrl + Left` rotates the keyword in place instead of treating the line as a heading, preserving the bullet and `[ ]` marker. The cycle includes a "no keyword" step so keywords can be removed again, and rotating into a state that stamps `CLOSED` checks the box (states that are done-like but don't stamp `CLOSED`, like `ABANDONED`, leave it alone). Checkbox keywords are never counted as task headings by Agenda, Tagged Agenda, or subtree TODO statistics. Controlled by `Org-vscode.enableCheckboxKeywords`.
+- **Syntax coloring for custom workflow states:** User-defined workflow states now get their own Symbol / Keyword / Task Text rows in the Syntax Color Customizer, grouped as `<KEYWORD> Tasks (custom)`. New states appear immediately after clicking **Save Workflow** — no window reload. Because the bundled grammar can't know runtime keywords, custom-state colors are applied via editor decorations driven by the same saved settings (`Org-vscode.decorateCustomWorkflowStates`). Each custom state starts from a distinct default color.
+- **Built-in keywords on checkbox lines are syntax highlighted:** The grammar now scopes workflow keywords that follow a checkbox marker in ordered and unordered lists.
+
+`Tests`
+
+- Added `checkbox-keywords` unit coverage (parsing, keyword rotation, checkbox-state syncing, custom workflows, no-keyword removal step).
+- Added `workflow-state-scopes` unit coverage (built-in vs custom scope mapping, slug sanitization, generated customizer rows, deduplication).
+
+
+# [2.2.28] 08-13-26
+
+`Performance`
+
+- **Agenda View is much faster on large org files:** The agenda scan now parses planning data only for task headings (instead of every line of every file), uses cached state lookups and hoisted date constants, and reuses the plain-timestamp regex. Measured ~22x faster scanning on a 20k-line file.
+- **Status toggles are responsive while the Agenda View is open:** The save-triggered agenda refresh is now debounced (300ms trailing) so the multiple saves from a single `Ctrl+Left` / `Ctrl+Right` toggle coalesce into one rescan after the command completes. Saves of non-org files no longer trigger agenda refreshes.
+
+
+# [2.2.27] 08-05-26
+
+`Fixed`
+
+- **Done-task auto-move now stays in the correct sibling group:** Completing an indented asterisk heading with `Ctrl+Right` no longer jumps the finished task into an unrelated parent section when matching child headings share the same task text elsewhere in the file.
+
+`Tests`
+
+- Added a regression test covering duplicated child heading text in indented asterisk-mode files.
+
+
+# [2.2.26] 05-06-26
+
+`Added / Enhanced`
+
+- **External Capture & Link API (v1):** New public API surface returned from `activate()` lets other VS Code extensions (email clients, ticket trackers, browsers) feed structured TODO entries into your org inbox and register custom org link schemes (e.g. `[[msgid:abc@host]]`). Disabled by default (`Org-vscode.enableExternalCapture`); each calling extension must be explicitly approved per workspace on first use. See [docs/external-api.md](docs/external-api.md) and the new repository-root `SECURITY.md` for the threat model and integration contract. Addresses [issue #110](https://github.com/realDestroyer/org-vscode/issues/110).
+- **Configurable src-block execution suppression:** New `Org-vscode.disableSrcExecutionInPaths` setting hides the *Execute Src Block* CodeLens (and refuses palette/keybinding execution) for files matching the configured paths. Defaults to `["inbox.org"]` so externally-captured content cannot reach the existing code-execution path.
+- **`org-vscode.captureTodo` command:** Palette/keybinding entry point that reuses the same sanitizer and formatter as the public API. When invoked from the palette it now prompts for headline + optional comma-separated tags, so the inbox is reachable without writing a consumer extension.
+- **Reference consumer extension:** Added [`examples/external-consumer/`](examples/external-consumer/README.md) — a runnable, ~120-LOC example showing the email-capture pattern, trust prompts, validation gate, and `msgid:` link round-trip. Recommended starting point for integrators.
+- **`Org-vscode.debugExternalApi` setting:** Off by default. When enabled, the public API logs caller-identification diagnostics (call stack, known extension roots) to the Extension Host console for bug reports.
+
+`Design changes`
+
+- **`captureTodo` payload `link` is now a structured object** (`{ scheme, path, description? }`) instead of a pre-formatted bracket string. Org-vscode now owns the bracket rendering end-to-end and validates the scheme against the allowlist as a discrete field; the consumer never hand-formats `[[scheme:path][desc]]`. Built-in safe schemes are `http`, `https`, `mailto`; any other scheme must be registered via `registerLinkType` before it can be used in a captured link. `file` and `id` are explicitly forbidden. Brackets are rejected in `path` and `description` so payloads cannot break out of the rendered link form. Lands before v1 ships per discussion in [issue #110](https://github.com/realDestroyer/org-vscode/issues/110#issuecomment-4350910697).
+
+`Fixes`
+
+- External API caller identification now case-insensitive on Windows so callers from `e:\\` paths are no longer mis-reported as `"unknown"` when VS Code returns extension paths as `E:\\`. Also handles paths with spaces, anonymous/top-level frames, and async-prefixed V8 frames; longest-prefix-wins matching prevents nested example/test extensions from being mis-attributed to org-vscode itself.
+
+`Tests`
+
+- Added unit coverage for `linkTypeRegistry`, `trustStore`, `captureTodo` (sanitization, formatting, splice), and `extensionApi` (kill-switch, trust-denied paths).
+- Added regression tests for `matchCallerInStack`: Windows case-insensitive matching, longest-prefix-wins, paths with spaces, anonymous/async V8 frames, org-vscode internal-frame skipping, and the `node_modules/vscode` shim filter.
+
+
+# [2.2.25] 05-05-26
+
+`Fixed`
+
+- **Heading folding for unindented body content (#111):** Added a dedicated `FoldingRangeProvider` so every heading gets a chevron in the gutter regardless of whether its body text is indented. Previously the extension relied on indent-based folding plus drawer markers, which meant flush-left content under a heading had no fold control at all (reported by RexxMagnus). Each heading now folds from its own line through the line just before the next heading at the same or shallower level, with trailing blank lines trimmed off.
+
+`Tests`
+
+- Added `heading-folding.test.js` covering unindented bodies, headings with no body, trailing-blank trimming, nested levels, and unicode heading markers.
+
+
+# [2.2.24] 04-15-26
+
+`Added / Enhanced`
+
+- **Column View (MVP):** Added `extension.openColumnView` with a dedicated task table webview.
+  - Scope modes: **All Org Files**, **Active File**, and **Current Subtree**.
+  - Dynamic property columns from inherited Org properties.
+  - Interactive column picker with persisted layout (visible columns + sorting + scope) per workspace.
+  - Fast filtering, sortable headers, click-to-reveal source location, and refresh on file save.
+- **Agenda View panel placement stability:** Save-triggered refresh now updates Agenda content in-place so panel location/pop-out state is preserved.
+
+`Tests`
+
+- Added unit coverage for Column View subtree parsing/range helpers and extension-host coverage for `extension.openColumnView` panel open/reuse lifecycle.
+
+
+# [2.2.23] 04-09-26
+
+`Added / Enhanced`
+
+- **Archive Subtree (Org-style):** Added `org-vscode.archiveSubtree` to move the current heading subtree into an archive destination, plus archive-awareness settings for views.
+  - `Org-vscode.archiveFolderName`
+  - `Org-vscode.ignoreArchivedFilesInViews`
+- **Archived file filtering in Agenda/Tagged Agenda/Calendar:** Optional filtering now ignores archive-oriented files/folders in major views by default.
+- **TODO dependency enforcement (Org-style):** Added `Org-vscode.enforceTodoDependencies` so parent tasks cannot transition to done-like states while incomplete child task headings remain.
+- **Clocking MVP commands:** Added `org-vscode.clockIn`, `org-vscode.clockOut`, and `org-vscode.updateClockTable` commands.
+- **Clock table placement + indentation parity improvements:**
+  - New clock tables are inserted at the end of the current task subtree (below body content), not above planning/body lines.
+  - Generated `#+BEGIN_CLOCKTABLE` blocks and rows respect task body indentation.
+  - Existing clock tables are discovered by scanning the full current subtree (not only cursor-adjacent lines), avoiding duplicate block insertion when blank lines/body content are present.
+  - Clock-in now reuses an existing `LOGBOOK` drawer found anywhere in the current subtree, preventing duplicate drawer creation when clocktable/report blocks exist.
+- **Clocktable syntax scopes + customizer controls:** Added dedicated clocktable TextMate scopes and Syntax Color Customizer entries for block markers, header/rows, and per-status values (TODO/IN_PROGRESS/CONTINUED/DONE/ABANDONED), including background color support.
+
+`Tests`
+
+- Added clock utility unit coverage and validated the updated behavior through full bundle + test workflow.
+
+
+# [2.2.22] 02-27-26
+
+`Added / Enhanced`
+
+- **Year-In-Review dashboard redesign:** Refreshed the year-end review dashboard UI with cleaner layout and stronger visual hierarchy for scanning annual activity.
+- **Year summary/report rendering improvements:** Improved summary composition and report builder output for more reliable and readable annual exports.
+
+
+# [2.2.21] 02-27-26
+
+`Fixed`
+
+- **Status toggling no longer steals sibling `CLOSED:` planning lines:** Hardened planning-line merge logic so `Ctrl+Left` / `Ctrl+Right` and related workflows only bind nearby planning metadata to the current heading when ownership is unambiguous.
+- **Year-in-Review executive report export no longer fails on `SafeHtml`:** Coerces rendered HTML to a primitive string before writing report files.
+- **Year-in-Review dashboard rendering reliability:** Browser HTML utilities now preserve nested safe HTML correctly, including void elements like `<input>`, preventing literal markup text from appearing in the Raw Tasks table.
+- **Year-in-Review tag extraction from inline planning lines:** Tasks now correctly capture Emacs-style colon tags (for example `:TAG1:TAG2:TAG3:`) even when tags appear before inline `SCHEDULED` / `DEADLINE` / `CLOSED` stamps.
+- **Year-in-Review heatmap readability + coverage:** Increased default heatmap tag depth and improved month-header cell sizing/overflow behavior for clearer labels.
+
+
+# [2.2.20] 02-12-26
+
+`Fixed`
+
+- **Agenda View: child tasks with their own dates are no longer skipped:** Child task headings with their own `SCHEDULED` / `DEADLINE` are now surfaced even when their parent task is included in the agenda and the subtree is otherwise skipped.
+- **Tagged Agenda View: child task rows render correctly in “Show Details”:** Child task headings inside the details block no longer inherit the main row float layout.
+
+
+# [2.2.19] 02-09-26
+
+`Fixed`
+
+- **Multiline selection: SCHEDULED Smart Date/Reschedule:** Fixed an "Overlapping ranges are not allowed" error when adjusting dates across multi-line selections that include both a heading and its planning line.
+
+
+# [2.2.18] 02-04-26
+
+`Added / Enhanced`
+
+- **Org links: render link descriptions (opt-in):** Optional decoration-based rendering for bracket links like `[[https://github.com][Github]]` to display only `Github`.
+  - Setting: `Org-vscode.decorateLinkDescriptions` (default: `false`).
+  - Command: **Org-vscode: Toggle Link Description Rendering**.
+  - Auto-reveals the full link while the cursor is inside it for easier editing.
+
+
+# [2.2.17] 02-04-26
+
+`Added / Enhanced`
+
+- **Agenda View: Closed tab:** Shows recently completed tasks grouped by completion date.
+  - Uses `CLOSED:` planning stamps and LOGBOOK `State "..." [timestamp]` history (repeaters) to determine the most recent completion.
+- **Agenda View: Range filter:** Limit Agenda + Closed to **All / This week / This month / This year** (week = Monday–Sunday).
+
+
+# [2.2.16] 02-02-26
+
+`Fixed`
+
+- **Syntax Color Customizer live preview:** Fixed a startup-time webview error (`Cannot access 'LIVE_PREVIEW_STYLE_ID' before initialization`) that could break the customizer in some environments.
+
+
+# [2.2.15] 02-01-26
+
+`Added / Enhanced`
+
+- **Heading planning decorations now support `CLOSED`:** Optional heading-line decoration appends ` (C: YYYY-MM-DD)` when the planning line is folded.
+  - Setting: `Org-vscode.decorateHeadingClosedDates` (default: `false`).
+  - Repeating tasks: prefers the **last** `CLOSED:` stamp when multiple are present.
+- **Syntax Color Customizer:** Added styling entry for **Heading CLOSED Decoration** (scope: `meta.decoration.heading.closed.vso`).
+
+`Fixed / Hardened`
+
+- **Syntax Color Customizer webview reliability:** Fixed a packaged/webview load-time script parsing failure that could cause the UI to appear unresponsive.
+- **CSP-safe live preview:** Live preview updates are applied via a nonce'd `<style>` element (no inline style mutation).
+- **Hostile settings hardening:** Sanitizes config-derived token colors / fontStyle to avoid malformed user settings breaking the customizer.
+
+`Changed`
+
+- Removed experimental heading planning decoration alignment UI/setting; VS Code decorations are inline and cannot be truly right-aligned to the editor window edge.
+
+
+# [2.2.14] 01-27-26
+
+`Added / Enhanced`
+
+- **Agenda View now shows more than scheduled tasks:**
+  - Includes **DEADLINE-only** tasks (setting: `Org-vscode.agendaIncludeDeadlines`, default: `true`).
+  - Includes an **`[UNDATED]`** section for tasks with no `SCHEDULED` and no `DEADLINE` (setting: `Org-vscode.agendaIncludeUndated`, default: `true`).
+  - Both settings are exposed in the VS Code Settings UI.
+
+- **Tagged Agenda improvements:**
+  - Correctly labels tasks as **SCHEDULED**, **DEADLINE**, or **UNDATED**.
+  - Adds an **UNDATED** section per file when applicable.
+  - New setting: `Org-vscode.taggedAgendaIncludeAllStatuses` (default: `true`) to include tasks of all statuses for reporting/analytics.
+
+
+# [2.2.13] 01-23-26
+
+`Fixed`
+
+- **Reopening tasks no longer stamps CLOSED:** Transitions from done-like states (e.g. `DONE`) back to non-done states (e.g. `TODO`) no longer insert a `CLOSED: [...]` timestamp.
+  - `CLOSED` stamping is now gated on both `isDoneLike` and `stampsClosed` for consistent behavior across state cycling and Set TODO State.
+
+
+# [2.2.12] 01-20-26
+
+`Added / Enhanced`
+
+- **Src block execution (Org-babel-style MVP):** Execute `#+BEGIN_SRC <language> ... #+END_SRC` blocks and insert/update `#+RESULTS:` immediately after the block.
+  - Supported (MVP): Python, PowerShell, Bash, JavaScript (Node), C++.
+  - UX: CodeLens above `#+BEGIN_SRC`, editor right-click menu, and command palette command: `Org-vscode: Execute Src Block`.
+  - **Settings UI:** Added per-language executable settings (`Org-vscode.srcExecution.*`) and C++ compiler style (`Org-vscode.srcExecution.cppCompilerStyle`).
+  - Safety: disabled in untrusted workspaces (VS Code Workspace Trust).
+
+
+# [2.2.11] 01-18-26
+
+`Fixed`
+
+- **Calendar View drag/drop reschedule:** Fixed a regression where dragging events did not update the source file's `SCHEDULED:` stamp under the newer timestamp syntax.
+  - Preserves existing timestamp style (brackets, weekday/time) and repeater/warning cookies.
+  - Added unit coverage to prevent future regressions, including repeater cases.
+
+
+# [2.2.10] 01-17-26
+
+`Fixed / Enhanced`
+
+- **Agenda View deadline parsing:** Fixed "Due: Invalid date" badges caused by legacy planning stamp parsing.
+- **Checkbox auto-DONE:** Fixed auto-done not closing tasks and improved correctness:
+  - A parent task no longer auto-completes if any child subtask heading is still TODO.
+  - Repeating tasks now complete+log, then reschedule/reopen and reset their subtree (checkboxes unchecked + child subtasks reset) for the next iteration.
+- **Checkbox toggle (multi-line):** `Ctrl+Alt+X` now supports multi-line selections and can bulk-check or bulk-uncheck.
+- **Move Block Up/Down (multi-line):** Range selections can move multiple sibling subtrees together.
+- **Set Repeater:** Fixed repeater command output that could produce malformed planning like `SCHEDULED: [< ...]`.
+- **Migration:** `Migrate File to v2` now converts legacy `SCHEDULED/DEADLINE: [...]` planning stamps to active `<...>` (and repairs malformed `[< ...]`).
+- **Tagged Agenda:** Added AgendaView-style deadline badges/icons for faster scanning.
+
+
+# [2.2.9] 01-16-26
+
+`Added / Enhanced`
+
+- **LOGBOOK drawer logging (Org-style history):** Optional state-change history entries written into a drawer (default `LOGBOOK`) on completion transitions.
+  - Settings: `Org-vscode.logIntoDrawer`, `Org-vscode.logDrawerName`
+  - Works from editor state changes, checkbox auto-done, Agenda View, and Tagged Agenda View.
+
+- **Agenda View performance:** Large speedup on big `.org` files by caching workflow keyword detection (avoids rebuilding task keyword regex/config for every line during scans).
+
+# [2.2.8] 01-16-26
+
+`Added / Enhanced`
+
+- **Repeating tasks (Org repeaters):** Completing a task with a repeater now advances `SCHEDULED:` / `DEADLINE:` timestamps (`+`, `++`, and `.+` semantics).
+- **REPEAT_TO_STATE:** Optional `:REPEAT_TO_STATE:` property (with inheritance) controls which TODO keyword a repeating task reopens to after completion.
+- **Set Repeater command:** Added **Org-vscode: Set Repeater...** to add/update/remove repeater tokens on `SCHEDULED`, `DEADLINE`, or `BOTH`.
+
+`Fixed`
+
+- **Agenda/Calendar/Tagged Agenda:** Repeater suffixes (e.g. `+1w`) no longer break timestamp parsing or cause tasks to be omitted.
+- **Syntax highlighting:** Timestamps with repeater suffixes now tokenize correctly.
+- **Agenda/Tagged Agenda status toggles:** Completing repeating tasks from the views now reschedules/reopens and writes changes back to the file.
+
+# [2.2.7] 01-15-26
+
+`Fixed / Enhanced`
+
+- **Settings UI:** Exposed `Org-vscode.bodyIndentation` and `Org-vscode.autoIndentNonHeaderText` in the VS Code Settings UI (no manual `settings.json` editing required).
+
+# [2.2.6] 01-13-26
+
+`Enhanced`
+
+- **Auto-indent body text (Issue #76):** Optional auto-indentation for non-heading lines when pressing Enter (setting: `Org-vscode.autoIndentNonHeaderText`).
+- **Configurable body indentation:** Control the indentation width used for body/planning lines (setting: `Org-vscode.bodyIndentation`).
+- **Align Schedules behavior:** `Org-vscode: Align Schedules` no longer aligns `:PROPERTIES:` drawers; alignment behavior is now configurable via `Org-vscode.alignSchedulesAlignTags`, `Org-vscode.alignSchedulesAlignInlineScheduled`, and `Org-vscode.alignSchedulesNormalizePlanningLines`.
+
+# [2.2.5] 01-12-26
+
+`Enhanced`
+
+- **Configurable Workflow States:** Task keywords (TODO states) are now driven by `Org-vscode.workflowStates` (cycle order + per-state semantics like CLOSED stamping, carryover/forward-trigger, and agenda visibility).
+- **Set TODO State:** Added **Org-vscode: Set TODO State...** to set an exact keyword from a QuickPick (selection-aware).
+- **Syntax Color Customizer:** Added a `Property Drawer` control (scope: `meta.block.property.vso`) so you can style `:PROPERTIES:`…`:END:` blocks.
+- **Workflow States GUI:** Added a **Workflow States** tab to the Syntax Color Customizer so you can edit `Org-vscode.workflowStates` without writing JSON.
+
+`Fixed / Enhanced`
+
+- **Move Block Up/Down:** Moving a task block now keeps its full subtree together (child headings, drawers, and indented content) and works when your cursor is anywhere inside the block.
+
+# [2.2.4] 01-11-26
+
+`Added / Enhanced`
+
+- **Properties (Emacs parity):** Property drawer management commands:
+  - `Org-vscode: Set Property` (creates/updates drawers as needed)
+  - `Org-vscode: Get Property (with inheritance)` (local → parent headings → file `#+PROPERTY`)
+  - `Org-vscode: Delete Property` (removes empty drawers)
+- **IDs:**
+  - `Org-vscode: Get or Create ID` (creates a UUID when missing; copies to clipboard)
+  - `Org-vscode: Set ID` (sets/replaces ID; empty input generates a UUID; copies to clipboard)
+
+`Fixed`
+
+- **Tagged Agenda:** Clicking a task (with highlight enabled) no longer applies a filled background to the selected row; it now matches Agenda View’s outline-only highlight. Disable via `Org-vscode.agendaHighlightTaskOnClick`.
+
+# [2.2.3] 01-11-26
+`Fixed`
+
+- **Tagged Agenda:** Clicking task text now reveals the source line in the existing editor (or opens in the left column), matching Agenda View instead of opening in the webview column.
+
+# [2.2.2] 01-11-26
+`Enhanced`
+
+- **Agenda View / Tagged Agenda:** Click task text (or filename) to reveal the exact source line in the editor. Settings: `Org-vscode.agendaRevealTaskOnClick` and `Org-vscode.agendaHighlightTaskOnClick`.
+
+# [2.2.1] 01-07-26
+`Fixed / Enhanced`
+
+- **Fix: Activation bundling:** Updated the bundle pipeline to prefer ESM entrypoints (avoids a runtime crash caused by a missing `./impl/*` module).
+- **Enhanced: Keyboard shortcuts discoverability:** Legacy `extension.*` commands now display under the `org-vscode:` category without changing command IDs.
+- **Enhanced: Keybinding Customizer:** Cleaner command display names, summaries for all rows, hides noisy `when` clauses, includes commands without default keybindings, and keeps summary text on one line.
+
+# [2.2.0] 01-06-26
+`Added / Enhanced`
+
+- **Preview (MVP):** Live HTML preview with editor → preview scroll sync. Commands: `Org-vscode: Open Preview` and `Org-vscode: Open Preview To Side`.
+- **Keybinding:** `Ctrl+Alt+P` opens preview to the side.
+- **Editing (Org Meta-Return style):** `Alt+Enter` smart-inserts a new heading / list item / table row depending on context.
+- **Math (experimental):** Optional math symbol decorations that render common LaTeX commands as Unicode glyphs inside `$...$` and `$$...$$` (setting: `Org-vscode.decorateMath`).
+
+# [2.1.5] 01-06-26
+`Fixed / Enhanced`
+
+- **Fix: Task-state highlighting scopes:** Unicode task symbols now use `constant.character.*.vso` only for the symbol itself (not the entire line), restoring correct per-token coloring for TODO/IN_PROGRESS/CONTINUED/DONE/ABANDONED headings.
+- **Enhanced: Syntax Color Customizer:** Added controls for additional Org syntax scopes (links, lists, checkboxes, blocks, math, emphasis, priority, comments, and tables).
+
+# [2.1.4] 01-06-26
+`Enhanced`
+
+- **Expanded Org syntax highlighting:** Better highlighting coverage for common Org constructs (blocks, lists, links, priorities, drawers/properties, directives, and basic math fragments).
+- **Navigation:** Document Outline for Org headings + improved Org link handling (including `[[*heading]]`, `[[id:...]]`, and `[[#target]]`).
+- **Link completion:** Auto-complete link targets inside `[[...]]`, including workspace-wide `id:` suggestions.
+- **Docs/examples:** Updated documentation and the shipped example Org file to showcase the new syntax and navigation helpers.
+
+# [2.1.3] 01-05-26
+`Enhanced`
+
+- **Statistics cookies (Org-mode placeholders):** Cookies now use `[/]` (fraction) and `[%]` (percent) placeholders, which Org-vscode renders as `[n/m]` and `[p%]`.
+- **Subtree completion stats:** Heading cookies include TODO subtree completion in addition to checkbox completion (DONE/ABANDONED count as complete).
+
+# [2.1.2] 01-04-26
+`Fixed / Enhanced`
+
+- **Agenda View / Tagged Agenda:** Clicking a checkbox in “Show Details” now immediately updates the checkmark in the webview (no full refresh needed, so filters/expansions stay open).
+- **Checkbox auto-DONE:** When `Org-vscode.autoDoneWhenAllCheckboxesChecked` is enabled, tasks now revert from `DONE` back to `IN_PROGRESS` if any checkbox becomes unchecked (and `CLOSED` is removed).
+
+# [2.1.1] 01-04-26
+`Enhanced`
+
+- **Checkbox statistics (Emacs parity):** Supports `[n/m]` and `[p%]` cookies on headings and list items, with hierarchical counting (top-level items only; children determine parent completion).
+- **Checkbox toggling:** Toggle checkbox at cursor with `Ctrl+Alt+X` (command: Org-vscode: Toggle Checkbox Item).
+- **Agenda View / Tagged Agenda:** “Show Details” supports clicking checkboxes to toggle completion (writes back to source files).
+- **Docs:** Added checkbox usage screenshots and updated guides.
+
+# [2.1.0] 12-29-25
+`Enhanced`
+
+- **Agenda View:** Added file filter chips (quickly view one .org file or all).
+- **Agenda View:** Improved “Show Details” readability so expanded task details wrap and stay within the panel.
+- **TODO line decoration:** Optional whole-line background highlighting per task state (uses your tokenColorCustomizations backgrounds).
+- **Checkbox automation:** Optional auto-DONE when all child checkboxes under a heading are checked.
+- **Emphasis rendering:** Optional runtime styling for `*bold*`, `/italic/`, `_underline_`, `+strike+` with markers hidden unless you’re editing them.
+- **Editing commands:** Added emphasis wrap/toggle commands for bold/italic/underline.
+
+# [2.0.2] 12-29-25
+`Enhanced`
+
+- **Tagged Agenda:** CONTINUED tasks are omitted by default to avoid duplicates when a task was continued into a future TODO. Set `Org-vscode.includeContinuedInTaggedAgenda` to include them.
+- **Indent decoration:** Heading indentation decorations can be enabled/disabled independently of unicode marker decorations.
+  - When `decorateUnicodeHeadings` is OFF but indentation is ON, headings render Org-Indent-style with the trailing `*` visible.
+- **Insert Org Table:** The table generator now emits canonical Org-mode pipe tables (Emacs compatible), and the webview UI buttons/marquee work correctly under strict CSP.
+- **Snippets packaging:** Ensures `snippets/vso.json` ships in the VSIX so snippet completions work after install.
+
+# [2.0.1] 12-28-25
+`Fixed`
+
+- **Year-in-Review packaging:** ensures `media/yearDashboardView.js` ships in the VSIX so the dashboard webview loads correctly.
+
+# [2.0.0] 12-28-25
+`Enhanced / Breaking`
+
+- **Emacs-style tags + match strings:**
+  - Canonical tags are end-of-headline `:TAG1:TAG2:` with outline + `#+FILETAGS` inheritance.
+  - Tag filtering supports Emacs match strings like `+A+B`, `A|B`, and `+A-B`.
+  - Tag groups via `#+TAGS:` blocks are supported and expanded.
+  - Tag names normalize hyphens to underscores (e.g. `TEST-TAG` → `TEST_TAG`) to keep match strings unambiguous.
+
+- **Emacs-style planning lines (SCHEDULED/DEADLINE):**
+  - Canonical planning metadata lives on the indented line directly under the heading.
+  - Backward-compatible: legacy inline stamps are still recognized.
+
+- **Explicit v2 migration command:**
+  - Adds **Org-vscode: Migrate File to v2 Format** (no automatic rewrites).
+  - Migrates legacy `[+TAG:...]` blocks, inline planning stamps, and `COMPLETED:` → `CLOSED:`.
+
+- **DONE timestamps use `CLOSED` (Issue #18):**
+  - DONE transitions now write `CLOSED: [...]` instead of `COMPLETED: [...]`.
+  - Backward-compatible: legacy `COMPLETED` timestamps are still parsed/removed.
+
+- **Syntax highlighting + snippets/docs:**
+  - Grammar highlights `CLOSED` (and legacy `COMPLETED`) consistently.
+  - Snippets and docs now prefer `CLOSED` in examples.
+
+# [1.10.9] 12-23-25
+`Enhanced`
+
+- **Editor shortcuts no longer depend on `vso` language mode:**
+  - Keybindings now work when the editor language mode is `org`/`vsorg`/`org-vscode` (not only `vso`).
+
+- **Heading increment/decrement (Alt+Left/Right):**
+  - Runs reliably even when the current file language mode isn't `vso`.
+  - Selection-aware for asterisk headings (bulk increment/decrement across selected lines).
+
+# [1.10.8] 12-17-25
+`Enhanced`
+
+- **Multi-line selection editing:**
+  - Status cycling (`Ctrl+Left/Right`) now applies across multi-line selections / multi-cursor.
+  - Scheduling (`Ctrl+Alt+S`), deadlines (`Ctrl+Alt+D`), and inline tags (`Ctrl+Shift+T`) now support applying to multiple selected tasks at once.
+  - Heading increment/decrement (`Alt+Left/Right`) supports multi-line selection.
+  - Date adjusters (smart date, deadline date, day heading increment/decrement) support multi-line selection.
+
+# [1.10.7] 12-16-25
+`Fixed`
+
+- **Agenda View chronological ordering:**
+  - Fixed date-group sorting so agenda sections display in true chronological order.
+  - Avoids unstable sorting caused by greedy bracket parsing in the agenda header key.
+
+`Enhanced`
+
+- **Cross-platform file paths (Linux/macOS/Windows):**
+  - Commands that create/open/read org files now consistently use `path.join(...)` for directory/file paths.
+
+- **Docs:**
+  - Added CONTRIBUTING workflow guide (Issue -> Branch -> PR -> Review -> Merge).
+
+# [1.10.6] 12-16-25
+`Enhanced`
+
+- **Org-compatible source + decorative headings:**
+  - `Org-vscode.decorateUnicodeHeadings` can render Unicode heading markers visually while keeping `*` headings in the file.
+  - `Org-vscode.decorateHeadingIndentation` optionally adds org-indent-like visual indentation for headings.
+  - `Org-vscode.adjustHeadingIndentation` is now numeric (spaces per level; `0` disables), used by heading increment/decrement and decoration indentation width.
+  - Heading increment/decrement now works even if `headingMarkerStyle` doesn't match the current file, and prompts to update settings.
+
+- **Date formatting correctness:**
+  - Commands and views that parse/write scheduled/deadline dates now use `Org-vscode.dateFormat` consistently.
+  - Calendar drag/drop rescheduling now writes dates using the configured format.
+  - Added **Org-vscode: Convert Dates in Current File** for explicit, safe date format conversion.
+
+- **Snippets + tests:**
+  - Built-in snippets emit `*` headings (Org-friendly) instead of forcing Unicode markers.
+  - Added functional integration coverage for asterisk-mode workflows.
+
+# [1.10.5] 12-15-25
+`Enhanced`
+
+- **Org-mode interoperability:**
+  - Added `Org-vscode.headingMarkerStyle` setting (`unicode` default, `asterisks` to preserve `*` headings in-file).
+  - Disabled the on-type `*` → Unicode conversion when `headingMarkerStyle` is set to `asterisks`.
+  - Updated commands and views (Agenda/TaggedAgenda/Calendar/Move Up/Down/Continued auto-forwarding) to support and preserve either marker style.
+  - Updated syntax highlighting so `* TODO ...` task headings are properly scoped in asterisk mode.
+  - Year Summary now detects day headings written with either `⊘ [...]` or `* [...]`.
+
+# [1.10.4] 12-12-25
+`Fixed`
+
+- **Insert Table:**
+  - Fixed `org-vscode.insertTable` not being registered on activation (command not found).
+
+# [1.10.3] 12-12-25
+`Fixed`
+
+- **Syntax Color Customizer:**
+  - Fixed **Save Colors** button not applying settings.
+  - Synced Marketplace README content with the main repo README.
+
+# [1.10.2] 12-12-25
+`Enhanced`
+
+- **Syntax Color Customizer scope expansion:**
+  - Added defaults for additional Org elements (DEADLINE/CLOSED/COMPLETED/timestamps/day headers/headings/directives/properties).
+  - Added an optional **Body / Notes Text** control (uses theme default unless you explicitly set it).
+
+# [1.10.1] 12-11-25
+`Fixed`
+
+- **Agenda / TaggedAgenda CONTINUED parity:**
+  - Clicking task keywords in Agenda and TaggedAgenda now triggers the same CONTINUED auto-forward/remove behavior as the editor hotkeys.
+  - Agenda no longer collapses (dispose/reopen) after changing a task status.
+
+# [1.10.0] 12-11-25
+`Added`
+
+- **Syntax Color Customizer Webview:**
+  - New command **"org-vscode Customize Syntax Colors"** opens an interactive UI for customizing syntax highlighting.
+  - Visual color pickers for every task state: TODO, IN_PROGRESS, CONTINUED, DONE, ABANDONED.
+  - Also customize SCHEDULED stamps, inline tags, and agenda dates.
+  - Toggle bold/italic font styles for each element.
+  - Live preview shows exactly how your text will appear.
+  - Save changes directly to user settings or reset to extension defaults.
+  - Quick link to VS Code's Keyboard Shortcuts editor (filtered to org-vscode).
+
+- **Default Syntax Highlighting Colors:**
+  - Users now get proper syntax highlighting out of the box without manual configuration.
+  - Extension provides sensible default colors via `configurationDefaults` in package.json.
+  - Users can still override colors in their personal settings or use the new Customizer UI.
+
+<img src="https://github.com/realDestroyer/org-vscode/blob/master/Images/Syntax-Highlight-WebUI.png?raw=true" width="900" />
+
+# [1.9.1] 12-11-25
+`Fixed`
+
+  - Fixed issue where adding a SCHEDULED date to a line that already had a DEADLINE would place SCHEDULED after DEADLINE, breaking syntax highlighting.
+  - The `Ctrl+Alt+S` command now correctly inserts SCHEDULED before any existing DEADLINE tag.
+  - Also added zero-padding for single-digit months/days (e.g., `1` → `01`).
+
+# [1.9.0] 12-10-25
+`Enhanced`
+
+- **CONTINUED Task Auto-Forwarding:**
+  - When toggling away from `CONTINUED`, the forwarded copy is automatically removed from the next day.
+  - Creates the next day's heading if it doesn't already exist.
+
+- **DEADLINE Support:**
+  Added tag support using Emacs-style end-of-headline tags `:foo:bar:` (legacy `: [+TAG:foo,bar] -` is still recognized for backward compatibility).
+  - New snippet `/dl` adds a DEADLINE line to an existing task.
+  - Agenda View now displays deadline badges with color-coded warnings:
+    - 🔴 **OVERDUE** (pulsing red) - Past deadline
+    - 🟠 **DUE TODAY** (orange) - Deadline is today
+    - 🟡 **Due in X days** (yellow) - 1-3 day warning
+    - ⚫ **Due: date** (gray) - Future deadline (4+ days)
+  - Year Summary parser now tracks DEADLINE dates in exports.
+  - Distinct syntax highlighting for DEADLINE (red/orange vs SCHEDULED cyan).
+
+- **Smart Date Keybind Consolidation:**
+  - `Alt+Shift+Left/Right` now intelligently detects whether cursor is on a day heading or SCHEDULED line and adjusts accordingly.
+  - `Ctrl+Shift+Left/Right` now adjusts DEADLINE dates.
+  - Added negative keybindings to properly unbind old commands on update.
+
+- **New Keybindings:**
+  - `Ctrl+Alt+D` - Add/remove DEADLINE to task (prompts for date)
+  - `Alt+Shift+S` - Add separator line (moved from Ctrl+Alt+D)
+
+- **Agenda View Improvements:**
+  - Now shows only `TODO` and `IN_PROGRESS` tasks (excludes CONTINUED, DONE, ABANDONED).
+  - CONTINUED tasks are excluded since their forwarded TODO copy will appear instead.
+
+- **Align Schedules Fix:**
+  - `Alt+Shift+A` now preserves DEADLINE tags when aligning SCHEDULED timestamps.
+
+- **Day Heading Snippet:**
+  - New `/day` snippet inserts a day heading with today's date and weekday picker.
+
+# [1.8.0] 12-04-25
+`Enhanced`
+
+- **Year-in-Review Suite:**
+  - Added three new commands — `orgMode.exportYearSummary`, `orgMode.generateExecutiveReport`, and `orgMode.openYearInReview` — to build JSON/CSV summaries, polished Markdown/HTML executive reports, and an interactive dashboard that visualizes tag heatmaps, status timelines, and task feeds for a full Org file.
+  - Shared the parsing/build pipeline across exporters so one Org scan feeds every artifact, reducing churn on large notebooks.
+  - Webview assets now load lazily with safe fallbacks if a packaged file goes missing, preventing activation failures.
+- **Heading Depth Controls:**
+  - `Alt+Right` / `Alt+Left` no longer fight each other — the commands now rotate Unicode symbols deterministically and optionally adjust indentation by two spaces.
+  - New setting `Org-vscode.adjustHeadingIndentation` (defaults to `true`) lets you decide whether heading depth should move with the symbol or stay pinned.
+
+# [1.7.6] 12-03-25
+`Enhanced`
+
+- **Syntax Highlighting Refresh:**
+  - Updated `vso.tmLanguage.json` so #+ directives, property drawers, and inline timestamps each receive their own scopes for clearer theming across editors.
+  - DEADLINE, CLOSED, and general SCHEDULED markers now share consistent keyword highlighting inside every task state row so the metadata is easier to scan.
+  - General Org timestamps (e.g., `<2025-12-03 Wed 09:00>`) are now scoped once and reused everywhere, reducing flicker between Agenda, Calendar, and file views.
+
+# [1.7.5] 12-02-25
+`Enhanced`
+
+- **Calendar Palette Sync:**
+  - Calendar events now inherit the same deterministic colors used by their tag chips, so each task block, chip, and tooltip all share a single visual identity.
+  - Updated the rendering logic to compute colors once per tag and reuse them for both the chip row and FullCalendar events, improving consistency and performance.
+  - Improved contrast handling so text automatically flips to a readable shade regardless of the assigned background color.
+
+# [1.7.4] 11-28-25
+`Enhanced`
+
+- **Calendar Status & Density Tweaks:**
+  - Added a slim status bar that mirrors the current view range, total task count, and any active tag filters to give quick context without leaving the webview.
+  - Streamlined event cards to highlight the title and scheduled day while keeping metadata tucked away in tooltips.
+  - Minor drag-and-drop polish so rescheduling feedback stays stable during rapid calendar navigation.
+
+# [1.7.3] 11-15-25
+`Enhanced`
+
+- **Calendar Tag Bubble Refresh:**
+  - Restored the classic "bubbly" styling with rounded capsules, gradients, and hover cues that make the filter bar easy to parse at a glance.
+  - Chip row now shows only the tags that exist inside the currently visible range (month/week), keeping the control surface tidy for large files.
+  - Added keyboard/mouse affordances (Ctrl/Cmd multi-select, desaturation of inactive chips) so advanced filtering feels natural.
+
+# [1.7.2] 11-04-25
+`Docs & Packaging`
+
+- Updated README, roadmap, and marketplace metadata to reflect the refreshed calendar efforts and to prep for the 1.7.3+ releases.
+- Cleaned up `package.json`, icon placement, and VSIX packaging so the Marketplace listing installs without warnings.
+- Added roadmap entries for the yearly summary/export initiatives to make upcoming work visible.
+
+# [1.7.1] 08-04-25
+`Refactored`
+
+- Centralized Task Keyword/Symbol Manager:
+  - All logic for task keyword transitions, symbol assignment, and completion stamps is now handled by a new manager (`taskKeywordManager.js`).
+  - Refactored all relevant files (`keywordLeft.js`, `keywordRight.js`, `agenda.js`, `taggedAgenda.js`, and recommended for `calendar.js`) to use this manager, eliminating duplicated logic and ensuring consistent behavior across all views and commands.
+  - Blank lines or notes now default to TODO when keyword rotation is triggered.
+  - This refactor improves maintainability, reliability, and future extensibility of task status handling throughout the extension.
+
+# [1.7.0] 06-20-25
+`Enhanced`
+
+- **Calendar View Rework:**
+  - Task tags are now interactive: tag "bubbles" are displayed above the calendar, one for each unique tag found in the currently visible tasks.
+  - Clicking a tag filters the visible tasks in the calendar to only those matching the tag.
+  - Ctrl+Clicking tag bubbles allows multiple tags to be selected (OR logic).
+  - When tags are selected, unselected tags are visually desaturated (grayed out) for clarity.
+  - If no tags are selected, all tasks and tags remain colorful.
+  - Enhanced styling and clarity around filtering behavior.
+vsce
+# [1.6.9] 06-14-25
+`Enhanced`
+
+- Unified Task Symbols:
+  - Updated all internal functions (Agenda View, Tagged Agenda View, Calendar View, keywordLeft/Right, etc.) to support the new Unicode task symbols:
+    - ⊙ TODO
+    - ⊘ IN_PROGRESS
+    - ⊜ CONTINUED
+    - ⊖ DONE
+    - ⊗ ABANDONED
+  - Symbols are now accurately rotated in both source files and supporting views.
+  - Agenda and Tagged Agenda Views now update the keyword correctly while intentionally hiding the Unicode symbol for a cleaner look.
+
+- Visual Cycling Behavior:
+  - Stopped infinite cycling: you can no longer rotate beyond TODO (left) or ABANDONED (right).
+  - COMPLETED timestamps are reliably added or removed when toggling to/from DONE in every view.
+  - Cleaned symbol detection logic to prevent keyword misfires (e.g. detecting "DONE" inside "ABANDONED").
+
+`Fixed`
+
+- Unicode-aware task matching:
+  - Substring-matching bugs are now eliminated using stricter regex to detect keywords correctly (e.g. DONE was falsely matched inside ABANDONED).
+  - Symbol detection logic in task movement (moveUp / moveDown) updated to use the full Unicode task set.
+
+`Added`
+
+- Message Utility Activation:
+  - Fully integrated and exposed the previously unused `showMessage.js` feature.
+  - A new command (`extension.showMessageTest`) displays an information popup with a customizable message and button.
+  - Added a `Ctrl + Alt + M` keybinding for testing the GitHub redirect example.
+
+# [1.6.8] 05-15-25
+`Fixed`
+
+- Open By Tag:
+  - Restored support for opening .org files by tag from the #+TAGS: header using the VS-Org: Open By Tag command.
+  - The previous version only supported .vsorg files and silently ignored .org files.
+  - Updated logic to support both extensions, clean up blank entries, and normalize tag casing for accurate matching. 🔍✨
+  - You can now confidently open any project by tag, no matter which file type or case it's in!
+
+# [1.6.7] 05-07-25
+`Enhanced`
+
+- Tag Insertion:
+  - When adding a new tag to a task using the addTag command, the extension now checks the file’s #+TAGS: header at the top.
+  - If the tag isn’t already listed, it will automatically be added to the #+TAGS: line, keeping the header in sync with inline tags. 💪
+  - This makes it easier to spot what kinds of projects or contexts a file includes—especially when quickly skimming or using global tag search.
+  - Existing tags in the header are preserved, and no duplicates will be added.
+
+
+# [1.6.6] 04-30-25
+`Fixed`
+- Fixed a bug where tasks containing commas in their description (e.g. “Work on mock interview questions, etc.”) would fail to update their status.
+- The issue was caused by parsing the message.text on commas without safely escaping them. The text was split mid-sentence, causing the update logic to fail to find the original task line.
+- Commas in task text and scheduled date fields are now safely encoded and decoded during message passing between the webview and extension backend. 🎯
+
+
+## [1.6.5] 04-29-25
+`Fixed`
+
+- Tagged Agenda View:
+  - Fixed the erroneously added "cw" letters in a loop. My guess is, I must've been typing on a different window or playing Counter-Strike and alt+tabbed while playing with VSCode in the background and an automated deployment must've kicked off.
+
+## [1.6.4] 04-24-25
+`Fixed`
+
+- Tagged Agenda View:
+  - COMPLETED timestamps now use a consistent long-form style (e.g. 25th March 2025, 8:35:37 am) when toggling to DONE, matching the format used in the main Agenda View and status change commands.
+  - Previously, marking a task as DONE in the Tagged Agenda View inserted a shortened ISO date (e.g. 2025-03-25). This has been updated for consistency and readability.
+  - Fixed a parsing bug where the time portion (including seconds) of the COMPLETED timestamp was being truncated due to incorrect handling of commas in message payloads.
+
+
+## [1.6.3] 04-23-25
+
+`Fixed`
+
+- Agenda View:
+  - COMPLETED timestamps now match the correct long-form style (e.g. 23rd April 2025, 7:46:58 am) for consistency with keywordLeft / keywordRight actions.
+  - Previously, toggling to DONE in the Agenda View used an ISO format (e.g. 2025-04-23). This has been updated to keep formatting consistent across features.
+
+## [1.6.2] 04-21-25
+
+`Added`
+
+- Calendar View Enhancements:
+  - Tags are now visually extracted and displayed as colored bubbles above the calendar
+  - Tasks are color-coded by their primary tag
+  - Tag colors are assigned dynamically (no hardcoding required)
+  - Rescheduling via drag-and-drop now correctly handles tasks with inline tags
+
+`Fixed`
+
+- Rescheduling bug where tagged tasks could not be matched back to source file due to missing tag text during comparison
+
+## [1.6.1] 04-16-25
+
+`Added`
+
+- New feature: Export all active (non-DONE) tasks to `CurrentTasks.org` with `Ctrl + Shift + E`
+- Each task section is grouped under a `##### Source: <filename> #####` header
+- Tasks updated in `CurrentTasks.org` with `keywordLeft` or `keywordRight` will sync changes to the original file automatically
+
+
+## [v1.0.0 thru v1.5.0] 03-18-25 thru 04-09-25
+`Added`
+
+- New Feature(s):
+  - Agenda View
+  - Tagged Agenda View
+  - Calendar View
+  - Keyword Left/Right integration between files
+  - ReadFiles/ChangeDir
+  - Tagging
+  - Tag Searching
+  - Insert Table
+  - Insert Visual Date Separator
+  - Increment/Decrement SCHEDULED Date Stamp
+  - Increment/Decrement Day Separator Date Stamp
+  - SCHEDULED alignment keyboard shortcut
+
+
+## [1.0.0-rebuild] 03-18-25
+
+`Added`
+
+- Agenda View
+  - Modifications within Agenda View are replicated in source file
+  - [Expand All] / [Collapse All] toggle functionality for grouped tasks
+  - Click-to-toggle TODO/DONE directly from the Agenda View
+- Calendar View
+  - You can now drag & drop tasks to different days, weeks, or months
+  - Dragging updates the source file with the new scheduled date
+  - Click-to-toggle TODO/DONE directly from the Calendar View
+- Tagged Task Support
+  - You can now add tags using Emacs-style end-of-headline tags `:tag1:tag2:` (legacy `: [+TAG:tag1,tag2] -` is still recognized for backward compatibility)
+  - Tags are attached to TODO lines and can be used to filter tasks
+- Tagged Agenda View
+  - New agenda view that filters tasks by tag(s)
+  - Supports AND / OR logic depending on input
+  - Fully interactive: open files, toggle status, grouped by date
+- Workspace Compatibility
+  - You can now store .org files in a workspace and they will be read
+- File Watch & Auto Refresh
+  - Agenda and Calendar views automatically refresh on save
+
+`Changed`
+
+- DONE date format changed to `Day Month Name, Year` (e.g. `18th October, 2018`)
+
+`Fixed`
+
+- Agenda view now works cross-platform (including macOS)
+- Scheduling bugs when dates were invalid or partial
+
+## [0.1.4] 08-09-24
+
+`Fixed`
+
+- Fixed scheduling bug
+
+`Changed`
+
+- Changed the keybinds for folding to the default vscode keybinds ```Shift + Ctrl + [``` to fold and ```Shift + Ctrl + ]``` to unfold
+
+## [0.1.3] 10-18-18
+
+`Added`
+
+- Added the `DD-MM-YYYY` date format [Issue #73](https://github.com/robaboyd/vs-org/issues/73)
+  - The setting can be changed under the VS-Org config in the Extension preferences
+  - The already scheduled TODOs will update to the new format when the setting is changed
+
+`Changed`
+
+- DONE date format changed to `Day Month Name, Year` ex. 18th October, 2018
+
+## [0.1.2] 10-12-18
+
+`Fixed`
+
+- Agenda view now shows on mac [Issue #65](https://github.com/robaboyd/vs-org/issues/65)
+
+## [0.1.1] 10-10-18
+
+`Changed`
+
+-Syntax Highlighting update. The text on the line is now the same color as the heading
+
+## [0.1.0] 10-8-18
+
+`Added`
+
+- Agenda View. Plan, and organize your taks in a easy to use interface.
+- `ctrl+alt+s` keybind to schedule an item, saves the document as well
+- `VS-Org: Agenda View` command
+- Scheduling auto saves a file
+
+`Changed`
+
+- Completed Text goes on a new line
+- Inserting `TODO` or `DONE` auto saves the file
+
+## [0.0.8] 9-30-18
+
+`Changed`
+
+- The new .vsorg file now has focus when it's created
+
+`Fixed`
+
+- Vs-Org will now properly format the \* when the are typed (`editor.formatOnType` needed to be true, the extension sets this for .vsorg files automatically)
+- Users no longer need to set `editor.inserFileNewline` to true, the extension does this by default
+
+## [0.0.7] 9-28-18
+
+`Changed`
+
+- Syntax highlighting for `COMPLETED: DATE` is now the comment syntax (depending on your theme it's not so cluttered)
+- `COMPLETED: DATE` is now appended to the end of the task that is completed
+
+## [0.0.6] 9-27-18
+
+`Changed`
+
+- Syntax Highlighting for DONE on highlights the DONE keyword, no longer does full line
+- The DONE date is now on its own line with `COMPLETED:`
+
+`Fixed`
+
+- Switching from DONE or TODO no longer removes other done or todos on the line
+
+## [0.0.5] 9-27-18
+
+`Changed`
+
+- The default keybind for folding is now `tab`
+- The default keybind for unfolding is now `shift+tab`
+- Syntax highlighting for `#+` is now the selected themes comment color
+
+`Fixed`
+
+- Adding TODO, DONE or changing the level of the heading no longer get rid of special characters
+- VS-Org Keybinds are only active when the file extension is .vsorg or .vso
+- Fixed issue with `#` acting like a comment, `#+` is now a comment
+
+## [0.0.4] 9-26-18
+
+`Changed`
+
+- Changed to proper version number
+
+## [0.0.3] 9-25-18
+
+`Added`
+
+- Snippet adds an underline as a divider after #+TAGS
+
+`Changed`
+
+- Changed syntax highlighting for the TODO keyword. Only highlights TODO, not the rest of the line.
+
+## [0.0.2] 9-25-18
+
+`Added`
+
+- Initial release
+
+### Keybinds
+
+- Typing \* , ** , or \*** will properly format to "⊖", "⊙", "⊘".
+- alt+shift+upArrow will swap the BLOCK of text with the BLOCK of text above it.
+- alt+shift+downArrow will swap the BLOCK of text with the BLOCK of text below it.
+- shift+rightArrow will add TODO or DONE keyword
+- shift+rightLeft will add DONE or TODO keyword
+- Fold and Unfold code with default keybinds ctrl+shift+] or [
+- alt+rightArrow will increment the level of the heading
+- alt+leftArrow will decrement the level of the heading
+
+### Commands
+
+- Search by tags with the `VS-Org: Open By Tag` command
+- Search by titles with the `VS-Org: Open By Title` command
+- Change main directory with the `VS-Org: Change VS-Org Directory` command.
+- Create a new file with the `VS-Org: Create new .vsorg file` command.

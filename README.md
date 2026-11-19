@@ -8,7 +8,7 @@
 > A fast, keyboard-driven Org Mode–style task manager built for Visual Studio Code.
 > Inspired by Emacs Org Mode
 
-Org-vscode brings Emacs Org Mode workflows to VS Code. See the [roadmap](docs/roadmap.md) for planned features and compatibility work.
+Org-vscode brings Emacs Org Mode workflows to VS Code. See the [roadmap](roadmap.md) for planned features and compatibility work.
 
 ## 🎬 Demo
 
@@ -154,7 +154,7 @@ Src block execution currently has no default keybinding (use CodeLens, right-cli
 ## More Details
 
 - [Browse by workflow](docs/README.md#browse-by-workflow) to find a feature, from scheduling and navigation to reporting.
-- Read the [full how-to guide](docs/howto.md), [changelog](docs/CHANGELOG.md), or [roadmap](docs/roadmap.md).
+- Read the [full how-to guide](howto.md), [changelog](CHANGELOG.md), or [roadmap](roadmap.md).
 
 ---
 
@@ -162,7 +162,7 @@ Src block execution currently has no default keybinding (use CodeLens, right-cli
 
 If you run into a bug or have a feature request, please open an [issue](https://github.com/realdestroyer/org-vscode/issues).
 
-Pull requests are welcome. See the [contributor guide](docs/CONTRIBUTING.md) for setup, testing, and the pull request workflow.
+Pull requests are welcome. See the [contributor guide](CONTRIBUTING.md) for setup, testing, and the pull request workflow.
 
 ---
 

@@ -1,6 +1,6 @@
 # Yearly Summary / Review Workflow
 
-This document captures the end-to-end plan for turning a full-year `.org` file into reporting artifacts that help with annual reviews. The feature tracks added to [roadmap.md](../roadmap.md) map to the stages below.
+This document captures the end-to-end plan for turning a full-year `.org` file into reporting artifacts that help with annual reviews. The feature tracks added to the [roadmap](../../roadmap.md) map to the stages below.
 
 ## Objectives
 - Parse entire Org files (e.g., `Test Org Files/work.org`) to capture every scheduled task, status symbol, tag hint, timestamp, and supporting notes.
