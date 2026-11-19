@@ -26,7 +26,7 @@
 
 ## Project and development
 
-- [Changelog](CHANGELOG.md) and [roadmap](roadmap.md).
+- [Changelog](CHANGELOG.md) and [roadmap](../roadmap.md).
 - [Contributing](CONTRIBUTING.md): report issues, set up a development checkout, and run tests.
 - [External Capture & Link API](external-api.md): integrate another VS Code extension.
 - [Security policy](../SECURITY.md).
