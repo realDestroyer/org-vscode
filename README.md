@@ -8,13 +8,15 @@
 > A fast, keyboard-driven Org Mode–style task manager built for Visual Studio Code.
 > Inspired by Emacs Org Mode
 
-Org-vscode’s long-term direction is to emulate Emacs Org Mode as closely as practical in VS Code (syntax, navigation, and editing workflows). Some Emacs features are still in progress — see the v2.2 parity checklist below.
+Org-vscode brings Emacs Org Mode workflows to VS Code. See the [roadmap](docs/roadmap.md) for planned features and compatibility work.
 
 ## 🎬 Demo
 
-![Demo](https://github.com/realDestroyer/org-vscode/raw/master/Images/demo-example-file.gif)
+Check off an item and change a task’s TODO state from Agenda View. Both changes appear immediately in the `.org` source file.
 
-Video download (mp4): https://github.com/realDestroyer/org-vscode/raw/master/Images/demo1.mp4
+![Agenda View demo: check an item, then change a task from TODO to IN_PROGRESS and see both edits in the source](Images/agenda-demo.gif)
+
+[Download the full-resolution demo (WebM)](https://raw.githubusercontent.com/realDestroyer/org-vscode/master/Images/agenda-demo.webm) · [Browse feature guides](docs/README.md#browse-by-workflow)
 
 ---
 
@@ -64,20 +66,16 @@ Org-vscode helps you manage tasks, notes, and projects in plain text `.org` file
 - Commands: Sort Headings by Scheduled Date (`Org-vscode.sortClosedTasksToTop` optional)
 - **External Capture & Link API** (opt-in, off by default): other VS Code extensions can register custom org link schemes (e.g. `[[msgid:abc@host]]`) and push structured TODO entries into your inbox after a per-extension consent prompt. There's also a built-in **Org-vscode: Capture TODO into Inbox** palette command for quick personal capture. See [docs/external-api.md](docs/external-api.md), the runnable [examples/external-consumer/](examples/external-consumer/README.md), and [SECURITY.md](SECURITY.md).
 
-See every feature in one file:
-
-- Demo GIF: https://github.com/realDestroyer/org-vscode/blob/master/Images/demo-example-file.gif
-- Download the example file: https://raw.githubusercontent.com/realDestroyer/org-vscode/master/examples/demo-walkthrough.org
-
-For the full guide (examples + screenshots), see:
-
-- https://github.com/realDestroyer/org-vscode/blob/master/docs/howto.md
+Try the [walkthrough Org file](examples/demo-walkthrough.org) or use the [documentation index](docs/README.md) to find a specific workflow.
 
 ## 🚀 Quick Start (Emacs-inspired)
 
 Most workflows are designed to feel familiar if you use Emacs Org Mode — keyboard-first, selection-aware edits, and “structure-first” navigation.
 
-- Open the Command Palette and run Org-vscode commands (many have default keybindings below).
+1. Install **org-vscode** from the [Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=realDestroyer.org-vscode) or [Open VSX](https://open-vsx.org/extension/realDestroyer/org-vscode).
+2. Open an existing `.org` file, create one, or try the [example Org file](examples/demo-walkthrough.org).
+3. Open the Command Palette and search for `Org-vscode` to find commands. Common shortcuts are listed below.
+
 - Use `Ctrl+Shift+O` to jump to headings (Outline is powered by the Org heading structure).
 - Use `Ctrl+Click` (Windows/Linux) / `Cmd+Click` (Mac) on `[[links]]` to follow them.
 - Type `[[` (or `[[id:`) to trigger Org link completion.
@@ -155,24 +153,8 @@ Src block execution currently has no default keybinding (use CodeLens, right-cli
 
 ## More Details
 
-Everything else lives in the How-To. Jump straight to the section you need:
-
-- Migration (v1 → v2): https://github.com/realDestroyer/org-vscode/blob/master/docs/howto.md#v2-format--migration
-- Agenda View: https://github.com/realDestroyer/org-vscode/blob/master/docs/howto.md#agenda-view--scheduling
-- Checkboxes: https://github.com/realDestroyer/org-vscode/blob/master/docs/howto.md#checkboxes
-- Deadlines: https://github.com/realDestroyer/org-vscode/blob/master/docs/howto.md#deadlines
-- CONTINUED auto-forwarding: https://github.com/realDestroyer/org-vscode/blob/master/docs/howto.md#continued-auto-forwarding
-- Inline tags: https://github.com/realDestroyer/org-vscode/blob/master/docs/howto.md#inline-tags--tag-filtering
-- Align scheduled tasks: https://github.com/realDestroyer/org-vscode/blob/master/docs/howto.md#align-scheduled-tasks
-- Tagged Agenda: https://github.com/realDestroyer/org-vscode/blob/master/docs/howto.md#tagged-agenda-view
-- Calendar View: https://github.com/realDestroyer/org-vscode/blob/master/docs/howto.md#calendar-view
-- Syntax Color Customizer: https://github.com/realDestroyer/org-vscode/blob/master/docs/howto.md#syntax-color-customizer
-- Year-In-Review Dashboard: https://github.com/realDestroyer/org-vscode/blob/master/docs/howto.md#year-in-review-dashboard
-
-Other docs:
-
-- Changelog: https://github.com/realDestroyer/org-vscode/blob/master/docs/CHANGELOG.md
-- Roadmap: https://github.com/realDestroyer/org-vscode/blob/master/docs/roadmap.md
+- [Browse by workflow](docs/README.md#browse-by-workflow) to find a feature, from scheduling and navigation to reporting.
+- Read the [full how-to guide](docs/howto.md), [changelog](docs/CHANGELOG.md), or [roadmap](docs/roadmap.md).
 
 ---
 
@@ -180,7 +162,7 @@ Other docs:
 
 If you run into a bug or have a feature request, please open an [issue](https://github.com/realdestroyer/org-vscode/issues).
 
-Pull requests welcome!
+Pull requests are welcome. See the [contributor guide](docs/CONTRIBUTING.md) for setup, testing, and the pull request workflow.
 
 ---
 
@@ -193,4 +175,4 @@ Pull requests welcome!
 
 ## 📄 License
 
-MIT License — see [LICENSE](https://github.com/realdestroyer/org-vscode/blob/master/LICENSE) for full details.
+MIT License — see [LICENSE.md](LICENSE.md) for full details.

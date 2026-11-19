@@ -1,61 +1,19 @@
-.vscode/**
-.vscode-test/**
-.git/**
-node_modules/**
-
-# Build outputs (keep dist/, it's the extension entrypoint)
-**/*.map
-out/**
-src/**
-
-# Repo-only content
-.github/**
-AGENTS.md
-CLAUDE.md
-GEMINI.md
-GROK.md
-Test Org Files/**
-Test Files/**
-Issues/**
-Pull Requests/**
-Roadmap/**
-examples/**
-Images/**
+# Only ship the extension, its runtime assets, and listing metadata.
+**
+!package.json
+!README.md
+!LICENSE.md
+!SECURITY.md
+!docs/CHANGELOG.md
 !Images/org-vscode-logo.png
-org-vscode/**
-
-# Local tooling / exports
-tools/**
-copilot_exports/**
-
-# Local logs
-Logs/**
-
-# Build helpers
-scripts/**
-
-# Tooling / docs not needed at runtime
-.gitignore
-tsconfig.json
-vsc-extension-quickstart.md
-tslint.json
-build.ps1
-merge-to-master.ps1
-last_weeks_meals.txt
-howto.md
-CHANGELOG.md
-roadmap.md
-TYPESCRIPT
-CONTRIBUTING.md
-manifest.scm
-JIRA integration.txt
-
-# Local release-note scratch files
-release-notes-*.md
-pr_body.md
-
-# Local patch artifacts / packages
-*.orig
-*.rej
-*.patch
-*.vsix
+!dist/extension.js
+!language-configuration.json
+!vso.tmLanguage.json
+!snippets/vso.json
+!media/fullcalendar.min.css
+!media/fullcalendar.min.js
+!media/htm.js
+!media/htmlUtils.browser.js
+!media/mermaid.min.js
+!media/moment.min.js
+!media/yearDashboardView.js
