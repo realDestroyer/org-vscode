@@ -7,8 +7,8 @@ const {
   requestTransitionNote,
   computeTransitionLogbookInsertion,
   applyTransitionLogbookInsertion
-} = require(path.join(__dirname, '..', '..', 'out', 'transitionNotes.js'));
-const { createWorkflowRegistry } = require(path.join(__dirname, '..', '..', 'out', 'workflowStates.js'));
+} = require(path.join(__dirname, '..', '..', 'src', 'transitionNotes.js'));
+const { createWorkflowRegistry } = require(path.join(__dirname, '..', '..', 'src', 'workflowStates.js'));
 
 function createRegistry() {
   return createWorkflowRegistry([

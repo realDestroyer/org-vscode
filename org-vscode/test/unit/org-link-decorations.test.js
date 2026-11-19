@@ -30,7 +30,7 @@ function testHiddenLinkDecorationCollapsesLongTargets() {
     ConfigurationTarget: { Global: 1 }
   };
   const originalLoad = Module._load;
-  const modulePath = path.resolve(__dirname, '..', '..', 'out', 'orgLinkDecorations.js');
+  const modulePath = path.resolve(__dirname, '..', '..', 'src', 'orgLinkDecorations.js');
 
   Module._load = function (request, parent, isMain) {
     if (request === 'vscode') return vscodeMock;

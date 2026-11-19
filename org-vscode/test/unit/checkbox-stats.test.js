@@ -1,7 +1,7 @@
 const assert = require('assert');
 const path = require('path');
 
-const { computeCheckboxStatsByHeadingLine, computeHierarchicalCheckboxStatsInRange, computeTodoStatsInRange, computeSubtreeCompletionStatsInRange, hasCheckboxCookie, findCheckboxCookie, formatCheckboxStats } = require(path.join(__dirname, '..', '..', 'out', 'checkboxStats.js'));
+const { computeCheckboxStatsByHeadingLine, computeHierarchicalCheckboxStatsInRange, computeTodoStatsInRange, computeSubtreeCompletionStatsInRange, hasCheckboxCookie, findCheckboxCookie, formatCheckboxStats } = require(path.join(__dirname, '..', '..', 'src', 'checkboxStats.js'));
 
 function testCheckboxStatsHierarchicalByHeading() {
   const lines = [

@@ -9,7 +9,7 @@ const {
   CaptureValidationError,
   MAX_HEADLINE_LEN,
   MAX_BODY_LEN
-} = require(path.join(__dirname, '..', '..', 'out', 'api', 'captureTodo.js'));
+} = require(path.join(__dirname, '..', '..', 'src', 'api', 'captureTodo.js'));
 
 function expectThrows(fn, messageRe) {
   try {

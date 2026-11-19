@@ -7,7 +7,7 @@ const {
   buildTaskPrefixRegex,
   buildTaskHeadingRegex,
   createWorkflowRegistry
-} = require(path.join(__dirname, '..', '..', 'out', 'workflowStates.js'));
+} = require(path.join(__dirname, '..', '..', 'src', 'workflowStates.js'));
 
 function testDefaultsAreStable() {
   const defaults = getDefaultWorkflowStates();

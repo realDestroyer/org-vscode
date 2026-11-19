@@ -5,7 +5,7 @@ const {
   computeCheckboxToggleEdits,
   computeCheckboxLineChangeEdits,
   computeCheckboxBulkToggleEdits
-} = require(path.join(__dirname, '..', '..', 'out', 'checkboxToggle.js'));
+} = require(path.join(__dirname, '..', '..', 'src', 'checkboxToggle.js'));
 
 function applyEdits(lines, edits) {
   const out = lines.slice();

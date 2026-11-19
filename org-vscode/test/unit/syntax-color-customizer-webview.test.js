@@ -119,7 +119,7 @@ function testWebviewDoesNotBreakOnMaliciousConfigValues() {
   const vscodeMock = createVscodeMock({ tokenColorCustomizations });
 
   const extensionRoot = path.resolve(__dirname, '..', '..');
-  const modulePath = path.join(extensionRoot, 'out', 'syntaxColorCustomizer.js');
+  const modulePath = path.join(extensionRoot, 'src', 'syntaxColorCustomizer.js');
   delete require.cache[require.resolve(modulePath)];
 
   withMockedVscode(vscodeMock, () => {

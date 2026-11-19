@@ -1,15 +1,15 @@
 const assert = require('assert');
 const path = require('path');
 
-const outDir = path.join(__dirname, '..', '..', 'out');
+const sourceDir = path.join(__dirname, '..', '..', 'src');
 const {
   isCheckboxLine,
   parseCheckboxLine,
   findCheckboxKeyword,
   buildCheckboxLine,
   rotateCheckboxKeyword
-} = require(path.join(outDir, 'checkboxKeywords.js'));
-const { createWorkflowRegistry } = require(path.join(outDir, 'workflowStates.js'));
+} = require(path.join(sourceDir, 'checkboxKeywords.js'));
+const { createWorkflowRegistry } = require(path.join(sourceDir, 'workflowStates.js'));
 
 const registry = createWorkflowRegistry(undefined);
 

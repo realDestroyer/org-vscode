@@ -54,7 +54,7 @@ module.exports = {
   name: 'unit/year-metrics',
   run() {
     return withMockedVscode(() => {
-      const { parseOrgContent } = require(path.join(__dirname, '..', '..', 'out', 'yearSummary.js'));
+      const { parseOrgContent } = require(path.join(__dirname, '..', '..', 'src', 'yearSummary.js'));
       const parsed = parseOrgContent(SAMPLE);
       const metrics = parsed.metrics;
 

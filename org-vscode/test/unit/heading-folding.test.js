@@ -34,13 +34,13 @@ function loadFolding() {
 
   const originalRequire = Module.prototype.require;
   const target = require.resolve(
-    path.join(__dirname, "..", "..", "out", "orgFoldingProvider.js")
+    path.join(__dirname, "..", "..", "src", "orgFoldingProvider.js")
   );
   // orgFoldingProvider transitively requires orgSymbolProvider, which also
   // captures vscode at load time. Clear both from the cache so neither
   // bleeds our stub into other test files.
   const symbolModule = require.resolve(
-    path.join(__dirname, "..", "..", "out", "orgSymbolProvider.js")
+    path.join(__dirname, "..", "..", "src", "orgSymbolProvider.js")
   );
   delete require.cache[target];
   delete require.cache[symbolModule];

@@ -16,7 +16,7 @@ function loadLinkTargets() {
   };
 
   try {
-    return require(path.join(__dirname, '..', '..', 'out', 'orgLinkTargets.js'));
+    return require(path.join(__dirname, '..', '..', 'src', 'orgLinkTargets.js'));
   } finally {
     Module._load = originalLoad;
   }

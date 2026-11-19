@@ -1,6 +1,6 @@
 const assert = require('assert');
 
-const { computeDesiredIndentForNewLine } = require('../../out/indentUtils');
+const { computeDesiredIndentForNewLine } = require('../../src/indentUtils');
 
 module.exports = {
   name: 'indent-utils',

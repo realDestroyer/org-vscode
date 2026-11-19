@@ -6,7 +6,7 @@ const {
   linkTypeRegistry,
   normalizeType,
   validateHandler
-} = require(path.join(__dirname, '..', '..', 'out', 'api', 'linkTypeRegistry.js'));
+} = require(path.join(__dirname, '..', '..', 'src', 'api', 'linkTypeRegistry.js'));
 
 function makeHandler(type, extra) {
   return Object.assign({

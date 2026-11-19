@@ -5,7 +5,7 @@ const {
   createTrustStore,
   normalizeExtensionId,
   TRUST_STORE_KEY
-} = require(path.join(__dirname, '..', '..', 'out', 'api', 'trustStore.js'));
+} = require(path.join(__dirname, '..', '..', 'src', 'api', 'trustStore.js'));
 
 function makeMemento(initial) {
   const store = new Map();

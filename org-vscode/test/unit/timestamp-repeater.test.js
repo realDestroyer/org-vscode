@@ -8,7 +8,7 @@ const {
   advanceDateByRepeater,
   processRepeaterOnDone,
   getAcceptedDateFormats
-} = require(path.join(__dirname, '..', '..', 'out', 'orgTagUtils.js'));
+} = require(path.join(__dirname, '..', '..', 'src', 'orgTagUtils.js'));
 
 // ============================================================================
 // parseRepeater Tests

@@ -1,13 +1,13 @@
 const assert = require('assert');
 const path = require('path');
 
-const outDir = path.join(__dirname, '..', '..', 'out');
+const sourceDir = path.join(__dirname, '..', '..', 'src');
 const {
   isBuiltinStateKeyword,
   sanitizeKeywordForScope,
   getScopesForKeyword,
   buildCustomStateColorEntries
-} = require(path.join(outDir, 'workflowStateScopes.js'));
+} = require(path.join(sourceDir, 'workflowStateScopes.js'));
 
 function testIdentifiesBuiltins() {
   assert.strictEqual(isBuiltinStateKeyword('TODO'), true);

@@ -1,7 +1,7 @@
 const assert = require('assert');
 const path = require('path');
 
-const { findSrcBlockAtLine, applyResultsAfterEndSrc } = require(path.join(__dirname, '..', '..', 'out', 'srcBlockUtils.js'));
+const { findSrcBlockAtLine, applyResultsAfterEndSrc } = require(path.join(__dirname, '..', '..', 'src', 'srcBlockUtils.js'));
 
 function testFindSrcBlockBasic() {
   const lines = [

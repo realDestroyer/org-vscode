@@ -11,7 +11,7 @@ const {
   buildDayHeading,
   stripInlinePlanning,
   DAY_HEADING_REGEX
-} = require(path.join(__dirname, '..', '..', 'out', 'continuedTaskHandler.js'));
+} = require(path.join(__dirname, '..', '..', 'src', 'continuedTaskHandler.js'));
 
 // ============================================================================
 // DAY_HEADING_REGEX Tests

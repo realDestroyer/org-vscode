@@ -4,7 +4,7 @@ const path = require('path');
 const {
   computeMetaReturn,
   computeSmartInsertNewElement
-} = require(path.join(__dirname, '..', '..', 'out', 'smartInsertNewElement.js'));
+} = require(path.join(__dirname, '..', '..', 'src', 'smartInsertNewElement.js'));
 
 function testHeadingInsertsAfterSubtree() {
   const lines = [

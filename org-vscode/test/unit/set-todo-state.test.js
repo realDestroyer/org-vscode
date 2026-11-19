@@ -1,8 +1,8 @@
 const assert = require('assert');
 const path = require('path');
 
-const { computeTodoStateChange, buildPlanningBody } = require(path.join(__dirname, '..', '..', 'out', 'setTodoState.js'));
-const { createWorkflowRegistry } = require(path.join(__dirname, '..', '..', 'out', 'workflowStates.js'));
+const { computeTodoStateChange, buildPlanningBody } = require(path.join(__dirname, '..', '..', 'src', 'setTodoState.js'));
+const { createWorkflowRegistry } = require(path.join(__dirname, '..', '..', 'src', 'workflowStates.js'));
 
 // ============================================================================
 // computeTodoStateChange Tests

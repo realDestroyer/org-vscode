@@ -52,7 +52,7 @@ async function testCaptureDisabledByDefault() {
   const vscodeMock = createVscodeMock({ config: {} });
   await withMockedVscode(vscodeMock, async () => {
     const { createExtensionApi, CaptureDisabledError } = require(
-      path.join(__dirname, '..', '..', 'out', 'api', 'extensionApi.js')
+      path.join(__dirname, '..', '..', 'src', 'api', 'extensionApi.js')
     );
     const api = createExtensionApi(vscodeMock, {
       workspaceState: makeMemento(),
@@ -73,7 +73,7 @@ async function testCaptureRejectsUnknownCaller() {
   });
   await withMockedVscode(vscodeMock, async () => {
     const { createExtensionApi, TrustDeniedError } = require(
-      path.join(__dirname, '..', '..', 'out', 'api', 'extensionApi.js')
+      path.join(__dirname, '..', '..', 'src', 'api', 'extensionApi.js')
     );
     const api = createExtensionApi(vscodeMock, {
       workspaceState: makeMemento(),
@@ -94,7 +94,7 @@ async function testRegisterLinkTypeRequiresTrust() {
   });
   await withMockedVscode(vscodeMock, async () => {
     const { createExtensionApi, TrustDeniedError } = require(
-      path.join(__dirname, '..', '..', 'out', 'api', 'extensionApi.js')
+      path.join(__dirname, '..', '..', 'src', 'api', 'extensionApi.js')
     );
     const api = createExtensionApi(vscodeMock, {
       workspaceState: makeMemento(),
@@ -112,10 +112,10 @@ async function testGetCapturedSchemesReadsRegistry() {
   const vscodeMock = createVscodeMock({});
   await withMockedVscode(vscodeMock, async () => {
     const { createExtensionApi } = require(
-      path.join(__dirname, '..', '..', 'out', 'api', 'extensionApi.js')
+      path.join(__dirname, '..', '..', 'src', 'api', 'extensionApi.js')
     );
     const { linkTypeRegistry } = require(
-      path.join(__dirname, '..', '..', 'out', 'api', 'linkTypeRegistry.js')
+      path.join(__dirname, '..', '..', 'src', 'api', 'linkTypeRegistry.js')
     );
     const api = createExtensionApi(vscodeMock, {
       workspaceState: makeMemento(),
@@ -137,7 +137,7 @@ async function testGetCapturedSchemesReadsRegistry() {
 // ─────────────────────────────────────────────────────────────────────
 function loadMatchCaller() {
   // Pure helper, no mock needed.
-  return require(path.join(__dirname, '..', '..', 'out', 'api', 'extensionApi.js')).matchCallerInStack;
+  return require(path.join(__dirname, '..', '..', 'src', 'api', 'extensionApi.js')).matchCallerInStack;
 }
 
 function testMatchesWindowsCaseInsensitive() {

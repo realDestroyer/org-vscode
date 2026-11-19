@@ -3,7 +3,7 @@ const fs = require('fs');
 const path = require('path');
 
 const viewScriptPath = path.join(__dirname, '..', '..', 'media', 'yearDashboardView.js');
-const dashboardHostPath = path.join(__dirname, '..', '..', 'out', 'yearDashboard.js');
+const dashboardHostPath = path.join(__dirname, '..', '..', 'src', 'yearDashboard.js');
 
 function collectMatches(source, regex, group) {
   return Array.from(source.matchAll(regex)).map(match => match[group]);

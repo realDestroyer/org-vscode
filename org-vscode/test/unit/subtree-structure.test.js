@@ -4,7 +4,7 @@ const path = require('path');
 const {
   computeRefilePlan,
   computeSubtreeLevelResult
-} = require(path.join(__dirname, '..', '..', 'out', 'subtreeStructureUtils.js'));
+} = require(path.join(__dirname, '..', '..', 'src', 'subtreeStructureUtils.js'));
 
 function testPromoteAndDemoteWholeStarSubtree() {
   const lines = ['* Parent', '** Child', 'body', '*** Grandchild', '* Sibling'];

@@ -1,7 +1,7 @@
 const assert = require("assert");
 const path = require("path");
 
-const columnView = require(path.join(__dirname, "..", "..", "out", "columnView.js"));
+const columnView = require(path.join(__dirname, "..", "..", "src", "columnView.js"));
 
 function testCollectColumnRowsFromLines() {
   const lines = [

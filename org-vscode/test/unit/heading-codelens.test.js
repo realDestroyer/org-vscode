@@ -2,7 +2,7 @@ const assert = require('assert');
 const path = require('path');
 
 const { buildHeadingCodeLensPlan, normalizeHeadingCodeLensActions } = require(
-  path.join(__dirname, '..', '..', 'out', 'headingCodeLensUtils.js')
+  path.join(__dirname, '..', '..', 'src', 'headingCodeLensUtils.js')
 );
 
 module.exports = {

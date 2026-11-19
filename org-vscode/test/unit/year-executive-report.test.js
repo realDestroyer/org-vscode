@@ -22,7 +22,7 @@ module.exports = {
   name: 'unit/year-executive-report',
   run() {
     return withMockedVscode(async () => {
-      const { generateExecutiveReportForFile } = require('../../out/yearExecutiveReport');
+      const { generateExecutiveReportForFile } = require('../../src/yearExecutiveReport');
 
       const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'org-vscode-yir-'));
       const orgPath = path.join(tmpDir, '2026-Todo.org');

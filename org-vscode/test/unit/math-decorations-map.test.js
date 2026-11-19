@@ -3,7 +3,7 @@ const fs = require('fs');
 const path = require('path');
 
 function testDefaultCommandMapKeysMatchCommandRegexOutput() {
-  const filePath = path.join(__dirname, '..', '..', 'out', 'mathDecorations.js');
+  const filePath = path.join(__dirname, '..', '..', 'src', 'mathDecorations.js');
   const text = fs.readFileSync(filePath, 'utf8');
 
   assert.ok(
