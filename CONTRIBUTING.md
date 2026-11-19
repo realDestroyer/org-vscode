@@ -1,6 +1,4 @@
-﻿# Moved
+# Contributing to Org-vscode
 
-Contributing docs have moved to: docs/CONTRIBUTING.md
-
-- GitHub: https://github.com/realdestroyer/org-vscode/blob/master/docs/CONTRIBUTING.md
+See the [contributor guide](docs/CONTRIBUTING.md) for the issue and pull request workflow, development setup, and test commands.
 

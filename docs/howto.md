@@ -29,7 +29,7 @@
 * [Workspace queries and perspectives](#workspace-queries-and-perspectives)
 * [∑ Math Symbol Decorations](#math-symbol-decorations)
 * [📂 Open a File by Tags or Titles](#open-a-file-by-tags-or-titles)
-* [📅 Agenda View & Scheduling](#agenda-view--scheduling)
+* [📅 Agenda View & Scheduling](#agenda-view-scheduling)
 * [📊 Column View](#column-view)
 * [☑️ Checkboxes](#checkboxes)
 * [⏰ Deadlines](#deadlines)
@@ -41,7 +41,7 @@
 * [Priority cycling and transition notes](#priority-cycling-and-transition-notes)
 * [📒 LOGBOOK (State Change History)](#logbook)
 * [⏱ Clocking + Clock Table](#clocking--clock-table)
-* [🏷 Inline Tags & Tag Filtering](#inline-tags--tag-filtering)
+* [🏷 Inline Tags & Tag Filtering](#inline-tags-tag-filtering)
 * [🧮 Insert Org Table](#insert-org-table)
 * [Align Scheduled Task Tags](#align-scheduled-tasks)
 * [Tagged Agenda View](#tagged-agenda-view)
@@ -455,12 +455,13 @@ Priority: [#A]
 - Type `[[` (or `[[id:`) to get link completions.
 - Run **Org-vscode: Insert Link to Heading** (`Ctrl+Alt+L`, or `Cmd+Alt+L` on macOS) to search headings across the workspace and insert a stable `id:` link.
   - If the target has no `:ID:`, Org-vscode creates one in its property drawer.
+  - Follow the link to open the target Org file and place the cursor on the linked heading, even when it’s in a different file.
   - Clean cross-file targets are saved so the new link resolves immediately. Existing dirty target buffers remain dirty and are not auto-saved.
 
 Optional UI enhancement:
 
 - `Org-vscode.decorateLinkDescriptions`: when enabled, bracket links like `[[https://github.com][Github]]` are visually rendered as just `Github` (decorations only).
-  - The full link is automatically revealed while your cursor is inside it (so it stays editable).
+  - Move the cursor into the link to reveal and edit its full markup. Move the cursor away and the description comes back automatically.
   - Command: **Org-vscode: Toggle Link Description Rendering**
 
 Examples:
@@ -501,7 +502,7 @@ On body text, lists, tables, selections, suggestion widgets, and rename inputs, 
 
 ## Context action and structural insertion <a id="context-action-and-structural-insertion"></a>
 
-Run `Org-vscode: Execute Context Action` (or assign it a personal keybinding) for the core behavior of Emacs Org's context-sensitive `C-c C-c`: toggle a checkbox, align a table, renumber an ordered list, or repair the weekday in a timestamp. No default chord is assigned because `Ctrl+C Ctrl+C` would override VS Code's Copy command.
+**Execute Context Action** chooses what to do based on what's under your cursor: on a checkbox it toggles it, in a table it aligns the columns, in an ordered list it renumbers the items, and on a timestamp it repairs the weekday. Run `Org-vscode: Execute Context Action` from the Command Palette or assign your own shortcut. It corresponds to Emacs Org's `C-c C-c`, not Meta-Return. No default chord is assigned because `Ctrl+C Ctrl+C` would override VS Code's Copy command.
 
 Press `Alt+Enter` for Emacs-style Meta-Return (`M-RET`): insert before a heading/list item when the cursor is in its prefix, split it at the cursor, or create a context-matching element. Press `Ctrl+Enter` (`Cmd+Enter` on macOS) for the distinct `C-RET` behavior that inserts a matching sibling after the current heading subtree, list-item subtree, checkbox item, or table row.
 
@@ -730,7 +731,7 @@ Column View stores your visible columns, sort settings, and selected scope in wo
 
 ### Navigation
 
-- Click any row to jump to that heading in the source file.
+- Click any task row, including its task text, to open the source `.org` file and place the cursor on that exact heading. As in Agenda and Tagged Agenda, you can jump straight to the task without searching for it.
 - Use **Refresh** for a manual rescan; the view also refreshes on file save.
 
 ---

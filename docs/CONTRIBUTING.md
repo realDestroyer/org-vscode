@@ -35,46 +35,23 @@ Thanks for helping improve org-vscode.
 
 ## Notes for this repo
 
-- Avoid committing directly to `master` unless you intentionally choose to bypass review (e.g., quick solo maintenance). The default expectation is the PR workflow above.
+- Avoid committing directly to `master` unless you intentionally choose to bypass review (e.g., quick solo maintenance). The default expectation is the PR workflow above. Only Destroyer can publish to master.
 
-## Release checklist (maintainers)
+Releases and Marketplace publishing are maintainer-managed and are outside the contributor workflow.
 
-This repo bundles the extension into `dist/extension.js`. For a release, ensure the version bump and bundle are done on `master`.
+## Development and testing
 
-1. **Merge to `master`**
-    - Ensure CI/tests are green.
+Open the **repository root** (the folder containing `package.json`) in VS Code, not its parent folder or the nested `org-vscode/` directory. Run these commands from the repository root:
 
-2. **Update docs**
-   - Ensure user-facing docs reflect changes:
-      - `README.md`
-      - `docs/CHANGELOG.md`
-      - `docs/howto.md` / `docs/roadmap.md` (as needed)
+```sh
+npm ci
+npm run test:unit
+npm test
+```
 
-3. **Bump version**
-    - Update `package.json` and the matching root version fields in `package-lock.json`.
-
-4. **Bundle + test**
-    - From the repository root:
-       - `npm run bundle`
-      - `npm run test:unit`
-      - `npm test`
-
-5. **Package VSIX**
-    - From the repository root:
-       - `npx vsce package --readme-path README.md --changelog-path docs/CHANGELOG.md`
-
-6. **Publish to VS Code Marketplace**
-    - Requires a VSCE publisher token configured for `realDestroyer`.
-    - From the repository root, publish the VSIX created in step 5:
-       - `npx vsce publish --packagePath org-vscode-<version>.vsix`
-
-7. **Publish to OpenVSX**
-    - Requires an OpenVSX token (commonly via `OVSX_PAT`).
-    - From the repository root, publish the same VSIX:
-       - `npx ovsx publish org-vscode-<version>.vsix -p $env:OVSX_PAT`
-
-8. **Update the Latest Release in GitHub**
-    - Upload the latest .vsix to GitHub "Latest Release"
-
-
-    
+- [`package.json`](../package.json) is the extension manifest and defines the build and test commands.
+- [`org-vscode/out/`](../org-vscode/out/) is the editable JavaScript source despite its name. Do not edit the generated `dist/extension.js`.
+- [`org-vscode/test/`](../org-vscode/test/) contains unit and extension-host tests. `npm test` builds the extension and runs the host suite with a pinned VS Code version and separate settings/extensions directories. On Windows, the [test runner](../org-vscode/test/runTest.js) uses `_orgvscode_testlink` and `_orgvscode_vscode_test` at the root of the repository's drive.
+- `npm run bundle` refreshes `dist/extension.js`, `media/`, and `snippets/`. Edit webview assets and snippets in [`org-vscode/media/`](../org-vscode/media/) and [`org-vscode/snippets/`](../org-vscode/snippets/), not their generated copies.
+- Use **Run and Debug → Extension** to build and open an Extension Development Host. Use sample files from [`examples/`](../examples/) to reproduce issues; keep personal Org files out of commits, test fixtures, and screenshots.
+- GitHub documentation lives in [`docs/`](./) and uses media from [`Images/`](../Images/) and [`docs/images/`](images/). Only files listed in [the VSIX allowlist](../.vscodeignore) ship with the extension. If you add a runtime asset, update the allowlist and verify the resulting package.
