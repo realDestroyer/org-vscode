@@ -206,7 +206,7 @@
   - Bare URL: https://orgmode.org
   - Bracket link with description: [[https://orgmode.org][Org manual]]
   - Mail link: mailto:someone@example.com
-  - File link (relative): [[file:../docs/howto.md][Open the How-To]]
+  - File link (relative): [[file:../howto.md][Open the How-To]]
   - Internal heading link: [[*Tables + Exports][Jump to the tables section]]
 
   This heading has a global ID and a CUSTOM_ID (anchor-like):

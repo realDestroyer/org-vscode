@@ -95,6 +95,6 @@ To keep Emacs-style tag match strings unambiguous (where `-TAG` means “NOT TAG
 
 ## Related docs
 
-- [How-To Guide](howto.md)
+- [How-To Guide](../howto.md)
 - [Roadmap](../roadmap.md)
-- [Changelog](CHANGELOG.md)
+- [Changelog](../CHANGELOG.md)

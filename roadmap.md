@@ -1,6 +1,6 @@
 ﻿# Roadmap
 
-This roadmap tracks planned, in-progress, and shipped features. See the [changelog](docs/CHANGELOG.md) for the latest release.
+This roadmap tracks planned, in-progress, and shipped features. See the [changelog](CHANGELOG.md) for the latest release.
 
 ## Features
 
